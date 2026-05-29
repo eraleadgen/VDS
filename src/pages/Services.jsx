@@ -59,7 +59,7 @@ const SERVICES = [
       'Coating Recommended After',
       'Inspection Under Lights',
     ],
-    img: 'https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=800&q=80',
+    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/da5a21bfa_ChatGPTImageFeb17202611_00_33PM.png',
     gold: false,
   },
 ];
