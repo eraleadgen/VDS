@@ -35,9 +35,7 @@ export default function Navbar() {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
           <img src={LOGO} alt="VDS Mobile" className="h-9 w-auto" />
-          <span className="hidden sm:block text-xs font-mono-tech text-vapor/50 tracking-widest uppercase mt-1">
-            Mobile
-          </span>
+
         </Link>
 
         {/* Desktop Nav */}

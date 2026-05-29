@@ -62,7 +62,7 @@ export default function Home() {
       <section className="relative min-h-screen flex items-end overflow-hidden">
         <img
           src="https://images.unsplash.com/photo-1616455579100-2ceaa4ec2d28?w=1600&q=85"
-          alt="Luxury car detail"
+          alt=""
           className="absolute inset-0 w-full h-full object-cover object-center"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/60 to-transparent" />
