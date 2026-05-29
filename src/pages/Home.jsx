@@ -61,7 +61,7 @@ export default function Home() {
       {/* ── HERO ─────────────────────────────────────── */}
       <section className="relative min-h-screen flex items-end overflow-hidden">
         <img
-          src="https://images.unsplash.com/photo-1616455579100-2ceaa4ec2d28?w=1600&q=85"
+          src="https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=1600&q=85"
           alt=""
           className="absolute inset-0 w-full h-full object-cover object-center"
         />
