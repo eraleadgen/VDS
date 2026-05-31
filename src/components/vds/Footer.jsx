@@ -31,7 +31,7 @@ export default function Footer() {
           <div>
             <p className="text-xs font-mono-tech tracking-widest text-gold mb-6">NAVIGATE</p>
             <div className="flex flex-col gap-3">
-              {[['/', 'Home'], ['/services', 'Services'], ['/vds-gold', 'VDS Gold'], ['/gallery', 'Gallery'], ['/faq', 'FAQ']].map(([path, label]) => (
+              {[['/', 'Home'], ['/services', 'Services'], ['/vds-gold', 'VDS Gold'], ['/faq', 'FAQ']].map(([path, label]) => (
                 <Link key={path} to={path} className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">{label}</Link>
               ))}
             </div>

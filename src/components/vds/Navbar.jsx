@@ -7,7 +7,7 @@ const LOGO = "https://media.base44.com/images/public/6a191df337222815cd0b1f5e/6a
 const navLinks = [
   { label: 'HOME', path: '/' },
   { label: 'SERVICES', path: '/services' },
-  { label: 'GALLERY', path: '/gallery' },
+
   { label: 'FAQ', path: '/faq' },
 
 ];

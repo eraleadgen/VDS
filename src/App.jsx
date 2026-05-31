@@ -10,7 +10,6 @@ import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import Home from './pages/Home';
 import Services from './pages/Services';
 import VdsGold from './pages/VdsGold';
-import Gallery from './pages/Gallery';
 import FAQ from './pages/FAQ';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
@@ -40,7 +39,7 @@ const AuthenticatedApp = () => {
       <Route path="/" element={<Home />} />
       <Route path="/services" element={<Services />} />
       <Route path="/vds-gold" element={<VdsGold />} />
-      <Route path="/gallery" element={<Gallery />} />
+
       <Route path="/faq" element={<FAQ />} />
 
       <Route path="/terms" element={<Terms />} />
