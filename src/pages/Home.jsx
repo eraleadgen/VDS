@@ -17,21 +17,21 @@ const SERVICES = [
     title: 'FULL DETAIL',
     subtitle: 'Interior & Exterior Restoration',
     specs: ['Interior & Exterior Restoration', 'Odor & Stain Removal', 'GTechniq Products', 'Ceramic Sealant'],
-    img: 'https://images.unsplash.com/photo-1607860108855-64acf2078ed9?w=600&q=80',
+    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/167aa5aef_interiordetailingmercades.jpg',
     path: '/services',
   },
   {
     title: 'CERAMIC COATINGS',
     subtitle: 'Long-Term Paint Protection',
     specs: ['3 Month – 7 Year Coatings', 'GTechniq Professional Products', 'Hydrophobic Surface Protection', 'UV & Chemical Resistance'],
-    img: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80',
+    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/9ff1619de_Ceramiccoatingnearme.webp',
     path: '/services',
   },
   {
     title: 'PAINT CORRECTION',
     subtitle: 'Swirl & Scratch Removal',
     specs: ['Swirl Mark Elimination', 'Scratch & Buffer Trail Removal', 'Flawless Paint Quality', 'Coating Recommended'],
-    img: 'https://images.unsplash.com/photo-1625047509248-ec889cbff17f?w=600&q=80',
+    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/93d7fe9d4_mobilepaintcorrection.jpg',
     path: '/services',
   },
 ];
@@ -61,7 +61,7 @@ export default function Home() {
       {/* ── HERO ─────────────────────────────────────── */}
       <section className="relative min-h-screen flex items-end overflow-hidden">
         <img
-          src="https://images.unsplash.com/photo-1544636331-e26879cd4d9b?w=1600&q=85"
+          src="https://media.base44.com/images/public/6a191df337222815cd0b1f5e/f695b9a84_PhotoFeb23202651724PM.jpg"
           alt=""
           className="absolute inset-0 w-full h-full object-cover object-center"
         />
@@ -69,7 +69,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-r from-obsidian/70 via-transparent to-transparent" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 pt-32 pb-16 md:pb-24 w-full">
-          <div className="max-w-3xl">
+          <div className="max-w-3xl mx-auto md:mx-0 text-center md:text-left">
             <p className="text-xs font-mono-tech tracking-[0.3em] text-gold mb-6 opacity-80">
               METRO ATLANTA · MOBILE DETAILING
             </p>
@@ -77,15 +77,15 @@ export default function Home() {
               THE RITUAL<br />OF
               <GoldShimmer className="ml-4">REFLECTION.</GoldShimmer>
             </h1>
-            <p className="text-lg text-vapor/60 font-grotesk max-w-xl leading-relaxed mb-10">
+            <p className="text-lg text-vapor/60 font-grotesk max-w-xl leading-relaxed mb-10 mx-auto md:mx-0">
               Premium mobile detailing for luxury and performance vehicles across Metro Atlanta. We come to you — no shop visit required.
             </p>
 
-            <div className="flex flex-wrap gap-4">
-              <Link to="/contact"
+            <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+              <a href="sms:+14704128986"
                 className="flex items-center gap-3 bg-vapor text-obsidian px-7 py-4 text-sm font-mono-tech tracking-widest hover:bg-gold transition-colors duration-300 rounded-sm">
-                REQUEST A QUOTE <ArrowRight size={14} />
-              </Link>
+                TEXT FOR A QUOTE <ArrowRight size={14} />
+              </a>
               <Link to="/vds-gold"
                 className="vds-gold-btn flex items-center gap-3 px-7 py-4 text-sm font-mono-tech tracking-widest rounded-sm">
                 ◆ EXPLORE VDS GOLD
@@ -174,9 +174,9 @@ export default function Home() {
                   ))}
                 </ul>
                 <div className="flex gap-3">
-                  <a href="tel:+14043836915"
+                  <a href="sms:+14704128986"
                     className="flex-1 text-center py-3 text-xs font-mono-tech tracking-widest bg-vapor text-obsidian hover:bg-gold transition-colors duration-200 rounded-sm">
-                    REQUEST QUOTE
+                    TEXT FOR QUOTE
                   </a>
                   <Link to={svc.path}
                     className="px-4 py-3 border border-vapor/20 text-vapor/50 hover:border-vapor hover:text-vapor transition-colors duration-200 rounded-sm">
@@ -222,7 +222,7 @@ export default function Home() {
 
             <div className="relative">
               <img
-                src="https://images.unsplash.com/photo-1601362840469-51e4d8d58785?w=800&q=80"
+                src="https://media.base44.com/images/public/6a191df337222815cd0b1f5e/f16ccaed0_porschedetailing.jpg"
                 alt="Premium detailing"
                 className="w-full aspect-[3/4] object-cover rounded-sm"
               />
@@ -283,7 +283,7 @@ export default function Home() {
       {/* ── FINAL CTA ────────────────────────────────── */}
       <section className="relative py-32 overflow-hidden">
         <img
-          src="https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=1600&q=80"
+          src="https://media.base44.com/images/public/6a191df337222815cd0b1f5e/7b9bc552e_Lamborginidetailing.jpg"
           alt="Luxury car"
           className="absolute inset-0 w-full h-full object-cover"
         />

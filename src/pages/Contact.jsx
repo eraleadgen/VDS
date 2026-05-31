@@ -73,10 +73,10 @@ export default function Contact() {
               <div className="space-y-8">
                 <div>
                   <p className="text-xs font-mono-tech text-vapor/30 tracking-widest mb-3">PHONE</p>
-                  <a href="tel:+14043836915"
+                  <a href="sms:+14704128986"
                     className="flex items-center gap-3 text-vapor hover:text-gold transition-colors font-grotesk font-semibold text-lg">
                     <Phone size={16} className="text-gold" />
-                    (404) 383-6915
+                    (470) 412-8986
                   </a>
                 </div>
                 <div>
@@ -142,9 +142,9 @@ export default function Contact() {
                     We've received your request and will reach out shortly. For immediate assistance, call or text us directly.
                   </p>
                   <div className="flex flex-col gap-3">
-                    <a href="tel:+14043836915"
+                    <a href="sms:+14704128986"
                       className="bg-vapor text-obsidian py-3 text-sm font-mono-tech tracking-widest text-center hover:bg-gold transition-colors rounded-sm">
-                      CALL (404) 383-6915
+                      TEXT (470) 412-8986
                     </a>
                     <button onClick={() => setSubmitted(false)}
                       className="border border-vapor/20 text-vapor/50 py-3 text-sm font-mono-tech tracking-widest hover:border-vapor transition-colors rounded-sm">

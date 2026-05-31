@@ -34,7 +34,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
-          <img src={LOGO} alt="VDS Mobile" className="h-9 w-auto" />
+          <img src={LOGO} alt="VDS Mobile" className="h-12 w-auto" />
 
         </Link>
 
@@ -64,11 +64,11 @@ export default function Navbar() {
             ◆ VDS GOLD
           </Link>
           <a
-            href="tel:+14043836915"
+            href="sms:+14704128986"
             className="flex items-center gap-2 bg-vapor text-obsidian px-4 py-2 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold transition-colors duration-200"
           >
             <Phone size={12} />
-            CALL NOW
+            TEXT NOW
           </a>
         </div>
 
@@ -103,10 +103,10 @@ export default function Navbar() {
               ◆ VDS GOLD — $200/MO
             </Link>
             <a
-              href="tel:+14043836915"
+              href="sms:+14704128986"
               className="bg-vapor text-obsidian px-4 py-3 text-sm font-mono-tech tracking-widest text-center rounded-sm"
             >
-              CALL (404) 383-6915
+              TEXT (470) 412-8986
             </a>
           </div>
         </div>
