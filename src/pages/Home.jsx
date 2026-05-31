@@ -159,7 +159,7 @@ export default function Home() {
                   <div className="text-center">
                     <p className="text-xs font-mono-tech text-gold/70 tracking-widest mb-2">◆ INCLUDED IN</p>
                     <Link to="/vds-gold" className="text-lg font-grotesk font-bold text-gold">VDS GOLD MEMBERSHIP</Link>
-                    <p className="text-vapor/50 text-xs font-mono-tech mt-2">$200/mo per vehicle</p>
+                    <p className="text-vapor/50 text-xs font-mono-tech mt-2">$250/mo per vehicle</p>
                   </div>
                 </div>
               </div>
