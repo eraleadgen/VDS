@@ -24,14 +24,14 @@ const SERVICES = [
     title: 'CERAMIC COATINGS',
     subtitle: 'Long-Term Paint Protection',
     specs: ['3 Month – 7 Year Coatings', 'GTechniq Professional Products', 'Hydrophobic Surface Protection', 'UV & Chemical Resistance'],
-    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/9ff1619de_Ceramiccoatingnearme.webp',
+    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/3a80c18b3_ceramic-coating-being-professionally-applied-to-car-paint-for-long-term-protection.webp',
     path: '/services',
   },
   {
     title: 'PAINT CORRECTION',
     subtitle: 'Swirl & Scratch Removal',
     specs: ['Swirl Mark Elimination', 'Scratch & Buffer Trail Removal', 'Flawless Paint Quality', 'Coating Recommended'],
-    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/93d7fe9d4_mobilepaintcorrection.jpg',
+    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/2e390daf5_ChatGPTImageFeb17202611_00_33PM.png',
     path: '/services',
   },
 ];
@@ -126,8 +126,9 @@ export default function Home() {
             </div>
             <div className="flex flex-col items-center md:items-end gap-4">
               <div className="text-right">
-                <p className="text-6xl font-grotesk font-bold text-gold">$200</p>
+                <p className="text-6xl font-grotesk font-bold text-gold">$250</p>
                 <p className="text-xs font-mono-tech text-vapor/40 tracking-widest">PER VEHICLE / MONTH</p>
+
               </div>
               <Link to="/vds-gold"
                 className="vds-gold-btn px-8 py-4 text-sm font-mono-tech tracking-widest rounded-sm whitespace-nowrap">
@@ -222,7 +223,7 @@ export default function Home() {
 
             <div className="relative">
               <img
-                src="https://media.base44.com/images/public/6a191df337222815cd0b1f5e/f16ccaed0_porschedetailing.jpg"
+                src="https://media.base44.com/images/public/6a191df337222815cd0b1f5e/13a784e4a_PhotoOct24202512551PM.jpg"
                 alt="Premium detailing"
                 className="w-full aspect-[3/4] object-cover rounded-sm"
               />

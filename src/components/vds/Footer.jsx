@@ -31,7 +31,7 @@ export default function Footer() {
           <div>
             <p className="text-xs font-mono-tech tracking-widest text-gold mb-6">NAVIGATE</p>
             <div className="flex flex-col gap-3">
-              {[['/', 'Home'], ['/services', 'Services'], ['/vds-gold', 'VDS Gold'], ['/gallery', 'Gallery'], ['/faq', 'FAQ'], ['/contact', 'Contact']].map(([path, label]) => (
+              {[['/', 'Home'], ['/services', 'Services'], ['/vds-gold', 'VDS Gold'], ['/gallery', 'Gallery'], ['/faq', 'FAQ']].map(([path, label]) => (
                 <Link key={path} to={path} className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">{label}</Link>
               ))}
             </div>
@@ -56,8 +56,8 @@ export default function Footer() {
                 Text (470) 412-8986
               </a>
               <a href="sms:+14704128986" className="flex items-center gap-3 text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">
-                <span className="text-gold text-xs">✉</span>
-                Text (470) 412-8986
+                <Phone size={13} className="text-gold" />
+                Call / Text (470) 412-8986
               </a>
               <a href="mailto:Valetdetailingservice@gmail.com" className="flex items-center gap-3 text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">
                 <Mail size={13} className="text-gold" />

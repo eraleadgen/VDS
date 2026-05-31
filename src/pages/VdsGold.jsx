@@ -29,9 +29,10 @@ const INTERIOR_SPECS = [
 const MEMBERSHIP_VALUE = [
   { service: 'Exterior Detail (×4)', value: '$320+' },
   { service: 'Interior Deep Clean (×1)', value: '$180+' },
-  { service: 'Ceramic Sealant (×4)', value: '$80+' },
-  { service: 'Total Retail Value', value: '$580+' },
-  { service: 'VDS GOLD PRICE', value: '$200' },
+  { service: 'Ceramic Coating (unlimited)', value: '$400+' },
+  { service: 'Ceramic Sealant (every detail)', value: '$80+' },
+  { service: 'Total Retail Value', value: '$980+' },
+  { service: 'VDS GOLD PRICE', value: '$250' },
 ];
 
 export default function VdsGold() {
@@ -86,17 +87,17 @@ export default function VdsGold() {
               The premium monthly membership that keeps your vehicle in a permanent state of perfection.
             </p>
             <p className="text-sm font-mono-tech text-vapor/40 tracking-widest mb-12">
-              UNLIMITED EXTERIOR DETAILS + 1 INTERIOR DEEP CLEAN / MONTH
+              UNLIMITED CERAMIC COATINGS + 1 INTERIOR DETAIL / MONTH + CERAMIC SEALANT EVERY DETAIL
             </p>
 
             <div className="flex flex-wrap items-end gap-8 mb-12">
               <div>
                 <p className="text-xs font-mono-tech text-gold/60 tracking-widest mb-1">MEMBERSHIP PRICE</p>
-                <p className="text-7xl font-grotesk font-bold text-gold leading-none">$200</p>
+                <p className="text-7xl font-grotesk font-bold text-gold leading-none">$250</p>
                 <p className="text-xs font-mono-tech text-vapor/40 tracking-widest mt-1">PER VEHICLE / MONTH</p>
               </div>
               <div className="pb-2 text-vapor/30 font-mono-tech text-xs">
-                vs. $580+ retail value
+                vs. $980+ retail value
               </div>
             </div>
 
@@ -207,7 +208,7 @@ export default function VdsGold() {
 
           <div className="text-center mt-10">
             <p className="text-vapor/40 font-mono-tech text-xs tracking-widest mb-6">
-              SAVE $380+ EVERY MONTH · PRIORITY SCHEDULING · CANCEL ANYTIME
+              SAVE $730+ EVERY MONTH · PRIORITY SCHEDULING · CANCEL ANYTIME
             </p>
             <a href="tel:+14043836915"
               className="inline-flex items-center gap-3 bg-gold text-obsidian px-10 py-4 text-sm font-mono-tech tracking-widest hover:bg-gold-light transition-colors duration-300 rounded-sm font-bold">
@@ -225,7 +226,7 @@ export default function VdsGold() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-0.5 bg-vapor/5">
           {[
-            { step: '01', title: 'ENROLL', desc: 'Call or text us to enroll your vehicle(s) in VDS Gold. $200/mo per vehicle.' },
+            { step: '01', title: 'ENROLL', desc: 'Call or text us to enroll your vehicle(s) in VDS Gold. $250/mo per vehicle.' },
             { step: '02', title: 'SCHEDULE', desc: 'Book your exterior details any time — as many as you need throughout the month.' },
             { step: '03', title: 'WE COME TO YOU', desc: 'Our team arrives at your location with professional equipment and Gtechniq products.' },
             { step: '04', title: 'STAY PERFECT', desc: 'Your vehicle remains in a permanent state of immaculate perfection, month after month.' },
@@ -253,7 +254,7 @@ export default function VdsGold() {
             JOIN<br /><GoldShimmer>THE CIRCLE.</GoldShimmer>
           </h2>
           <p className="text-vapor/50 leading-relaxed mb-12">
-            Stop thinking about your car's condition. With VDS Gold, your vehicle is always appointment-ready, always immaculate. $200/mo per vehicle — unlimited exterior, 1 interior monthly.
+            Stop thinking about your car's condition. With VDS Gold, your vehicle is always appointment-ready, always immaculate. $250/mo per vehicle — unlimited ceramic coatings, 1 interior detail monthly, ceramic sealant included every detail.
           </p>
 
           <div className="glass-panel p-10 rounded-sm border border-gold/20 text-left">
@@ -263,13 +264,13 @@ export default function VdsGold() {
                 <p className="text-3xl font-grotesk font-bold text-vapor">VDS Gold</p>
               </div>
               <div className="text-right">
-                <p className="text-4xl font-grotesk font-bold text-gold">$200</p>
+                <p className="text-4xl font-grotesk font-bold text-gold">$250</p>
                 <p className="text-xs font-mono-tech text-vapor/40">/mo per vehicle</p>
               </div>
             </div>
 
             <ul className="space-y-3 mb-10">
-              {['Unlimited Exterior Details', '1× Monthly Interior Deep Clean', 'Steam Clean & Deep Vacuum', 'Interior Glass & All Surfaces', '1-Month Ceramic Sealant', 'Hand Wash Rims & All Panels', 'Door Jambs Cleaned', 'Priority Scheduling', 'Cancel Anytime'].map(item => (
+              {['Unlimited Ceramic Coatings', '1× Monthly Interior Detail', 'Ceramic Sealant with Every Detail', 'Steam Clean & Deep Vacuum', 'Interior Glass & All Surfaces', 'Hand Wash Rims & All Panels', 'Door Jambs Cleaned', 'Priority Scheduling', 'Cancel Anytime'].map(item => (
                 <li key={item} className="flex items-center gap-3 text-sm font-mono-tech text-vapor/70">
                   <Check size={13} className="text-gold shrink-0" />
                   {item}

@@ -12,7 +12,6 @@ import Services from './pages/Services';
 import VdsGold from './pages/VdsGold';
 import Gallery from './pages/Gallery';
 import FAQ from './pages/FAQ';
-import Contact from './pages/Contact';
 import Terms from './pages/Terms';
 import Privacy from './pages/Privacy';
 
@@ -43,7 +42,7 @@ const AuthenticatedApp = () => {
       <Route path="/vds-gold" element={<VdsGold />} />
       <Route path="/gallery" element={<Gallery />} />
       <Route path="/faq" element={<FAQ />} />
-      <Route path="/contact" element={<Contact />} />
+
       <Route path="/terms" element={<Terms />} />
       <Route path="/privacy" element={<Privacy />} />
       <Route path="*" element={<PageNotFound />} />

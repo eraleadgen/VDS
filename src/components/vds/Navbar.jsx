@@ -9,7 +9,7 @@ const navLinks = [
   { label: 'SERVICES', path: '/services' },
   { label: 'GALLERY', path: '/gallery' },
   { label: 'FAQ', path: '/faq' },
-  { label: 'CONTACT', path: '/contact' },
+
 ];
 
 export default function Navbar() {
