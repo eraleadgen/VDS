@@ -29,7 +29,7 @@ const INTERIOR_SPECS = [
 const MEMBERSHIP_VALUE = [
   { service: 'Exterior Detail (×4)', value: '$320+' },
   { service: 'Interior Deep Clean (×1)', value: '$180+' },
-  { service: 'Ceramic Coating (unlimited)', value: '$400+' },
+  { service: 'Exterior Detail (unlimited)', value: '$400+' },
   { service: 'Ceramic Sealant (every detail)', value: '$80+' },
   { service: 'Total Retail Value', value: '$980+' },
   { service: 'VDS GOLD PRICE', value: '$250' },
@@ -87,7 +87,7 @@ export default function VdsGold() {
               The premium monthly membership that keeps your vehicle in a permanent state of perfection.
             </p>
             <p className="text-sm font-mono-tech text-vapor/40 tracking-widest mb-12">
-              UNLIMITED CERAMIC COATINGS + 1 INTERIOR DETAIL / MONTH + CERAMIC SEALANT EVERY DETAIL
+              UNLIMITED EXTERIOR DETAILS + 1 INTERIOR DETAIL / MONTH + CERAMIC SEALANT EVERY DETAIL
             </p>
 
             <div className="flex flex-wrap items-end gap-8 mb-12">
@@ -254,7 +254,7 @@ export default function VdsGold() {
             JOIN<br /><GoldShimmer>THE CIRCLE.</GoldShimmer>
           </h2>
           <p className="text-vapor/50 leading-relaxed mb-12">
-            Stop thinking about your car's condition. With VDS Gold, your vehicle is always appointment-ready, always immaculate. $250/mo per vehicle — unlimited ceramic coatings, 1 interior detail monthly, ceramic sealant included every detail.
+            Stop thinking about your car's condition. With VDS Gold, your vehicle is always appointment-ready, always immaculate. $250/mo per vehicle — unlimited exterior details, 1 interior detail monthly, ceramic sealant included every detail.
           </p>
 
           <div className="glass-panel p-10 rounded-sm border border-gold/20 text-left">
@@ -270,7 +270,7 @@ export default function VdsGold() {
             </div>
 
             <ul className="space-y-3 mb-10">
-              {['Unlimited Ceramic Coatings', '1× Monthly Interior Detail', 'Ceramic Sealant with Every Detail', 'Steam Clean & Deep Vacuum', 'Interior Glass & All Surfaces', 'Hand Wash Rims & All Panels', 'Door Jambs Cleaned', 'Priority Scheduling', 'Cancel Anytime'].map(item => (
+              {['Unlimited Exterior Details', '1× Monthly Interior Detail', 'Ceramic Sealant with Every Detail', 'Steam Clean & Deep Vacuum', 'Interior Glass & All Surfaces', 'Hand Wash Rims & All Panels', 'Door Jambs Cleaned', 'Priority Scheduling', 'Cancel Anytime'].map(item => (
                 <li key={item} className="flex items-center gap-3 text-sm font-mono-tech text-vapor/70">
                   <Check size={13} className="text-gold shrink-0" />
                   {item}
