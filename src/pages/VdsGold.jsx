@@ -27,11 +27,10 @@ const INTERIOR_SPECS = [
 ];
 
 const MEMBERSHIP_VALUE = [
-  { service: 'Exterior Detail (×4)', value: '$320+' },
-  { service: 'Interior Deep Clean (×1)', value: '$180+' },
-  { service: 'Exterior Detail (unlimited)', value: '$400+' },
-  { service: 'Ceramic Sealant (every detail)', value: '$80+' },
-  { service: 'Total Retail Value', value: '$980+' },
+  { service: 'Exterior Detail (×4/mo)', value: '$400+' },
+  { service: 'Interior Deep Clean (×1/mo)', value: '$100+' },
+  { service: 'Ceramic Sealant (×4/mo)', value: '$200+' },
+  { service: 'Total Retail Value', value: '$700+' },
   { service: 'VDS GOLD PRICE', value: '$250' },
 ];
 
@@ -97,7 +96,7 @@ export default function VdsGold() {
                 <p className="text-xs font-mono-tech text-vapor/40 tracking-widest mt-1">PER VEHICLE / MONTH</p>
               </div>
               <div className="pb-2 text-vapor/30 font-mono-tech text-xs">
-                vs. $980+ retail value
+                vs. $700+ retail value
               </div>
             </div>
 
@@ -208,7 +207,7 @@ export default function VdsGold() {
 
           <div className="text-center mt-10">
             <p className="text-vapor/40 font-mono-tech text-xs tracking-widest mb-6">
-              SAVE $730+ EVERY MONTH · PRIORITY SCHEDULING · CANCEL ANYTIME
+              SAVE $450+ EVERY MONTH · PRIORITY SCHEDULING · CANCEL ANYTIME
             </p>
             <a href="tel:+14043836915"
               className="inline-flex items-center gap-3 bg-gold text-obsidian px-10 py-4 text-sm font-mono-tech tracking-widest hover:bg-gold-light transition-colors duration-300 rounded-sm font-bold">
