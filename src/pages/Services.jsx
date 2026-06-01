@@ -21,7 +21,7 @@ const SERVICES = [
       'GTechniq Products Applied',
       'Ceramic Sealant',
     ],
-    img: 'https://images.unsplash.com/photo-1607860108855-64acf2078ed9?w=800&q=80',
+    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/418daee5e_IMG_4756.png',
     gold: true,
   },
   {

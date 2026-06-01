@@ -17,7 +17,7 @@ const SERVICES = [
     title: 'FULL DETAIL',
     subtitle: 'Interior & Exterior Restoration',
     specs: ['Interior & Exterior Restoration', 'Odor & Stain Removal', 'GTechniq Products', 'Ceramic Sealant'],
-    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/167aa5aef_interiordetailingmercades.jpg',
+    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/418daee5e_IMG_4756.png',
     path: '/services',
   },
   {
