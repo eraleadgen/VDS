@@ -40,7 +40,7 @@ const SERVICES = [
       'IPA Wipe-Down Before Application',
       'Curing & Inspection',
     ],
-    img: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80',
+    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/2a0221ade_ceramic-coating-being-professionally-applied-to-car-paint-for-long-term-protection.webp',
     gold: false,
   },
   {
