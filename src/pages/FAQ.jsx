@@ -43,7 +43,7 @@ const FAQS = [
       },
       {
         q: 'What\'s the difference between a full detail and VDS Gold?',
-        a: 'A full detail is a one-time comprehensive service. VDS Gold is our monthly membership at $250/mo per vehicle — it gives you unlimited exterior details and 1 interior deep clean every month, so your car stays perpetually perfect.',
+        a: 'A full detail is a one-time comprehensive service. VDS Gold is our monthly membership at $300/mo per vehicle — it gives you unlimited exterior details and 1 interior deep clean every month, so your car stays perpetually perfect.',
       },
     ],
   },
@@ -52,7 +52,7 @@ const FAQS = [
     items: [
       {
         q: 'What is VDS Gold?',
-        a: 'VDS Gold is our monthly membership program at $250/mo per vehicle. Members receive unlimited exterior details (hand wash on rims, all panels, door jambs, and 1-month ceramic sealant) plus 1 full interior detail per month (steam clean, deep vacuum, glass, every surface and crevice).',
+        a: 'VDS Gold is our monthly membership program at $300/mo per vehicle. Members receive unlimited exterior details (hand wash on rims, all panels, door jambs, and 1-month ceramic sealant) plus 1 full interior detail per month (steam clean, deep vacuum, glass, every surface and crevice).',
       },
       {
         q: 'Can I cancel VDS Gold anytime?',
@@ -60,7 +60,7 @@ const FAQS = [
       },
       {
         q: 'Can I add multiple vehicles to VDS Gold?',
-        a: 'Yes. The membership is priced at $250/mo per vehicle, so you can enroll as many vehicles as you need.',
+        a: 'Yes. The membership is priced at $300/mo per vehicle, so you can enroll as many vehicles as you need.',
       },
       {
         q: 'How do I schedule my VDS Gold appointments?',

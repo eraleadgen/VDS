@@ -97,7 +97,7 @@ export default function Services() {
                 <GoldShimmer>VDS GOLD</GoldShimmer> — All of this, every month.
               </h2>
               <p className="text-vapor/50 text-sm max-w-lg">
-                Unlimited exterior details + 1 interior deep clean per month. Ceramic sealant, steam clean, door jambs — everything. $250/mo per vehicle.
+                Unlimited exterior details + 1 interior deep clean per month. Ceramic sealant, steam clean, door jambs — everything. $300/mo per vehicle.
               </p>
             </div>
             <Link to="/vds-gold"

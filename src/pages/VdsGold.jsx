@@ -31,7 +31,7 @@ const MEMBERSHIP_VALUE = [
   { service: 'Interior Deep Clean (×1/mo)', value: '$100+' },
   { service: 'Ceramic Sealant (×4/mo)', value: '$200+' },
   { service: 'Total Retail Value', value: '$700+' },
-  { service: 'VDS GOLD PRICE', value: '$250' },
+  { service: 'VDS GOLD PRICE', value: '$300' },
 ];
 
 export default function VdsGold() {
@@ -92,7 +92,7 @@ export default function VdsGold() {
             <div className="flex flex-wrap items-end gap-8 mb-12">
               <div>
                 <p className="text-xs font-mono-tech text-gold/60 tracking-widest mb-1">MEMBERSHIP PRICE</p>
-                <p className="text-7xl font-grotesk font-bold text-gold leading-none">$250</p>
+                <p className="text-7xl font-grotesk font-bold text-gold leading-none">$300</p>
                 <p className="text-xs font-mono-tech text-vapor/40 tracking-widest mt-1">PER VEHICLE / MONTH</p>
               </div>
               <div className="pb-2 text-vapor/30 font-mono-tech text-xs">
@@ -207,7 +207,7 @@ export default function VdsGold() {
 
           <div className="text-center mt-10">
             <p className="text-vapor/40 font-mono-tech text-xs tracking-widest mb-6">
-              SAVE $450+ EVERY MONTH · PRIORITY SCHEDULING · CANCEL ANYTIME
+              SAVE $400+ EVERY MONTH · PRIORITY SCHEDULING · CANCEL ANYTIME
             </p>
             <a href="tel:+14043836915"
               className="inline-flex items-center gap-3 bg-gold text-obsidian px-10 py-4 text-sm font-mono-tech tracking-widest hover:bg-gold-light transition-colors duration-300 rounded-sm font-bold">
@@ -225,7 +225,7 @@ export default function VdsGold() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-0.5 bg-vapor/5">
           {[
-            { step: '01', title: 'ENROLL', desc: 'Call or text us to enroll your vehicle(s) in VDS Gold. $250/mo per vehicle.' },
+            { step: '01', title: 'ENROLL', desc: 'Call or text us to enroll your vehicle(s) in VDS Gold. $300/mo per vehicle.' },
             { step: '02', title: 'SCHEDULE', desc: 'Book your exterior details any time — as many as you need throughout the month.' },
             { step: '03', title: 'WE COME TO YOU', desc: 'Our team arrives at your location with professional equipment and Gtechniq products.' },
             { step: '04', title: 'STAY PERFECT', desc: 'Your vehicle remains in a permanent state of immaculate perfection, month after month.' },
@@ -253,7 +253,7 @@ export default function VdsGold() {
             JOIN<br /><GoldShimmer>THE CIRCLE.</GoldShimmer>
           </h2>
           <p className="text-vapor/50 leading-relaxed mb-12">
-            Stop thinking about your car's condition. With VDS Gold, your vehicle is always appointment-ready, always immaculate. $250/mo per vehicle — unlimited exterior details, 1 interior detail monthly, ceramic sealant included every detail.
+            Stop thinking about your car's condition. With VDS Gold, your vehicle is always appointment-ready, always immaculate. $300/mo per vehicle — unlimited exterior details, 1 interior detail monthly, ceramic sealant included every detail.
           </p>
 
           <div className="glass-panel p-10 rounded-sm border border-gold/20 text-left">
@@ -263,7 +263,7 @@ export default function VdsGold() {
                 <p className="text-3xl font-grotesk font-bold text-vapor">VDS Gold</p>
               </div>
               <div className="text-right">
-                <p className="text-4xl font-grotesk font-bold text-gold">$250</p>
+                <p className="text-4xl font-grotesk font-bold text-gold">$300</p>
                 <p className="text-xs font-mono-tech text-vapor/40">/mo per vehicle</p>
               </div>
             </div>
