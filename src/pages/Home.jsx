@@ -223,7 +223,7 @@ export default function Home() {
 
             <div className="relative">
               <img
-                src="https://media.base44.com/images/public/6a191df337222815cd0b1f5e/13a784e4a_PhotoOct24202512551PM.jpg"
+                src="https://media.base44.com/images/public/6a191df337222815cd0b1f5e/b2e59eedc_paintcorrection.jpg"
                 alt="Premium detailing"
                 className="w-full aspect-[3/4] object-cover rounded-sm"
               />
