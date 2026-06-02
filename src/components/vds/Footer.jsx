@@ -51,11 +51,7 @@ export default function Footer() {
           <div>
             <p className="text-xs font-mono-tech tracking-widest text-gold mb-6">CONTACT</p>
             <div className="flex flex-col gap-4">
-              <a href="sms:+14704128986" className="flex items-center gap-3 text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">
-                <Phone size={13} className="text-gold" />
-                Text (470) 412-8986
-              </a>
-              <a href="sms:+14704128986" className="flex items-center gap-3 text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">
+              <a href="tel:+14704128986" className="flex items-center gap-3 text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">
                 <Phone size={13} className="text-gold" />
                 Call / Text (470) 412-8986
               </a>
