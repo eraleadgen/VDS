@@ -223,7 +223,7 @@ export default function Home() {
 
             <div className="relative">
               <img
-                src="https://media.base44.com/images/public/6a191df337222815cd0b1f5e/b2e59eedc_paintcorrection.jpg"
+                src="https://media.base44.com/images/public/6a191df337222815cd0b1f5e/36815783a_PorscheGoogleReview.webp"
                 alt="Premium detailing"
                 className="w-full aspect-[3/4] object-cover rounded-sm"
               />
@@ -232,7 +232,7 @@ export default function Home() {
                   {[1,2,3,4,5].map(i => <Star key={i} size={12} className="text-gold fill-gold" />)}
                 </div>
                 <p className="text-vapor/80 text-sm font-grotesk italic max-w-xs">
-                  "Best detailing experience I've ever had. My Porsche has never looked this good."
+                  "VDS Mobile does an amazing job, I highly recommend. They will exceed your expectations every time."
                 </p>
                 <p className="text-vapor/40 text-xs font-mono-tech mt-3 tracking-widest">VERIFIED GOOGLE REVIEW</p>
               </div>
