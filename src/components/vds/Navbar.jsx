@@ -100,7 +100,7 @@ export default function Navbar() {
               to="/vds-gold"
               className="vds-gold-btn px-4 py-3 text-sm font-mono-tech tracking-widest text-center rounded-sm"
             >
-              ◆ VDS GOLD — $300/MO
+              ◆ VDS GOLD — FROM $250/MO
             </Link>
             <a
               href="sms:+14704128986"

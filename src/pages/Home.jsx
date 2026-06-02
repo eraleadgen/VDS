@@ -126,8 +126,9 @@ export default function Home() {
             </div>
             <div className="flex flex-col items-center md:items-end gap-4">
               <div className="text-right">
-                <p className="text-6xl font-grotesk font-bold text-gold">$300</p>
-                <p className="text-xs font-mono-tech text-vapor/40 tracking-widest">PER VEHICLE / MONTH</p>
+                <p className="text-4xl font-grotesk font-bold text-gold">$250 <span className="text-lg text-vapor/50">sedan/coupe</span></p>
+                <p className="text-4xl font-grotesk font-bold text-gold">$300 <span className="text-lg text-vapor/50">truck/3-row</span></p>
+                <p className="text-xs font-mono-tech text-vapor/40 tracking-widest mt-1">PER VEHICLE / MONTH</p>
 
               </div>
               <Link to="/vds-gold"
@@ -159,7 +160,7 @@ export default function Home() {
                   <div className="text-center">
                     <p className="text-xs font-mono-tech text-gold/70 tracking-widest mb-2">◆ INCLUDED IN</p>
                     <Link to="/vds-gold" className="text-lg font-grotesk font-bold text-gold">VDS GOLD MEMBERSHIP</Link>
-                    <p className="text-vapor/50 text-xs font-mono-tech mt-2">$300/mo per vehicle</p>
+                    <p className="text-vapor/50 text-xs font-mono-tech mt-2">From $250/mo per vehicle</p>
                   </div>
                 </div>
               </div>

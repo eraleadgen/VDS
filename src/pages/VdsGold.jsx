@@ -31,7 +31,8 @@ const MEMBERSHIP_VALUE = [
   { service: 'Interior Deep Clean (×1/mo)', value: '$100+' },
   { service: 'Ceramic Sealant (×4/mo)', value: '$200+' },
   { service: 'Total Retail Value', value: '$700+' },
-  { service: 'VDS GOLD PRICE', value: '$300' },
+  { service: 'VDS GOLD — SEDAN/COUPE', value: '$250' },
+  { service: 'VDS GOLD — TRUCK/3-ROW', value: '$300' },
 ];
 
 export default function VdsGold() {
@@ -92,8 +93,9 @@ export default function VdsGold() {
             <div className="flex flex-wrap items-end gap-8 mb-12">
               <div>
                 <p className="text-xs font-mono-tech text-gold/60 tracking-widest mb-1">MEMBERSHIP PRICE</p>
-                <p className="text-7xl font-grotesk font-bold text-gold leading-none">$300</p>
-                <p className="text-xs font-mono-tech text-vapor/40 tracking-widest mt-1">PER VEHICLE / MONTH</p>
+                <p className="text-5xl font-grotesk font-bold text-gold leading-none">$250<span className="text-2xl font-mono-tech text-vapor/50"> SEDAN/COUPE</span></p>
+                <p className="text-5xl font-grotesk font-bold text-gold leading-none mt-2">$300<span className="text-2xl font-mono-tech text-vapor/50"> TRUCK/3-ROW</span></p>
+                <p className="text-xs font-mono-tech text-vapor/40 tracking-widest mt-2">PER VEHICLE / MONTH</p>
               </div>
               <div className="pb-2 text-vapor/30 font-mono-tech text-xs">
                 vs. $700+ retail value
@@ -184,25 +186,29 @@ export default function VdsGold() {
           </div>
 
           <div className="glass-panel rounded-sm overflow-hidden">
-            {MEMBERSHIP_VALUE.map((row, i) => (
-              <div key={i}
-                className={`flex items-center justify-between px-8 py-5 ${
-                  i < MEMBERSHIP_VALUE.length - 2 ? 'border-b border-vapor/5' :
-                  i === MEMBERSHIP_VALUE.length - 2 ? 'border-b border-gold/30' :
-                  'bg-gold/10 border-t border-gold/30'
-                }`}>
-                <span className={`font-mono-tech text-sm ${i === MEMBERSHIP_VALUE.length - 1 ? 'text-gold font-bold tracking-widest' : 'text-vapor/60'}`}>
-                  {row.service}
-                </span>
-                <span className={`font-mono-tech text-sm ${
-                  i === MEMBERSHIP_VALUE.length - 1 ? 'text-gold text-2xl font-bold' :
-                  i === MEMBERSHIP_VALUE.length - 2 ? 'text-vapor/40 line-through' :
-                  'text-vapor/40'
-                }`}>
-                  {row.value}
-                </span>
-              </div>
-            ))}
+            {MEMBERSHIP_VALUE.map((row, i) => {
+              const isRetail = i === 3;
+              const isGold = i >= 4;
+              return (
+                <div key={i}
+                  className={`flex items-center justify-between px-8 py-5 ${
+                    isGold ? 'bg-gold/10 border-t border-gold/30' :
+                    isRetail ? 'border-b border-gold/30' :
+                    'border-b border-vapor/5'
+                  }`}>
+                  <span className={`font-mono-tech text-sm ${isGold ? 'text-gold font-bold tracking-widest' : 'text-vapor/60'}`}>
+                    {row.service}
+                  </span>
+                  <span className={`font-mono-tech ${
+                    isGold ? 'text-gold text-2xl font-bold' :
+                    isRetail ? 'text-vapor/40 line-through text-sm' :
+                    'text-vapor/40 text-sm'
+                  }`}>
+                    {row.value}
+                  </span>
+                </div>
+              );
+            })}
           </div>
 
           <div className="text-center mt-10">
@@ -225,7 +231,7 @@ export default function VdsGold() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-0.5 bg-vapor/5">
           {[
-            { step: '01', title: 'ENROLL', desc: 'Call or text us to enroll your vehicle(s) in VDS Gold. $300/mo per vehicle.' },
+            { step: '01', title: 'ENROLL', desc: 'Call or text us to enroll your vehicle(s) in VDS Gold. $250/mo for sedans/coupes, $300/mo for trucks & 3-row vehicles.' },
             { step: '02', title: 'SCHEDULE', desc: 'Book your exterior details any time — as many as you need throughout the month.' },
             { step: '03', title: 'WE COME TO YOU', desc: 'Our team arrives at your location with professional equipment and Gtechniq products.' },
             { step: '04', title: 'STAY PERFECT', desc: 'Your vehicle remains in a permanent state of immaculate perfection, month after month.' },
@@ -253,7 +259,7 @@ export default function VdsGold() {
             JOIN<br /><GoldShimmer>THE CIRCLE.</GoldShimmer>
           </h2>
           <p className="text-vapor/50 leading-relaxed mb-12">
-            Stop thinking about your car's condition. With VDS Gold, your vehicle is always appointment-ready, always immaculate. $300/mo per vehicle — unlimited exterior details, 1 interior detail monthly, ceramic sealant included every detail.
+            Stop thinking about your car's condition. With VDS Gold, your vehicle is always appointment-ready, always immaculate. Starting at $250/mo — unlimited exterior details, 1 interior detail monthly, ceramic sealant included every detail.
           </p>
 
           <div className="glass-panel p-10 rounded-sm border border-gold/20 text-left">
@@ -263,7 +269,8 @@ export default function VdsGold() {
                 <p className="text-3xl font-grotesk font-bold text-vapor">VDS Gold</p>
               </div>
               <div className="text-right">
-                <p className="text-4xl font-grotesk font-bold text-gold">$300</p>
+                <p className="text-2xl font-grotesk font-bold text-gold">$250 <span className="text-sm font-mono-tech text-vapor/50">sedan/coupe</span></p>
+                <p className="text-2xl font-grotesk font-bold text-gold">$300 <span className="text-sm font-mono-tech text-vapor/50">truck/3-row</span></p>
                 <p className="text-xs font-mono-tech text-vapor/40">/mo per vehicle</p>
               </div>
             </div>
