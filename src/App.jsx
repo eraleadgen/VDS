@@ -13,6 +13,7 @@ import Services from './pages/Services';
 import VdsGold from './pages/VdsGold';
 import FAQ from './pages/FAQ';
 import Terms from './pages/Terms';
+import Pricing from './pages/Pricing';
 import Privacy from './pages/Privacy';
 
 const AuthenticatedApp = () => {
@@ -42,6 +43,7 @@ const AuthenticatedApp = () => {
       <Route path="/vds-gold" element={<VdsGold />} />
 
       <Route path="/faq" element={<FAQ />} />
+      <Route path="/pricing" element={<Pricing />} />
 
       <Route path="/terms" element={<Terms />} />
       <Route path="/privacy" element={<Privacy />} />
