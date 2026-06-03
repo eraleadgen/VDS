@@ -28,7 +28,7 @@ const INTERIOR_SPECS = [
 
 const MEMBERSHIP_VALUE = [
   { service: 'Exterior Detail (×4/mo)', value: '$400+' },
-  { service: 'Interior Deep Clean (×1/mo)', value: '$100+' },
+  { service: 'Interior Deep Clean (×1/mo)', value: '$125+' },
   { service: 'Ceramic Sealant (×4/mo)', value: '$200+' },
   { service: 'Total Retail Value', value: '$700+' },
   { service: 'VDS GOLD — SEDAN/COUPE', value: '$250' },
