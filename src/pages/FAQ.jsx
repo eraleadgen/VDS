@@ -162,13 +162,9 @@ export default function FAQ() {
         <h2 className="text-3xl font-grotesk font-bold text-vapor mb-4">STILL HAVE QUESTIONS?</h2>
         <p className="text-vapor/50 mb-10">We're happy to walk you through everything. Reach out by call or text.</p>
         <div className="flex flex-wrap justify-center gap-4">
-          <a href="tel:+14043836915"
+          <a href="tel:+14704128986"
             className="bg-vapor text-obsidian px-8 py-4 text-sm font-mono-tech tracking-widest hover:bg-gold transition-colors duration-200 rounded-sm">
-            CALL (404) 383-6915
-          </a>
-          <a href="sms:+14704128986"
-            className="border border-vapor/20 text-vapor px-8 py-4 text-sm font-mono-tech tracking-widest hover:border-vapor transition-colors duration-200 rounded-sm">
-            TEXT (470) 412-8986
+            CALL / TEXT (470) 412-8986
           </a>
           <Link to="/contact"
             className="border border-gold/30 text-gold px-8 py-4 text-sm font-mono-tech tracking-widest hover:border-gold transition-colors duration-200 rounded-sm">
