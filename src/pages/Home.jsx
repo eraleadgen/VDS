@@ -23,9 +23,10 @@ const SERVICES = [
   {
     title: 'CERAMIC COATINGS',
     subtitle: 'Long-Term Paint Protection',
-    specs: ['3 Month – 7 Year Coatings', 'GTechniq Professional Products', 'Hydrophobic Surface Protection', 'UV & Chemical Resistance'],
+    specs: ['2–7 Year Coatings', 'GTechniq Professional Products', 'Hydrophobic Surface Protection', 'UV & Chemical Resistance'],
     img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/3a80c18b3_ceramic-coating-being-professionally-applied-to-car-paint-for-long-term-protection.webp',
     path: '/services',
+    notInGold: true,
   },
   {
     title: 'PAINT CORRECTION',
