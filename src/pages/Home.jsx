@@ -127,13 +127,13 @@ export default function Home() {
             </div>
             <div className="flex flex-col items-center md:items-end gap-4">
               <div className="text-right">
-                <div className="flex items-baseline justify-end gap-3">
-                  <span className="text-4xl font-grotesk font-bold text-gold">$250</span>
-                  <span className="text-lg text-vapor/50">sedan/coupe</span>
+                <div className="flex items-baseline gap-3">
+                  <span className="text-4xl font-grotesk font-bold text-gold w-24 text-right">$250</span>
+                  <span className="text-lg text-vapor/50 w-28 text-left">sedan/coupe</span>
                 </div>
-                <div className="flex items-baseline justify-end gap-3">
-                  <span className="text-4xl font-grotesk font-bold text-gold">$300</span>
-                  <span className="text-lg text-vapor/50">truck/3-row</span>
+                <div className="flex items-baseline gap-3">
+                  <span className="text-4xl font-grotesk font-bold text-gold w-24 text-right">$300</span>
+                  <span className="text-lg text-vapor/50 w-28 text-left">truck/3-row</span>
                 </div>
                 <p className="text-xs font-mono-tech text-vapor/40 tracking-widest mt-1">PER VEHICLE / MONTH</p>
               </div>
