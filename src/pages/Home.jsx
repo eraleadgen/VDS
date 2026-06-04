@@ -33,6 +33,7 @@ const SERVICES = [
     specs: ['Swirl Mark Elimination', 'Scratch & Buffer Trail Removal', 'Flawless Paint Quality', 'Coating Recommended'],
     img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/2e390daf5_ChatGPTImageFeb17202611_00_33PM.png',
     path: '/services',
+    notInGold: true,
   },
 ];
 
@@ -126,10 +127,15 @@ export default function Home() {
             </div>
             <div className="flex flex-col items-center md:items-end gap-4">
               <div className="text-right">
-                <p className="text-4xl font-grotesk font-bold text-gold">$250 <span className="text-lg text-vapor/50">sedan/coupe</span></p>
-                <p className="text-4xl font-grotesk font-bold text-gold">$300 <span className="text-lg text-vapor/50">truck/3-row</span></p>
+                <div className="flex items-baseline justify-end gap-3">
+                  <span className="text-4xl font-grotesk font-bold text-gold">$250</span>
+                  <span className="text-lg text-vapor/50">sedan/coupe</span>
+                </div>
+                <div className="flex items-baseline justify-end gap-3">
+                  <span className="text-4xl font-grotesk font-bold text-gold">$300</span>
+                  <span className="text-lg text-vapor/50">truck/3-row</span>
+                </div>
                 <p className="text-xs font-mono-tech text-vapor/40 tracking-widest mt-1">PER VEHICLE / MONTH</p>
-
               </div>
               <Link to="/vds-gold"
                 className="vds-gold-btn px-8 py-4 text-sm font-mono-tech tracking-widest rounded-sm whitespace-nowrap">
@@ -158,9 +164,20 @@ export default function Home() {
                 {/* Gold upsell on hover */}
                 <div className="absolute inset-0 bg-obsidian/90 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-6">
                   <div className="text-center">
-                    <p className="text-xs font-mono-tech text-gold/70 tracking-widest mb-2">◆ INCLUDED IN</p>
-                    <Link to="/vds-gold" className="text-lg font-grotesk font-bold text-gold">VDS GOLD MEMBERSHIP</Link>
-                    <p className="text-vapor/50 text-xs font-mono-tech mt-2">From $250/mo per vehicle</p>
+                    {svc.notInGold ? (
+                      <>
+                        <p className="text-xs font-mono-tech text-vapor/50 tracking-widest mb-2">ONE-TIME SERVICE</p>
+                        <p className="text-lg font-grotesk font-bold text-vapor">PAINT CORRECTION</p>
+                        <p className="text-vapor/40 text-xs font-mono-tech mt-2">Not included in VDS Gold</p>
+                        <a href="sms:+14704128986" className="inline-block mt-4 text-xs font-mono-tech tracking-widest text-gold border border-gold/40 px-4 py-2 hover:bg-gold hover:text-obsidian transition-colors duration-200">TEXT FOR A QUOTE</a>
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-xs font-mono-tech text-gold/70 tracking-widest mb-2">◆ INCLUDED IN</p>
+                        <Link to="/vds-gold" className="text-lg font-grotesk font-bold text-gold">VDS GOLD MEMBERSHIP</Link>
+                        <p className="text-vapor/50 text-xs font-mono-tech mt-2">From $250/mo per vehicle</p>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
