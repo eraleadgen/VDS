@@ -15,6 +15,8 @@ import FAQ from './pages/FAQ';
 import Terms from './pages/Terms';
 import Pricing from './pages/Pricing';
 import Privacy from './pages/Privacy';
+import MemberLogin from './pages/MemberLogin';
+import MemberDashboard from './pages/MemberDashboard';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -47,6 +49,8 @@ const AuthenticatedApp = () => {
 
       <Route path="/terms" element={<Terms />} />
       <Route path="/privacy" element={<Privacy />} />
+      <Route path="/member-login" element={<MemberLogin />} />
+      <Route path="/member-dashboard" element={<MemberDashboard />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

@@ -7,10 +7,8 @@ const LOGO = "https://media.base44.com/images/public/6a191df337222815cd0b1f5e/6a
 const navLinks = [
   { label: 'HOME', path: '/' },
   { label: 'SERVICES', path: '/services' },
-
   { label: 'PRICING', path: '/pricing' },
   { label: 'FAQ', path: '/faq' },
-
 ];
 
 export default function Navbar() {
@@ -59,6 +57,12 @@ export default function Navbar() {
         {/* Right: VDS Gold + CTA */}
         <div className="hidden md:flex items-center gap-4">
           <Link
+            to="/member-login"
+            className="text-xs font-mono-tech tracking-widest text-vapor/50 hover:text-vapor transition-colors duration-200"
+          >
+            MEMBER LOGIN
+          </Link>
+          <Link
             to="/vds-gold"
             className="vds-gold-btn px-4 py-2 text-xs font-mono-tech tracking-widest rounded-sm"
           >
@@ -97,6 +101,12 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
+            <Link
+              to="/member-login"
+              className="text-sm font-mono-tech tracking-widest text-vapor/60 border border-vapor/20 px-4 py-3 text-center rounded-sm"
+            >
+              MEMBER LOGIN
+            </Link>
             <Link
               to="/vds-gold"
               className="vds-gold-btn px-4 py-3 text-sm font-mono-tech tracking-widest text-center rounded-sm"

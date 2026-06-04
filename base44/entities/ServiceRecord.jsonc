@@ -1,0 +1,37 @@
+{
+  "name": "ServiceRecord",
+  "type": "object",
+  "properties": {
+    "vehicle_id": {
+      "type": "string",
+      "description": "ID of the MemberVehicle"
+    },
+    "service_type": {
+      "type": "string",
+      "enum": [
+        "full_detail",
+        "exterior_detail"
+      ],
+      "description": "Type of service performed"
+    },
+    "service_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date service was performed"
+    },
+    "month_year": {
+      "type": "string",
+      "description": "Billing month in YYYY-MM format"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Admin notes about the service"
+    }
+  },
+  "required": [
+    "vehicle_id",
+    "service_type",
+    "service_date",
+    "month_year"
+  ]
+}

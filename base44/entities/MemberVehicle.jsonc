@@ -1,0 +1,35 @@
+{
+  "name": "MemberVehicle",
+  "type": "object",
+  "properties": {
+    "year": {
+      "type": "string",
+      "description": "Vehicle year"
+    },
+    "make": {
+      "type": "string",
+      "description": "Vehicle make (e.g. Porsche)"
+    },
+    "model": {
+      "type": "string",
+      "description": "Vehicle model (e.g. 911)"
+    },
+    "color": {
+      "type": "string",
+      "description": "Vehicle color"
+    },
+    "license_plate": {
+      "type": "string",
+      "description": "License plate number"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Any special notes about this vehicle"
+    }
+  },
+  "required": [
+    "year",
+    "make",
+    "model"
+  ]
+}
