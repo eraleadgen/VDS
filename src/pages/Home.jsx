@@ -125,23 +125,10 @@ export default function Home() {
                 Unlimited exterior details + 1 deep interior clean per month. Your vehicle, perpetually immaculate.
               </p>
             </div>
-            <div className="flex flex-col items-center md:items-end gap-4">
-              <div className="text-right">
-                <div className="flex items-baseline gap-3">
-                  <span className="text-4xl font-grotesk font-bold text-gold w-24 text-right">$250</span>
-                  <span className="text-lg text-vapor/50 w-28 text-left">sedan/coupe</span>
-                </div>
-                <div className="flex items-baseline gap-3">
-                  <span className="text-4xl font-grotesk font-bold text-gold w-24 text-right">$300</span>
-                  <span className="text-lg text-vapor/50 w-28 text-left">truck/3-row</span>
-                </div>
-                <p className="text-xs font-mono-tech text-vapor/40 tracking-widest mt-1">PER VEHICLE / MONTH</p>
-              </div>
-              <Link to="/vds-gold"
-                className="vds-gold-btn px-8 py-4 text-sm font-mono-tech tracking-widest rounded-sm whitespace-nowrap">
-                VIEW MEMBERSHIP →
-              </Link>
-            </div>
+            <Link to="/vds-gold"
+              className="vds-gold-btn px-8 py-4 text-sm font-mono-tech tracking-widest rounded-sm whitespace-nowrap">
+              VIEW MEMBERSHIP →
+            </Link>
           </div>
         </div>
       </section>
@@ -166,7 +153,6 @@ export default function Home() {
                   <div className="text-center">
                     {svc.notInGold ? (
                       <>
-                        <p className="text-xs font-mono-tech text-vapor/50 tracking-widest mb-2">ONE-TIME SERVICE</p>
                         <p className="text-lg font-grotesk font-bold text-vapor">PAINT CORRECTION</p>
                         <p className="text-vapor/40 text-xs font-mono-tech mt-2">Not included in VDS Gold</p>
                         <a href="sms:+14704128986" className="inline-block mt-4 text-xs font-mono-tech tracking-widest text-gold border border-gold/40 px-4 py-2 hover:bg-gold hover:text-obsidian transition-colors duration-200">TEXT FOR A QUOTE</a>
