@@ -103,10 +103,10 @@ export default function VdsGold() {
             </div>
 
             <div className="flex flex-wrap gap-4">
-              <a href="tel:+14043836915"
+              <Link to="/gold-signup"
                 className="flex items-center gap-3 bg-gold text-obsidian px-8 py-4 text-sm font-mono-tech tracking-widest hover:bg-gold-light transition-colors duration-300 rounded-sm font-bold">
                 JOIN THE CIRCLE <ArrowRight size={14} />
-              </a>
+              </Link>
               <a href="sms:+14704128986"
                 className="flex items-center gap-3 border border-gold/40 text-gold px-8 py-4 text-sm font-mono-tech tracking-widest hover:border-gold transition-colors duration-300 rounded-sm">
                 TEXT TO ENROLL
@@ -215,10 +215,10 @@ export default function VdsGold() {
             <p className="text-vapor/40 font-mono-tech text-xs tracking-widest mb-6">
               SAVE $400+ EVERY MONTH · PRIORITY SCHEDULING · CANCEL ANYTIME
             </p>
-            <a href="tel:+14043836915"
+            <Link to="/gold-signup"
               className="inline-flex items-center gap-3 bg-gold text-obsidian px-10 py-4 text-sm font-mono-tech tracking-widest hover:bg-gold-light transition-colors duration-300 rounded-sm font-bold">
               JOIN THE CIRCLE TODAY <ArrowRight size={14} />
-            </a>
+            </Link>
           </div>
         </div>
       </section>
@@ -231,7 +231,7 @@ export default function VdsGold() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-0.5 bg-vapor/5">
           {[
-            { step: '01', title: 'ENROLL', desc: 'Call or text us to enroll your vehicle(s) in VDS Gold. $250/mo for sedans/coupes, $300/mo for trucks & 3-row vehicles.' },
+            { step: '01', title: 'CREATE ACCOUNT', desc: 'Sign up online in minutes. Add your vehicle(s), set your preferences, and get instant access to your member portal.' },
             { step: '02', title: 'SCHEDULE', desc: 'Book your exterior details any time — as many as you need throughout the month.' },
             { step: '03', title: 'WE COME TO YOU', desc: 'Our team arrives at your location with professional equipment and Gtechniq products.' },
             { step: '04', title: 'STAY PERFECT', desc: 'Your vehicle remains in a permanent state of immaculate perfection, month after month.' },
@@ -285,13 +285,13 @@ export default function VdsGold() {
             </ul>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <a href="tel:+14043836915"
+              <Link to="/gold-signup"
                 className="flex-1 text-center py-4 bg-gold text-obsidian font-mono-tech text-sm tracking-widest font-bold hover:bg-gold-light transition-colors duration-200 rounded-sm">
-                CALL TO ENROLL
-              </a>
+                CREATE YOUR ACCOUNT
+              </Link>
               <a href="sms:+14704128986"
                 className="flex-1 text-center py-4 border border-gold/40 text-gold font-mono-tech text-sm tracking-widest hover:border-gold transition-colors duration-200 rounded-sm">
-                TEXT TO ENROLL
+                TEXT US FIRST
               </a>
             </div>
             <p className="text-center text-vapor/30 text-xs font-mono-tech mt-4">

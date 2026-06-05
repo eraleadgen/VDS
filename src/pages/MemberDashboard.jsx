@@ -105,6 +105,24 @@ export default function MemberDashboard() {
           </a>
         </div>
 
+        {/* Subscription Status */}
+        <div className="mb-8">
+          <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40 mb-4">MEMBERSHIP STATUS</p>
+          <div className="glass-panel border border-gold/15 rounded-sm p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-2 h-2 rounded-full bg-gold animate-pulse" />
+              <div>
+                <p className="text-vapor font-grotesk font-semibold">VDS Gold — Active</p>
+                <p className="text-vapor/40 text-xs font-mono-tech mt-0.5">Unlimited Exterior + 1 Interior / Month · Ceramic Sealant Included</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-gold font-mono-tech text-xs tracking-widest">$250–$300 / MO</p>
+              <p className="text-vapor/30 text-xs font-mono-tech mt-0.5">Stripe billing coming soon</p>
+            </div>
+          </div>
+        </div>
+
         {/* Usage Tracker */}
         <div className="mb-12">
           <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40 mb-4">THIS MONTH'S USAGE</p>

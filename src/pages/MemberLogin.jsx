@@ -102,8 +102,8 @@ export default function MemberLogin() {
 
           <p className="text-center text-vapor/30 text-xs font-mono-tech mt-6">
             Not a member yet?{' '}
-            <Link to="/vds-gold" className="text-gold/60 hover:text-gold transition-colors">
-              Explore VDS Gold →
+            <Link to="/gold-signup" className="text-gold/60 hover:text-gold transition-colors">
+              Create your account →
             </Link>
           </p>
         </div>
