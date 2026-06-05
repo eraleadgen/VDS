@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Phone } from 'lucide-react';
+import { Menu, X, UserCircle } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
 
 const LOGO = "https://media.base44.com/images/public/6a191df337222815cd0b1f5e/6a27779cd_1773368635248-a065bd31-ddf6-4b1c-87dc-3a6080dc60f8.png";
 
@@ -14,6 +15,7 @@ const navLinks = [
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const location = useLocation();
 
   useEffect(() => {
@@ -23,6 +25,10 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => setOpen(false), [location]);
+
+  useEffect(() => {
+    base44.auth.isAuthenticated().then(setIsLoggedIn);
+  }, [location]);
 
   return (
     <header
@@ -34,7 +40,6 @@ export default function Navbar() {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
           <img src={LOGO} alt="VDS Mobile" className="h-12 w-auto" />
-
         </Link>
 
         {/* Desktop Nav */}
@@ -54,27 +59,31 @@ export default function Navbar() {
           ))}
         </nav>
 
-        {/* Right: VDS Gold + CTA */}
+        {/* Right */}
         <div className="hidden md:flex items-center gap-4">
-          <Link
-            to="/member-login"
-            className="text-xs font-mono-tech tracking-widest text-vapor/50 hover:text-vapor transition-colors duration-200"
-          >
-            MEMBER LOGIN
-          </Link>
+          {isLoggedIn ? (
+            <Link
+              to="/member-dashboard"
+              className="flex items-center gap-2 border border-gold/40 text-gold px-4 py-2 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold hover:text-obsidian transition-colors duration-200"
+            >
+              <UserCircle size={14} />
+              MY ACCOUNT
+            </Link>
+          ) : (
+            <Link
+              to="/member-login"
+              className="flex items-center gap-2 text-xs font-mono-tech tracking-widest text-vapor/50 hover:text-vapor transition-colors duration-200"
+            >
+              <UserCircle size={14} />
+              MEMBER LOGIN
+            </Link>
+          )}
           <Link
             to="/vds-gold"
             className="vds-gold-btn px-4 py-2 text-xs font-mono-tech tracking-widest rounded-sm"
           >
             ◆ VDS GOLD
           </Link>
-          <a
-            href="sms:+14704128986"
-            className="flex items-center gap-2 bg-vapor text-obsidian px-4 py-2 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold transition-colors duration-200"
-          >
-            <Phone size={12} />
-            TEXT NOW
-          </a>
         </div>
 
         {/* Mobile hamburger */}
@@ -101,24 +110,27 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
-            <Link
-              to="/member-login"
-              className="text-sm font-mono-tech tracking-widest text-vapor/60 border border-vapor/20 px-4 py-3 text-center rounded-sm"
-            >
-              MEMBER LOGIN
-            </Link>
+            {isLoggedIn ? (
+              <Link
+                to="/member-dashboard"
+                className="text-sm font-mono-tech tracking-widest text-gold border border-gold/40 px-4 py-3 text-center rounded-sm flex items-center justify-center gap-2"
+              >
+                <UserCircle size={15} /> MY ACCOUNT
+              </Link>
+            ) : (
+              <Link
+                to="/member-login"
+                className="text-sm font-mono-tech tracking-widest text-vapor/60 border border-vapor/20 px-4 py-3 text-center rounded-sm"
+              >
+                MEMBER LOGIN
+              </Link>
+            )}
             <Link
               to="/vds-gold"
               className="vds-gold-btn px-4 py-3 text-sm font-mono-tech tracking-widest text-center rounded-sm"
             >
               ◆ VDS GOLD — FROM $250/MO
             </Link>
-            <a
-              href="sms:+14704128986"
-              className="bg-vapor text-obsidian px-4 py-3 text-sm font-mono-tech tracking-widest text-center rounded-sm"
-            >
-              TEXT (470) 412-8986
-            </a>
           </div>
         </div>
       )}
