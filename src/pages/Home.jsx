@@ -17,7 +17,8 @@ const SERVICES = [
     title: 'FULL DETAIL',
     subtitle: 'Interior & Exterior Restoration',
     specs: ['Interior & Exterior Restoration', 'Odor & Stain Removal', 'Professional Products', 'Ceramic Sealant'],
-    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/418daee5e_IMG_4756.png',
+    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/ba38246d1_FullDetail-CeramicSealant2.jpg',
+    img2: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/1f19df53a_InteriorDetailing.jpg',
     path: '/services',
   },
   {
@@ -145,8 +146,22 @@ export default function Home() {
           {SERVICES.map((svc) => (
             <div key={svc.title} className="bg-obsidian group relative overflow-hidden">
               <div className="relative h-64 overflow-hidden">
-                <img src={svc.img} alt={svc.title}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
+                {svc.img2 ? (
+                  <>
+                    <img src={svc.img2} alt={svc.title}
+                      className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+                      style={{ transform: 'scale(0.85)', transformOrigin: 'center' }} />
+                    <img src={svc.img} alt={svc.title}
+                      className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+                      style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)', transform: 'scale(0.85)', transformOrigin: 'center' }} />
+                    <div className="absolute inset-0 pointer-events-none"
+                      style={{ background: 'linear-gradient(to bottom right, transparent calc(50% - 1px), #D4AF37 calc(50% - 1px), #D4AF37 calc(50% + 1px), transparent calc(50% + 1px))' }} />
+                  </>
+                ) : (
+                  <img src={svc.img} alt={svc.title}
+                    className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+                    style={{ transform: 'scale(0.85)', transformOrigin: 'center' }} />
+                )}
                 <div className="absolute inset-0 bg-gradient-to-t from-obsidian to-transparent" />
 
                 {/* Gold upsell on hover */}

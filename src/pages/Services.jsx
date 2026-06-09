@@ -118,13 +118,14 @@ export default function Services() {
               {svc.img2 ? (
                 <>
                   {/* Bottom-right triangle: img2 */}
-                  <img src={svc.img2} alt={svc.title} className="absolute inset-0 w-full h-full object-cover" />
+                  <img src={svc.img2} alt={svc.title} className="absolute inset-0 w-full h-full object-cover object-center"
+                    style={{ transform: 'scale(0.8)', transformOrigin: 'center' }} />
                   {/* Top-left triangle: img clipped diagonally */}
                   <img
                     src={svc.img}
                     alt={svc.title}
-                    className="absolute inset-0 w-full h-full object-cover"
-                    style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)' }}
+                    className="absolute inset-0 w-full h-full object-cover object-center"
+                    style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)', transform: 'scale(0.8)', transformOrigin: 'center' }}
                   />
                   {/* Diagonal gold divider line */}
                   <div className="absolute inset-0 pointer-events-none"
