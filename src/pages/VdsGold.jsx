@@ -67,8 +67,8 @@ export default function VdsGold() {
         />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 py-32 w-full">
-          <div className="max-w-2xl">
-            <div className="flex items-center gap-3 mb-8">
+          <div className="max-w-2xl text-center md:text-left mx-auto md:mx-0">
+            <div className="flex items-center gap-3 mb-8 justify-center md:justify-start">
               <div className="w-12 h-px bg-gold" />
               <p className="text-xs font-mono-tech tracking-[0.4em] text-gold">INTRODUCING</p>
             </div>
@@ -85,7 +85,7 @@ export default function VdsGold() {
               UNLIMITED EXTERIOR DETAILS + 1 INTERIOR DETAIL / MONTH + CERAMIC SEALANT EVERY DETAIL
             </p>
 
-            <div className="flex flex-wrap items-end gap-8 mb-12">
+            <div className="flex flex-wrap items-end gap-8 mb-12 justify-center md:justify-start">
               <div>
                 <p className="text-xs font-mono-tech text-gold/60 tracking-widest mb-1">MEMBERSHIP PRICE</p>
                 <p className="text-5xl font-grotesk font-bold text-gold leading-none">$250<span className="text-2xl font-mono-tech text-vapor/50"> SEDAN/COUPE</span></p>
@@ -97,7 +97,7 @@ export default function VdsGold() {
               </div>
             </div>
 
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-4 justify-center md:justify-start">
               <Link to="/gold-signup"
                 className="flex items-center gap-3 bg-gold text-obsidian px-8 py-4 text-sm font-mono-tech tracking-widest hover:bg-gold-light transition-colors duration-300 rounded-sm font-bold">
                 JOIN THE CIRCLE <ArrowRight size={14} />

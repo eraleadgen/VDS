@@ -73,12 +73,12 @@ export default function Services() {
       <section className="relative pt-36 pb-20 overflow-hidden">
         <div className="absolute inset-0"
           style={{ background: 'radial-gradient(ellipse at 30% 0%, rgba(212,175,55,0.04) 0%, transparent 60%)' }} />
-        <div className="max-w-7xl mx-auto px-6">
+        <div className="max-w-7xl mx-auto px-6 text-center md:text-left">
           <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">WHAT WE OFFER</p>
           <h1 className="text-5xl md:text-7xl font-grotesk font-bold text-vapor mb-6">
             OUR SERVICES
           </h1>
-          <p className="text-vapor/50 text-lg max-w-2xl leading-relaxed">
+          <p className="text-vapor/50 text-lg max-w-2xl leading-relaxed mx-auto md:mx-0">
             Professional-grade detailing for luxury and performance vehicles. Every service uses professional products and paint-safe techniques perfected over 4+ years.
           </p>
         </div>
@@ -91,7 +91,7 @@ export default function Services() {
           <div className="absolute top-0 right-0 w-64 h-64"
             style={{ background: 'radial-gradient(ellipse at top right, rgba(212,175,55,0.08) 0%, transparent 70%)' }} />
           <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <div>
+            <div className="text-center md:text-left">
               <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-3">NEW MONTHLY MEMBERSHIP</p>
               <h2 className="text-3xl font-grotesk font-bold text-vapor mb-2">
                 <GoldShimmer>VDS GOLD</GoldShimmer> — All of this, every month.

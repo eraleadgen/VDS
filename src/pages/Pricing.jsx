@@ -107,7 +107,7 @@ export default function Pricing() {
       {/* ── VDS GOLD BANNER ──────────────────────────── */}
       <section className="border-y border-gold/20 py-16 bg-gradient-to-r from-obsidian via-[#0D0B06] to-obsidian">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-8">
-          <div>
+          <div className="text-center md:text-left">
             <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-3">BEST VALUE</p>
             <h2 className="text-4xl font-grotesk font-bold text-vapor mb-2">
               <GoldShimmer>VDS GOLD</GoldShimmer> MEMBERSHIP

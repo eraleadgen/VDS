@@ -136,7 +136,7 @@ export default function Home() {
 
       {/* ── SERVICES ─────────────────────────────────── */}
       <section className="py-24 max-w-7xl mx-auto px-6">
-        <div className="mb-16">
+        <div className="mb-16 text-center md:text-left">
           <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">WHAT WE OFFER</p>
           <h2 className="text-4xl md:text-5xl font-grotesk font-bold text-vapor">OUR SERVICES</h2>
         </div>
@@ -199,7 +199,7 @@ export default function Home() {
       <section className="py-24 border-y border-vapor/5">
         <div className="max-w-7xl mx-auto px-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-            <div>
+            <div className="text-center lg:text-left">
               <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">WHO WE ARE</p>
               <h2 className="text-4xl md:text-5xl font-grotesk font-bold text-vapor leading-tight mb-8">
                 ABOUT VALET<br />DETAILING SERVICE

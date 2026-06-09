@@ -136,10 +136,10 @@ export default function Gallery() {
       <Navbar />
 
       {/* Header */}
-      <section className="pt-36 pb-16 max-w-7xl mx-auto px-6">
+      <section className="pt-36 pb-16 max-w-7xl mx-auto px-6 text-center md:text-left">
         <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">OUR WORK</p>
         <h1 className="text-5xl md:text-6xl font-grotesk font-bold text-vapor mb-6">GALLERY</h1>
-        <p className="text-vapor/50 font-mono-tech text-sm max-w-xl">
+        <p className="text-vapor/50 font-mono-tech text-sm max-w-xl mx-auto md:mx-0">
           Real results on real vehicles across Metro Atlanta. Every photo is an actual client vehicle serviced by VDS Mobile.
         </p>
       </section>
