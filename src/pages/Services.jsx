@@ -129,7 +129,7 @@ export default function Services() {
                   />
                   {/* Diagonal gold divider line */}
                   <div className="absolute inset-0 pointer-events-none"
-                    style={{ background: 'linear-gradient(to bottom right, transparent calc(50% - 1px), #D4AF37 calc(50% - 1px), #D4AF37 calc(50% + 1px), transparent calc(50% + 1px))' }} />
+                    style={{ background: 'linear-gradient(to bottom right, transparent calc(50% - 1px), rgba(255,255,255,0.15) calc(50% - 1px), rgba(255,255,255,0.15) calc(50% + 1px), transparent calc(50% + 1px))' }} />
                 </>
               ) : (
                 <img src={svc.img} alt={svc.title} className="w-full h-full object-cover" />

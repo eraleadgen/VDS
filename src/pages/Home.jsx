@@ -155,7 +155,7 @@ export default function Home() {
                       className="absolute inset-0 w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
                       style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)', transform: 'scale(0.85)', transformOrigin: 'center' }} />
                     <div className="absolute inset-0 pointer-events-none"
-                      style={{ background: 'linear-gradient(to bottom right, transparent calc(50% - 1px), #D4AF37 calc(50% - 1px), #D4AF37 calc(50% + 1px), transparent calc(50% + 1px))' }} />
+                      style={{ background: 'linear-gradient(to bottom right, transparent calc(50% - 1px), rgba(255,255,255,0.15) calc(50% - 1px), rgba(255,255,255,0.15) calc(50% + 1px), transparent calc(50% + 1px))' }} />
                   </>
                 ) : (
                   <img src={svc.img} alt={svc.title}
