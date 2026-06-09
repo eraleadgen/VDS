@@ -44,6 +44,51 @@ const PHOTOS = [
     service: 'Full Detail + 5-Year Ceramic Coating + Stage 1 Paint Correction',
     tags: ['Full Detail', 'Ceramic Coating', 'Paint Correction'],
   },
+  {
+    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/73b0c6f48_FullDetail-5YearCeramicCoating-Stage1PaintCorrection.jpg',
+    service: 'Full Detail + 5-Year Ceramic Coating + Stage 1 Paint Correction',
+    tags: ['Full Detail', 'Ceramic Coating', 'Paint Correction'],
+  },
+  {
+    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/7e0e8e30c_FullDetail-CeramicSealant2.jpg',
+    service: 'Full Detail + Ceramic Sealant',
+    tags: ['Full Detail', 'Ceramic Sealant'],
+  },
+  {
+    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/fc5c033c1_FullDetail-CeramicSealant.jpg',
+    service: 'Full Detail + Ceramic Sealant',
+    tags: ['Full Detail', 'Ceramic Sealant'],
+  },
+  {
+    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/e81a4b27a_FullDetail2.jpg',
+    service: 'Full Detail',
+    tags: ['Full Detail'],
+  },
+  {
+    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/afaaf50c5_FullDetail3.jpg',
+    service: 'Full Detail',
+    tags: ['Full Detail'],
+  },
+  {
+    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/72db908f1_FullDetail4.jpg',
+    service: 'Full Detail',
+    tags: ['Full Detail'],
+  },
+  {
+    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/08e4dab62_FullDetail5.jpg',
+    service: 'Full Detail',
+    tags: ['Full Detail'],
+  },
+  {
+    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/20635cea2_FullDetail6.jpg',
+    service: 'Full Detail',
+    tags: ['Full Detail'],
+  },
+  {
+    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/ddc0a29a7_FullDetail.jpg',
+    service: 'Full Detail',
+    tags: ['Full Detail'],
+  },
 ];
 
 const ALL_FILTERS = ['All', 'Full Detail', 'Exterior Detail', 'Ceramic Sealant', 'Ceramic Coating', 'Paint Correction'];
