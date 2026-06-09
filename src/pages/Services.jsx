@@ -21,8 +21,7 @@ const SERVICES = [
       'Professional Products Applied',
       'Ceramic Sealant',
     ],
-    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/ba38246d1_FullDetail-CeramicSealant2.jpg',
-    img2: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/1f19df53a_InteriorDetailing.jpg',
+    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/c7357965d_FullDetail-CeramicSealant2.jpg',
     gold: true,
   },
   {
@@ -115,25 +114,7 @@ export default function Services() {
           <div key={svc.id} className={`grid grid-cols-1 lg:grid-cols-2 ${i % 2 === 1 ? 'lg:grid-flow-dense' : ''} bg-vapor/5`}>
             {/* Image */}
             <div className={`relative overflow-hidden h-80 lg:h-auto ${i % 2 === 1 ? 'lg:col-start-2' : ''}`}>
-              {svc.img2 ? (
-                <>
-                  {/* Bottom-right triangle: img2 */}
-                  <img src={svc.img2} alt={svc.title} className="absolute inset-0 w-full h-full object-cover object-center"
-                    style={{ transform: 'scale(0.8)', transformOrigin: 'center' }} />
-                  {/* Top-left triangle: img clipped diagonally */}
-                  <img
-                    src={svc.img}
-                    alt={svc.title}
-                    className="absolute inset-0 w-full h-full object-cover object-center"
-                    style={{ clipPath: 'polygon(0 0, 100% 0, 0 100%)', transform: 'scale(0.8)', transformOrigin: 'center' }}
-                  />
-                  {/* Diagonal gold divider line */}
-                  <div className="absolute inset-0 pointer-events-none"
-                    style={{ background: 'linear-gradient(to bottom right, transparent calc(50% - 1px), rgba(255,255,255,0.15) calc(50% - 1px), rgba(255,255,255,0.15) calc(50% + 1px), transparent calc(50% + 1px))' }} />
-                </>
-              ) : (
-                <img src={svc.img} alt={svc.title} className="w-full h-full object-cover" />
-              )}
+              <img src={svc.img} alt={svc.title} className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-r from-asphalt/80 to-transparent lg:hidden" />
               {svc.gold && (
                 <div className="absolute top-6 left-6 vds-gold-btn px-3 py-1.5 text-xs font-mono-tech tracking-widest rounded-sm bg-obsidian">
