@@ -55,6 +55,11 @@ export default function MemberDashboard() {
     await loadData();
   };
 
+  const handleEditVehicle = async (id, formData) => {
+    await base44.entities.MemberVehicle.update(id, formData);
+    await loadData();
+  };
+
   const handleLogout = () => {
     base44.auth.logout('/');
   };
@@ -224,7 +229,7 @@ export default function MemberDashboard() {
           ) : (
             <div className="space-y-3">
               {vehicles.map(v => (
-                <VehicleCard key={v.id} vehicle={v} onDelete={handleDeleteVehicle} />
+                <VehicleCard key={v.id} vehicle={v} onDelete={handleDeleteVehicle} onEdit={handleEditVehicle} />
               ))}
             </div>
           )}

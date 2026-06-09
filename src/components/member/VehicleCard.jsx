@@ -1,6 +1,25 @@
-import { Trash2, Car } from 'lucide-react';
+import { useState } from 'react';
+import { Trash2, Car, Pencil } from 'lucide-react';
+import AddVehicleForm from './AddVehicleForm';
 
-export default function VehicleCard({ vehicle, onDelete }) {
+export default function VehicleCard({ vehicle, onDelete, onEdit }) {
+  const [editing, setEditing] = useState(false);
+
+  const handleEdit = async (formData) => {
+    await onEdit(vehicle.id, formData);
+    setEditing(false);
+  };
+
+  if (editing) {
+    return (
+      <AddVehicleForm
+        initialData={vehicle}
+        onAdd={handleEdit}
+        onCancel={() => setEditing(false)}
+      />
+    );
+  }
+
   return (
     <div className="glass-panel border border-vapor/10 hover:border-gold/30 transition-colors duration-200 p-5 rounded-sm flex items-start justify-between gap-4">
       <div className="flex items-start gap-4">
@@ -22,12 +41,20 @@ export default function VehicleCard({ vehicle, onDelete }) {
           )}
         </div>
       </div>
-      <button
-        onClick={() => onDelete(vehicle.id)}
-        className="text-vapor/20 hover:text-red-400 transition-colors duration-200 shrink-0 mt-1"
-      >
-        <Trash2 size={15} />
-      </button>
+      <div className="flex items-center gap-3 shrink-0 mt-1">
+        <button
+          onClick={() => setEditing(true)}
+          className="text-vapor/20 hover:text-gold transition-colors duration-200"
+        >
+          <Pencil size={14} />
+        </button>
+        <button
+          onClick={() => onDelete(vehicle.id)}
+          className="text-vapor/20 hover:text-red-400 transition-colors duration-200"
+        >
+          <Trash2 size={15} />
+        </button>
+      </div>
     </div>
   );
 }
