@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, ArrowRight, Star } from 'lucide-react';
+import { Check, ArrowRight } from 'lucide-react';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
 import GoldShimmer from '../components/vds/GoldShimmer';
@@ -35,6 +35,8 @@ const MEMBERSHIP_VALUE = [
   { service: 'VDS GOLD — TRUCK/3-ROW', value: '$300' },
 ];
 
+const HERO_IMG = 'https://images.unsplash.com/photo-1542282088-fe8426682b8f?w=1600';
+
 export default function VdsGold() {
   const [scrollY, setScrollY] = useState(0);
   const heroRef = useRef(null);
@@ -45,27 +47,20 @@ export default function VdsGold() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Background shifts from deep black to metallic gold tint as user scrolls
   const goldTint = Math.min(scrollY / 2000, 0.06);
 
   return (
     <div
       className="min-h-screen"
-      style={{ backgroundColor: `rgb(${Math.round(10 + goldTint * 40)}, ${Math.round(11 + goldTint * 30)}, ${Math.round(13)})` }}
+      style={{ backgroundColor: `rgb(${Math.round(10 + goldTint * 40)}, ${Math.round(11 + goldTint * 30)}, 13)` }}
     >
       <Navbar />
 
       {/* ── HERO ─────────────────────────────────────── */}
       <section ref={heroRef} className="relative min-h-screen flex items-center overflow-hidden">
-        <img
-          src="https://images.unsplash.com/photo-1542282088-fe8426682b8f?w=1600&q=80"
-          alt="VDS Gold"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
+        <img src={HERO_IMG} alt="VDS Gold" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-r from-obsidian via-obsidian/80 to-obsidian/30" />
         <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-transparent to-obsidian/50" />
-
-        {/* Gold shimmer overlay */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{ background: 'radial-gradient(ellipse at 70% 50%, rgba(212,175,55,0.05) 0%, transparent 60%)' }}
@@ -132,7 +127,6 @@ export default function VdsGold() {
             </div>
             <h3 className="text-3xl font-grotesk font-bold text-vapor mb-2">EXTERIOR DETAIL</h3>
             <p className="text-vapor/40 font-mono-tech text-xs tracking-widest mb-10">UNLIMITED / MONTH</p>
-
             <ul className="space-y-4">
               {EXTERIOR_SPECS.map((spec, i) => (
                 <li key={i} className="flex items-start gap-4 border-b border-vapor/5 pb-4 last:border-0 last:pb-0">
@@ -141,7 +135,6 @@ export default function VdsGold() {
                 </li>
               ))}
             </ul>
-
             <div className="mt-12 p-5 border border-gold/20 rounded-sm bg-gold/5">
               <p className="text-gold font-mono-tech text-xs tracking-widest mb-1">◆ UNLIMITED ACCESS</p>
               <p className="text-vapor/60 text-sm">Schedule as many exterior details as you need each month. No caps, no limits.</p>
@@ -152,14 +145,12 @@ export default function VdsGold() {
           <div className="bg-asphalt p-10 lg:p-14 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 pointer-events-none"
               style={{ background: 'radial-gradient(ellipse at top right, rgba(212,175,55,0.08) 0%, transparent 70%)' }} />
-
             <div className="flex items-center gap-4 mb-2">
               <div className="w-8 h-px bg-gold" />
               <p className="text-xs font-mono-tech tracking-[0.3em] text-gold">INTERIOR</p>
             </div>
             <h3 className="text-3xl font-grotesk font-bold text-vapor mb-2">INTERIOR DETAIL</h3>
             <p className="text-vapor/40 font-mono-tech text-xs tracking-widest mb-10">1× PER MONTH</p>
-
             <ul className="space-y-4">
               {INTERIOR_SPECS.map((spec, i) => (
                 <li key={i} className="flex items-start gap-4 border-b border-vapor/5 pb-4 last:border-0 last:pb-0">
@@ -168,7 +159,6 @@ export default function VdsGold() {
                 </li>
               ))}
             </ul>
-
             <div className="mt-12 p-5 border border-gold/20 rounded-sm bg-gold/5">
               <p className="text-gold font-mono-tech text-xs tracking-widest mb-1">◆ STEAM TECHNOLOGY</p>
               <p className="text-vapor/60 text-sm">High-temperature steam penetrates every crevice for a truly sanitized, showroom-quality interior.</p>
@@ -184,25 +174,21 @@ export default function VdsGold() {
             <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">THE MATH</p>
             <h2 className="text-4xl font-grotesk font-bold text-vapor">VALUE BREAKDOWN</h2>
           </div>
-
           <div className="glass-panel rounded-sm overflow-hidden">
             {MEMBERSHIP_VALUE.map((row, i) => {
               const isRetail = i === 3;
               const isGold = i >= 4;
               return (
-                <div key={i}
-                  className={`flex items-center justify-between px-8 py-5 ${
-                    isGold ? 'bg-gold/10 border-t border-gold/30' :
-                    isRetail ? 'border-b border-gold/30' :
-                    'border-b border-vapor/5'
-                  }`}>
+                <div key={i} className={`flex items-center justify-between px-8 py-5 ${
+                  isGold ? 'bg-gold/10 border-t border-gold/30' :
+                  isRetail ? 'border-b border-gold/30' : 'border-b border-vapor/5'
+                }`}>
                   <span className={`font-mono-tech text-sm ${isGold ? 'text-gold font-bold tracking-widest' : 'text-vapor/60'}`}>
                     {row.service}
                   </span>
                   <span className={`font-mono-tech ${
                     isGold ? 'text-gold text-2xl font-bold' :
-                    isRetail ? 'text-vapor/40 line-through text-sm' :
-                    'text-vapor/40 text-sm'
+                    isRetail ? 'text-vapor/40 line-through text-sm' : 'text-vapor/40 text-sm'
                   }`}>
                     {row.value}
                   </span>
@@ -210,7 +196,6 @@ export default function VdsGold() {
               );
             })}
           </div>
-
           <div className="text-center mt-10">
             <p className="text-vapor/40 font-mono-tech text-xs tracking-widest mb-6">
               SAVE $400+ EVERY MONTH · PRIORITY SCHEDULING · CANCEL ANYTIME
@@ -233,7 +218,7 @@ export default function VdsGold() {
           {[
             { step: '01', title: 'CREATE ACCOUNT', desc: 'Sign up online in minutes. Add your vehicle(s), set your preferences, and get instant access to your member portal.' },
             { step: '02', title: 'SCHEDULE', desc: 'Book your exterior details any time — as many as you need throughout the month.' },
-            { step: '03', title: 'WE COME TO YOU', desc: 'Our team arrives at your location with professional equipment and Gtechniq products.' },
+            { step: '03', title: 'WE COME TO YOU', desc: 'Our team arrives at your location with professional equipment and premium detailing products.' },
             { step: '04', title: 'STAY PERFECT', desc: 'Your vehicle remains in a permanent state of immaculate perfection, month after month.' },
           ].map((item) => (
             <div key={item.step} className="bg-asphalt p-8">

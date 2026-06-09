@@ -18,7 +18,7 @@ const SERVICES = [
       'Rim & Wheel Detail',
       'Door Jambs Cleaned',
       'Odor & Stain Treatment',
-      'GTechniq Products Applied',
+      'Professional Products Applied',
       'Ceramic Sealant',
     ],
     img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/418daee5e_IMG_4756.png',
@@ -28,9 +28,9 @@ const SERVICES = [
     id: 'ceramic',
     title: 'CERAMIC COATINGS',
     subtitle: 'Long-Term Paint Protection',
-    description: 'Professional-grade ceramic coatings using GTechniq products. From 3-month maintenance coatings to 7-year permanent protection — engineered for luxury vehicles.',
+    description: 'Professional-grade ceramic coatings from 3-month maintenance coatings to 7-year permanent protection — engineered for luxury vehicles.',
     specs: [
-      'GTechniq Professional Products',
+      'Professional-Grade Products',
       '3-Month to 7-Year Options',
       'Hydrophobic Surface Technology',
       'UV & Chemical Resistance',
@@ -79,7 +79,7 @@ export default function Services() {
             OUR SERVICES
           </h1>
           <p className="text-vapor/50 text-lg max-w-2xl leading-relaxed">
-            Professional-grade detailing for luxury and performance vehicles. Every service uses GTechniq products and paint-safe techniques perfected over 4+ years.
+            Professional-grade detailing for luxury and performance vehicles. Every service uses professional products and paint-safe techniques perfected over 4+ years.
           </p>
         </div>
       </section>

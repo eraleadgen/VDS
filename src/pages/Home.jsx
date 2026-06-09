@@ -16,14 +16,14 @@ const SERVICES = [
   {
     title: 'FULL DETAIL',
     subtitle: 'Interior & Exterior Restoration',
-    specs: ['Interior & Exterior Restoration', 'Odor & Stain Removal', 'GTechniq Products', 'Ceramic Sealant'],
+    specs: ['Interior & Exterior Restoration', 'Odor & Stain Removal', 'Professional Products', 'Ceramic Sealant'],
     img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/418daee5e_IMG_4756.png',
     path: '/services',
   },
   {
     title: 'CERAMIC COATINGS',
     subtitle: 'Long-Term Paint Protection',
-    specs: ['2–7 Year Coatings', 'GTechniq Professional Products', 'Hydrophobic Surface Protection', 'UV & Chemical Resistance'],
+    specs: ['2–7 Year Coatings', 'Professional-Grade Coatings', 'Hydrophobic Surface Protection', 'UV & Chemical Resistance'],
     img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/3a80c18b3_ceramic-coating-being-professionally-applied-to-car-paint-for-long-term-protection.webp',
     path: '/services',
     notInGold: true,
@@ -210,7 +210,7 @@ export default function Home() {
 
               <div className="grid grid-cols-1 gap-8">
                 {[
-                  { icon: '◆', title: 'Luxury & Performance Specialists', desc: "We're not a high-volume car wash. Our tools, techniques, and Gtechniq products are specifically chosen for Porsche, Rolls Royce, and Mercedes-Benz." },
+                  { icon: '◆', title: 'Luxury & Performance Specialists', desc: "We're not a high-volume car wash. Our tools, techniques, and professional-grade products are specifically chosen for Porsche, Rolls Royce, and Mercedes-Benz." },
                   { icon: '✎', title: 'Meticulous, Unrushed Craftsmanship', desc: 'Quality over speed. Every vehicle receives our full attention, ensuring a flawless result without cutting corners.' },
                   { icon: '⚗', title: 'Professional, Insured & Reliable', desc: 'Registered LLC with comprehensive business insurance. Clear communication, on-time arrivals, and complete peace of mind.' },
                   { icon: '❖', title: 'Long-Term Client Relationships', desc: "Our goal is to be your trusted partner for car care — delivering consistent, exceptional results every single time." },
