@@ -129,28 +129,46 @@ export default function MemberDashboard() {
           <UsageTracker fullDetailsUsed={fullDetailsUsed} exteriorDetailsUsed={exteriorDetailsUsed} />
         </div>
 
-        {/* Service History */}
-        {thisMonthRecords.length > 0 && (
+        {/* Service History — grouped by vehicle */}
+        {vehicles.length > 0 && (
           <div className="mb-12">
-            <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40 mb-4">RECENT SERVICES</p>
-            <div className="space-y-2">
-              {thisMonthRecords.map(record => {
-                const v = vehicles.find(veh => veh.id === record.vehicle_id);
+            <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40 mb-4">SERVICE HISTORY</p>
+            <div className="space-y-4">
+              {vehicles.map(v => {
+                const vehicleRecords = records
+                  .filter(r => r.vehicle_id === v.id)
+                  .sort((a, b) => new Date(b.service_date) - new Date(a.service_date));
                 return (
-                  <div key={record.id} className="glass-panel border border-vapor/10 px-5 py-4 rounded-sm flex items-center justify-between">
-                    <div>
-                      <p className="text-vapor text-sm font-grotesk font-medium">
-                        {record.service_type === 'full_detail' ? 'Full Interior Detail' : 'Exterior Detail'}
+                  <div key={v.id} className="glass-panel border border-vapor/10 rounded-sm overflow-hidden">
+                    {/* Vehicle header */}
+                    <div className="px-5 py-3 border-b border-vapor/10 flex items-center gap-3 bg-asphalt/50">
+                      <span className="text-gold text-xs">◆</span>
+                      <p className="text-vapor font-grotesk font-semibold text-sm">
+                        {v.year} {v.make} {v.model}
                       </p>
-                      {v && (
-                        <p className="text-vapor/40 text-xs font-mono-tech mt-0.5">
-                          {v.year} {v.make} {v.model}
-                        </p>
-                      )}
+                      {v.color && <span className="text-vapor/30 font-mono-tech text-xs">{v.color}</span>}
                     </div>
-                    <p className="text-vapor/40 text-xs font-mono-tech">
-                      {record.service_date ? format(new Date(record.service_date), 'MMM d') : '—'}
-                    </p>
+                    {vehicleRecords.length === 0 ? (
+                      <div className="px-5 py-6 text-center">
+                        <p className="text-vapor/25 text-xs font-mono-tech">No services recorded yet.</p>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-vapor/5">
+                        {vehicleRecords.map(record => (
+                          <div key={record.id} className="px-5 py-3 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-1.5 h-1.5 rounded-full ${record.service_type === 'full_detail' ? 'bg-gold' : 'bg-vapor/40'}`} />
+                              <p className="text-vapor/80 text-sm font-grotesk">
+                                {record.service_type === 'full_detail' ? 'Full Interior Detail' : 'Exterior Detail'}
+                              </p>
+                            </div>
+                            <p className="text-vapor/40 text-xs font-mono-tech">
+                              {record.service_date ? format(new Date(record.service_date), 'MMM d, yyyy') : '—'}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })}
