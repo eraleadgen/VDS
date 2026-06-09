@@ -89,6 +89,36 @@ const PHOTOS = [
     service: 'Full Detail',
     tags: ['Full Detail'],
   },
+  {
+    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/b46468994_ExteriorDetail3.jpg',
+    service: 'Exterior Detail',
+    tags: ['Exterior Detail'],
+  },
+  {
+    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/e47c4c896_ExteriorDetail5.jpg',
+    service: 'Exterior Detail',
+    tags: ['Exterior Detail'],
+  },
+  {
+    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/52c3ecad8_ExteriorDetail4.jpg',
+    service: 'Exterior Detail',
+    tags: ['Exterior Detail'],
+  },
+  {
+    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/1082fee8c_FullDetail-5YearCeramicCoating-Stage1PaintCorrecton.jpg',
+    service: 'Full Detail + 5-Year Ceramic Coating + Stage 1 Paint Correction',
+    tags: ['Full Detail', 'Ceramic Coating', 'Paint Correction'],
+  },
+  {
+    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/67fedece8_FullDetail4.jpg',
+    service: 'Full Detail',
+    tags: ['Full Detail'],
+  },
+  {
+    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/ef3ecb851_FullDetail5.jpg',
+    service: 'Full Detail',
+    tags: ['Full Detail'],
+  },
 ];
 
 const ALL_FILTERS = ['All', 'Full Detail', 'Exterior Detail', 'Ceramic Sealant', 'Ceramic Coating', 'Paint Correction'];
