@@ -18,6 +18,7 @@ import Privacy from './pages/Privacy';
 import MemberLogin from './pages/MemberLogin';
 import MemberDashboard from './pages/MemberDashboard';
 import GoldSignup from './pages/GoldSignup';
+import Gallery from './pages/Gallery';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -53,6 +54,7 @@ const AuthenticatedApp = () => {
       <Route path="/member-login" element={<MemberLogin />} />
       <Route path="/member-dashboard" element={<MemberDashboard />} />
       <Route path="/gold-signup" element={<GoldSignup />} />
+      <Route path="/gallery" element={<Gallery />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
