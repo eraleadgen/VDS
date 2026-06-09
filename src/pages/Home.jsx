@@ -71,7 +71,7 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-r from-obsidian/70 via-transparent to-transparent" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 pt-32 pb-16 md:pb-24 w-full">
-          <div className="max-w-3xl mx-auto md:mx-0 text-center md:text-left">
+          <div className="max-w-3xl mx-auto text-center md:text-left">
             <p className="text-xs font-mono-tech tracking-[0.3em] text-gold mb-6 opacity-80">
               METRO ATLANTA · MOBILE DETAILING
             </p>
