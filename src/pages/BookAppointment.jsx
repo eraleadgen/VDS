@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { ChevronLeft, ChevronRight, ArrowRight, CheckCircle, Star } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowRight, CheckCircle, ChevronDown } from 'lucide-react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isBefore, isToday, isSameDay } from 'date-fns';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
@@ -18,7 +18,6 @@ const SERVICES = [
 ];
 
 const TIME_SLOTS = ['8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM'];
-
 const QUOTE_ONLY_IDS = ['ceramic_coating', 'paint_correction'];
 
 const DEFAULT_FORM = {
@@ -31,6 +30,7 @@ export default function BookAppointment() {
   const location = useLocation();
   const [user, setUser] = useState(null);
   const [isGold, setIsGold] = useState(false);
+  const [vehicles, setVehicles] = useState([]);
   const [form, setForm] = useState(DEFAULT_FORM);
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(null);
@@ -46,12 +46,13 @@ export default function BookAppointment() {
         setIsGold(!!me?.is_gold_member);
         if (me?.email) setForm(f => ({ ...f, email: me.email }));
         if (me?.full_name) setForm(f => ({ ...f, name: me.full_name }));
+        const v = await base44.entities.MemberVehicle.list();
+        setVehicles(v);
       }
     };
     init();
   }, []);
 
-  // Pre-select service from navigation state (e.g. from MemberDashboard)
   useEffect(() => {
     if (location.state?.preselect_service) {
       setForm(f => ({ ...f, service_type: location.state.preselect_service }));
@@ -62,20 +63,17 @@ export default function BookAppointment() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm(f => ({ ...f, [name]: value }));
     if (name === 'service_type') {
       setSelectedDay(null);
-      setForm(f => ({ ...f, [name]: value, preferred_date: '', preferred_time: '' }));
+      setForm(f => ({ ...f, service_type: value, preferred_date: '', preferred_time: '' }));
+    } else {
+      setForm(f => ({ ...f, [name]: value }));
     }
   };
 
   const handleDayClick = (day) => {
     setSelectedDay(day);
     setForm(f => ({ ...f, preferred_date: format(day, 'yyyy-MM-dd'), preferred_time: '' }));
-  };
-
-  const handleTimeClick = (slot) => {
-    setForm(f => ({ ...f, preferred_time: slot }));
   };
 
   const handleSubmit = async (e) => {
@@ -100,6 +98,8 @@ export default function BookAppointment() {
   const today = new Date();
 
   const visibleServices = SERVICES.filter(s => !s.gold || isGold);
+
+  const selectClass = "w-full bg-asphalt border border-vapor/10 focus:border-gold/40 text-vapor px-4 py-3 text-sm font-mono-tech rounded-sm outline-none transition-colors appearance-none cursor-pointer";
 
   if (submitted) {
     return (
@@ -150,26 +150,25 @@ export default function BookAppointment() {
 
         <form onSubmit={handleSubmit} className="space-y-8">
 
-          {/* Service Selection */}
+          {/* Service Dropdown */}
           <div>
-            <p className="text-xs font-mono-tech tracking-widest text-vapor/40 mb-4">SELECT SERVICE</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {visibleServices.map(s => (
-                <button
-                  key={s.id}
-                  type="button"
-                  onClick={() => setForm(f => ({ ...f, service_type: s.id, preferred_date: '', preferred_time: '' }))}
-                  className={`text-left px-5 py-4 border rounded-sm transition-colors ${
-                    form.service_type === s.id
-                      ? 'border-gold bg-gold/10'
-                      : 'border-vapor/10 hover:border-vapor/30'
-                  }`}
-                >
-                  <p className={`font-mono-tech text-xs tracking-widest mb-1 ${s.gold ? 'text-gold' : 'text-vapor'}`}>{s.label}</p>
-                  <p className="text-vapor/40 font-mono-tech text-xs">{s.duration} · {s.price}</p>
-                  {s.quoteOnly && <p className="text-vapor/30 font-mono-tech text-xs mt-1">Custom quote — we'll reach out</p>}
-                </button>
-              ))}
+            <label className="block text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">SELECT SERVICE <span className="text-gold">*</span></label>
+            <div className="relative">
+              <select
+                name="service_type"
+                value={form.service_type}
+                onChange={handleChange}
+                required
+                className={selectClass}
+              >
+                <option value="" disabled>Choose a service...</option>
+                {visibleServices.map(s => (
+                  <option key={s.id} value={s.id}>
+                    {s.label} — {s.price}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-vapor/40 pointer-events-none" />
             </div>
           </div>
 
@@ -183,10 +182,33 @@ export default function BookAppointment() {
             </div>
           )}
 
+          {/* Vehicle Dropdown — only for logged-in users with saved vehicles */}
+          {vehicles.length > 0 && (
+            <div>
+              <label className="block text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">SELECT VEHICLE</label>
+              <div className="relative">
+                <select
+                  name="vehicle_info"
+                  value={form.vehicle_info}
+                  onChange={handleChange}
+                  className={selectClass}
+                >
+                  <option value="">Choose a vehicle (or type below)...</option>
+                  {vehicles.map(v => (
+                    <option key={v.id} value={`${v.year} ${v.make} ${v.model}${v.color ? ', ' + v.color : ''}`}>
+                      {v.year} {v.make} {v.model}{v.color ? ` — ${v.color}` : ''}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-vapor/40 pointer-events-none" />
+              </div>
+            </div>
+          )}
+
           {/* Calendar — only for schedulable services */}
           {form.service_type && !isQuoteOnly && (
             <div>
-              <p className="text-xs font-mono-tech tracking-widest text-vapor/40 mb-4">SELECT DATE</p>
+              <p className="text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">SELECT DATE <span className="text-gold">*</span></p>
               <div className="glass-panel border border-vapor/10 rounded-sm p-5">
                 {/* Month nav */}
                 <div className="flex items-center justify-between mb-4">
@@ -239,15 +261,15 @@ export default function BookAppointment() {
           {/* Time Slots */}
           {selectedDay && !isQuoteOnly && (
             <div>
-              <p className="text-xs font-mono-tech tracking-widest text-vapor/40 mb-4">
-                SELECT TIME — {format(selectedDay, 'EEEE, MMMM d').toUpperCase()}
+              <p className="text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">
+                SELECT TIME — {format(selectedDay, 'EEEE, MMMM d').toUpperCase()} <span className="text-gold">*</span>
               </p>
               <div className="grid grid-cols-3 gap-2">
                 {TIME_SLOTS.map(slot => (
                   <button
                     key={slot}
                     type="button"
-                    onClick={() => handleTimeClick(slot)}
+                    onClick={() => setForm(f => ({ ...f, preferred_time: slot }))}
                     className={`py-3 border rounded-sm font-mono-tech text-xs tracking-widest transition-colors ${
                       form.preferred_time === slot
                         ? 'border-gold bg-gold/10 text-gold'
@@ -263,7 +285,7 @@ export default function BookAppointment() {
 
           {/* Contact Info */}
           <div>
-            <p className="text-xs font-mono-tech tracking-widest text-vapor/40 mb-4">YOUR DETAILS</p>
+            <p className="text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">YOUR DETAILS</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
                 { name: 'name', label: 'Full Name', placeholder: 'John Smith', required: true },
@@ -288,19 +310,21 @@ export default function BookAppointment() {
             </div>
           </div>
 
-          {/* Vehicle + Notes */}
+          {/* Vehicle (manual) + Notes */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">VEHICLE</label>
-              <input
-                name="vehicle_info"
-                value={form.vehicle_info}
-                onChange={handleChange}
-                placeholder="2022 BMW M3, White"
-                className="w-full bg-asphalt border border-vapor/10 focus:border-gold/40 text-vapor placeholder:text-vapor/20 px-4 py-3 text-sm font-mono-tech rounded-sm outline-none transition-colors"
-              />
-            </div>
-            <div>
+            {vehicles.length === 0 && (
+              <div>
+                <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">VEHICLE</label>
+                <input
+                  name="vehicle_info"
+                  value={form.vehicle_info}
+                  onChange={handleChange}
+                  placeholder="2022 BMW M3, White"
+                  className="w-full bg-asphalt border border-vapor/10 focus:border-gold/40 text-vapor placeholder:text-vapor/20 px-4 py-3 text-sm font-mono-tech rounded-sm outline-none transition-colors"
+                />
+              </div>
+            )}
+            <div className={vehicles.length === 0 ? '' : 'sm:col-span-2'}>
               <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">NOTES</label>
               <input
                 name="notes"
