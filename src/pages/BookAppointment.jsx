@@ -9,6 +9,7 @@ import GoldShimmer from '../components/vds/GoldShimmer';
 
 const SERVICES = [
   { id: 'exterior_detail', label: 'Exterior Detail', duration: '1–2 hrs', price: 'From $100' },
+  { id: 'interior_detail', label: 'Interior Detail', duration: '2–3 hrs', price: 'From $125' },
   { id: 'full_detail', label: 'Full Interior + Exterior Detail', duration: '3–5 hrs', price: 'From $175' },
   { id: 'vds_gold_exterior', label: '◆ VDS Gold — Exterior Detail', duration: '1 hr', price: 'Member Only', gold: true },
   { id: 'vds_gold_full', label: '◆ VDS Gold — Full Detail', duration: '2–3 hrs', price: 'Member Only', gold: true },
