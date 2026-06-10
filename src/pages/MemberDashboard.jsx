@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { LogOut, Plus, Calendar, ChevronRight } from 'lucide-react';
+import { LogOut, Plus, Calendar, ChevronRight, Star } from 'lucide-react';
 import { format, startOfMonth } from 'date-fns';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
@@ -100,15 +100,47 @@ export default function MemberDashboard() {
             <p className="text-xs font-mono-tech tracking-widest text-gold/60 mb-1">CURRENT BILLING PERIOD</p>
             <p className="text-vapor font-grotesk font-semibold">{format(new Date(), 'MMMM yyyy')}</p>
           </div>
-          <a
-            href={BOOKING_LINK}
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            to="/book"
             className="vds-gold-btn flex items-center gap-2 px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm whitespace-nowrap"
           >
             <Calendar size={13} /> SCHEDULE APPOINTMENT →
-          </a>
+          </Link>
         </div>
+
+        {/* VDS Gold Quick Booking — Gold members only */}
+        {user?.is_gold_member && (
+          <div className="mb-8">
+            <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40 mb-4">VDS GOLD BOOKING</p>
+            <div className="glass-panel border border-gold/20 rounded-sm p-6">
+              <div className="flex items-center gap-3 mb-5">
+                <Star size={14} className="text-gold" />
+                <p className="text-vapor font-grotesk font-semibold">Book Your Gold Services</p>
+              </div>
+              <p className="text-vapor/40 font-mono-tech text-xs leading-relaxed mb-6">
+                As a VDS Gold member, you have access to unlimited exterior details and 1 interior detail per month — all with ceramic sealant included.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Link
+                  to="/book"
+                  state={{ preselect_service: 'vds_gold_exterior' }}
+                  className="flex flex-col gap-1 border border-gold/25 hover:border-gold/50 bg-gold/5 hover:bg-gold/10 px-5 py-4 rounded-sm transition-colors group"
+                >
+                  <p className="text-gold font-mono-tech text-xs tracking-widest group-hover:text-gold-light transition-colors">◆ EXTERIOR DETAIL</p>
+                  <p className="text-vapor/50 text-xs font-mono-tech">Unlimited / Month · 1 hr</p>
+                </Link>
+                <Link
+                  to="/book"
+                  state={{ preselect_service: 'vds_gold_full' }}
+                  className="flex flex-col gap-1 border border-gold/25 hover:border-gold/50 bg-gold/5 hover:bg-gold/10 px-5 py-4 rounded-sm transition-colors group"
+                >
+                  <p className="text-gold font-mono-tech text-xs tracking-widest group-hover:text-gold-light transition-colors">◆ FULL DETAIL</p>
+                  <p className="text-vapor/50 text-xs font-mono-tech">1× Per Month · 2–3 hrs</p>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Subscription Status */}
         <div className="mb-8">

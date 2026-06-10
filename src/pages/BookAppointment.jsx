@@ -1,18 +1,21 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { CheckCircle, ArrowRight, Car } from 'lucide-react';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
 import GoldShimmer from '../components/vds/GoldShimmer';
 
-const SERVICE_TYPES = [
+const STANDARD_SERVICES = [
   { value: 'exterior_detail', label: 'Exterior Detail' },
   { value: 'full_detail', label: 'Full Detail (Exterior + Interior)' },
   { value: 'ceramic_coating', label: 'Ceramic Coating' },
   { value: 'paint_correction', label: 'Paint Correction' },
+];
+
+const GOLD_SERVICES = [
   { value: 'vds_gold_exterior', label: 'VDS Gold — Exterior Detail' },
-  { value: 'vds_gold_interior', label: 'VDS Gold — Interior Detail' },
+  { value: 'vds_gold_full', label: 'VDS Gold — Full Detail' },
 ];
 
 const defaultForm = {
@@ -27,7 +30,10 @@ const defaultForm = {
 };
 
 export default function BookAppointment() {
-  const [form, setForm] = useState(defaultForm);
+  const location = useLocation();
+  const preselect = location.state?.preselect_service || '';
+
+  const [form, setForm] = useState({ ...defaultForm, service_type: preselect });
   const [vehicles, setVehicles] = useState([]);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -186,10 +192,19 @@ export default function BookAppointment() {
               className="w-full bg-asphalt border border-vapor/10 focus:border-gold/40 text-vapor px-4 py-3 text-sm font-grotesk outline-none transition-colors rounded-sm appearance-none"
             >
               <option value="" disabled className="text-vapor/30">Select a service...</option>
-              {SERVICE_TYPES.map(s => (
+              {STANDARD_SERVICES.map(s => (
                 <option key={s.value} value={s.value} className="bg-asphalt">{s.label}</option>
               ))}
+              {user?.is_gold_member && GOLD_SERVICES.map(s => (
+                <option key={s.value} value={s.value} className="bg-asphalt">◆ {s.label}</option>
+              ))}
             </select>
+            {!user?.is_gold_member && (
+              <p className="text-vapor/30 text-xs font-mono-tech mt-2">
+                ◆ VDS Gold services are available exclusively to members.{' '}
+                <Link to="/vds-gold" className="text-gold/60 hover:text-gold underline transition-colors">Learn more →</Link>
+              </p>
+            )}
           </div>
 
           {/* Vehicle */}
