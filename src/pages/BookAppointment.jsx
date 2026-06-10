@@ -1,10 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { CheckCircle, ArrowRight, Car } from 'lucide-react';
+import { CheckCircle, ArrowRight, Car, ChevronLeft, ChevronRight as ChevronRightIcon } from 'lucide-react';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
 import GoldShimmer from '../components/vds/GoldShimmer';
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isBefore, startOfDay, getDay, addDays } from 'date-fns';
+
+// These services require a manual quote — no calendar shown
+const QUOTE_ONLY_SERVICES = ['ceramic_coating', 'paint_correction'];
+
+const TIME_SLOTS = ['8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM'];
 
 const STANDARD_SERVICES = [
   { value: 'exterior_detail', label: 'Exterior Detail' },
@@ -27,6 +33,8 @@ const defaultForm = {
   vehicle_id: '',
   vehicle_manual: '',
   notes: '',
+  preferred_date: '',
+  preferred_time: '',
 };
 
 export default function BookAppointment() {
@@ -39,6 +47,11 @@ export default function BookAppointment() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [calendarMonth, setCalendarMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(null);
+
+  const isQuoteOnly = QUOTE_ONLY_SERVICES.includes(form.service_type);
+  const needsSchedule = form.service_type && !isQuoteOnly;
 
   useEffect(() => {
     const init = async () => {
@@ -64,11 +77,20 @@ export default function BookAppointment() {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
   };
 
+  const handleDateSelect = (day) => {
+    setSelectedDate(day);
+    setForm(f => ({ ...f, preferred_date: format(day, 'yyyy-MM-dd'), preferred_time: '' }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     if (!form.name || !form.phone || !form.address || !form.service_type) {
       setError('Please fill in all required fields.');
+      return;
+    }
+    if (needsSchedule && (!form.preferred_date || !form.preferred_time)) {
+      setError('Please select a date and time for your appointment.');
       return;
     }
     setLoading(true);
@@ -81,6 +103,8 @@ export default function BookAppointment() {
       service_type: form.service_type,
       vehicle_info: vehicleInfo,
       notes: form.notes,
+      preferred_date: form.preferred_date || '',
+      preferred_time: form.preferred_time || '',
     };
     const res = await base44.functions.invoke('submitBookingToGHL', payload);
     setLoading(false);
@@ -98,9 +122,13 @@ export default function BookAppointment() {
         <main className="flex-1 flex items-center justify-center px-6 py-32">
           <div className="text-center max-w-md">
             <CheckCircle size={48} className="text-gold mx-auto mb-6" />
-            <h2 className="text-3xl font-grotesk font-bold text-vapor mb-4">REQUEST RECEIVED</h2>
+            <h2 className="text-3xl font-grotesk font-bold text-vapor mb-4">
+              {isQuoteOnly ? 'REQUEST RECEIVED' : 'APPOINTMENT BOOKED'}
+            </h2>
             <p className="text-vapor/50 font-mono-tech text-sm leading-relaxed mb-8">
-              We'll reach out within 1 business hour to confirm your appointment. Check your phone or email for next steps.
+              {isQuoteOnly
+                ? "We'll reach out within 1 business hour with a custom quote. Check your phone or email for next steps."
+                : `Your appointment is set for ${form.preferred_date ? format(new Date(form.preferred_date + 'T12:00:00'), 'MMMM d, yyyy') : ''} at ${form.preferred_time}. We'll send a confirmation to your phone or email shortly.`}
             </p>
             <Link to="/" className="vds-gold-btn inline-flex items-center gap-2 px-8 py-4 text-sm font-mono-tech tracking-widest rounded-sm">
               BACK TO HOME <ArrowRight size={14} />
@@ -127,7 +155,7 @@ export default function BookAppointment() {
             BOOK AN <GoldShimmer>APPOINTMENT</GoldShimmer>
           </h1>
           <p className="text-vapor/40 font-mono-tech text-sm">
-            We come to your location. Fill out the form and we'll confirm within 1 hour.
+            We come to your location. Select your service, pick a time, and you're set.
           </p>
         </div>
 
@@ -207,6 +235,108 @@ export default function BookAppointment() {
             )}
           </div>
 
+          {/* Quote-only notice */}
+          {isQuoteOnly && (
+            <div className="border border-gold/20 bg-gold/5 px-5 py-4 rounded-sm">
+              <p className="text-gold font-mono-tech text-xs tracking-widest mb-1">CUSTOM QUOTE REQUIRED</p>
+              <p className="text-vapor/50 text-xs font-mono-tech leading-relaxed">
+                {form.service_type === 'ceramic_coating' ? 'Ceramic coatings' : 'Paint correction'} pricing varies by vehicle condition and size. Submit your request and we'll reach out within 1 business hour with a custom quote and available times.
+              </p>
+            </div>
+          )}
+
+          {/* Date & Time Picker — shown for all schedulable services */}
+          {needsSchedule && (
+            <div>
+              <label className="text-xs font-mono-tech tracking-widest text-vapor/50 mb-3 block">SELECT DATE & TIME *</label>
+
+              {/* Calendar */}
+              <div className="bg-asphalt border border-vapor/10 rounded-sm p-4 mb-3">
+                {/* Month nav */}
+                <div className="flex items-center justify-between mb-4">
+                  <button
+                    type="button"
+                    onClick={() => setCalendarMonth(m => subMonths(m, 1))}
+                    disabled={isBefore(endOfMonth(subMonths(calendarMonth, 1)), startOfDay(new Date()))}
+                    className="w-8 h-8 flex items-center justify-center text-vapor/40 hover:text-vapor disabled:opacity-20 transition-colors"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <p className="text-vapor font-mono-tech text-xs tracking-widest">{format(calendarMonth, 'MMMM yyyy').toUpperCase()}</p>
+                  <button
+                    type="button"
+                    onClick={() => setCalendarMonth(m => addMonths(m, 1))}
+                    className="w-8 h-8 flex items-center justify-center text-vapor/40 hover:text-vapor transition-colors"
+                  >
+                    <ChevronRightIcon size={16} />
+                  </button>
+                </div>
+
+                {/* Day headers */}
+                <div className="grid grid-cols-7 mb-1">
+                  {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => (
+                    <div key={d} className="text-center text-vapor/25 font-mono-tech text-xs py-1">{d}</div>
+                  ))}
+                </div>
+
+                {/* Days grid */}
+                <div className="grid grid-cols-7">
+                  {/* Leading blanks */}
+                  {Array.from({ length: getDay(startOfMonth(calendarMonth)) }).map((_, i) => (
+                    <div key={`blank-${i}`} />
+                  ))}
+                  {eachDayOfInterval({ start: startOfMonth(calendarMonth), end: endOfMonth(calendarMonth) }).map(day => {
+                    const isPast = isBefore(day, startOfDay(new Date()));
+                    const isSunday = getDay(day) === 0;
+                    const isDisabled = isPast || isSunday;
+                    const isSelected = selectedDate && isSameDay(day, selectedDate);
+                    return (
+                      <button
+                        key={day.toString()}
+                        type="button"
+                        disabled={isDisabled}
+                        onClick={() => handleDateSelect(day)}
+                        className={`aspect-square flex items-center justify-center text-xs font-mono-tech rounded-sm m-0.5 transition-colors
+                          ${isSelected ? 'bg-gold text-obsidian font-bold' : ''}
+                          ${!isSelected && !isDisabled ? 'text-vapor hover:bg-vapor/10' : ''}
+                          ${isDisabled ? 'text-vapor/15 cursor-not-allowed' : ''}
+                        `}
+                      >
+                        {format(day, 'd')}
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-vapor/25 font-mono-tech text-xs mt-3 text-center">Sundays unavailable</p>
+              </div>
+
+              {/* Time slots — shown after date selected */}
+              {selectedDate && (
+                <div>
+                  <p className="text-xs font-mono-tech tracking-widest text-vapor/40 mb-2">
+                    AVAILABLE TIMES — {format(selectedDate, 'EEE, MMM d').toUpperCase()}
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {TIME_SLOTS.map(slot => (
+                      <button
+                        key={slot}
+                        type="button"
+                        onClick={() => setForm(f => ({ ...f, preferred_time: slot }))}
+                        className={`py-2.5 text-xs font-mono-tech tracking-wide rounded-sm border transition-colors
+                          ${form.preferred_time === slot
+                            ? 'bg-gold text-obsidian border-gold font-bold'
+                            : 'border-vapor/10 text-vapor/60 hover:border-gold/40 hover:text-vapor bg-asphalt'
+                          }`}
+                      >
+                        {slot}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Vehicle */}
           <div>
             <label className="text-xs font-mono-tech tracking-widest text-vapor/50 mb-2 block">
@@ -269,15 +399,16 @@ export default function BookAppointment() {
             disabled={loading}
             className="w-full bg-gold text-obsidian py-4 text-sm font-mono-tech tracking-widest font-bold hover:bg-gold-light transition-colors duration-200 rounded-sm disabled:opacity-50 flex items-center justify-center gap-2"
           >
-            {loading ? (
-              <><div className="w-4 h-4 border-2 border-obsidian/30 border-t-obsidian rounded-full animate-spin" /> SUBMITTING...</>
-            ) : (
-              <>REQUEST APPOINTMENT <ArrowRight size={14} /></>
-            )}
+            {loading
+              ? <><div className="w-4 h-4 border-2 border-obsidian/30 border-t-obsidian rounded-full animate-spin" /><span>SUBMITTING...</span></>
+              : isQuoteOnly
+                ? <><span>REQUEST QUOTE</span><ArrowRight size={14} /></>
+                : <><span>CONFIRM APPOINTMENT</span><ArrowRight size={14} /></>
+            }
           </button>
 
           <p className="text-center text-vapor/25 text-xs font-mono-tech">
-            We'll confirm within 1 hour · Metro Atlanta, GA
+            {isQuoteOnly ? "We'll reply within 1 business hour · Metro Atlanta, GA" : "We'll send a confirmation shortly · Metro Atlanta, GA"}
           </p>
         </form>
       </main>

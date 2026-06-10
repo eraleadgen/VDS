@@ -5,7 +5,7 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const isAuth = await base44.auth.isAuthenticated();
 
-    const { name, phone, email, address, service_type, vehicle_info, notes } = await req.json();
+    const { name, phone, email, address, service_type, vehicle_info, notes, preferred_date, preferred_time } = await req.json();
 
     if (!name || !phone || !address || !service_type) {
       return Response.json({ success: false, error: 'Missing required fields.' }, { status: 400 });
@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
 
     // If GHL secrets not yet configured, just log and return success (for development)
     if (!GHL_API_KEY || !GHL_LOCATION_ID) {
-      console.log('GHL secrets not configured. Booking request received:', { name, phone, email, address, service_type, vehicle_info, notes });
+      console.log('GHL secrets not configured. Booking request received:', { name, phone, email, address, service_type, vehicle_info, notes, preferred_date, preferred_time });
       return Response.json({ success: true, message: 'Booking received (GHL not yet configured).' });
     }
 
@@ -32,6 +32,8 @@ Deno.serve(async (req) => {
         { key: 'vehicle_info', field_value: vehicle_info || '' },
         { key: 'service_address', field_value: address },
         { key: 'booking_notes', field_value: notes || '' },
+        { key: 'preferred_date', field_value: preferred_date || '' },
+        { key: 'preferred_time', field_value: preferred_time || '' },
       ],
       tags: ['website-booking', service_type],
       source: 'VDS Website Booking Form',
@@ -58,7 +60,10 @@ Deno.serve(async (req) => {
 
     // 2. Add an internal note to the contact with booking details
     if (contactId) {
-      const noteBody = `BOOKING REQUEST\nService: ${service_type}\nVehicle: ${vehicle_info || 'N/A'}\nService Address: ${address}\nNotes: ${notes || 'None'}`;
+      const appointmentLine = preferred_date && preferred_time
+        ? `Appointment: ${preferred_date} at ${preferred_time}`
+        : 'Appointment: Quote requested — no date selected';
+      const noteBody = `BOOKING REQUEST\nService: ${service_type}\n${appointmentLine}\nVehicle: ${vehicle_info || 'N/A'}\nService Address: ${address}\nNotes: ${notes || 'None'}`;
       await fetch(`https://services.leadconnectorhq.com/contacts/${contactId}/notes`, {
         method: 'POST',
         headers: {
