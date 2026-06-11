@@ -27,7 +27,7 @@ export default function GoldShimmer({ children, className = '' }) {
       el.style.backgroundPosition = '-100% center';
 
       requestAnimationFrame(() => {
-        el.style.transition = 'background-position 0.9s cubic-bezier(0.4, 0, 0.2, 1)';
+        el.style.transition = 'background-position 2.8s cubic-bezier(0.25, 0, 0.75, 1)';
         el.style.backgroundPosition = '200% center';
       });
 
@@ -41,7 +41,7 @@ export default function GoldShimmer({ children, className = '' }) {
 
         // Repeat
         setTimeout(() => { if (running) doShine(); }, 3500);
-      }, 950);
+      }, 2900);
     };
 
     setTimeout(doShine, 800);
