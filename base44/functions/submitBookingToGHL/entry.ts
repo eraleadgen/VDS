@@ -71,9 +71,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Contact payload — no customFields (avoids ID mapping issues), address stored in note + address field
-    const contactPayload = {
-      locationId: GHL_LOCATION_ID,
+    // Base contact fields (locationId only for POST, not PUT)
+    const contactBase = {
       firstName,
       lastName,
       phone,
@@ -89,7 +88,7 @@ Deno.serve(async (req) => {
       const updateRes = await fetch(`https://services.leadconnectorhq.com/contacts/${existingContactId}`, {
         method: 'PUT',
         headers: GHL_HEADERS,
-        body: JSON.stringify(contactPayload),
+        body: JSON.stringify(contactBase),  // no locationId on PUT
       });
       const updateData = await updateRes.json();
       console.log('GHL contact update status:', updateRes.status, JSON.stringify(updateData));
@@ -102,7 +101,7 @@ Deno.serve(async (req) => {
       const createRes = await fetch('https://services.leadconnectorhq.com/contacts/', {
         method: 'POST',
         headers: GHL_HEADERS,
-        body: JSON.stringify(contactPayload),
+        body: JSON.stringify({ ...contactBase, locationId: GHL_LOCATION_ID }),
       });
       const createData = await createRes.json();
       if (!createRes.ok) {
@@ -112,7 +111,7 @@ Deno.serve(async (req) => {
           await fetch(`https://services.leadconnectorhq.com/contacts/${fallbackId}`, {
             method: 'PUT',
             headers: GHL_HEADERS,
-            body: JSON.stringify(contactPayload),
+            body: JSON.stringify(contactBase),
           });
           contactId = fallbackId;
         } else {
