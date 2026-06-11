@@ -276,11 +276,10 @@ export default function BookAppointment() {
               >
                 <option value="" disabled>Choose a service...</option>
                 {visibleServices.map(s => {
-                  const quote = getAutoQuote(s.id, form.vehicle_type);
-                  const priceSuffix = s.quoteOnly ? ' — Quote Only' : s.gold ? ' — Member Only' : quote ? ` — ${quote}` : '';
+                  const suffix = s.quoteOnly ? ' — Quote Only' : s.gold ? ' — Member Only' : '';
                   return (
                     <option key={s.id} value={s.id}>
-                      {s.label}{priceSuffix}
+                      {s.label}{suffix}
                     </option>
                   );
                 })}
