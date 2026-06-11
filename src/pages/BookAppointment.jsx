@@ -254,6 +254,7 @@ export default function BookAppointment() {
         : (derivedVehicleType || form.vehicle_type);
       await base44.functions.invoke('submitBookingToGHL', {
         ...form,
+        service_type: firstService,
         vehicle_type: submitVehicleType,
         vehicle_info: vehicleSummary,
         vehicle_details: vehicleDetails.join(' | '),
