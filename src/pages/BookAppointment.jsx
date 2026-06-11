@@ -209,12 +209,33 @@ export default function BookAppointment() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.name || !form.phone || !form.address) return;
-    if (!form.preferred_date || !form.preferred_time) return;
-    if (selectedVehicles.length === 0) return;
+    console.log('Submit attempt - form state:', {
+      name: form.name,
+      phone: form.phone,
+      address: form.address,
+      preferred_date: form.preferred_date,
+      preferred_time: form.preferred_time,
+      selectedVehicles,
+      vehicleServices,
+    });
+    if (!form.name || !form.phone || !form.address) {
+      console.log('Missing contact info');
+      return;
+    }
+    if (!form.preferred_date || !form.preferred_time) {
+      console.log('Missing date/time');
+      return;
+    }
+    if (selectedVehicles.length === 0) {
+      console.log('No vehicles selected');
+      return;
+    }
     // Validate each vehicle has a service selected
     const hasAllServices = selectedVehicles.every(label => getVehicleService(label));
-    if (!hasAllServices) return;
+    if (!hasAllServices) {
+      console.log('Not all vehicles have services');
+      return;
+    }
     setLoading(true);
     try {
       const vehicleSummary = selectedVehicles.join(', ');
