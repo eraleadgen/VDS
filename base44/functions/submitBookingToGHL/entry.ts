@@ -4,7 +4,26 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
-    const { name, phone, email, address, service_type, vehicle_info, notes, preferred_date, preferred_time } = await req.json();
+    const { name, phone, email, address, service_type, vehicle_type, vehicle_info, notes, preferred_date, preferred_time } = await req.json();
+
+    // Calendar ID map: service_type + vehicle_type → GHL calendar ID
+    const CALENDAR_IDS = {
+      // VDS Gold
+      vds_gold_exterior_sedan_coupe: 'H3DX0ztGWQ4BBliILHim',
+      vds_gold_exterior_truck_suv:   'LO4uEJer1WKHdXvjwxhF',
+      vds_gold_full_sedan_coupe:     'U30SDSZI19VAr9vzX2we',
+      vds_gold_full_truck_suv:       'hgqeZGlC2xXg4WoK4GtG',
+      // Non-Gold
+      full_detail_sedan_coupe:       'Q9ik2XQBOogEm127sgQf',
+      exterior_detail_sedan_coupe:   'PapYeoYdsEQzRVST5mJ9',
+      interior_detail_sedan_coupe:   'nqXqR49QjxMCACvE7kcl',
+      full_detail_truck_suv:         '57xm2gp8cKGXHiXV8LLt',
+      exterior_detail_truck_suv:     '3Z3rjETwPUzvle0sxkGT',
+      interior_detail_truck_suv:     '1yz6e2OBSHN2oDlUvNPr',
+    };
+
+    const calendarKey = vehicle_type ? `${service_type}_${vehicle_type}` : null;
+    const calendarId = calendarKey ? CALENDAR_IDS[calendarKey] : null;
 
     if (!name || !phone || !address || !service_type) {
       return Response.json({ success: false, error: 'Missing required fields.' }, { status: 400 });
@@ -127,6 +146,46 @@ Deno.serve(async (req) => {
         },
         body: JSON.stringify({ body: noteBody, userId: '' }),
       });
+    }
+
+    // 3. Create GHL appointment if date/time and calendar are available
+    if (contactId && calendarId && preferred_date && preferred_time) {
+      // Convert "10:00 AM" + "2026-06-20" → ISO datetime
+      const [timePart, meridiem] = preferred_time.split(' ');
+      let [hours, minutes] = timePart.split(':').map(Number);
+      if (meridiem === 'PM' && hours !== 12) hours += 12;
+      if (meridiem === 'AM' && hours === 12) hours = 0;
+      const startIso = `${preferred_date}T${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:00-05:00`;
+      // End time = start + 2 hours
+      const endHours = hours + 2;
+      const endIso = `${preferred_date}T${String(endHours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:00-05:00`;
+
+      const apptPayload = {
+        calendarId,
+        locationId: GHL_LOCATION_ID,
+        contactId,
+        startTime: startIso,
+        endTime: endIso,
+        title: `${service_type.replace(/_/g, ' ').toUpperCase()} — ${name}`,
+        appointmentStatus: 'new',
+        address: address || '',
+      };
+
+      const apptRes = await fetch('https://services.leadconnectorhq.com/calendars/events/appointments', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${GHL_API_KEY}`,
+          'Content-Type': 'application/json',
+          'Version': '2021-04-15',
+        },
+        body: JSON.stringify(apptPayload),
+      });
+      const apptData = await apptRes.json();
+      if (!apptRes.ok) {
+        console.error('GHL appointment creation failed:', apptData);
+      } else {
+        console.log('GHL appointment created:', apptData?.id);
+      }
     }
 
     return Response.json({ success: true, contactId });

@@ -22,7 +22,7 @@ const QUOTE_ONLY_IDS = ['ceramic_coating', 'paint_correction'];
 
 const DEFAULT_FORM = {
   name: '', phone: '', email: '', address: '',
-  service_type: '', vehicle_info: '', notes: '',
+  service_type: '', vehicle_type: '', vehicle_info: '', notes: '',
   preferred_date: '', preferred_time: '',
 };
 
@@ -86,7 +86,7 @@ export default function BookAppointment() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.service_type || !form.name || !form.phone || !form.address) return;
-    if (!isQuoteOnly && (!form.preferred_date || !form.preferred_time)) return;
+    if (!isQuoteOnly && (!form.preferred_date || !form.preferred_time || !form.vehicle_type)) return;
     setLoading(true);
     try {
       const vehicleSummary = selectedVehicles.length > 0 ? selectedVehicles.join(', ') : form.vehicle_info;
@@ -218,6 +218,27 @@ export default function BookAppointment() {
                     </button>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {/* Vehicle Type */}
+          {form.service_type && !isQuoteOnly && (
+            <div>
+              <label className="block text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">VEHICLE TYPE <span className="text-gold">*</span></label>
+              <div className="grid grid-cols-2 gap-3">
+                {[{ id: 'sedan_coupe', label: 'Sedan / Coupe' }, { id: 'truck_suv', label: 'Truck / SUV' }].map(vt => (
+                  <button
+                    key={vt.id}
+                    type="button"
+                    onClick={() => setForm(f => ({ ...f, vehicle_type: vt.id }))}
+                    className={`py-3 border rounded-sm font-mono-tech text-xs tracking-widest transition-colors ${
+                      form.vehicle_type === vt.id ? 'border-gold bg-gold/10 text-gold' : 'border-vapor/10 text-vapor/50 hover:border-vapor/30 hover:text-vapor'
+                    }`}
+                  >
+                    {vt.label}
+                  </button>
+                ))}
               </div>
             </div>
           )}
@@ -357,7 +378,7 @@ export default function BookAppointment() {
           <div className="pt-2 space-y-4">
             <button
               type="submit"
-              disabled={loading || !form.service_type || !form.name || !form.phone || !form.address || (!isQuoteOnly && (!form.preferred_date || !form.preferred_time))}
+              disabled={loading || !form.service_type || !form.name || !form.phone || !form.address || (!isQuoteOnly && (!form.preferred_date || !form.preferred_time || !form.vehicle_type))}
               className="w-full flex items-center justify-center gap-3 bg-gold hover:bg-gold-light text-obsidian font-mono-tech text-sm tracking-widest py-4 rounded-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {loading
