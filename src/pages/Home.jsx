@@ -85,7 +85,7 @@ export default function Home() {
 
             <div className="flex flex-wrap gap-4 justify-center md:justify-start">
               <Link to="/pricing"
-                className="flex items-center gap-3 bg-vapor text-obsidian px-7 py-4 text-sm font-mono-tech tracking-widest hover:bg-gold transition-colors duration-300 rounded-sm">
+                className="flex items-center gap-3 border border-vapor/40 text-vapor px-7 py-4 text-sm font-mono-tech tracking-widest hover:border-vapor transition-colors duration-300 rounded-sm">
                 PRICING <ArrowRight size={14} />
               </Link>
               <Link to="/book"

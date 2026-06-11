@@ -78,7 +78,7 @@ export default function Pricing() {
 
       {/* ── PRICING GRID ─────────────────────────────── */}
       <section className="max-w-7xl mx-auto px-6 pb-24">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0.5 bg-gold/10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0.5 bg-vapor/5">
           {PRICING_SECTIONS.map((section) => (
             <div key={section.title} className="bg-obsidian p-8 border border-vapor/5">
               <div className="flex items-center gap-3 mb-1">
