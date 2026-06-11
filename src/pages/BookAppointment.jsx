@@ -256,6 +256,10 @@ export default function BookAppointment() {
   const today = new Date();
 
   const visibleServices = SERVICES.filter(s => !s.gold || isGold);
+  
+  // Determine if first selected vehicle's service is a consultation (for time slot header)
+  const firstSelectedService = selectedVehicles.length > 0 ? getVehicleService(selectedVehicles[0]) : null;
+  const isConsultation = firstSelectedService && CONSULTATION_IDS.includes(firstSelectedService);
 
   const selectClass = "w-full bg-asphalt border border-vapor/10 focus:border-gold/40 text-vapor px-4 py-3 text-sm font-mono-tech rounded-sm outline-none transition-colors appearance-none cursor-pointer";
 
