@@ -3,12 +3,20 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const isAuth = await base44.auth.isAuthenticated();
+    const user = await base44.auth.me();
+    if (!user) {
+      return Response.json({ success: false, error: 'Unauthorized.' }, { status: 401 });
+    }
 
     const { firstName, lastName, email, phone, source, tags } = await req.json();
 
     if (!email && !phone) {
       return Response.json({ success: false, error: 'Email or phone required.' }, { status: 400 });
+    }
+
+    // Ensure the contact being synced belongs to the authenticated user
+    if (email && email.toLowerCase() !== user.email.toLowerCase()) {
+      return Response.json({ success: false, error: 'Forbidden.' }, { status: 403 });
     }
 
     const GHL_API_KEY = Deno.env.get('GHL_API_KEY');
