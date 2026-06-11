@@ -22,6 +22,14 @@
       "type": "string",
       "description": "License plate number"
     },
+    "vehicle_type": {
+      "type": "string",
+      "enum": [
+        "sedan_coupe",
+        "truck_suv"
+      ],
+      "description": "Auto-classified vehicle type"
+    },
     "notes": {
       "type": "string",
       "description": "Any special notes about this vehicle"
