@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
 import GoldShimmer from '../components/vds/GoldShimmer';
+import GoldParticles from '../components/vds/GoldParticles';
 
 const STATS = [
   { value: '500+', label: 'VEHICLES DETAILED' },
@@ -69,6 +70,7 @@ export default function Home() {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/60 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-r from-obsidian/70 via-transparent to-transparent" />
+        <GoldParticles count={55} />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 pt-32 pb-16 md:pb-24 w-full">
           <div className="max-w-3xl mx-auto text-center md:text-left">
