@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { LogOut, Plus, Calendar, ChevronRight, Star, UserCog } from 'lucide-react';
+import { LogOut, Plus, Calendar, ChevronRight, Star, UserCog, ClipboardList } from 'lucide-react';
 import { format, startOfMonth } from 'date-fns';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
@@ -10,6 +10,7 @@ import UsageTracker from '../components/member/UsageTracker';
 import VehicleCard from '../components/member/VehicleCard';
 import AddVehicleForm from '../components/member/AddVehicleForm';
 import AccountDetailsForm from '../components/member/AccountDetailsForm';
+import AppointmentCard from '../components/member/AppointmentCard';
 
 const BOOKING_LINK = 'https://book.vdsmobile.com'; // Replace with your actual Gold member booking link
 
@@ -17,6 +18,7 @@ export default function MemberDashboard() {
   const [user, setUser] = useState(null);
   const [vehicles, setVehicles] = useState([]);
   const [records, setRecords] = useState([]);
+  const [appointments, setAppointments] = useState([]);
   const [showAddVehicle, setShowAddVehicle] = useState(false);
   const [showEditAccount, setShowEditAccount] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -34,12 +36,14 @@ export default function MemberDashboard() {
   }, []);
 
   const loadData = async () => {
-    const [v, r] = await Promise.all([
+    const [v, r, a] = await Promise.all([
       base44.entities.MemberVehicle.list(),
       base44.entities.ServiceRecord.list(),
+      base44.entities.Appointment.list(),
     ]);
     setVehicles(v);
     setRecords(r);
+    setAppointments(a.sort((x, y) => new Date(y.preferred_date) - new Date(x.preferred_date)));
   };
 
   const thisMonthRecords = records.filter(r => r.month_year === currentMonth);
@@ -114,6 +118,35 @@ export default function MemberDashboard() {
           >
             <Calendar size={13} /> SCHEDULE APPOINTMENT →
           </Link>
+        </div>
+
+        {/* Upcoming Appointments */}
+        <div className="mb-8">
+          <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40 mb-4">UPCOMING APPOINTMENTS</p>
+          {appointments.filter(a => a.status !== 'cancelled').length === 0 ? (
+            <div className="glass-panel border border-vapor/10 rounded-sm p-8 text-center">
+              <ClipboardList size={24} className="text-vapor/20 mx-auto mb-3" />
+              <p className="text-vapor/40 font-mono-tech text-xs">No upcoming appointments</p>
+              <Link
+                to="/book"
+                className="mt-4 inline-block border border-gold/40 text-gold px-5 py-2 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold hover:text-obsidian transition-colors"
+              >
+                BOOK NOW →
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {appointments
+                .filter(a => a.status !== 'cancelled')
+                .map(apt => (
+                  <AppointmentCard
+                    key={apt.id}
+                    appointment={apt}
+                    onRefresh={loadData}
+                  />
+                ))}
+            </div>
+          )}
         </div>
 
         {/* VDS Gold Quick Booking — Gold members only */}

@@ -1,0 +1,79 @@
+{
+  "name": "Appointment",
+  "type": "object",
+  "properties": {
+    "service_type": {
+      "type": "string",
+      "description": "Type of service booked"
+    },
+    "service_label": {
+      "type": "string",
+      "description": "Human-readable service name"
+    },
+    "vehicle_info": {
+      "type": "string",
+      "description": "Vehicle details (year make model)"
+    },
+    "preferred_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Requested service date"
+    },
+    "preferred_time": {
+      "type": "string",
+      "description": "Requested time slot"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "confirmed",
+        "completed",
+        "cancelled"
+      ],
+      "default": "pending",
+      "description": "Appointment status"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Customer notes or add-ons"
+    },
+    "customer_name": {
+      "type": "string",
+      "description": "Customer full name"
+    },
+    "customer_phone": {
+      "type": "string",
+      "description": "Customer phone number"
+    },
+    "customer_email": {
+      "type": "string",
+      "description": "Customer email"
+    },
+    "service_address": {
+      "type": "string",
+      "description": "Service location address"
+    }
+  },
+  "required": [
+    "service_type",
+    "preferred_date",
+    "preferred_time",
+    "customer_name",
+    "customer_phone"
+  ],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}
