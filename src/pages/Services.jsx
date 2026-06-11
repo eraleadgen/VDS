@@ -174,9 +174,9 @@ export default function Services() {
         </h2>
         <p className="text-vapor/50 mb-10">Call or text us. We'll assess your vehicle's needs and recommend the right service — no pressure, no upsells you don't need.</p>
         <div className="flex flex-wrap justify-center gap-4">
-          <a href="tel:+14043836915"
+          <a href="tel:+14704128986"
             className="bg-vapor text-obsidian px-8 py-4 text-sm font-mono-tech tracking-widest hover:bg-gold transition-colors duration-200 rounded-sm">
-            CALL (404) 383-6915
+            CALL (470) 412-8986
           </a>
           <Link to="/contact"
             className="border border-vapor/20 text-vapor px-8 py-4 text-sm font-mono-tech tracking-widest hover:border-vapor transition-colors duration-200 rounded-sm">
