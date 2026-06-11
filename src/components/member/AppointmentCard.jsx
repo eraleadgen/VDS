@@ -11,6 +11,8 @@ export default function AppointmentCard({ appointment, onRefresh }) {
   const handleCancel = async () => {
     setCancelling(true);
     try {
+      // Cancel in GHL first (sync), then update local status
+      await base44.functions.invoke('cancelAppointmentInGHL', { appointment_id: appointment.id });
       await base44.entities.Appointment.update(appointment.id, { status: 'cancelled' });
       await onRefresh();
     } catch (err) {
