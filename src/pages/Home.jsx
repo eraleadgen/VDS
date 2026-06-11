@@ -19,14 +19,14 @@ const SERVICES = [
     subtitle: 'Interior & Exterior Restoration',
     specs: ['Interior & Exterior Restoration', 'Odor & Stain Removal', 'Professional Products', 'Ceramic Sealant'],
     img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/c7357965d_FullDetail-CeramicSealant2.jpg',
-    path: '/services',
+    bookingId: 'full_detail',
   },
   {
     title: 'CERAMIC COATINGS',
     subtitle: 'Long-Term Paint Protection',
     specs: ['2–7 Year Coatings', 'Professional-Grade Coatings', 'Hydrophobic Surface Protection', 'UV & Chemical Resistance'],
     img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/3a80c18b3_ceramic-coating-being-professionally-applied-to-car-paint-for-long-term-protection.webp',
-    path: '/services',
+    bookingId: 'ceramic_coating',
     notInGold: true,
   },
   {
@@ -34,7 +34,7 @@ const SERVICES = [
     subtitle: 'Swirl & Scratch Removal',
     specs: ['Swirl Mark Elimination', 'Scratch & Buffer Trail Removal', 'Flawless Paint Quality', 'Coating Recommended'],
     img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/2e390daf5_ChatGPTImageFeb17202611_00_33PM.png',
-    path: '/services',
+    bookingId: 'paint_correction',
     notInGold: true,
   },
 ];
@@ -162,9 +162,9 @@ export default function Home() {
                   <div className="text-center">
                     {svc.notInGold ? (
                       <>
-                        <p className="text-lg font-grotesk font-bold text-vapor">PAINT CORRECTION</p>
+                        <p className="text-lg font-grotesk font-bold text-vapor">{svc.title}</p>
                         <p className="text-vapor/40 text-xs font-mono-tech mt-2">Not included in VDS Gold</p>
-                        <a href="sms:+14704128986" className="inline-block mt-4 text-xs font-mono-tech tracking-widest text-gold border border-gold/40 px-4 py-2 hover:bg-gold hover:text-obsidian transition-colors duration-200">TEXT FOR A QUOTE</a>
+                        <Link to="/book" state={{ preselect_service: svc.bookingId }} className="inline-block mt-4 text-xs font-mono-tech tracking-widest text-gold border border-gold/40 px-4 py-2 hover:bg-gold hover:text-obsidian transition-colors duration-200">BOOK NOW</Link>
                       </>
                     ) : (
                       <>
@@ -188,11 +188,13 @@ export default function Home() {
                   ))}
                 </ul>
                 <div className="flex gap-3">
-                  <a href="sms:+14704128986"
+                  <Link
+                    to="/book"
+                    state={{ preselect_service: svc.bookingId }}
                     className="flex-1 text-center py-3 text-xs font-mono-tech tracking-widest bg-vapor text-obsidian hover:bg-gold transition-colors duration-200 rounded-sm">
-                    TEXT FOR QUOTE
-                  </a>
-                  <Link to={svc.path}
+                    BOOK NOW
+                  </Link>
+                  <Link to="/services"
                     className="px-4 py-3 border border-vapor/20 text-vapor/50 hover:border-vapor hover:text-vapor transition-colors duration-200 rounded-sm">
                     <ArrowRight size={14} />
                   </Link>

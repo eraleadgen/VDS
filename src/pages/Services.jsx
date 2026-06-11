@@ -152,14 +152,18 @@ export default function Services() {
               </div>
 
               <div className="flex gap-3">
-                <Link to="/book"
+                <Link
+                  to="/book"
+                  state={{ preselect_service: svc.id === 'full-detail' ? 'full_detail' : svc.id === 'ceramic' ? 'ceramic_coating' : 'paint_correction' }}
                   className="flex-1 text-center py-3.5 bg-vapor text-obsidian font-mono-tech text-xs tracking-widest hover:bg-gold transition-colors duration-200 rounded-sm">
                   BOOK NOW
                 </Link>
-                <a href="sms:+14704128986"
+                <Link
+                  to="/book"
+                  state={{ preselect_service: svc.id === 'full-detail' ? 'full_detail' : svc.id === 'ceramic' ? 'ceramic_coating' : 'paint_correction' }}
                   className="px-6 py-3.5 border border-vapor/20 text-vapor/50 font-mono-tech text-xs tracking-widest hover:border-vapor hover:text-vapor transition-colors duration-200 rounded-sm">
-                  TEXT US
-                </a>
+                  GET QUOTE
+                </Link>
               </div>
             </div>
           </div>
