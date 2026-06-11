@@ -148,34 +148,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 2b. Create Appointment entity record
-    try {
-      const serviceLabels = {
-        exterior_detail: 'Exterior Detail',
-        interior_detail: 'Interior Detail',
-        full_detail: 'Full Interior + Exterior Detail',
-        vds_gold_exterior: 'VDS Gold — Exterior Detail',
-        vds_gold_full: 'VDS Gold — Full Detail',
-        ceramic_coating: 'Ceramic Coating',
-        paint_correction: 'Paint Correction',
-      };
-      await base44.entities.Appointment.create({
-        service_type,
-        service_label: serviceLabels[service_type] || service_type.replace(/_/g, ' ').toUpperCase(),
-        vehicle_info: vehicle_info || 'TBD',
-        preferred_date,
-        preferred_time,
-        status: 'pending',
-        notes: notes || '',
-        customer_name: name,
-        customer_phone: phone,
-        customer_email: email || '',
-        service_address: address,
-      });
-    } catch (err) {
-      console.error('Failed to create Appointment entity:', err.message);
-    }
-
     // 3. Create appointment if date/time + calendar are available
     if (contactId && calendarId && preferred_date && preferred_time) {
       const [timePart, meridiem] = preferred_time.split(' ');
@@ -227,11 +199,11 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 4. Create Appointment entity record for user dashboard access
+    // 3. Create Appointment entity record for user dashboard access
     try {
       const user = await base44.auth.me();
       if (user) {
-        const serviceLabelMap = {
+        const serviceLabels = {
           exterior_detail: 'Exterior Detail',
           interior_detail: 'Interior Detail',
           full_detail: 'Full Interior + Exterior Detail',
@@ -242,8 +214,8 @@ Deno.serve(async (req) => {
         };
         await base44.entities.Appointment.create({
           service_type,
-          service_label: serviceLabelMap[service_type] || service_type.replace(/_/g, ' ').toUpperCase(),
-          vehicle_info: vehicle_info || '',
+          service_label: serviceLabels[service_type] || service_type.replace(/_/g, ' ').toUpperCase(),
+          vehicle_info: vehicle_info || 'TBD',
           preferred_date,
           preferred_time,
           status: 'pending',
