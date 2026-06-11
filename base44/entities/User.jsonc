@@ -4,19 +4,23 @@
   "properties": {
     "role": {
       "type": "string",
-      "description": "The role of the user in the app",
       "enum": [
         "admin",
         "user"
-      ]
+      ],
+      "default": "user"
     },
     "is_gold_member": {
       "type": "boolean",
-      "description": "Whether this user has an active VDS Gold membership",
       "default": false
+    },
+    "phone": {
+      "type": "string",
+      "description": "Member phone number"
+    },
+    "address": {
+      "type": "string",
+      "description": "Primary service address"
     }
-  },
-  "required": [
-    "role"
-  ]
+  }
 }

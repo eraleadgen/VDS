@@ -11,6 +11,7 @@ export default function GoldSignup() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -105,6 +106,16 @@ export default function GoldSignup() {
                     required
                     className="w-full bg-asphalt border border-vapor/10 focus:border-gold/50 outline-none text-vapor px-4 py-3 text-sm font-mono-tech rounded-sm transition-colors duration-200"
                     placeholder="(404) 555-0000"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-mono-tech tracking-widest text-vapor/50 mb-2">SERVICE ADDRESS</label>
+                  <input
+                    type="text"
+                    value={address}
+                    onChange={e => setAddress(e.target.value)}
+                    className="w-full bg-asphalt border border-vapor/10 focus:border-gold/50 outline-none text-vapor px-4 py-3 text-sm font-mono-tech rounded-sm transition-colors duration-200"
+                    placeholder="123 Main St, Atlanta GA"
                   />
                 </div>
                 <div>

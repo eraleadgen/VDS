@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { LogOut, Plus, Calendar, ChevronRight, Star } from 'lucide-react';
+import { LogOut, Plus, Calendar, ChevronRight, Star, UserCog } from 'lucide-react';
 import { format, startOfMonth } from 'date-fns';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
@@ -9,6 +9,7 @@ import GoldShimmer from '../components/vds/GoldShimmer';
 import UsageTracker from '../components/member/UsageTracker';
 import VehicleCard from '../components/member/VehicleCard';
 import AddVehicleForm from '../components/member/AddVehicleForm';
+import AccountDetailsForm from '../components/member/AccountDetailsForm';
 
 const BOOKING_LINK = 'https://book.vdsmobile.com'; // Replace with your actual Gold member booking link
 
@@ -17,6 +18,7 @@ export default function MemberDashboard() {
   const [vehicles, setVehicles] = useState([]);
   const [records, setRecords] = useState([]);
   const [showAddVehicle, setShowAddVehicle] = useState(false);
+  const [showEditAccount, setShowEditAccount] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const currentMonth = format(new Date(), 'yyyy-MM');
@@ -58,6 +60,12 @@ export default function MemberDashboard() {
   const handleEditVehicle = async (id, formData) => {
     await base44.entities.MemberVehicle.update(id, formData);
     await loadData();
+  };
+
+  const handleAccountSaved = async () => {
+    const me = await base44.auth.me();
+    setUser(me);
+    setShowEditAccount(false);
   };
 
   const handleLogout = () => {
@@ -225,6 +233,38 @@ export default function MemberDashboard() {
             </div>
           </div>
         )}
+
+        {/* Account Details */}
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40">ACCOUNT DETAILS</p>
+            {!showEditAccount && (
+              <button
+                onClick={() => setShowEditAccount(true)}
+                className="flex items-center gap-2 text-xs font-mono-tech tracking-widest text-gold/60 hover:text-gold transition-colors border border-gold/20 hover:border-gold/40 px-4 py-2 rounded-sm"
+              >
+                <UserCog size={12} /> EDIT
+              </button>
+            )}
+          </div>
+          {showEditAccount ? (
+            <AccountDetailsForm user={user} onSaved={handleAccountSaved} onCancel={() => setShowEditAccount(false)} />
+          ) : (
+            <div className="glass-panel border border-vapor/10 rounded-sm p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {[
+                { label: 'NAME', value: user?.full_name },
+                { label: 'EMAIL', value: user?.email },
+                { label: 'PHONE', value: user?.phone },
+                { label: 'SERVICE ADDRESS', value: user?.address },
+              ].map(({ label, value }) => (
+                <div key={label}>
+                  <p className="text-xs font-mono-tech tracking-widest text-vapor/30 mb-1">{label}</p>
+                  <p className="text-vapor text-sm font-grotesk">{value || <span className="text-vapor/20">—</span>}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Vehicles */}
         <div>
