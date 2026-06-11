@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { ChevronLeft, ChevronRight, ArrowRight, CheckCircle, ChevronDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowRight, CheckCircle, ChevronDown, X } from 'lucide-react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isBefore, isToday, isSameDay } from 'date-fns';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
@@ -32,6 +32,7 @@ export default function BookAppointment() {
   const [isGold, setIsGold] = useState(false);
   const [vehicles, setVehicles] = useState([]);
   const [form, setForm] = useState(DEFAULT_FORM);
+  const [selectedVehicles, setSelectedVehicles] = useState([]);
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -76,13 +77,21 @@ export default function BookAppointment() {
     setForm(f => ({ ...f, preferred_date: format(day, 'yyyy-MM-dd'), preferred_time: '' }));
   };
 
+  const toggleVehicle = (label) => {
+    setSelectedVehicles(prev =>
+      prev.includes(label) ? prev.filter(v => v !== label) : [...prev, label]
+    );
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.service_type || !form.name || !form.phone || !form.address) return;
     if (!isQuoteOnly && (!form.preferred_date || !form.preferred_time)) return;
     setLoading(true);
+    const vehicleSummary = selectedVehicles.length > 0 ? selectedVehicles.join(', ') : form.vehicle_info;
     await base44.functions.invoke('submitBookingToGHL', {
       ...form,
+      vehicle_info: vehicleSummary,
       preferred_date: form.preferred_date || null,
       preferred_time: form.preferred_time || null,
     });
@@ -182,25 +191,28 @@ export default function BookAppointment() {
             </div>
           )}
 
-          {/* Vehicle Dropdown — only for logged-in users with saved vehicles */}
+          {/* Vehicle Multi-Select — only for logged-in users with saved vehicles */}
           {vehicles.length > 0 && (
             <div>
-              <label className="block text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">SELECT VEHICLE</label>
-              <div className="relative">
-                <select
-                  name="vehicle_info"
-                  value={form.vehicle_info}
-                  onChange={handleChange}
-                  className={selectClass}
-                >
-                  <option value="">Choose a vehicle (or type below)...</option>
-                  {vehicles.map(v => (
-                    <option key={v.id} value={`${v.year} ${v.make} ${v.model}${v.color ? ', ' + v.color : ''}`}>
-                      {v.year} {v.make} {v.model}{v.color ? ` — ${v.color}` : ''}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-vapor/40 pointer-events-none" />
+              <label className="block text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">SELECT VEHICLE(S)</label>
+              <div className="space-y-2">
+                {vehicles.map(v => {
+                  const label = `${v.year} ${v.make} ${v.model}${v.color ? ', ' + v.color : ''}`;
+                  const checked = selectedVehicles.includes(label);
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => toggleVehicle(label)}
+                      className={`w-full flex items-center justify-between px-5 py-3 border rounded-sm transition-colors text-left ${
+                        checked ? 'border-gold bg-gold/10' : 'border-vapor/10 hover:border-vapor/30'
+                      }`}
+                    >
+                      <span className="font-mono-tech text-sm text-vapor">{label}</span>
+                      {checked && <X size={13} className="text-gold shrink-0" />}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -312,19 +324,19 @@ export default function BookAppointment() {
 
           {/* Vehicle (manual) + Notes */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {vehicles.length === 0 && (
-              <div>
-                <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">VEHICLE</label>
-                <input
-                  name="vehicle_info"
-                  value={form.vehicle_info}
-                  onChange={handleChange}
-                  placeholder="2022 BMW M3, White"
-                  className="w-full bg-asphalt border border-vapor/10 focus:border-gold/40 text-vapor placeholder:text-vapor/20 px-4 py-3 text-sm font-mono-tech rounded-sm outline-none transition-colors"
-                />
-              </div>
-            )}
-            <div className={vehicles.length === 0 ? '' : 'sm:col-span-2'}>
+            <div>
+              <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">
+                {vehicles.length > 0 ? 'ADDITIONAL VEHICLE' : 'VEHICLE'}
+              </label>
+              <input
+                name="vehicle_info"
+                value={form.vehicle_info}
+                onChange={handleChange}
+                placeholder="2022 BMW M3, White"
+                className="w-full bg-asphalt border border-vapor/10 focus:border-gold/40 text-vapor placeholder:text-vapor/20 px-4 py-3 text-sm font-mono-tech rounded-sm outline-none transition-colors"
+              />
+            </div>
+            <div>
               <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">NOTES</label>
               <input
                 name="notes"
