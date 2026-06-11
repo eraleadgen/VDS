@@ -47,6 +47,14 @@ export default function Register() {
       if (result?.access_token) {
         base44.auth.setToken(result.access_token);
       }
+      // Sync new account to GHL CRM
+      await base44.functions.invoke('syncContactToGHL', {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email,
+        source: 'VDS Website Account Registration',
+        tags: ['website-signup'],
+      });
       window.location.href = "/";
     } catch (err) {
       setError(err.message || "Invalid verification code");

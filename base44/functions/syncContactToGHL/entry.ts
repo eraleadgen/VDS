@@ -3,25 +3,23 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    const isAuth = await base44.auth.isAuthenticated();
 
-    const { name, phone, email, address, service_type, vehicle_info, notes, preferred_date, preferred_time } = await req.json();
+    const { firstName, lastName, email, phone, source, tags } = await req.json();
 
-    if (!name || !phone || !address || !service_type) {
-      return Response.json({ success: false, error: 'Missing required fields.' }, { status: 400 });
+    if (!email && !phone) {
+      return Response.json({ success: false, error: 'Email or phone required.' }, { status: 400 });
     }
 
     const GHL_API_KEY = Deno.env.get('GHL_API_KEY');
     const GHL_LOCATION_ID = Deno.env.get('GHL_LOCATION_ID');
 
     if (!GHL_API_KEY || !GHL_LOCATION_ID) {
-      console.log('GHL secrets not configured. Booking request received:', { name, phone, email, address, service_type, vehicle_info, notes, preferred_date, preferred_time });
-      return Response.json({ success: true, message: 'Booking received (GHL not yet configured).' });
+      console.log('GHL secrets not configured. Contact sync received:', { firstName, lastName, email, phone });
+      return Response.json({ success: true, message: 'Contact received (GHL not yet configured).' });
     }
 
-    const firstName = name.split(' ')[0];
-    const lastName = name.split(' ').slice(1).join(' ') || '';
-
-    // 1. Search for existing contact by email to avoid duplicates
+    // 1. Search for existing contact by email
     let existingContactId = null;
     if (email) {
       const searchRes = await fetch(
@@ -41,20 +39,12 @@ Deno.serve(async (req) => {
 
     const contactPayload = {
       locationId: GHL_LOCATION_ID,
-      firstName,
-      lastName,
-      phone,
+      firstName: firstName || '',
+      lastName: lastName || '',
       email: email || undefined,
-      customFields: [
-        { key: 'service_type', field_value: service_type },
-        { key: 'vehicle_info', field_value: vehicle_info || '' },
-        { key: 'service_address', field_value: address },
-        { key: 'booking_notes', field_value: notes || '' },
-        { key: 'preferred_date', field_value: preferred_date || '' },
-        { key: 'preferred_time', field_value: preferred_time || '' },
-      ],
-      tags: ['website-booking', service_type],
-      source: 'VDS Website Booking Form',
+      phone: phone || undefined,
+      tags: tags || ['website-signup'],
+      source: source || 'VDS Website Account Creation',
     };
 
     let contactId;
@@ -95,12 +85,9 @@ Deno.serve(async (req) => {
       contactId = createData.contact?.id;
     }
 
-    // 2. Add a booking note to the contact
+    // 2. Add a note
     if (contactId) {
-      const appointmentLine = preferred_date && preferred_time
-        ? `Appointment: ${preferred_date} at ${preferred_time}`
-        : 'Appointment: Quote requested — no date selected';
-      const noteBody = `BOOKING REQUEST\nService: ${service_type}\n${appointmentLine}\nVehicle: ${vehicle_info || 'N/A'}\nService Address: ${address}\nNotes: ${notes || 'None'}`;
+      const noteBody = `NEW ACCOUNT CREATED\nName: ${firstName} ${lastName}\nEmail: ${email || 'N/A'}\nPhone: ${phone || 'N/A'}\nSource: ${source || 'VDS Website'}`;
       await fetch(`https://services.leadconnectorhq.com/contacts/${contactId}/notes`, {
         method: 'POST',
         headers: {
@@ -115,7 +102,7 @@ Deno.serve(async (req) => {
     return Response.json({ success: true, contactId });
 
   } catch (error) {
-    console.error('submitBookingToGHL error:', error);
+    console.error('syncContactToGHL error:', error);
     return Response.json({ success: false, error: error.message }, { status: 500 });
   }
 });

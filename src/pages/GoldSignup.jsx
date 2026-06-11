@@ -46,6 +46,15 @@ export default function GoldSignup() {
     setLoading(true);
     const res = await base44.auth.verifyOtp({ email, otpCode: otp });
     base44.auth.setToken(res.access_token);
+    // Sync new member to GHL CRM
+    await base44.functions.invoke('syncContactToGHL', {
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email,
+      phone,
+      source: 'VDS Website Member Portal Signup',
+      tags: ['website-signup', 'member-portal'],
+    });
     window.location.href = '/member-dashboard';
   };
 
