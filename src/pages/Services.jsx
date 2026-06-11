@@ -19,7 +19,7 @@ const SERVICES = [
       'Door Jambs Cleaned',
       'Odor & Stain Treatment',
       'Professional Products Applied',
-      'Ceramic Sealant',
+      'Ceramic Sealant Add-On Available',
     ],
     img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/c7357965d_FullDetail-CeramicSealant2.jpg',
     gold: true,
@@ -31,7 +31,7 @@ const SERVICES = [
     description: 'Professional-grade ceramic coatings from 3-month maintenance coatings to 7-year permanent protection — engineered for luxury vehicles.',
     specs: [
       'Professional-Grade Products',
-      '3-Month to 7-Year Options',
+      '2-Year to 7-Year Coatings',
       'Hydrophobic Surface Technology',
       'UV & Chemical Resistance',
       'High-Gloss Finish Enhancement',
