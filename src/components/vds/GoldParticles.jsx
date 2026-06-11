@@ -55,25 +55,8 @@ export default function GoldParticles({ count = 55 }) {
       ctx.fillStyle = f.color;
       ctx.beginPath();
 
-      if (f.shape === 0) {
-        // Rhombus / diamond
-        const s = f.size;
-        ctx.moveTo(0, -s);
-        ctx.lineTo(s * 0.5, 0);
-        ctx.lineTo(0, s);
-        ctx.lineTo(-s * 0.5, 0);
-      } else if (f.shape === 1) {
-        // Elongated thin flake
-        const s = f.size;
-        ctx.moveTo(0, -s * 1.4);
-        ctx.lineTo(s * 0.3, 0);
-        ctx.lineTo(0, s * 1.4);
-        ctx.lineTo(-s * 0.3, 0);
-      } else {
-        // Tiny irregular square
-        const s = f.size * 0.6;
-        ctx.rect(-s / 2, -s / 2, s, s);
-      }
+      // Circle
+      ctx.arc(0, 0, f.size, 0, Math.PI * 2);
 
       ctx.closePath();
       ctx.fill();
