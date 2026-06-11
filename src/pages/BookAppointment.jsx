@@ -54,7 +54,8 @@ export default function BookAppointment() {
   const [selectedVehicles, setSelectedVehicles] = useState([]);
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(null);
-  const [addOns, setAddOns] = useState([]);
+  // addOns: { [vehicleLabel]: [addonId, ...] } — keyed by vehicle label, or '__global' for no-vehicle / single-vehicle
+  const [addOns, setAddOns] = useState({});
   const [showAddVehicle, setShowAddVehicle] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -89,25 +90,47 @@ export default function BookAppointment() {
     setShowAddVehicle(false);
   };
 
-  const toggleAddOn = (id) => setAddOns(prev => prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]);
+  const getVehicleAddOns = (label) => addOns[label] || [];
+  const toggleAddOn = (vehicleLabel, id) => {
+    setAddOns(prev => {
+      const current = prev[vehicleLabel] || [];
+      const updated = current.includes(id) ? current.filter(a => a !== id) : [...current, id];
+      return { ...prev, [vehicleLabel]: updated };
+    });
+  };
+  const addOnCostForVehicle = (label) =>
+    getVehicleAddOns(label).reduce((sum, id) => {
+      const ao = ADD_ONS.find(a => a.id === id);
+      return sum + (ao ? parseInt(ao.price.replace(/\D/g, '')) : 0);
+    }, 0);
 
   const autoQuote = getAutoQuote(form.service_type, form.vehicle_type);
-  const addOnTotal = addOns.reduce((sum, id) => {
-    const ao = ADD_ONS.find(a => a.id === id);
-    return sum + (ao ? parseInt(ao.price.replace(/\D/g, '')) : 0);
-  }, 0);
 
-  // Multi-vehicle total: sum base price for each selected saved vehicle
-  const multiVehicleTotal = (() => {
-    if (!form.service_type || isQuoteOnly || selectedVehicles.length < 2) return null;
+  // Determine active vehicle keys for add-ons and totals
+  // If user has selected saved vehicles, use those; otherwise use '__global'
+  const activeVehicleKeys = selectedVehicles.length > 0 ? selectedVehicles : ['__global'];
+
+  // Total add-ons across all active vehicles
+  const addOnTotal = activeVehicleKeys.reduce((sum, key) => sum + addOnCostForVehicle(key), 0);
+
+  // Total estimate: sum base price per vehicle + their add-ons
+  const estimatedTotal = (() => {
+    if (!form.service_type || isQuoteOnly) return null;
+    if (selectedVehicles.length === 0) {
+      // No saved vehicles selected — use single vehicle type
+      if (!form.vehicle_type) return null;
+      const base = PRICE_MAP[form.service_type]?.[form.vehicle_type];
+      if (!base) return null;
+      return parseInt(base.replace(/\D/g, '')) + addOnCostForVehicle('__global');
+    }
     const prices = selectedVehicles.map(label => {
       const v = vehicles.find(veh => `${veh.year} ${veh.make} ${veh.model}${veh.color ? ', ' + veh.color : ''}` === label);
-      const vType = v?.vehicle_type;
-      const p = PRICE_MAP[form.service_type]?.[vType];
-      return p ? parseInt(p.replace(/\D/g, '')) : null;
+      const base = PRICE_MAP[form.service_type]?.[v?.vehicle_type];
+      if (!base) return null;
+      return parseInt(base.replace(/\D/g, '')) + addOnCostForVehicle(label);
     });
     if (prices.some(p => p === null)) return null;
-    return prices.reduce((a, b) => a + b, 0) + addOnTotal;
+    return prices.reduce((a, b) => a + b, 0);
   })();
 
   const handleChange = (e) => {
@@ -138,14 +161,19 @@ export default function BookAppointment() {
     setLoading(true);
     try {
       const vehicleSummary = selectedVehicles.length > 0 ? selectedVehicles.join(', ') : form.vehicle_info;
-      const addOnLabels = addOns.map(id => ADD_ONS.find(a => a.id === id)?.label).filter(Boolean).join(', ');
-      const quoteNote = autoQuote
-        ? `Estimated Quote: ${autoQuote}${addOnTotal > 0 ? ` + $${addOnTotal} add-ons = ${autoQuote.replace('+','').trim()} + $${addOnTotal}` : ''}`
-        : '';
+      // Build per-vehicle add-on summary
+      const addOnSummaryParts = activeVehicleKeys.map(key => {
+        const labels = getVehicleAddOns(key).map(id => ADD_ONS.find(a => a.id === id)?.label).filter(Boolean);
+        if (!labels.length) return null;
+        const prefix = selectedVehicles.length > 1 ? `${key}: ` : '';
+        return `${prefix}${labels.join(', ')}`;
+      }).filter(Boolean);
+      const addOnNote = addOnSummaryParts.length ? `Add-ons: ${addOnSummaryParts.join(' | ')}` : '';
+      const quoteNote = estimatedTotal != null ? `Estimated Total: $${estimatedTotal}+` : '';
       await base44.functions.invoke('submitBookingToGHL', {
         ...form,
         vehicle_info: vehicleSummary,
-        notes: [quoteNote, form.notes, addOnLabels ? `Add-ons: ${addOnLabels}` : ''].filter(Boolean).join(' | '),
+        notes: [quoteNote, form.notes, addOnNote].filter(Boolean).join(' | '),
         preferred_date: form.preferred_date || null,
         preferred_time: form.preferred_time || null,
       });
@@ -336,20 +364,18 @@ export default function BookAppointment() {
             </div>
           )}
 
-          {/* Auto-quote display */}
-          {(multiVehicleTotal || autoQuote) && (
+          {/* Estimated total display */}
+          {estimatedTotal != null && (
             <div className="flex items-center justify-between border border-gold/20 bg-gold/5 rounded-sm px-5 py-4">
               <div>
                 <p className="text-xs font-mono-tech tracking-widest text-gold mb-1">ESTIMATED TOTAL</p>
                 <p className="text-vapor/50 font-mono-tech text-xs">
-                  {multiVehicleTotal
+                  {selectedVehicles.length > 1
                     ? `${selectedVehicles.length} vehicles${addOnTotal > 0 ? ` + $${addOnTotal} add-ons` : ''}. Final quote confirmed before service.`
-                    : 'Based on service + vehicle type. Final quote confirmed before service.'}
+                    : `Based on service + vehicle type${addOnTotal > 0 ? ` + $${addOnTotal} add-ons` : ''}. Final quote confirmed before service.`}
                 </p>
               </div>
-              <p className="text-2xl font-grotesk font-bold text-gold shrink-0 ml-4">
-                {multiVehicleTotal ? `$${multiVehicleTotal}+` : autoQuote}
-              </p>
+              <p className="text-2xl font-grotesk font-bold text-gold shrink-0 ml-4">${estimatedTotal}+</p>
             </div>
           )}
 
@@ -357,30 +383,42 @@ export default function BookAppointment() {
           {form.service_type && !isQuoteOnly && (
             <div>
               <label className="block text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">ADD-ON SERVICES <span className="text-vapor/25">(OPTIONAL)</span></label>
-              <div className="space-y-2">
-                {ADD_ONS.map(ao => {
-                  const active = addOns.includes(ao.id);
-                  return (
-                    <button
-                      key={ao.id}
-                      type="button"
-                      onClick={() => toggleAddOn(ao.id)}
-                      className={`w-full flex items-center justify-between px-5 py-3 border rounded-sm transition-colors text-left ${
-                        active ? 'border-gold bg-gold/10' : 'border-vapor/10 hover:border-vapor/30'
-                      }`}
-                    >
-                      <span className="font-mono-tech text-sm text-vapor">{ao.label}</span>
-                      <div className="flex items-center gap-3">
-                        <span className={`font-mono-tech text-sm font-bold ${active ? 'text-gold' : 'text-vapor/40'}`}>{ao.price}</span>
-                        {active && <X size={13} className="text-gold shrink-0" />}
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-              {addOns.length > 0 && (
-                <p className="text-right text-xs font-mono-tech text-gold/60 mt-2 tracking-widest">
-                  ADD-ONS: +${addOnTotal}
+              {activeVehicleKeys.map(vehicleKey => (
+                <div key={vehicleKey} className="mb-4">
+                  {selectedVehicles.length > 1 && (
+                    <p className="text-xs font-mono-tech text-vapor/30 tracking-widest mb-2">{vehicleKey}</p>
+                  )}
+                  <div className="space-y-2">
+                    {ADD_ONS.map(ao => {
+                      const active = getVehicleAddOns(vehicleKey).includes(ao.id);
+                      return (
+                        <button
+                          key={ao.id}
+                          type="button"
+                          onClick={() => toggleAddOn(vehicleKey, ao.id)}
+                          className={`w-full flex items-center justify-between px-5 py-3 border rounded-sm transition-colors text-left ${
+                            active ? 'border-gold bg-gold/10' : 'border-vapor/10 hover:border-vapor/30'
+                          }`}
+                        >
+                          <span className="font-mono-tech text-sm text-vapor">{ao.label}</span>
+                          <div className="flex items-center gap-3">
+                            <span className={`font-mono-tech text-sm font-bold ${active ? 'text-gold' : 'text-vapor/40'}`}>{ao.price}</span>
+                            {active && <X size={13} className="text-gold shrink-0" />}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {addOnCostForVehicle(vehicleKey) > 0 && selectedVehicles.length > 1 && (
+                    <p className="text-right text-xs font-mono-tech text-gold/60 mt-1 tracking-widest">
+                      +${addOnCostForVehicle(vehicleKey)}
+                    </p>
+                  )}
+                </div>
+              ))}
+              {addOnTotal > 0 && (
+                <p className="text-right text-xs font-mono-tech text-gold/60 mt-1 tracking-widest border-t border-gold/10 pt-2">
+                  TOTAL ADD-ONS: +${addOnTotal}
                 </p>
               )}
             </div>
