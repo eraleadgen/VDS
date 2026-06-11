@@ -36,7 +36,8 @@ const PRICING_SECTIONS = [
     title: 'CERAMIC COATINGS',
     subtitle: 'Long-Term Paint Protection',
     rows: [
-      { label: '3 Month Ceramic Sealant', price: '$50' },
+      { label: '2 Year Ceramic Coating', price: 'Quote Only' },
+      { label: '3 Year Ceramic Coating', price: 'Quote Only' },
       { label: '5 Year Ceramic Coating', price: '$1,300+' },
       { label: '7 Year Ceramic Coating', price: '$1,500+' },
     ],
@@ -54,6 +55,7 @@ const PRICING_SECTIONS = [
     title: 'ADD-ON SERVICES',
     subtitle: 'Optional Enhancements',
     rows: [
+      { label: 'Ceramic Sealant (3 Month)', price: '$50' },
       { label: 'Engine Bay Detail', price: '$50' },
       { label: 'Headlight Restoration', price: '$100' },
     ],
