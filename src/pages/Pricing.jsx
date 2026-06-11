@@ -135,11 +135,11 @@ export default function Pricing() {
       {/* ── CTA ──────────────────────────────────────── */}
       <section className="py-24 text-center max-w-2xl mx-auto px-6">
         <h2 className="text-3xl font-grotesk font-bold text-vapor mb-4">READY TO BOOK?</h2>
-        <p className="text-vapor/50 mb-10 font-mono-tech text-sm">Text or call us for a custom quote. We'll confirm pricing before any service begins.</p>
-        <a href="sms:+14704128986"
-          className="inline-flex items-center gap-3 bg-vapor text-obsidian px-10 py-4 text-sm font-mono-tech tracking-widest hover:bg-gold transition-colors duration-300 rounded-sm">
-          TEXT FOR A QUOTE <ArrowRight size={14} />
-        </a>
+        <p className="text-vapor/50 mb-10 font-mono-tech text-sm">Book your appointment online. Final quote confirmed before service begins.</p>
+        <Link to="/book"
+          className="inline-flex items-center gap-3 border border-gold bg-gold text-obsidian px-10 py-4 text-sm font-mono-tech tracking-widest hover:bg-gold-light transition-colors duration-300 rounded-sm">
+          BOOK NOW <ArrowRight size={14} />
+        </Link>
       </section>
 
       <Footer />
