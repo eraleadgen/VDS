@@ -113,6 +113,7 @@ export default function AppointmentCard({ appointment, onRefresh }) {
           )}
           <Link
             to="/book"
+            state={{ preselect_service: appointment.service_type }}
             className="ml-auto text-xs font-mono-tech tracking-widest opacity-60 hover:opacity-100 transition-colors"
           >
             RESCHEDULE →
@@ -124,6 +125,7 @@ export default function AppointmentCard({ appointment, onRefresh }) {
         <div className="pt-3 border-t border-current border-opacity-20">
           <Link
             to="/book"
+            state={{ preselect_service: appointment.service_type }}
             className="text-xs font-mono-tech tracking-widest opacity-60 hover:opacity-100 transition-colors"
           >
             BOOK NEW APPOINTMENT →
