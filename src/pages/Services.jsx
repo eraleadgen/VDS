@@ -152,10 +152,10 @@ export default function Services() {
               </div>
 
               <div className="flex gap-3">
-                <a href="tel:+14043836915"
+                <Link to="/book"
                   className="flex-1 text-center py-3.5 bg-vapor text-obsidian font-mono-tech text-xs tracking-widest hover:bg-gold transition-colors duration-200 rounded-sm">
-                  REQUEST QUOTE
-                </a>
+                  BOOK NOW
+                </Link>
                 <a href="sms:+14704128986"
                   className="px-6 py-3.5 border border-vapor/20 text-vapor/50 font-mono-tech text-xs tracking-widest hover:border-vapor hover:text-vapor transition-colors duration-200 rounded-sm">
                   TEXT US

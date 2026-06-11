@@ -59,25 +59,13 @@ export default function GoldSignup() {
       <div className="flex-1 flex items-center justify-center px-6 pt-32 pb-16">
         <div className="w-full max-w-md">
           <div className="text-center mb-10">
-            <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">VDS GOLD MEMBERSHIP</p>
+            <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">MEMBER PORTAL</p>
             <h1 className="text-4xl font-grotesk font-bold text-vapor mb-3">
               CREATE YOUR <GoldShimmer>ACCOUNT</GoldShimmer>
             </h1>
             <p className="text-vapor/50 text-sm font-mono-tech">
               Set up your member portal to manage vehicles &amp; schedule services.
             </p>
-          </div>
-
-          {/* Includes reminder */}
-          <div className="border border-gold/20 bg-gold/5 rounded-sm p-4 mb-6">
-            <p className="text-xs font-mono-tech text-gold/70 tracking-widest mb-3">YOUR MEMBERSHIP INCLUDES</p>
-            <ul className="space-y-1.5">
-              {['Unlimited Exterior Details / Month', '1× Monthly Interior Deep Clean', 'Ceramic Sealant with Every Detail', 'Priority Scheduling'].map(item => (
-                <li key={item} className="flex items-center gap-2 text-xs font-mono-tech text-vapor/60">
-                  <Check size={11} className="text-gold shrink-0" /> {item}
-                </li>
-              ))}
-            </ul>
           </div>
 
           <div className="glass-panel border border-gold/15 p-8 rounded-sm">
