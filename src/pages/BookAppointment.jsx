@@ -59,6 +59,8 @@ export default function BookAppointment() {
   const [showAddVehicle, setShowAddVehicle] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [bookedSlots, setBookedSlots] = useState([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -160,9 +162,25 @@ export default function BookAppointment() {
     }
   };
 
-  const handleDayClick = (day) => {
+  const handleDayClick = async (day) => {
     setSelectedDay(day);
     setForm(f => ({ ...f, preferred_date: format(day, 'yyyy-MM-dd'), preferred_time: '' }));
+    setBookedSlots([]);
+    if (form.service_type && derivedVehicleType) {
+      setLoadingSlots(true);
+      try {
+        const res = await base44.functions.invoke('getCalendarAvailability', {
+          service_type: form.service_type,
+          vehicle_type: derivedVehicleType,
+          date: format(day, 'yyyy-MM-dd'),
+        });
+        setBookedSlots(res.data?.bookedSlots || []);
+      } catch (err) {
+        console.error('Availability fetch error:', err);
+      } finally {
+        setLoadingSlots(false);
+      }
+    }
   };
 
   const toggleVehicle = (label) => {
@@ -482,22 +500,34 @@ export default function BookAppointment() {
               <p className="text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">
                 SELECT TIME — {format(selectedDay, 'EEEE, MMMM d').toUpperCase()} <span className="text-gold">*</span>
               </p>
-              <div className="grid grid-cols-3 gap-2">
-                {TIME_SLOTS.map(slot => (
-                  <button
-                    key={slot}
-                    type="button"
-                    onClick={() => setForm(f => ({ ...f, preferred_time: slot }))}
-                    className={`py-3 border rounded-sm font-mono-tech text-xs tracking-widest transition-colors ${
-                      form.preferred_time === slot
-                        ? 'border-gold bg-gold/10 text-gold'
-                        : 'border-vapor/10 text-vapor/50 hover:border-vapor/30 hover:text-vapor'
-                    }`}
-                  >
-                    {slot}
-                  </button>
-                ))}
-              </div>
+              {loadingSlots ? (
+                <div className="flex items-center gap-2 text-vapor/40 font-mono-tech text-xs py-4">
+                  <Loader2 size={13} className="animate-spin" /> CHECKING AVAILABILITY...
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-2">
+                  {TIME_SLOTS.map(slot => {
+                    const isBooked = bookedSlots.some(b => b.toLowerCase().replace(/\s/g, '') === slot.toLowerCase().replace(/\s/g, ''));
+                    return (
+                      <button
+                        key={slot}
+                        type="button"
+                        disabled={isBooked}
+                        onClick={() => !isBooked && setForm(f => ({ ...f, preferred_time: slot }))}
+                        className={`py-3 border rounded-sm font-mono-tech text-xs tracking-widest transition-colors ${
+                          isBooked
+                            ? 'border-vapor/5 text-vapor/20 cursor-not-allowed line-through'
+                            : form.preferred_time === slot
+                              ? 'border-gold bg-gold/10 text-gold'
+                              : 'border-vapor/10 text-vapor/50 hover:border-vapor/30 hover:text-vapor'
+                        }`}
+                      >
+                        {slot}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
 
