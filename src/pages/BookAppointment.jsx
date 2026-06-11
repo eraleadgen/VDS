@@ -24,16 +24,6 @@ const ADD_ONS = [
   { id: 'headlight_restoration', label: 'Headlight Restoration', price: '$100' },
 ];
 
-const SERVICE_LABELS = {
-  exterior_detail: 'Exterior Detail',
-  interior_detail: 'Interior Detail',
-  full_detail: 'Full Interior + Exterior Detail',
-  vds_gold_exterior: 'VDS Gold — Exterior Detail',
-  vds_gold_full: 'VDS Gold — Full Detail',
-  ceramic_coating: 'Ceramic Coating',
-  paint_correction: 'Paint Correction',
-};
-
 // Pricing map: service_id → { sedan_coupe, truck_suv }
 const PRICE_MAP = {
   exterior_detail:  { sedan_coupe: '$100+', truck_suv: '$115+' },
@@ -48,6 +38,16 @@ function getAutoQuote(serviceId, vehicleType) {
 
 const TIME_SLOTS = ['8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM'];
 const CONSULTATION_IDS = ['ceramic_coating', 'paint_correction'];
+
+const SERVICE_LABELS = {
+  exterior_detail: 'Exterior Detail',
+  interior_detail: 'Interior Detail',
+  full_detail: 'Full Interior + Exterior Detail',
+  vds_gold_exterior: 'VDS Gold — Exterior Detail',
+  vds_gold_full: 'VDS Gold — Full Detail',
+  ceramic_coating: 'Ceramic Coating',
+  paint_correction: 'Paint Correction',
+};
 
 const DEFAULT_FORM = {
   name: '', phone: '', email: '', address: '',
@@ -95,8 +95,6 @@ export default function BookAppointment() {
       setForm(f => ({ ...f, service_type: location.state.preselect_service }));
     }
   }, [location.state]);
-
-  const isConsultation = CONSULTATION_IDS.includes(form.service_type);
 
   const handleAddVehicleSave = async (vehicleForm) => {
     const saved = await base44.entities.MemberVehicle.create(vehicleForm);
@@ -178,22 +176,27 @@ export default function BookAppointment() {
     setSelectedDay(day);
     setForm(f => ({ ...f, preferred_date: format(day, 'yyyy-MM-dd'), preferred_time: '' }));
     setBookedSlots([]);
-    if (form.service_type) {
-      setLoadingSlots(true);
-      const vtForAvailability = CONSULTATION_IDS.includes(form.service_type)
-        ? (isGold ? 'gold' : 'standard')
-        : derivedVehicleType;
-      try {
-        const res = await base44.functions.invoke('getCalendarAvailability', {
-          service_type: form.service_type,
-          vehicle_type: vtForAvailability,
-          date: format(day, 'yyyy-MM-dd'),
-        });
-        setBookedSlots(res.data?.bookedSlots || []);
-      } catch (err) {
-        console.error('Availability fetch error:', err);
-      } finally {
-        setLoadingSlots(false);
+    // Use the first selected vehicle's service for availability check
+    if (selectedVehicles.length > 0) {
+      const firstService = getVehicleService(selectedVehicles[0]);
+      if (firstService) {
+        setLoadingSlots(true);
+        const isConsultation = CONSULTATION_IDS.includes(firstService);
+        const vtForAvailability = isConsultation
+          ? (isGold ? 'gold' : 'standard')
+          : derivedVehicleType;
+        try {
+          const res = await base44.functions.invoke('getCalendarAvailability', {
+            service_type: firstService,
+            vehicle_type: vtForAvailability,
+            date: format(day, 'yyyy-MM-dd'),
+          });
+          setBookedSlots(res.data?.bookedSlots || []);
+        } catch (err) {
+          console.error('Availability fetch error:', err);
+        } finally {
+          setLoadingSlots(false);
+        }
       }
     }
   };
@@ -222,6 +225,9 @@ export default function BookAppointment() {
         return `${label} — ${SERVICE_LABELS[service] || service}${addons.length ? ` + ${addons.join(', ')}` : ''}`;
       });
       const quoteNote = estimatedTotal != null ? `Estimated Total: $${estimatedTotal}+` : '';
+      // Use first vehicle's service to determine if this is a consultation booking
+      const firstService = getVehicleService(selectedVehicles[0]);
+      const isConsultation = CONSULTATION_IDS.includes(firstService);
       const submitVehicleType = isConsultation
         ? (isGold ? 'gold' : 'standard')
         : (derivedVehicleType || form.vehicle_type);
@@ -261,12 +267,10 @@ export default function BookAppointment() {
           <div className="text-center max-w-md">
             <CheckCircle size={48} className="text-gold mx-auto mb-6" />
             <h2 className="text-3xl font-grotesk font-bold text-vapor mb-3">
-              {isConsultation ? 'Consultation Booked!' : 'Appointment Requested!'}
+              Appointment Requested!
             </h2>
             <p className="text-vapor/50 font-mono-tech text-sm leading-relaxed mb-8">
-              {isConsultation
-                ? `Your 15-min consultation is set for ${format(new Date(form.preferred_date), 'MMMM d, yyyy')} at ${form.preferred_time}. We'll confirm shortly and provide a custom quote.`
-                : `Your appointment for ${format(new Date(form.preferred_date), 'MMMM d, yyyy')} at ${form.preferred_time} has been submitted. We'll confirm shortly.`}
+              Your appointment for {format(new Date(form.preferred_date), 'MMMM d, yyyy')} at {form.preferred_time} has been submitted. We'll confirm shortly.
             </p>
             <div className="flex flex-col gap-3">
               <Link
@@ -333,41 +337,6 @@ export default function BookAppointment() {
         )}
 
         {user && <form onSubmit={handleSubmit} className="space-y-8">
-
-          {/* Service Dropdown */}
-          <div>
-            <label className="block text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">SELECT SERVICE <span className="text-gold">*</span></label>
-            <div className="relative">
-              <select
-                name="service_type"
-                value={form.service_type}
-                onChange={handleChange}
-                required
-                className={selectClass}
-              >
-                <option value="" disabled>Choose a service...</option>
-                {visibleServices.map(s => {
-                  const suffix = s.quoteOnly ? ' — Quote Only' : s.gold ? ' — Member Only' : '';
-                  return (
-                    <option key={s.id} value={s.id}>
-                      {s.label}{suffix}
-                    </option>
-                  );
-                })}
-              </select>
-              <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-vapor/40 pointer-events-none" />
-            </div>
-          </div>
-
-          {/* Consultation notice */}
-          {isConsultation && (
-            <div className="border border-gold/20 bg-gold/5 rounded-sm px-5 py-4">
-              <p className="text-gold font-mono-tech text-xs tracking-widest mb-1">FREE 15-MIN CONSULTATION</p>
-              <p className="text-vapor/50 font-mono-tech text-xs leading-relaxed">
-                Ceramic coatings and paint correction are priced based on your vehicle's condition and size. Book a free 15-minute consultation — we'll assess your vehicle and provide a custom quote on the spot.
-              </p>
-            </div>
-          )}
 
           {/* Vehicle Section */}
           {(
@@ -485,12 +454,14 @@ export default function BookAppointment() {
           )}
 
           {/* Add-Ons */}
-          {selectedVehicles.length > 0 && (
+          {selectedVehicles.length > 0 && selectedVehicles.some(label => getVehicleService(label)) && (
             <div>
               <label className="block text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">ADD-ON SERVICES <span className="text-vapor/25">(OPTIONAL)</span></label>
               {selectedVehicles.map(vehicleKey => {
                 const vehicleService = getVehicleService(vehicleKey);
                 const isInteriorOnly = vehicleService === 'interior_detail';
+                const isVehicleConsultation = CONSULTATION_IDS.includes(vehicleService);
+                if (!vehicleService || isVehicleConsultation) return null;
                 return (
                   <div key={vehicleKey} className="mb-4">
                     {selectedVehicles.length > 1 && (
@@ -541,7 +512,7 @@ export default function BookAppointment() {
           )}
 
           {/* Calendar */}
-          {form.service_type && (
+          {selectedVehicles.length > 0 && selectedVehicles.some(label => getVehicleService(label)) && (
             <div>
               <p className="text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">SELECT DATE <span className="text-gold">*</span></p>
               <div className="glass-panel border border-vapor/10 rounded-sm p-5">
@@ -673,16 +644,16 @@ export default function BookAppointment() {
           <div className="pt-2 space-y-4">
             <button
               type="submit"
-              disabled={loading || !form.name || !form.phone || !form.address || !form.preferred_date || !form.preferred_time || selectedVehicles.length === 0}
+              disabled={loading || !form.name || !form.phone || !form.address || !form.preferred_date || !form.preferred_time || selectedVehicles.length === 0 || !selectedVehicles.every(v => getVehicleService(v))}
               className="w-full flex items-center justify-center gap-3 bg-gold hover:bg-gold-light text-obsidian font-mono-tech text-sm tracking-widest py-4 rounded-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {loading
                 ? <><div className="w-4 h-4 border-2 border-obsidian/30 border-t-obsidian rounded-full animate-spin" /><span>SUBMITTING...</span></>
-                : <><span>CONFIRM APPOINTMENT</span><ArrowRight size={14} /></>
+                : <><span>CONFIRM BOOKING</span><ArrowRight size={14} /></>
               }
             </button>
             <p className="text-center text-vapor/25 text-xs font-mono-tech">
-              {isConsultation ? "Free 15-min consultation · We'll confirm shortly · Metro Atlanta, GA" : "We'll send a confirmation shortly · Metro Atlanta, GA"}
+              We'll confirm shortly · Metro Atlanta, GA
             </p>
           </div>
 
