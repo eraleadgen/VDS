@@ -37,7 +37,7 @@ function getAutoQuote(serviceId, vehicleType) {
 }
 
 const TIME_SLOTS = ['8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM'];
-const QUOTE_ONLY_IDS = ['ceramic_coating', 'paint_correction'];
+const CONSULTATION_IDS = ['ceramic_coating', 'paint_correction'];
 
 const DEFAULT_FORM = {
   name: '', phone: '', email: '', address: '',
@@ -84,7 +84,7 @@ export default function BookAppointment() {
     }
   }, [location.state]);
 
-  const isQuoteOnly = QUOTE_ONLY_IDS.includes(form.service_type);
+  const isConsultation = CONSULTATION_IDS.includes(form.service_type);
 
   const handleAddVehicleSave = async (vehicleForm) => {
     const saved = await base44.entities.MemberVehicle.create(vehicleForm);
@@ -134,7 +134,7 @@ export default function BookAppointment() {
 
   // Total estimate: sum base price per vehicle + their add-ons
   const estimatedTotal = (() => {
-    if (!form.service_type || isQuoteOnly) return null;
+    if (!form.service_type || isConsultation) return null;
     if (selectedVehicles.length === 0) {
       // No saved vehicles selected — use derived vehicle type
       if (!derivedVehicleType) return null;
@@ -166,12 +166,15 @@ export default function BookAppointment() {
     setSelectedDay(day);
     setForm(f => ({ ...f, preferred_date: format(day, 'yyyy-MM-dd'), preferred_time: '' }));
     setBookedSlots([]);
-    if (form.service_type && derivedVehicleType) {
+    if (form.service_type) {
       setLoadingSlots(true);
+      const vtForAvailability = CONSULTATION_IDS.includes(form.service_type)
+        ? (isGold ? 'gold' : 'standard')
+        : derivedVehicleType;
       try {
         const res = await base44.functions.invoke('getCalendarAvailability', {
           service_type: form.service_type,
-          vehicle_type: derivedVehicleType,
+          vehicle_type: vtForAvailability,
           date: format(day, 'yyyy-MM-dd'),
         });
         setBookedSlots(res.data?.bookedSlots || []);
@@ -192,7 +195,7 @@ export default function BookAppointment() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.service_type || !form.name || !form.phone || !form.address) return;
-    if (!isQuoteOnly && (!form.preferred_date || !form.preferred_time)) return;
+    if (!form.preferred_date || !form.preferred_time) return;
     setLoading(true);
     try {
       const vehicleSummary = selectedVehicles.length > 0 ? selectedVehicles.join(', ') : form.vehicle_info;
@@ -205,9 +208,12 @@ export default function BookAppointment() {
       }).filter(Boolean);
       const addOnNote = addOnSummaryParts.length ? `Add-ons: ${addOnSummaryParts.join(' | ')}` : '';
       const quoteNote = estimatedTotal != null ? `Estimated Total: $${estimatedTotal}+` : '';
+      const submitVehicleType = isConsultation
+        ? (isGold ? 'gold' : 'standard')
+        : (derivedVehicleType || form.vehicle_type);
       await base44.functions.invoke('submitBookingToGHL', {
         ...form,
-        vehicle_type: derivedVehicleType || form.vehicle_type,
+        vehicle_type: submitVehicleType,
         vehicle_info: vehicleSummary,
         notes: [quoteNote, form.notes, addOnNote].filter(Boolean).join(' | '),
         preferred_date: form.preferred_date || null,
@@ -240,11 +246,11 @@ export default function BookAppointment() {
           <div className="text-center max-w-md">
             <CheckCircle size={48} className="text-gold mx-auto mb-6" />
             <h2 className="text-3xl font-grotesk font-bold text-vapor mb-3">
-              {isQuoteOnly ? 'Quote Request Sent!' : 'Appointment Requested!'}
+              {isConsultation ? 'Consultation Booked!' : 'Appointment Requested!'}
             </h2>
             <p className="text-vapor/50 font-mono-tech text-sm leading-relaxed mb-8">
-              {isQuoteOnly
-                ? "We'll review your request and reach out within 1 business day with a custom quote."
+              {isConsultation
+                ? `Your 15-min consultation is set for ${format(new Date(form.preferred_date), 'MMMM d, yyyy')} at ${form.preferred_time}. We'll confirm shortly and provide a custom quote.`
                 : `Your appointment for ${format(new Date(form.preferred_date), 'MMMM d, yyyy')} at ${form.preferred_time} has been submitted. We'll confirm shortly.`}
             </p>
             <button
@@ -306,12 +312,12 @@ export default function BookAppointment() {
             </div>
           </div>
 
-          {/* Quote-only notice */}
-          {isQuoteOnly && (
+          {/* Consultation notice */}
+          {isConsultation && (
             <div className="border border-gold/20 bg-gold/5 rounded-sm px-5 py-4">
-              <p className="text-gold font-mono-tech text-xs tracking-widest mb-1">CUSTOM QUOTE REQUIRED</p>
+              <p className="text-gold font-mono-tech text-xs tracking-widest mb-1">FREE 15-MIN CONSULTATION</p>
               <p className="text-vapor/50 font-mono-tech text-xs leading-relaxed">
-                Ceramic coatings and paint correction are priced based on your vehicle's condition and size. Fill in your details below and we'll reach out within 1 business day.
+                Ceramic coatings and paint correction are priced based on your vehicle's condition and size. Book a free 15-minute consultation — we'll assess your vehicle and provide a custom quote on the spot.
               </p>
             </div>
           )}
@@ -397,7 +403,7 @@ export default function BookAppointment() {
           )}
 
           {/* Add-Ons */}
-          {form.service_type && !isQuoteOnly && (
+          {form.service_type && !isConsultation && (
             <div>
               <label className="block text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">ADD-ON SERVICES <span className="text-vapor/25">(OPTIONAL)</span></label>
               {activeVehicleKeys.map(vehicleKey => (
@@ -441,8 +447,8 @@ export default function BookAppointment() {
             </div>
           )}
 
-          {/* Calendar — only for schedulable services */}
-          {form.service_type && !isQuoteOnly && (
+          {/* Calendar */}
+          {form.service_type && (
             <div>
               <p className="text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">SELECT DATE <span className="text-gold">*</span></p>
               <div className="glass-panel border border-vapor/10 rounded-sm p-5">
@@ -495,10 +501,10 @@ export default function BookAppointment() {
           )}
 
           {/* Time Slots */}
-          {selectedDay && !isQuoteOnly && (
+          {selectedDay && (
             <div>
               <p className="text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">
-                SELECT TIME — {format(selectedDay, 'EEEE, MMMM d').toUpperCase()} <span className="text-gold">*</span>
+                {isConsultation ? 'SELECT CONSULTATION TIME' : 'SELECT TIME'} — {format(selectedDay, 'EEEE, MMMM d').toUpperCase()} <span className="text-gold">*</span>
               </p>
               {loadingSlots ? (
                 <div className="flex items-center gap-2 text-vapor/40 font-mono-tech text-xs py-4">
@@ -574,18 +580,18 @@ export default function BookAppointment() {
           <div className="pt-2 space-y-4">
             <button
               type="submit"
-              disabled={loading || !form.service_type || !form.name || !form.phone || !form.address || (!isQuoteOnly && (!form.preferred_date || !form.preferred_time))}
+              disabled={loading || !form.service_type || !form.name || !form.phone || !form.address || !form.preferred_date || !form.preferred_time}
               className="w-full flex items-center justify-center gap-3 bg-gold hover:bg-gold-light text-obsidian font-mono-tech text-sm tracking-widest py-4 rounded-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {loading
                 ? <><div className="w-4 h-4 border-2 border-obsidian/30 border-t-obsidian rounded-full animate-spin" /><span>SUBMITTING...</span></>
-                : isQuoteOnly
-                  ? <><span>REQUEST QUOTE</span><ArrowRight size={14} /></>
+                : isConsultation
+                  ? <><span>BOOK CONSULTATION</span><ArrowRight size={14} /></>
                   : <><span>CONFIRM APPOINTMENT</span><ArrowRight size={14} /></>
               }
             </button>
             <p className="text-center text-vapor/25 text-xs font-mono-tech">
-              {isQuoteOnly ? "We'll reply within 1 business day · Metro Atlanta, GA" : "We'll send a confirmation shortly · Metro Atlanta, GA"}
+              {isConsultation ? "Free 15-min consultation · We'll confirm shortly · Metro Atlanta, GA" : "We'll send a confirmation shortly · Metro Atlanta, GA"}
             </p>
           </div>
 

@@ -12,6 +12,11 @@ const CALENDAR_IDS = {
   full_detail_truck_suv:         '57xm2gp8cKGXHiXV8LLt',
   exterior_detail_truck_suv:     '3Z3rjETwPUzvle0sxkGT',
   interior_detail_truck_suv:     '1yz6e2OBSHN2oDlUvNPr',
+  // Consultation calendars (ceramic coating / paint correction)
+  ceramic_coating_gold:          'eC6OePx9BgUqBdtjH57C',
+  paint_correction_gold:         'eC6OePx9BgUqBdtjH57C',
+  ceramic_coating_standard:      'K65mCRHHLWHJwXI7uIQn',
+  paint_correction_standard:     'K65mCRHHLWHJwXI7uIQn',
 };
 
 Deno.serve(async (req) => {
@@ -32,7 +37,14 @@ Deno.serve(async (req) => {
       return Response.json({ bookedSlots: [] });
     }
 
-    const calendarKey = vehicle_type ? `${service_type}_${vehicle_type}` : null;
+    const CONSULTATION_SERVICES = ['ceramic_coating', 'paint_correction'];
+    let calendarKey;
+    if (CONSULTATION_SERVICES.includes(service_type)) {
+      const tier = vehicle_type === 'gold' ? 'gold' : 'standard';
+      calendarKey = `${service_type}_${tier}`;
+    } else {
+      calendarKey = vehicle_type ? `${service_type}_${vehicle_type}` : null;
+    }
     const calendarId = calendarKey ? CALENDAR_IDS[calendarKey] : null;
 
     if (!calendarId) {
