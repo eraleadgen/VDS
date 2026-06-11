@@ -528,30 +528,16 @@ export default function BookAppointment() {
             </div>
           </div>
 
-          {/* Vehicle (manual) + Notes */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">
-                {vehicles.length > 0 ? 'ADDITIONAL VEHICLE' : 'VEHICLE'}
-              </label>
-              <input
-                name="vehicle_info"
-                value={form.vehicle_info}
-                onChange={handleChange}
-                placeholder="2022 BMW M3, White"
-                className="w-full bg-asphalt border border-vapor/10 focus:border-gold/40 text-vapor placeholder:text-vapor/20 px-4 py-3 text-sm font-mono-tech rounded-sm outline-none transition-colors"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">NOTES</label>
-              <input
-                name="notes"
-                value={form.notes}
-                onChange={handleChange}
-                placeholder="Any special requests..."
-                className="w-full bg-asphalt border border-vapor/10 focus:border-gold/40 text-vapor placeholder:text-vapor/20 px-4 py-3 text-sm font-mono-tech rounded-sm outline-none transition-colors"
-              />
-            </div>
+          {/* Notes */}
+          <div>
+            <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">NOTES</label>
+            <input
+              name="notes"
+              value={form.notes}
+              onChange={handleChange}
+              placeholder="Any special requests..."
+              className="w-full bg-asphalt border border-vapor/10 focus:border-gold/40 text-vapor placeholder:text-vapor/20 px-4 py-3 text-sm font-mono-tech rounded-sm outline-none transition-colors"
+            />
           </div>
 
           {/* Submit */}
