@@ -193,6 +193,15 @@ Deno.serve(async (req) => {
       }
       const endIso = `${preferred_date}T${String(endHours).padStart(2,'0')}:${String(endMinutes).padStart(2,'0')}:00-05:00`;
 
+      // Build comprehensive appointment description with all booking details
+      const apptDescription = [
+        'BOOKING DETAILS',
+        `Service: ${service_type.replace(/_/g, ' ').toUpperCase()}`,
+        `Vehicle: ${vehicle_info || 'N/A'}`,
+        `Service Address: ${address}`,
+        notes ? `Notes/Add-ons/Quote: ${notes}` : null,
+      ].filter(Boolean).join('\n\n');
+
       const apptPayload = {
         calendarId,
         locationId: GHL_LOCATION_ID,
@@ -200,6 +209,7 @@ Deno.serve(async (req) => {
         startTime: startIso,
         endTime: endIso,
         title: `${service_type.replace(/_/g, ' ').toUpperCase()} — ${name}`,
+        description: apptDescription,
         appointmentStatus: 'new',
         address: address || '',
       };
