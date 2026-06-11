@@ -104,7 +104,16 @@ export default function BookAppointment() {
       return sum + (ao ? parseInt(ao.price.replace(/\D/g, '')) : 0);
     }, 0);
 
-  const autoQuote = getAutoQuote(form.service_type, form.vehicle_type);
+  // Auto-derive vehicle_type from the first selected saved vehicle (for single-vehicle quote)
+  const derivedVehicleType = (() => {
+    if (selectedVehicles.length > 0) {
+      const v = vehicles.find(veh => `${veh.year} ${veh.make} ${veh.model}${veh.color ? ', ' + veh.color : ''}` === selectedVehicles[0]);
+      return v?.vehicle_type || null;
+    }
+    return form.vehicle_type || null;
+  })();
+
+  const autoQuote = getAutoQuote(form.service_type, derivedVehicleType);
 
   // Determine active vehicle keys for add-ons and totals
   // If user has selected saved vehicles, use those; otherwise use '__global'
@@ -117,9 +126,9 @@ export default function BookAppointment() {
   const estimatedTotal = (() => {
     if (!form.service_type || isQuoteOnly) return null;
     if (selectedVehicles.length === 0) {
-      // No saved vehicles selected — use single vehicle type
-      if (!form.vehicle_type) return null;
-      const base = PRICE_MAP[form.service_type]?.[form.vehicle_type];
+      // No saved vehicles selected — use derived vehicle type
+      if (!derivedVehicleType) return null;
+      const base = PRICE_MAP[form.service_type]?.[derivedVehicleType];
       if (!base) return null;
       return parseInt(base.replace(/\D/g, '')) + addOnCostForVehicle('__global');
     }
@@ -157,7 +166,7 @@ export default function BookAppointment() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.service_type || !form.name || !form.phone || !form.address) return;
-    if (!isQuoteOnly && (!form.preferred_date || !form.preferred_time || !form.vehicle_type)) return;
+    if (!isQuoteOnly && (!form.preferred_date || !form.preferred_time)) return;
     setLoading(true);
     try {
       const vehicleSummary = selectedVehicles.length > 0 ? selectedVehicles.join(', ') : form.vehicle_info;
@@ -172,6 +181,7 @@ export default function BookAppointment() {
       const quoteNote = estimatedTotal != null ? `Estimated Total: $${estimatedTotal}+` : '';
       await base44.functions.invoke('submitBookingToGHL', {
         ...form,
+        vehicle_type: derivedVehicleType || form.vehicle_type,
         vehicle_info: vehicleSummary,
         notes: [quoteNote, form.notes, addOnNote].filter(Boolean).join(' | '),
         preferred_date: form.preferred_date || null,
@@ -343,26 +353,7 @@ export default function BookAppointment() {
             </div>
           )}
 
-          {/* Vehicle Type */}
-          {form.service_type && !isQuoteOnly && (
-            <div>
-              <label className="block text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">VEHICLE TYPE <span className="text-gold">*</span></label>
-              <div className="grid grid-cols-2 gap-3">
-                {[{ id: 'sedan_coupe', label: 'Sedan / Coupe' }, { id: 'truck_suv', label: 'Truck / SUV' }].map(vt => (
-                  <button
-                    key={vt.id}
-                    type="button"
-                    onClick={() => setForm(f => ({ ...f, vehicle_type: vt.id }))}
-                    className={`py-3 border rounded-sm font-mono-tech text-xs tracking-widest transition-colors ${
-                      form.vehicle_type === vt.id ? 'border-gold bg-gold/10 text-gold' : 'border-vapor/10 text-vapor/50 hover:border-vapor/30 hover:text-vapor'
-                    }`}
-                  >
-                    {vt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+
 
           {/* Estimated total display */}
           {estimatedTotal != null && (
@@ -559,7 +550,7 @@ export default function BookAppointment() {
           <div className="pt-2 space-y-4">
             <button
               type="submit"
-              disabled={loading || !form.service_type || !form.name || !form.phone || !form.address || (!isQuoteOnly && (!form.preferred_date || !form.preferred_time || !form.vehicle_type))}
+              disabled={loading || !form.service_type || !form.name || !form.phone || !form.address || (!isQuoteOnly && (!form.preferred_date || !form.preferred_time))}
               className="w-full flex items-center justify-center gap-3 bg-gold hover:bg-gold-light text-obsidian font-mono-tech text-sm tracking-widest py-4 rounded-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {loading
