@@ -17,10 +17,6 @@
     "phone": {
       "type": "string",
       "description": "Member phone number"
-    },
-    "address": {
-      "type": "string",
-      "description": "Primary service address"
     }
   }
 }

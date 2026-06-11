@@ -9,7 +9,6 @@ export default function AccountDetailsForm({ user, onSaved, onCancel }) {
   const [firstName, setFirstName] = useState(nameParts[0] || '');
   const [lastName, setLastName] = useState(nameParts.slice(1).join(' ') || '');
   const [phone, setPhone] = useState(user?.phone || '');
-  const [address, setAddress] = useState(user?.address || '');
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -19,7 +18,6 @@ export default function AccountDetailsForm({ user, onSaved, onCancel }) {
     await base44.auth.updateMe({
       full_name: `${firstName.trim()} ${lastName.trim()}`.trim(),
       phone,
-      address,
     });
     setLoading(false);
     setSaved(true);
@@ -47,10 +45,7 @@ export default function AccountDetailsForm({ user, onSaved, onCancel }) {
           <input value={user?.email || ''} disabled className={`${inputClass} opacity-40 cursor-not-allowed`} />
           <p className="text-vapor/25 text-xs font-mono-tech mt-1">Email cannot be changed</p>
         </div>
-        <div className="sm:col-span-2">
-          <label className="block text-xs font-mono-tech tracking-widest text-vapor/40 mb-2">SERVICE ADDRESS</label>
-          <input value={address} onChange={e => setAddress(e.target.value)} className={inputClass} placeholder="123 Main St, Atlanta GA" />
-        </div>
+
       </div>
       <div className="flex gap-3">
         <button

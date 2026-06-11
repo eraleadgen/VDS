@@ -255,7 +255,7 @@ export default function MemberDashboard() {
                 { label: 'NAME', value: user?.full_name },
                 { label: 'EMAIL', value: user?.email },
                 { label: 'PHONE', value: user?.phone },
-                { label: 'SERVICE ADDRESS', value: user?.address },
+
               ].map(({ label, value }) => (
                 <div key={label}>
                   <p className="text-xs font-mono-tech tracking-widest text-vapor/30 mb-1">{label}</p>
