@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { ChevronLeft, ChevronRight, ArrowRight, CheckCircle, ChevronDown, X, Plus, Loader2, Trash2 } from 'lucide-react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isBefore, isToday, isSameDay } from 'date-fns';
@@ -254,12 +254,20 @@ export default function BookAppointment() {
                 ? `Your 15-min consultation is set for ${format(new Date(form.preferred_date), 'MMMM d, yyyy')} at ${form.preferred_time}. We'll confirm shortly and provide a custom quote.`
                 : `Your appointment for ${format(new Date(form.preferred_date), 'MMMM d, yyyy')} at ${form.preferred_time} has been submitted. We'll confirm shortly.`}
             </p>
-            <button
-              onClick={() => { setSubmitted(false); setForm(DEFAULT_FORM); setSelectedDay(null); }}
-              className="border border-gold/40 text-gold px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold hover:text-obsidian transition-colors"
-            >
-              BOOK ANOTHER
-            </button>
+            <div className="flex flex-col gap-3">
+              <Link
+                to="/member-dashboard"
+                className="border border-gold bg-gold text-obsidian px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold-light transition-colors"
+              >
+                VIEW APPOINTMENT →
+              </Link>
+              <button
+                onClick={() => { setSubmitted(false); setForm(DEFAULT_FORM); setSelectedDay(null); }}
+                className="border border-vapor/20 text-vapor/60 px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:border-vapor/50 hover:text-vapor transition-colors"
+              >
+                BOOK ANOTHER
+              </button>
+            </div>
           </div>
         </main>
         <Footer />
