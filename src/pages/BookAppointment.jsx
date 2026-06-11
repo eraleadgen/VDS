@@ -126,10 +126,13 @@ export default function BookAppointment() {
     try {
       const vehicleSummary = selectedVehicles.length > 0 ? selectedVehicles.join(', ') : form.vehicle_info;
       const addOnLabels = addOns.map(id => ADD_ONS.find(a => a.id === id)?.label).filter(Boolean).join(', ');
+      const quoteNote = autoQuote
+        ? `Estimated Quote: ${autoQuote}${addOnTotal > 0 ? ` + $${addOnTotal} add-ons = ${autoQuote.replace('+','').trim()} + $${addOnTotal}` : ''}`
+        : '';
       await base44.functions.invoke('submitBookingToGHL', {
         ...form,
         vehicle_info: vehicleSummary,
-        notes: [form.notes, addOnLabels ? `Add-ons: ${addOnLabels}` : ''].filter(Boolean).join(' | '),
+        notes: [quoteNote, form.notes, addOnLabels ? `Add-ons: ${addOnLabels}` : ''].filter(Boolean).join(' | '),
         preferred_date: form.preferred_date || null,
         preferred_time: form.preferred_time || null,
       });
