@@ -20,6 +20,7 @@ import MemberDashboard from './pages/MemberDashboard';
 import GoldSignup from './pages/GoldSignup';
 import Gallery from './pages/Gallery';
 import BookAppointment from './pages/BookAppointment';
+import GoldBooking from './pages/GoldBooking';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -57,6 +58,7 @@ const AuthenticatedApp = () => {
       <Route path="/gold-signup" element={<GoldSignup />} />
       <Route path="/gallery" element={<Gallery />} />
       <Route path="/book" element={<BookAppointment />} />
+      <Route path="/gold-booking" element={<GoldBooking />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

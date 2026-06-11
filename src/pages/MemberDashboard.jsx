@@ -122,16 +122,14 @@ export default function MemberDashboard() {
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Link
-                  to="/book"
-                  state={{ preselect_service: 'vds_gold_exterior' }}
+                  to="/gold-booking"
                   className="flex flex-col gap-1 border border-gold/25 hover:border-gold/50 bg-gold/5 hover:bg-gold/10 px-5 py-4 rounded-sm transition-colors group"
                 >
                   <p className="text-gold font-mono-tech text-xs tracking-widest group-hover:text-gold-light transition-colors">◆ EXTERIOR DETAIL</p>
                   <p className="text-vapor/50 text-xs font-mono-tech">Unlimited / Month · 1 hr</p>
                 </Link>
                 <Link
-                  to="/book"
-                  state={{ preselect_service: 'vds_gold_full' }}
+                  to="/gold-booking"
                   className="flex flex-col gap-1 border border-gold/25 hover:border-gold/50 bg-gold/5 hover:bg-gold/10 px-5 py-4 rounded-sm transition-colors group"
                 >
                   <p className="text-gold font-mono-tech text-xs tracking-widest group-hover:text-gold-light transition-colors">◆ FULL DETAIL</p>

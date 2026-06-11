@@ -8,6 +8,8 @@ import GoldShimmer from '../components/vds/GoldShimmer';
 
 export default function GoldSignup() {
   const [step, setStep] = useState('register'); // 'register' | 'otp'
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -19,6 +21,10 @@ export default function GoldSignup() {
   const handleRegister = async (e) => {
     e.preventDefault();
     setError('');
+    if (!firstName.trim() || !lastName.trim()) {
+      setError('Please enter your first and last name.');
+      return;
+    }
     if (password !== confirmPassword) {
       setError('Passwords do not match.');
       return;
@@ -28,7 +34,7 @@ export default function GoldSignup() {
       return;
     }
     setLoading(true);
-    await base44.auth.register({ email, password });
+    await base44.auth.register({ email, password, full_name: `${firstName.trim()} ${lastName.trim()}` });
     setStep('otp');
     setLoading(false);
   };
@@ -77,6 +83,30 @@ export default function GoldSignup() {
           <div className="glass-panel border border-gold/15 p-8 rounded-sm">
             {step === 'register' ? (
               <form onSubmit={handleRegister} className="space-y-5">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-mono-tech tracking-widest text-vapor/50 mb-2">FIRST NAME</label>
+                    <input
+                      type="text"
+                      value={firstName}
+                      onChange={e => setFirstName(e.target.value)}
+                      required
+                      className="w-full bg-asphalt border border-vapor/10 focus:border-gold/50 outline-none text-vapor px-4 py-3 text-sm font-mono-tech rounded-sm transition-colors duration-200"
+                      placeholder="John"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-mono-tech tracking-widest text-vapor/50 mb-2">LAST NAME</label>
+                    <input
+                      type="text"
+                      value={lastName}
+                      onChange={e => setLastName(e.target.value)}
+                      required
+                      className="w-full bg-asphalt border border-vapor/10 focus:border-gold/50 outline-none text-vapor px-4 py-3 text-sm font-mono-tech rounded-sm transition-colors duration-200"
+                      placeholder="Smith"
+                    />
+                  </div>
+                </div>
                 <div>
                   <label className="block text-xs font-mono-tech tracking-widest text-vapor/50 mb-2">EMAIL</label>
                   <input
