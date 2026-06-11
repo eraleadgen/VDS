@@ -128,11 +128,16 @@ Deno.serve(async (req) => {
       const appointmentLine = preferred_date && preferred_time
         ? `Appointment: ${preferred_date} at ${preferred_time}`
         : 'Appointment: No date/time selected';
+      // Parse vehicle info for note
+      const vehicleList = vehicle_info ? vehicle_info.split(',').map(v => v.trim()) : [];
+      const vehicleCount = vehicleList.length;
+      const vehicleDetails = vehicleList.map((v, i) => `  ${i + 1}. ${v}`).join('\n');
       const noteBody = [
         'BOOKING REQUEST — VDS WEBSITE',
         `Service: ${service_type.replace(/_/g, ' ').toUpperCase()}`,
         appointmentLine,
-        `Vehicle: ${vehicle_info || 'N/A'}`,
+        `Number of Vehicles: ${vehicleCount}`,
+        vehicleCount > 0 ? `Vehicles:\n${vehicleDetails}` : `Vehicle: ${vehicle_info || 'N/A'}`,
         `Service Address: ${address}`,
         notes ? `Notes: ${notes}` : null,
       ].filter(Boolean).join('\n');
@@ -165,11 +170,17 @@ Deno.serve(async (req) => {
       }
       const endIso = `${preferred_date}T${String(endHours).padStart(2,'0')}:${String(endMinutes).padStart(2,'0')}:00-05:00`;
 
+      // Parse vehicle info to get count and details
+      const vehicleList = vehicle_info ? vehicle_info.split(',').map(v => v.trim()) : [];
+      const vehicleCount = vehicleList.length;
+      const vehicleDetails = vehicleList.map((v, i) => `  ${i + 1}. ${v}`).join('\n');
+
       // Build comprehensive appointment description with all booking details
       const apptDescription = [
         'BOOKING DETAILS',
         `Service: ${service_type.replace(/_/g, ' ').toUpperCase()}`,
-        `Vehicle: ${vehicle_info || 'N/A'}`,
+        `Number of Vehicles: ${vehicleCount}`,
+        vehicleCount > 0 ? `Vehicles:\n${vehicleDetails}` : `Vehicle: ${vehicle_info || 'N/A'}`,
         `Service Address: ${address}`,
         notes ? `Notes/Add-ons/Quote: ${notes}` : null,
       ].filter(Boolean).join('\n\n');
