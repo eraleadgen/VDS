@@ -15,6 +15,8 @@ import FAQ from './pages/FAQ';
 import Terms from './pages/Terms';
 import Pricing from './pages/Pricing';
 import Privacy from './pages/Privacy';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import MemberLogin from './pages/MemberLogin';
 import MemberDashboard from './pages/MemberDashboard';
 import GoldSignup from './pages/GoldSignup';
@@ -53,6 +55,8 @@ const AuthenticatedApp = () => {
 
       <Route path="/terms" element={<Terms />} />
       <Route path="/privacy" element={<Privacy />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/member-login" element={<MemberLogin />} />
       <Route path="/member-dashboard" element={<MemberDashboard />} />
       <Route path="/gold-signup" element={<GoldSignup />} />
