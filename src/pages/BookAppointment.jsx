@@ -322,6 +322,22 @@ export default function BookAppointment() {
             </div>
           )}
 
+          {/* Vehicle Section — guest prompt */}
+          {!user && (
+            <div className="flex items-center justify-between border border-gold/20 bg-gold/5 rounded-sm px-5 py-4">
+              <div>
+                <p className="text-xs font-mono-tech tracking-widest text-gold mb-1">SAVE YOUR VEHICLES</p>
+                <p className="text-vapor/50 font-mono-tech text-xs">Create a free account to save vehicles and auto-fill future bookings.</p>
+              </div>
+              <a
+                href="/gold-signup"
+                className="shrink-0 ml-4 border border-gold/40 text-gold px-4 py-2 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold hover:text-obsidian transition-colors whitespace-nowrap"
+              >
+                CREATE ACCOUNT
+              </a>
+            </div>
+          )}
+
           {/* Vehicle Section */}
           {user && (
             <div>
