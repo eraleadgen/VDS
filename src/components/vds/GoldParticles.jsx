@@ -22,7 +22,7 @@ export default function GoldParticles({ count = 55 }) {
 
     // Create flakes
     const flakes = Array.from({ length: count }, () => {
-      const size = Math.random() * 7 + 2;
+      const size = Math.random() * 2.5 + 0.8;
       return {
         x: Math.random() * (width || 800),
         y: Math.random() * (height || 900),
@@ -50,7 +50,7 @@ export default function GoldParticles({ count = 55 }) {
 
       // Slight glow
       ctx.shadowColor = f.color;
-      ctx.shadowBlur = f.size * 1.5;
+      ctx.shadowBlur = f.size * 8;
 
       ctx.fillStyle = f.color;
       ctx.beginPath();
