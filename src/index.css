@@ -70,6 +70,18 @@
   100% { background-position: -50% center; }
 }
 
+@keyframes rotateBorderGlow {
+  0%   { box-shadow: 0 -4px 30px 4px rgba(212,175,55,0.5), 0 0 0 0 transparent; }
+  25%  { box-shadow: 4px 0 30px 4px rgba(212,175,55,0.5), 0 0 0 0 transparent; }
+  50%  { box-shadow: 0 4px 30px 4px rgba(212,175,55,0.5), 0 0 0 0 transparent; }
+  75%  { box-shadow: -4px 0 30px 4px rgba(212,175,55,0.5), 0 0 0 0 transparent; }
+  100% { box-shadow: 0 -4px 30px 4px rgba(212,175,55,0.5), 0 0 0 0 transparent; }
+}
+
+.gold-rotating-glow {
+  animation: rotateBorderGlow 4s linear infinite;
+}
+
 .gold-shine-text {
   background-image: linear-gradient(105deg, #A08020 0%, #A08020 30%, #C9921A 40%, #D4AF37 45%, #FFFDE0 50%, #D4AF37 55%, #C9921A 60%, #A08020 70%, #A08020 100%);
   background-size: 600% 100%;

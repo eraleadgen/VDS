@@ -119,10 +119,12 @@ export default function Home() {
       </section>
 
       {/* ── VDS GOLD BANNER ──────────────────────────── */}
-      <section className="relative py-20 overflow-hidden border-y border-gold/20">
+      <section className="relative py-20 overflow-hidden border-y border-gold/20" style={{
+        background: 'linear-gradient(180deg, #0A0B0D 0%, #0D0B06 50%, #0A0B0D 100%)',
+      }}>
         <div className="absolute inset-0 bg-gradient-to-r from-obsidian via-[#0D0B06] to-obsidian" />
         <div className="relative max-w-7xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8 gold-rotating-glow rounded-sm px-8 py-6 border border-gold/20">
             <div className="text-center md:text-left">
               <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-3">NEW — MONTHLY MEMBERSHIP</p>
               <h2 className="text-4xl md:text-5xl font-grotesk font-bold text-vapor">
