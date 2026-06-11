@@ -196,6 +196,7 @@ export default function BookAppointment() {
     e.preventDefault();
     if (!form.service_type || !form.name || !form.phone || !form.address) return;
     if (!form.preferred_date || !form.preferred_time) return;
+    if (selectedVehicles.length === 0) return;
     setLoading(true);
     try {
       const vehicleSummary = selectedVehicles.length > 0 ? selectedVehicles.join(', ') : form.vehicle_info;
@@ -285,7 +286,31 @@ export default function BookAppointment() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Guest gate — must have account to book */}
+        {!user && (
+          <div className="border border-gold/20 bg-gold/5 rounded-sm px-6 py-8 text-center">
+            <p className="text-gold font-mono-tech text-xs tracking-widest mb-2">ACCOUNT REQUIRED TO BOOK</p>
+            <p className="text-vapor/50 font-mono-tech text-sm leading-relaxed mb-6">
+              You must create a free account and add a vehicle before booking an appointment. This lets us track your service history and auto-fill future bookings.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <a
+                href="/gold-signup"
+                className="border border-gold bg-gold text-obsidian px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold-light transition-colors"
+              >
+                CREATE ACCOUNT
+              </a>
+              <a
+                href="/member-login"
+                className="border border-vapor/20 text-vapor/60 px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:border-vapor/50 hover:text-vapor transition-colors"
+              >
+                SIGN IN
+              </a>
+            </div>
+          </div>
+        )}
+
+        {user && <form onSubmit={handleSubmit} className="space-y-8">
 
           {/* Service Dropdown */}
           <div>
@@ -322,27 +347,11 @@ export default function BookAppointment() {
             </div>
           )}
 
-          {/* Vehicle Section — guest prompt */}
-          {!user && (
-            <div className="flex items-center justify-between border border-gold/20 bg-gold/5 rounded-sm px-5 py-4">
-              <div>
-                <p className="text-xs font-mono-tech tracking-widest text-gold mb-1">SAVE YOUR VEHICLES</p>
-                <p className="text-vapor/50 font-mono-tech text-xs">Create a free account to save vehicles and auto-fill future bookings.</p>
-              </div>
-              <a
-                href="/gold-signup"
-                className="shrink-0 ml-4 border border-gold/40 text-gold px-4 py-2 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold hover:text-obsidian transition-colors whitespace-nowrap"
-              >
-                CREATE ACCOUNT
-              </a>
-            </div>
-          )}
-
           {/* Vehicle Section */}
-          {user && (
+          {(
             <div>
               <div className="flex items-center justify-between mb-3">
-                <label className="text-xs font-mono-tech tracking-widest text-vapor/40">SELECT VEHICLE(S)</label>
+                <label className="text-xs font-mono-tech tracking-widest text-vapor/40">SELECT VEHICLE(S) <span className="text-gold">*</span></label>
                 {!showAddVehicle && (
                   <button
                     type="button"
@@ -396,7 +405,10 @@ export default function BookAppointment() {
                 </div>
               )}
               {vehicles.length === 0 && !showAddVehicle && (
-                <p className="text-vapor/30 font-mono-tech text-xs">No saved vehicles — add one above or enter details below.</p>
+                <p className="text-vapor/30 font-mono-tech text-xs">No saved vehicles — add one above to continue.</p>
+              )}
+              {vehicles.length > 0 && selectedVehicles.length === 0 && (
+                <p className="text-gold/60 font-mono-tech text-xs mt-2">Please select at least one vehicle to continue.</p>
               )}
             </div>
           )}
@@ -603,7 +615,7 @@ export default function BookAppointment() {
           <div className="pt-2 space-y-4">
             <button
               type="submit"
-              disabled={loading || !form.service_type || !form.name || !form.phone || !form.address || !form.preferred_date || !form.preferred_time}
+              disabled={loading || !form.service_type || !form.name || !form.phone || !form.address || !form.preferred_date || !form.preferred_time || selectedVehicles.length === 0}
               className="w-full flex items-center justify-center gap-3 bg-gold hover:bg-gold-light text-obsidian font-mono-tech text-sm tracking-widest py-4 rounded-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {loading
@@ -618,7 +630,7 @@ export default function BookAppointment() {
             </p>
           </div>
 
-        </form>
+        </form>}
       </main>
 
       <Footer />
