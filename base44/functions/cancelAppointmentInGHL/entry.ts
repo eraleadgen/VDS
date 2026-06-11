@@ -91,12 +91,15 @@ Deno.serve(async (req) => {
     });
 
     if (matchingEvent && matchingEvent.id) {
-      // Cancel the appointment in GHL
+      // Update appointment status to cancelled (GHL prefers status update over DELETE)
       const cancelRes = await fetch(
         `https://services.leadconnectorhq.com/calendars/events/appointments/${matchingEvent.id}`,
         {
-          method: 'DELETE',
+          method: 'PUT',
           headers: GHL_HEADERS,
+          body: JSON.stringify({
+            appointmentStatus: 'cancelled',
+          }),
         }
       );
 
