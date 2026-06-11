@@ -89,10 +89,27 @@ Deno.serve(async (req) => {
       });
       const createData = await createRes.json();
       if (!createRes.ok) {
-        console.error('GHL contact creation failed:', createData);
-        return Response.json({ success: false, error: 'Failed to create contact in GHL.' }, { status: 500 });
+        // GHL may reject if a duplicate contact exists matched by phone
+        const fallbackId = createData?.meta?.contactId;
+        if (fallbackId) {
+          // Update the existing contact instead
+          await fetch(`https://services.leadconnectorhq.com/contacts/${fallbackId}`, {
+            method: 'PUT',
+            headers: {
+              'Authorization': `Bearer ${GHL_API_KEY}`,
+              'Content-Type': 'application/json',
+              'Version': '2021-07-28',
+            },
+            body: JSON.stringify(contactPayload),
+          });
+          contactId = fallbackId;
+        } else {
+          console.error('GHL contact creation failed:', createData);
+          return Response.json({ success: false, error: 'Failed to create contact in GHL.' }, { status: 500 });
+        }
+      } else {
+        contactId = createData.contact?.id;
       }
-      contactId = createData.contact?.id;
     }
 
     // 2. Add a booking note to the contact

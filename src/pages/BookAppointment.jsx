@@ -88,15 +88,20 @@ export default function BookAppointment() {
     if (!form.service_type || !form.name || !form.phone || !form.address) return;
     if (!isQuoteOnly && (!form.preferred_date || !form.preferred_time)) return;
     setLoading(true);
-    const vehicleSummary = selectedVehicles.length > 0 ? selectedVehicles.join(', ') : form.vehicle_info;
-    await base44.functions.invoke('submitBookingToGHL', {
-      ...form,
-      vehicle_info: vehicleSummary,
-      preferred_date: form.preferred_date || null,
-      preferred_time: form.preferred_time || null,
-    });
-    setLoading(false);
-    setSubmitted(true);
+    try {
+      const vehicleSummary = selectedVehicles.length > 0 ? selectedVehicles.join(', ') : form.vehicle_info;
+      await base44.functions.invoke('submitBookingToGHL', {
+        ...form,
+        vehicle_info: vehicleSummary,
+        preferred_date: form.preferred_date || null,
+        preferred_time: form.preferred_time || null,
+      });
+      setSubmitted(true);
+    } catch (err) {
+      console.error('Booking submission error:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Calendar helpers
