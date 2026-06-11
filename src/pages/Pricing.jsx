@@ -36,8 +36,8 @@ const PRICING_SECTIONS = [
     title: 'CERAMIC COATINGS',
     subtitle: 'Long-Term Paint Protection',
     rows: [
-      { label: '2 Year Ceramic Coating', price: 'Quote Only' },
-      { label: '3 Year Ceramic Coating', price: 'Quote Only' },
+      { label: '2 Year Ceramic Coating', price: '$900+' },
+      { label: '3 Year Ceramic Coating', price: '$1,000+' },
       { label: '5 Year Ceramic Coating', price: '$1,300+' },
       { label: '7 Year Ceramic Coating', price: '$1,500+' },
     ],
