@@ -178,14 +178,14 @@ export default function Services() {
         </h2>
         <p className="text-vapor/50 mb-10">Call or text us. We'll assess your vehicle's needs and recommend the right service — no pressure, no upsells you don't need.</p>
         <div className="flex flex-wrap justify-center gap-4">
-          <a href="tel:+14704128986"
+          <Link to="/book"
             className="bg-vapor text-obsidian px-8 py-4 text-sm font-mono-tech tracking-widest hover:bg-gold transition-colors duration-200 rounded-sm">
-            CALL (470) 412-8986
-          </a>
-          <Link to="/contact"
-            className="border border-vapor/20 text-vapor px-8 py-4 text-sm font-mono-tech tracking-widest hover:border-vapor transition-colors duration-200 rounded-sm">
-            SEND A REQUEST
+            BOOK NOW
           </Link>
+          <a href="sms:+14704128986"
+            className="border border-vapor/20 text-vapor px-8 py-4 text-sm font-mono-tech tracking-widest hover:border-vapor transition-colors duration-200 rounded-sm">
+            TEXT US
+          </a>
         </div>
       </section>
 
