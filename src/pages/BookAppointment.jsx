@@ -414,19 +414,26 @@ export default function BookAppointment() {
                   <div className="space-y-2">
                     {ADD_ONS.map(ao => {
                       const active = getVehicleAddOns(vehicleKey).includes(ao.id);
+                      const isDisabled = ao.id === 'ceramic_sealant' && form.service_type === 'interior_detail';
                       return (
                         <button
                           key={ao.id}
                           type="button"
-                          onClick={() => toggleAddOn(vehicleKey, ao.id)}
+                          disabled={isDisabled}
+                          onClick={() => !isDisabled && toggleAddOn(vehicleKey, ao.id)}
                           className={`w-full flex items-center justify-between px-5 py-3 border rounded-sm transition-colors text-left ${
-                            active ? 'border-gold bg-gold/10' : 'border-vapor/10 hover:border-vapor/30'
+                            isDisabled
+                              ? 'border-vapor/5 text-vapor/20 cursor-not-allowed opacity-40'
+                              : active ? 'border-gold bg-gold/10' : 'border-vapor/10 hover:border-vapor/30'
                           }`}
                         >
-                          <span className="font-mono-tech text-sm text-vapor">{ao.label}</span>
+                          <div>
+                            <span className={`font-mono-tech text-sm ${isDisabled ? 'text-vapor/30' : 'text-vapor'}`}>{ao.label}</span>
+                            {isDisabled && <span className="block text-xs font-mono-tech text-vapor/25 mt-0.5">Exterior services only</span>}
+                          </div>
                           <div className="flex items-center gap-3">
-                            <span className={`font-mono-tech text-sm font-bold ${active ? 'text-gold' : 'text-vapor/40'}`}>{ao.price}</span>
-                            {active && <X size={13} className="text-gold shrink-0" />}
+                            <span className={`font-mono-tech text-sm font-bold ${active && !isDisabled ? 'text-gold' : 'text-vapor/40'}`}>{ao.price}</span>
+                            {active && !isDisabled && <X size={13} className="text-gold shrink-0" />}
                           </div>
                         </button>
                       );
