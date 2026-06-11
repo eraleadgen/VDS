@@ -97,6 +97,19 @@ export default function BookAppointment() {
     return sum + (ao ? parseInt(ao.price.replace(/\D/g, '')) : 0);
   }, 0);
 
+  // Multi-vehicle total: sum base price for each selected saved vehicle
+  const multiVehicleTotal = (() => {
+    if (!form.service_type || isQuoteOnly || selectedVehicles.length < 2) return null;
+    const prices = selectedVehicles.map(label => {
+      const v = vehicles.find(veh => `${veh.year} ${veh.make} ${veh.model}${veh.color ? ', ' + veh.color : ''}` === label);
+      const vType = v?.vehicle_type;
+      const p = PRICE_MAP[form.service_type]?.[vType];
+      return p ? parseInt(p.replace(/\D/g, '')) : null;
+    });
+    if (prices.some(p => p === null)) return null;
+    return prices.reduce((a, b) => a + b, 0) + addOnTotal;
+  })();
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === 'service_type') {
@@ -324,13 +337,19 @@ export default function BookAppointment() {
           )}
 
           {/* Auto-quote display */}
-          {autoQuote && (
+          {(multiVehicleTotal || autoQuote) && (
             <div className="flex items-center justify-between border border-gold/20 bg-gold/5 rounded-sm px-5 py-4">
               <div>
-                <p className="text-xs font-mono-tech tracking-widest text-gold mb-1">ESTIMATED PRICE</p>
-                <p className="text-vapor/50 font-mono-tech text-xs">Based on service + vehicle type. Final quote confirmed before service.</p>
+                <p className="text-xs font-mono-tech tracking-widest text-gold mb-1">ESTIMATED TOTAL</p>
+                <p className="text-vapor/50 font-mono-tech text-xs">
+                  {multiVehicleTotal
+                    ? `${selectedVehicles.length} vehicles${addOnTotal > 0 ? ` + $${addOnTotal} add-ons` : ''}. Final quote confirmed before service.`
+                    : 'Based on service + vehicle type. Final quote confirmed before service.'}
+                </p>
               </div>
-              <p className="text-2xl font-grotesk font-bold text-gold shrink-0 ml-4">{autoQuote}</p>
+              <p className="text-2xl font-grotesk font-bold text-gold shrink-0 ml-4">
+                {multiVehicleTotal ? `$${multiVehicleTotal}+` : autoQuote}
+              </p>
             </div>
           )}
 

@@ -43,8 +43,8 @@ export default function AddVehicleForm({ onAdd, onCancel, initialData = null }) 
 
   const handleModelBlur = () => handleClassify();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
+    if (!form.year || !form.make || !form.model) return;
     setLoading(true);
     await onAdd(form);
     setLoading(false);
@@ -68,7 +68,7 @@ export default function AddVehicleForm({ onAdd, onCancel, initialData = null }) 
   const vehicleTypeLabel = form.vehicle_type === 'sedan_coupe' ? 'Sedan / Coupe' : form.vehicle_type === 'truck_suv' ? 'Truck / SUV' : null;
 
   return (
-    <form onSubmit={handleSubmit} className="glass-panel border border-gold/20 p-6 rounded-sm space-y-4">
+    <div className="glass-panel border border-gold/20 p-6 rounded-sm space-y-4">
       <div className="flex items-center justify-between mb-2">
         <p className="text-sm font-mono-tech tracking-widest text-gold">{isEdit ? 'EDIT VEHICLE' : 'ADD VEHICLE'}</p>
         <button type="button" onClick={onCancel} className="text-vapor/30 hover:text-vapor transition-colors">
@@ -103,8 +103,9 @@ export default function AddVehicleForm({ onAdd, onCancel, initialData = null }) 
       {field('notes', 'NOTES (OPTIONAL)', 'e.g. ceramic coated, park in garage')}
       <div className="flex gap-3 pt-2">
         <button
-          type="submit"
-          disabled={loading || classifying}
+          type="button"
+          onClick={handleSubmit}
+          disabled={loading || classifying || !form.year || !form.make || !form.model}
           className="flex items-center gap-2 bg-vapor text-obsidian px-6 py-3 text-xs font-mono-tech tracking-widest hover:bg-gold transition-colors duration-200 rounded-sm disabled:opacity-50"
         >
           {isEdit ? <><Save size={13} /> {loading ? 'SAVING...' : 'SAVE CHANGES'}</> : <><Plus size={13} /> {loading ? 'SAVING...' : 'ADD VEHICLE'}</>}
@@ -117,6 +118,6 @@ export default function AddVehicleForm({ onAdd, onCancel, initialData = null }) 
           CANCEL
         </button>
       </div>
-    </form>
+    </div>
   );
 }
