@@ -4,7 +4,7 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
-    const { name, phone, email, address, service_type, vehicle_type, vehicle_info, notes, preferred_date, preferred_time } = await req.json();
+    const { name, phone, email, address, service_type, vehicle_type, vehicle_info, vehicle_details, notes, preferred_date, preferred_time } = await req.json();
 
     if (!name || !phone || !address || !service_type) {
       return Response.json({ success: false, error: 'Missing required fields.' }, { status: 400 });
@@ -139,7 +139,7 @@ Deno.serve(async (req) => {
         `Number of Vehicles: ${vehicleCount}`,
         vehicleCount > 0 ? `Vehicles:\n${vehicleDetails}` : `Vehicle: ${vehicle_info || 'N/A'}`,
         `Service Address: ${address}`,
-        notes ? `Notes: ${notes}` : null,
+        notes ? `Notes/Add-ons/Quote: ${notes}` : null,
       ].filter(Boolean).join('\n');
 
       const noteRes = await fetch(`https://services.leadconnectorhq.com/contacts/${contactId}/notes`, {
@@ -170,17 +170,23 @@ Deno.serve(async (req) => {
       }
       const endIso = `${preferred_date}T${String(endHours).padStart(2,'0')}:${String(endMinutes).padStart(2,'0')}:00-05:00`;
 
-      // Parse vehicle info to get count and details
-      const vehicleList = vehicle_info ? vehicle_info.split(',').map(v => v.trim()) : [];
-      const vehicleCount = vehicleList.length;
-      const vehicleDetails = vehicleList.map((v, i) => `  ${i + 1}. ${v}`).join('\n');
+      // Use vehicle_details if provided (per-vehicle services), otherwise parse vehicle_info
+      let vehicleDisplayText;
+      if (vehicle_details) {
+        vehicleDisplayText = `Vehicles:\n${vehicle_details.split(' | ').map((v, i) => `  ${i + 1}. ${v}`).join('\n')}`;
+      } else {
+        const vehicleList = vehicle_info ? vehicle_info.split(',').map(v => v.trim()) : [];
+        const vehicleCount = vehicleList.length;
+        vehicleDisplayText = vehicleCount > 0 
+          ? `Vehicles:\n${vehicleList.map((v, i) => `  ${i + 1}. ${v}`).join('\n')}`
+          : `Vehicle: ${vehicle_info || 'N/A'}`;
+      }
 
       // Build comprehensive appointment description with all booking details
       const apptDescription = [
         'BOOKING DETAILS',
         `Service: ${service_type.replace(/_/g, ' ').toUpperCase()}`,
-        `Number of Vehicles: ${vehicleCount}`,
-        vehicleCount > 0 ? `Vehicles:\n${vehicleDetails}` : `Vehicle: ${vehicle_info || 'N/A'}`,
+        vehicleDisplayText,
         `Service Address: ${address}`,
         notes ? `Notes/Add-ons/Quote: ${notes}` : null,
       ].filter(Boolean).join('\n\n');

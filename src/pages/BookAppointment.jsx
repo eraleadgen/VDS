@@ -24,6 +24,16 @@ const ADD_ONS = [
   { id: 'headlight_restoration', label: 'Headlight Restoration', price: '$100' },
 ];
 
+const SERVICE_LABELS = {
+  exterior_detail: 'Exterior Detail',
+  interior_detail: 'Interior Detail',
+  full_detail: 'Full Interior + Exterior Detail',
+  vds_gold_exterior: 'VDS Gold — Exterior Detail',
+  vds_gold_full: 'VDS Gold — Full Detail',
+  ceramic_coating: 'Ceramic Coating',
+  paint_correction: 'Paint Correction',
+};
+
 // Pricing map: service_id → { sedan_coupe, truck_suv }
 const PRICE_MAP = {
   exterior_detail:  { sedan_coupe: '$100+', truck_suv: '$115+' },
@@ -52,9 +62,11 @@ export default function BookAppointment() {
   const [vehicles, setVehicles] = useState([]);
   const [form, setForm] = useState(DEFAULT_FORM);
   const [selectedVehicles, setSelectedVehicles] = useState([]);
+  // vehicleServices: { [vehicleLabel]: serviceId } — per-vehicle service selection
+  const [vehicleServices, setVehicleServices] = useState({});
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(null);
-  // addOns: { [vehicleLabel]: [addonId, ...] } — keyed by vehicle label, or '__global' for no-vehicle / single-vehicle
+  // addOns: { [vehicleLabel]: [addonId, ...] } — keyed by vehicle label
   const [addOns, setAddOns] = useState({});
   const [showAddVehicle, setShowAddVehicle] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -98,6 +110,7 @@ export default function BookAppointment() {
     setVehicles(v => v.filter(veh => veh.id !== vehicle.id));
     setSelectedVehicles(prev => prev.filter(l => l !== label));
     setAddOns(prev => { const next = { ...prev }; delete next[label]; return next; });
+    setVehicleServices(prev => { const next = { ...prev }; delete next[label]; return next; });
   };
 
   const getVehicleAddOns = (label) => addOns[label] || [];
@@ -108,6 +121,10 @@ export default function BookAppointment() {
       return { ...prev, [vehicleLabel]: updated };
     });
   };
+  const setVehicleService = (vehicleLabel, serviceId) => {
+    setVehicleServices(prev => ({ ...prev, [vehicleLabel]: serviceId }));
+  };
+  const getVehicleService = (label) => vehicleServices[label] || form.service_type;
   const addOnCostForVehicle = (label) =>
     getVehicleAddOns(label).reduce((sum, id) => {
       const ao = ADD_ONS.find(a => a.id === id);
@@ -132,19 +149,14 @@ export default function BookAppointment() {
   // Total add-ons across all active vehicles
   const addOnTotal = activeVehicleKeys.reduce((sum, key) => sum + addOnCostForVehicle(key), 0);
 
-  // Total estimate: sum base price per vehicle + their add-ons
+  // Total estimate: sum base price per vehicle + their add-ons (each vehicle can have different service)
   const estimatedTotal = (() => {
-    if (!form.service_type || isConsultation) return null;
-    if (selectedVehicles.length === 0) {
-      // No saved vehicles selected — use derived vehicle type
-      if (!derivedVehicleType) return null;
-      const base = PRICE_MAP[form.service_type]?.[derivedVehicleType];
-      if (!base) return null;
-      return parseInt(base.replace(/\D/g, '')) + addOnCostForVehicle('__global');
-    }
+    if (selectedVehicles.length === 0) return null;
     const prices = selectedVehicles.map(label => {
       const v = vehicles.find(veh => `${veh.year} ${veh.make} ${veh.model}${veh.color ? ', ' + veh.color : ''}` === label);
-      const base = PRICE_MAP[form.service_type]?.[v?.vehicle_type];
+      const serviceId = getVehicleService(label);
+      if (!serviceId || !v?.vehicle_type) return null;
+      const base = PRICE_MAP[serviceId]?.[v.vehicle_type];
       if (!base) return null;
       return parseInt(base.replace(/\D/g, '')) + addOnCostForVehicle(label);
     });
@@ -194,20 +206,21 @@ export default function BookAppointment() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.service_type || !form.name || !form.phone || !form.address) return;
+    if (!form.name || !form.phone || !form.address) return;
     if (!form.preferred_date || !form.preferred_time) return;
     if (selectedVehicles.length === 0) return;
+    // Validate each vehicle has a service selected
+    const hasAllServices = selectedVehicles.every(label => getVehicleService(label));
+    if (!hasAllServices) return;
     setLoading(true);
     try {
-      const vehicleSummary = selectedVehicles.length > 0 ? selectedVehicles.join(', ') : form.vehicle_info;
-      // Build per-vehicle add-on summary
-      const addOnSummaryParts = activeVehicleKeys.map(key => {
-        const labels = getVehicleAddOns(key).map(id => ADD_ONS.find(a => a.id === id)?.label).filter(Boolean);
-        if (!labels.length) return null;
-        const prefix = selectedVehicles.length > 1 ? `${key}: ` : '';
-        return `${prefix}${labels.join(', ')}`;
-      }).filter(Boolean);
-      const addOnNote = addOnSummaryParts.length ? `Add-ons: ${addOnSummaryParts.join(' | ')}` : '';
+      const vehicleSummary = selectedVehicles.join(', ');
+      // Build per-vehicle service + add-on summary
+      const vehicleDetails = selectedVehicles.map(label => {
+        const service = getVehicleService(label);
+        const addons = getVehicleAddOns(label).map(id => ADD_ONS.find(a => a.id === id)?.label).filter(Boolean);
+        return `${label} — ${SERVICE_LABELS[service] || service}${addons.length ? ` + ${addons.join(', ')}` : ''}`;
+      });
       const quoteNote = estimatedTotal != null ? `Estimated Total: $${estimatedTotal}+` : '';
       const submitVehicleType = isConsultation
         ? (isGold ? 'gold' : 'standard')
@@ -216,7 +229,8 @@ export default function BookAppointment() {
         ...form,
         vehicle_type: submitVehicleType,
         vehicle_info: vehicleSummary,
-        notes: [quoteNote, form.notes, addOnNote].filter(Boolean).join(' | '),
+        vehicle_details: vehicleDetails.join(' | '),
+        notes: [quoteNote, form.notes].filter(Boolean).join(' | '),
         preferred_date: form.preferred_date || null,
         preferred_time: form.preferred_time || null,
       });
@@ -379,34 +393,66 @@ export default function BookAppointment() {
                 </div>
               )}
               {vehicles.length > 0 && (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {vehicles.map(v => {
                     const label = `${v.year} ${v.make} ${v.model}${v.color ? ', ' + v.color : ''}`;
                     const checked = selectedVehicles.includes(label);
+                    const vehicleService = getVehicleService(label);
+                    const isVehicleConsultation = CONSULTATION_IDS.includes(vehicleService);
                     return (
-                      <div key={v.id} className={`flex items-center border rounded-sm transition-colors ${checked ? 'border-gold bg-gold/10' : 'border-vapor/10'}`}>
-                        <button
-                          type="button"
-                          onClick={() => toggleVehicle(label)}
-                          className="flex-1 flex items-center justify-between px-5 py-3 text-left"
-                        >
-                          <span className="font-mono-tech text-sm text-vapor">{label}</span>
-                          <div className="flex items-center gap-3">
+                      <div key={v.id} className={`border rounded-sm transition-colors ${checked ? 'border-gold bg-gold/5' : 'border-vapor/10'}`}>
+                        <div className="flex items-center gap-3 p-4">
+                          <button
+                            type="button"
+                            onClick={() => toggleVehicle(label)}
+                            className={`w-5 h-5 border rounded-sm flex items-center justify-center transition-colors ${checked ? 'border-gold bg-gold text-obsidian' : 'border-vapor/30 hover:border-vapor/50'}`}
+                          >
+                            {checked && <X size={12} />}
+                          </button>
+                          <div className="flex-1">
+                            <p className="font-mono-tech text-sm text-vapor">{label}</p>
                             {v.vehicle_type && (
-                              <span className="text-xs font-mono-tech text-vapor/30">
+                              <p className="text-xs font-mono-tech text-vapor/30 mt-0.5">
                                 {v.vehicle_type === 'sedan_coupe' ? 'Sedan/Coupe' : 'Truck/SUV'}
-                              </span>
+                              </p>
                             )}
-                            {checked && <X size={13} className="text-gold shrink-0" />}
                           </div>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteVehicle(v)}
-                          className="px-4 py-3 text-vapor/20 hover:text-red-400 transition-colors border-l border-vapor/10"
-                        >
-                          <Trash2 size={13} />
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteVehicle(v)}
+                            className="p-2 text-vapor/20 hover:text-red-400 transition-colors"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                        {checked && (
+                          <div className="px-4 pb-4">
+                            <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">SERVICE FOR THIS VEHICLE</label>
+                            <div className="relative">
+                              <select
+                                value={vehicleService}
+                                onChange={(e) => setVehicleService(label, e.target.value)}
+                                className={selectClass}
+                              >
+                                <option value="" disabled>Choose a service...</option>
+                                {visibleServices.map(s => {
+                                  const suffix = s.quoteOnly ? ' — Quote Only' : s.gold ? ' — Member Only' : '';
+                                  return (
+                                    <option key={s.id} value={s.id}>
+                                      {s.label}{suffix}
+                                    </option>
+                                  );
+                                })}
+                              </select>
+                              <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-vapor/40 pointer-events-none" />
+                            </div>
+                            {isVehicleConsultation && (
+                              <p className="text-xs font-mono-tech text-gold/60 mt-2">
+                                Free 15-min consultation · Custom quote provided on-site
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -439,49 +485,53 @@ export default function BookAppointment() {
           )}
 
           {/* Add-Ons */}
-          {form.service_type && !isConsultation && (
+          {selectedVehicles.length > 0 && (
             <div>
               <label className="block text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">ADD-ON SERVICES <span className="text-vapor/25">(OPTIONAL)</span></label>
-              {activeVehicleKeys.map(vehicleKey => (
-                <div key={vehicleKey} className="mb-4">
-                  {selectedVehicles.length > 1 && (
-                    <p className="text-xs font-mono-tech text-vapor/30 tracking-widest mb-2">{vehicleKey}</p>
-                  )}
-                  <div className="space-y-2">
-                    {ADD_ONS.map(ao => {
-                      const active = getVehicleAddOns(vehicleKey).includes(ao.id);
-                      const isDisabled = ao.id === 'ceramic_sealant' && form.service_type === 'interior_detail';
-                      return (
-                        <button
-                          key={ao.id}
-                          type="button"
-                          disabled={isDisabled}
-                          onClick={() => !isDisabled && toggleAddOn(vehicleKey, ao.id)}
-                          className={`w-full flex items-center justify-between px-5 py-3 border rounded-sm transition-colors text-left ${
-                            isDisabled
-                              ? 'border-vapor/5 text-vapor/20 cursor-not-allowed opacity-40'
-                              : active ? 'border-gold bg-gold/10' : 'border-vapor/10 hover:border-vapor/30'
-                          }`}
-                        >
-                          <div>
-                            <span className={`font-mono-tech text-sm ${isDisabled ? 'text-vapor/30' : 'text-vapor'}`}>{ao.label}</span>
-                            {isDisabled && <span className="block text-xs font-mono-tech text-vapor/25 mt-0.5">Exterior services only</span>}
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <span className={`font-mono-tech text-sm font-bold ${active && !isDisabled ? 'text-gold' : 'text-vapor/40'}`}>{ao.price}</span>
-                            {active && !isDisabled && <X size={13} className="text-gold shrink-0" />}
-                          </div>
-                        </button>
-                      );
-                    })}
+              {selectedVehicles.map(vehicleKey => {
+                const vehicleService = getVehicleService(vehicleKey);
+                const isInteriorOnly = vehicleService === 'interior_detail';
+                return (
+                  <div key={vehicleKey} className="mb-4">
+                    {selectedVehicles.length > 1 && (
+                      <p className="text-xs font-mono-tech text-vapor/30 tracking-widest mb-2">{vehicleKey}</p>
+                    )}
+                    <div className="space-y-2">
+                      {ADD_ONS.map(ao => {
+                        const active = getVehicleAddOns(vehicleKey).includes(ao.id);
+                        const isDisabled = ao.id === 'ceramic_sealant' && isInteriorOnly;
+                        return (
+                          <button
+                            key={ao.id}
+                            type="button"
+                            disabled={isDisabled}
+                            onClick={() => !isDisabled && toggleAddOn(vehicleKey, ao.id)}
+                            className={`w-full flex items-center justify-between px-5 py-3 border rounded-sm transition-colors text-left ${
+                              isDisabled
+                                ? 'border-vapor/5 text-vapor/20 cursor-not-allowed opacity-40'
+                                : active ? 'border-gold bg-gold/10' : 'border-vapor/10 hover:border-vapor/30'
+                            }`}
+                          >
+                            <div>
+                              <span className={`font-mono-tech text-sm ${isDisabled ? 'text-vapor/30' : 'text-vapor'}`}>{ao.label}</span>
+                              {isDisabled && <span className="block text-xs font-mono-tech text-vapor/25 mt-0.5">Exterior services only</span>}
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className={`font-mono-tech text-sm font-bold ${active && !isDisabled ? 'text-gold' : 'text-vapor/40'}`}>{ao.price}</span>
+                              {active && !isDisabled && <X size={13} className="text-gold shrink-0" />}
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {addOnCostForVehicle(vehicleKey) > 0 && selectedVehicles.length > 1 && (
+                      <p className="text-right text-xs font-mono-tech text-gold/60 mt-1 tracking-widest">
+                        +${addOnCostForVehicle(vehicleKey)}
+                      </p>
+                    )}
                   </div>
-                  {addOnCostForVehicle(vehicleKey) > 0 && selectedVehicles.length > 1 && (
-                    <p className="text-right text-xs font-mono-tech text-gold/60 mt-1 tracking-widest">
-                      +${addOnCostForVehicle(vehicleKey)}
-                    </p>
-                  )}
-                </div>
-              ))}
+                );
+              })}
               {addOnTotal > 0 && (
                 <p className="text-right text-xs font-mono-tech text-gold/60 mt-1 tracking-widest border-t border-gold/10 pt-2">
                   TOTAL ADD-ONS: +${addOnTotal}
@@ -623,14 +673,12 @@ export default function BookAppointment() {
           <div className="pt-2 space-y-4">
             <button
               type="submit"
-              disabled={loading || !form.service_type || !form.name || !form.phone || !form.address || !form.preferred_date || !form.preferred_time || selectedVehicles.length === 0}
+              disabled={loading || !form.name || !form.phone || !form.address || !form.preferred_date || !form.preferred_time || selectedVehicles.length === 0}
               className="w-full flex items-center justify-center gap-3 bg-gold hover:bg-gold-light text-obsidian font-mono-tech text-sm tracking-widest py-4 rounded-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {loading
                 ? <><div className="w-4 h-4 border-2 border-obsidian/30 border-t-obsidian rounded-full animate-spin" /><span>SUBMITTING...</span></>
-                : isConsultation
-                  ? <><span>BOOK CONSULTATION</span><ArrowRight size={14} /></>
-                  : <><span>CONFIRM APPOINTMENT</span><ArrowRight size={14} /></>
+                : <><span>CONFIRM APPOINTMENT</span><ArrowRight size={14} /></>
               }
             </button>
             <p className="text-center text-vapor/25 text-xs font-mono-tech">
