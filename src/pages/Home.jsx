@@ -84,10 +84,14 @@ export default function Home() {
             </p>
 
             <div className="flex flex-wrap gap-4 justify-center md:justify-start">
-              <a href="sms:+14704128986"
+              <Link to="/pricing"
                 className="flex items-center gap-3 bg-vapor text-obsidian px-7 py-4 text-sm font-mono-tech tracking-widest hover:bg-gold transition-colors duration-300 rounded-sm">
-                TEXT FOR A QUOTE <ArrowRight size={14} />
-              </a>
+                PRICING <ArrowRight size={14} />
+              </Link>
+              <Link to="/book"
+                className="flex items-center gap-3 border border-vapor/40 text-vapor px-7 py-4 text-sm font-mono-tech tracking-widest hover:border-vapor transition-colors duration-300 rounded-sm">
+                BOOK NOW <ArrowRight size={14} />
+              </Link>
               <Link to="/vds-gold"
                 className="vds-gold-btn flex items-center gap-3 px-7 py-4 text-sm font-mono-tech tracking-widest rounded-sm">
                 ◆ EXPLORE VDS GOLD
