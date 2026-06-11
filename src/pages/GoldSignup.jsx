@@ -10,6 +10,7 @@ export default function GoldSignup() {
   const [step, setStep] = useState('register'); // 'register' | 'otp'
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -94,6 +95,17 @@ export default function GoldSignup() {
                       placeholder="Smith"
                     />
                   </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-mono-tech tracking-widest text-vapor/50 mb-2">PHONE NUMBER</label>
+                  <input
+                    type="tel"
+                    value={phone}
+                    onChange={e => setPhone(e.target.value)}
+                    required
+                    className="w-full bg-asphalt border border-vapor/10 focus:border-gold/50 outline-none text-vapor px-4 py-3 text-sm font-mono-tech rounded-sm transition-colors duration-200"
+                    placeholder="(404) 555-0000"
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-mono-tech tracking-widest text-vapor/50 mb-2">EMAIL</label>
