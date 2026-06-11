@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { ChevronLeft, ChevronRight, ArrowRight, CheckCircle, ChevronDown, X, Plus, Loader2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ArrowRight, CheckCircle, ChevronDown, X, Plus, Loader2, Trash2 } from 'lucide-react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isBefore, isToday, isSameDay } from 'date-fns';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
@@ -88,6 +88,14 @@ export default function BookAppointment() {
     const saved = await base44.entities.MemberVehicle.create(vehicleForm);
     setVehicles(v => [...v, saved]);
     setShowAddVehicle(false);
+  };
+
+  const handleDeleteVehicle = async (vehicle) => {
+    const label = `${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.color ? ', ' + vehicle.color : ''}`;
+    await base44.entities.MemberVehicle.delete(vehicle.id);
+    setVehicles(v => v.filter(veh => veh.id !== vehicle.id));
+    setSelectedVehicles(prev => prev.filter(l => l !== label));
+    setAddOns(prev => { const next = { ...prev }; delete next[label]; return next; });
   };
 
   const getVehicleAddOns = (label) => addOns[label] || [];
@@ -320,29 +328,30 @@ export default function BookAppointment() {
                     const label = `${v.year} ${v.make} ${v.model}${v.color ? ', ' + v.color : ''}`;
                     const checked = selectedVehicles.includes(label);
                     return (
-                      <button
-                        key={v.id}
-                        type="button"
-                        onClick={() => {
-                          toggleVehicle(label);
-                          if (!form.vehicle_type && v.vehicle_type) {
-                            setForm(f => ({ ...f, vehicle_type: v.vehicle_type }));
-                          }
-                        }}
-                        className={`w-full flex items-center justify-between px-5 py-3 border rounded-sm transition-colors text-left ${
-                          checked ? 'border-gold bg-gold/10' : 'border-vapor/10 hover:border-vapor/30'
-                        }`}
-                      >
-                        <span className="font-mono-tech text-sm text-vapor">{label}</span>
-                        <div className="flex items-center gap-3">
-                          {v.vehicle_type && (
-                            <span className="text-xs font-mono-tech text-vapor/30">
-                              {v.vehicle_type === 'sedan_coupe' ? 'Sedan/Coupe' : 'Truck/SUV'}
-                            </span>
-                          )}
-                          {checked && <X size={13} className="text-gold shrink-0" />}
-                        </div>
-                      </button>
+                      <div key={v.id} className={`flex items-center border rounded-sm transition-colors ${checked ? 'border-gold bg-gold/10' : 'border-vapor/10'}`}>
+                        <button
+                          type="button"
+                          onClick={() => toggleVehicle(label)}
+                          className="flex-1 flex items-center justify-between px-5 py-3 text-left"
+                        >
+                          <span className="font-mono-tech text-sm text-vapor">{label}</span>
+                          <div className="flex items-center gap-3">
+                            {v.vehicle_type && (
+                              <span className="text-xs font-mono-tech text-vapor/30">
+                                {v.vehicle_type === 'sedan_coupe' ? 'Sedan/Coupe' : 'Truck/SUV'}
+                              </span>
+                            )}
+                            {checked && <X size={13} className="text-gold shrink-0" />}
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteVehicle(v)}
+                          className="px-4 py-3 text-vapor/20 hover:text-red-400 transition-colors border-l border-vapor/10"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     );
                   })}
                 </div>
