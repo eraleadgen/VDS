@@ -16,8 +16,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Vehicle not found or unauthorized' }, { status: 404 });
     }
 
-    // Find active subscription for this vehicle
-    const subscriptions = await base44.entities.VehicleSubscription.filter({ 
+    // Find active subscription for this vehicle (service role needed for admin-only entity)
+    const subscriptions = await base44.asServiceRole.entities.VehicleSubscription.filter({ 
       vehicle_id, 
       status: 'active' 
     });
@@ -33,8 +33,7 @@ Deno.serve(async (req) => {
       if (sub.stripe_subscription_id) {
         await stripe.subscriptions.cancel(sub.stripe_subscription_id);
       }
-      // Update subscription record
-      await base44.entities.VehicleSubscription.update(sub.id, {
+      await base44.asServiceRole.entities.VehicleSubscription.update(sub.id, {
         status: 'canceled',
         current_period_end: new Date().toISOString().split('T')[0]
       });

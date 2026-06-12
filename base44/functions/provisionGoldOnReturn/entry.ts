@@ -36,8 +36,8 @@ Deno.serve(async (req) => {
       return Response.json({ skipped: true, reason: 'No vehicles found' });
     }
 
-    // Get existing VehicleSubscription records to avoid duplicates
-    const existingSubs = await base44.entities.VehicleSubscription.list();
+    // Get existing VehicleSubscription records to avoid duplicates (service role needed)
+    const existingSubs = await base44.asServiceRole.entities.VehicleSubscription.list();
     const enrolledVehicleIds = new Set(existingSubs.map(s => s.vehicle_id));
 
     // Find the most recent checkout session to get vehicle_ids metadata
@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
       if (!vehicle) continue;
       const tier = vehicle.vehicle_type || 'sedan_coupe';
 
-      await base44.entities.VehicleSubscription.create({
+      await base44.asServiceRole.entities.VehicleSubscription.create({
         vehicle_id: vehicleId,
         stripe_subscription_id: subscription.id,
         stripe_customer_id: customer.id,
