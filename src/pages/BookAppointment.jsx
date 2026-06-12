@@ -258,11 +258,13 @@ export default function BookAppointment() {
     setLoading(true);
     try {
       const vehicleSummary = selectedVehicles.join(', ');
-      // Build per-vehicle service + add-on summary
+      // Build per-vehicle service + add-on summary with vehicle type
       const vehicleDetails = selectedVehicles.map(label => {
+        const v = vehicles.find(veh => `${veh.year} ${veh.make} ${veh.model}${veh.color ? ', ' + veh.color : ''}` === label);
         const service = getVehicleService(label);
         const addons = getVehicleAddOns(label).map(id => ADD_ONS.find(a => a.id === id)?.label).filter(Boolean);
-        return `${label} — ${SERVICE_LABELS[service] || service}${addons.length ? ` + ${addons.join(', ')}` : ''}`;
+        const vehicleTypeLabel = v?.vehicle_type === 'truck_suv' ? 'Truck/SUV' : 'Sedan/Coupe';
+        return `${label} (${vehicleTypeLabel}) — ${SERVICE_LABELS[service] || service}${addons.length ? ` + ${addons.join(', ')}` : ''}`;
       });
       const quoteNote = estimatedTotal != null ? `Estimated Total: $${estimatedTotal}+` : '';
       // Use first vehicle's service to determine if this is a consultation booking

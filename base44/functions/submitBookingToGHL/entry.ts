@@ -159,67 +159,113 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 3. Create appointment if date/time + calendar are available
-    if (contactId && calendarId && preferred_date && preferred_time) {
+    // 3. Create appointments for each vehicle if date/time + calendar are available
+    if (contactId && preferred_date && preferred_time && vehicle_details) {
       const [timePart, meridiem] = preferred_time.split(' ');
       let [hours, minutes] = timePart.split(':').map(Number);
       if (meridiem === 'PM' && hours !== 12) hours += 12;
       if (meridiem === 'AM' && hours === 12) hours = 0;
 
-      const startIso = `${preferred_date}T${String(hours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:00-05:00`;
-      let endHours = hours, endMinutes = minutes;
-      if (CONSULTATION_SERVICES.includes(service_type)) {
-        endMinutes = minutes + 15;
-        if (endMinutes >= 60) { endHours += 1; endMinutes -= 60; }
-      } else {
-        endHours = hours + 2;
+      // Parse vehicle_details into individual vehicle objects
+      // Format: "2023 Honda Civic, Black (Sedan/Coupe) — Interior Detail | 2017 Subaru BRZ, Grey (Truck/SUV) — Full Interior + Exterior Detail + Ceramic Sealant (3 Month)"
+      const vehicleEntries = vehicle_details.split(' | ').map(v => v.trim());
+      
+      // Create separate appointment for each vehicle
+      let appointmentCount = 0;
+      for (let i = 0; i < vehicleEntries.length; i++) {
+        const vehicleEntry = vehicleEntries[i];
+        // Parse: "Vehicle Info (VehicleType) — Service Name + Addons"
+        const parts = vehicleEntry.split(' — ');
+        const vehicleInfoWithType = parts[0];
+        const serviceWithAddons = parts[1] || '';
+        
+        // Extract vehicle type from parentheses
+        const typeMatch = vehicleInfoWithType.match(/\(([^)]+)\)/);
+        const vehicleTypeStr = typeMatch ? typeMatch[1] : vehicle_type;
+        const vehicleType = vehicleTypeStr === 'Truck/SUV' ? 'truck_suv' : 'sedan_coupe';
+        
+        // Extract base service type (before any + signs)
+        const baseService = serviceWithAddons.split(' + ')[0].trim();
+        
+        // Map service name back to service_type key
+        const serviceTypeMap = {
+          'Exterior Detail': 'exterior_detail',
+          'Interior Detail': 'interior_detail',
+          'Full Interior + Exterior Detail': 'full_detail',
+          'VDS Gold — Exterior Detail': 'vds_gold_exterior',
+          'VDS Gold — Full Detail': 'vds_gold_full',
+          'Ceramic Coating': 'ceramic_coating',
+          'Paint Correction': 'paint_correction',
+        };
+        const vehicleServiceType = serviceTypeMap[baseService] || service_type;
+        
+        // Determine calendar ID for this vehicle's service
+        let vehicleCalendarKey;
+        const isConsultation = CONSULTATION_SERVICES.includes(vehicleServiceType);
+        if (isConsultation) {
+          const tier = vehicle_type === 'gold' ? 'gold' : 'standard';
+          vehicleCalendarKey = `${vehicleServiceType}_${tier}`;
+        } else {
+          vehicleCalendarKey = `${vehicleServiceType}_${vehicleType}`;
+        }
+        const vehicleCalendarId = CALENDAR_IDS[vehicleCalendarKey];
+        
+        if (!vehicleCalendarId) {
+          console.log('No calendar found for service:', vehicleCalendarKey);
+          continue;
+        }
+        
+        // Calculate start time (stagger appointments by 2 hours for each vehicle after the first)
+        const staggerHours = i * 2;
+        const startHours = hours + staggerHours;
+        const startIso = `${preferred_date}T${String(startHours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:00-05:00`;
+        
+        // Calculate end time based on service type
+        let endHours = startHours, endMinutes = minutes;
+        if (isConsultation) {
+          endMinutes = minutes + 15;
+          if (endMinutes >= 60) { endHours += 1; endMinutes -= 60; }
+        } else {
+          endHours = startHours + 2;
+        }
+        const endIso = `${preferred_date}T${String(endHours).padStart(2,'0')}:${String(endMinutes).padStart(2,'0')}:00-05:00`;
+
+        // Build appointment description for this specific vehicle
+        const vehicleInfoClean = vehicleInfoWithType.replace(/\([^)]+\)/, '').trim();
+        const apptDescription = [
+          'BOOKING DETAILS',
+          `Service: ${baseService.toUpperCase()}`,
+          `Vehicle: ${vehicleInfoClean}`,
+          `Service Address: ${address}`,
+          notes ? `Notes/Add-ons/Quote: ${notes}` : null,
+        ].filter(Boolean).join('\n\n');
+
+        const apptPayload = {
+          calendarId: vehicleCalendarId,
+          locationId: GHL_LOCATION_ID,
+          contactId,
+          startTime: startIso,
+          endTime: endIso,
+          title: `${baseService.toUpperCase()} — ${name}`,
+          description: apptDescription,
+          appointmentStatus: 'new',
+          address: address || '',
+        };
+
+        const apptRes = await fetch('https://services.leadconnectorhq.com/calendars/events/appointments', {
+          method: 'POST',
+          headers: GHL_HEADERS,
+          body: JSON.stringify(apptPayload),
+        });
+        const apptData = await apptRes.json();
+        if (!apptRes.ok) {
+          console.error('GHL appointment creation failed for vehicle', i + 1, ':', JSON.stringify(apptData));
+        } else {
+          console.log('GHL appointment created for vehicle', i + 1, ':', apptData?.id);
+          appointmentCount++;
+        }
       }
-      const endIso = `${preferred_date}T${String(endHours).padStart(2,'0')}:${String(endMinutes).padStart(2,'0')}:00-05:00`;
-
-      // Use vehicle_details if provided (per-vehicle services), otherwise parse vehicle_info
-      let vehicleDisplayText;
-      if (vehicle_details) {
-        vehicleDisplayText = `Vehicles:\n${vehicle_details.split(' | ').map((v, i) => `  ${i + 1}. ${v}`).join('\n')}`;
-      } else {
-        const vehicleList = vehicle_info ? vehicle_info.split(',').map(v => v.trim()) : [];
-        const vehicleCount = vehicleList.length;
-        vehicleDisplayText = vehicleCount > 0 
-          ? `Vehicles:\n${vehicleList.map((v, i) => `  ${i + 1}. ${v}`).join('\n')}`
-          : `Vehicle: ${vehicle_info || 'N/A'}`;
-      }
-
-      // Build comprehensive appointment description with all booking details
-      const apptDescription = [
-        'BOOKING DETAILS',
-        `Service: ${service_type.replace(/_/g, ' ').toUpperCase()}`,
-        vehicleDisplayText,
-        `Service Address: ${address}`,
-        notes ? `Notes/Add-ons/Quote: ${notes}` : null,
-      ].filter(Boolean).join('\n\n');
-
-      const apptPayload = {
-        calendarId,
-        locationId: GHL_LOCATION_ID,
-        contactId,
-        startTime: startIso,
-        endTime: endIso,
-        title: `${service_type.replace(/_/g, ' ').toUpperCase()} — ${name}`,
-        description: apptDescription,
-        appointmentStatus: 'new',
-        address: address || '',
-      };
-
-      const apptRes = await fetch('https://services.leadconnectorhq.com/calendars/events/appointments', {
-        method: 'POST',
-        headers: GHL_HEADERS,
-        body: JSON.stringify(apptPayload),
-      });
-      const apptData = await apptRes.json();
-      if (!apptRes.ok) {
-        console.error('GHL appointment creation failed:', JSON.stringify(apptData));
-      } else {
-        console.log('GHL appointment created:', apptData?.id);
-      }
+      console.log('Total appointments created:', appointmentCount);
     }
 
     // 3. Create Appointment entity record for user dashboard access
