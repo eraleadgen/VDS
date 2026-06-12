@@ -3,6 +3,12 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    
+    // Authenticate user
+    const user = await base44.auth.me();
+    if (!user) {
+      return Response.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
 
     const { name, phone, email, address, service_type, vehicle_type, vehicle_info, vehicle_details, notes, preferred_date, preferred_time } = await req.json();
 
@@ -270,44 +276,41 @@ Deno.serve(async (req) => {
 
     // 3. Create Appointment entity record for user dashboard access
     try {
-      const user = await base44.auth.me();
-      if (user) {
-        const serviceLabels = {
-          exterior_detail: 'Exterior Detail',
-          interior_detail: 'Interior Detail',
-          full_detail: 'Full Interior + Exterior Detail',
-          vds_gold_exterior: 'VDS Gold — Exterior Detail',
-          vds_gold_full: 'VDS Gold — Full Detail',
-          ceramic_coating: 'Ceramic Coating',
-          paint_correction: 'Paint Correction',
-        };
-        
-        // Build detailed services list from vehicle_details for display
-        let servicesNotes = '';
-        if (vehicle_details) {
-          const vehicleEntries = vehicle_details.split(' | ').map(v => v.trim());
-          servicesNotes = vehicleEntries.map((entry, idx) => {
-            const parts = entry.split(' — ');
-            const vehicleInfo = parts[0]?.replace(/\([^)]+\)/, '').trim() || '';
-            const service = parts[1] || '';
-            return `${idx + 1}. ${vehicleInfo} — ${service}`;
-          }).join('\n');
-        }
-        
-        await base44.entities.Appointment.create({
-          service_type,
-          service_label: serviceLabels[service_type] || service_type.replace(/_/g, ' ').toUpperCase(),
-          vehicle_info: vehicle_info || 'TBD',
-          preferred_date,
-          preferred_time,
-          status: 'pending',
-          notes: servicesNotes || notes || '',
-          customer_name: name,
-          customer_phone: phone,
-          customer_email: email || '',
-          service_address: address,
-        });
+      const serviceLabels = {
+        exterior_detail: 'Exterior Detail',
+        interior_detail: 'Interior Detail',
+        full_detail: 'Full Interior + Exterior Detail',
+        vds_gold_exterior: 'VDS Gold — Exterior Detail',
+        vds_gold_full: 'VDS Gold — Full Detail',
+        ceramic_coating: 'Ceramic Coating',
+        paint_correction: 'Paint Correction',
+      };
+      
+      // Build detailed services list from vehicle_details for display
+      let servicesNotes = '';
+      if (vehicle_details) {
+        const vehicleEntries = vehicle_details.split(' | ').map(v => v.trim());
+        servicesNotes = vehicleEntries.map((entry, idx) => {
+          const parts = entry.split(' — ');
+          const vehicleInfo = parts[0]?.replace(/\([^)]+\)/, '').trim() || '';
+          const service = parts[1] || '';
+          return `${idx + 1}. ${vehicleInfo} — ${service}`;
+        }).join('\n');
       }
+      
+      await base44.entities.Appointment.create({
+        service_type,
+        service_label: serviceLabels[service_type] || service_type.replace(/_/g, ' ').toUpperCase(),
+        vehicle_info: vehicle_info || 'TBD',
+        preferred_date,
+        preferred_time,
+        status: 'pending',
+        notes: servicesNotes || notes || '',
+        customer_name: name,
+        customer_phone: phone,
+        customer_email: email || '',
+        service_address: address,
+      });
     } catch (err) {
       console.error('Failed to create Appointment entity:', err.message);
     }
