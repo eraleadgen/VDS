@@ -32,10 +32,6 @@ export default function VdsGoldSignup() {
       }
       const me = await base44.auth.me();
       setUser(me);
-      if (me?.is_gold_member) {
-        navigate('/member-dashboard');
-        return;
-      }
       const v = await base44.entities.MemberVehicle.list();
       setVehicles(v);
     };
