@@ -38,6 +38,8 @@ export default function MemberDashboard() {
       const params = new URLSearchParams(window.location.search);
       if (params.get('gold_success') === 'true') {
         setShowGoldSuccess(true);
+        // Provision subscriptions as fallback in case webhook hasn't fired yet
+        await provisionGoldSubscriptions(me);
         // Clean up URL
         window.history.replaceState({}, document.title, '/member-dashboard');
       }
@@ -46,6 +48,15 @@ export default function MemberDashboard() {
     };
     init();
   }, []);
+
+  // Fallback: provision Gold subscriptions if webhook hasn't fired yet
+  const provisionGoldSubscriptions = async (me) => {
+    try {
+      await base44.functions.invoke('provisionGoldOnReturn', { user_id: me?.id });
+    } catch (e) {
+      console.log('Provision fallback skipped:', e.message);
+    }
+  };
 
   const loadData = async () => {
     const [v, r, a, subs] = await Promise.all([

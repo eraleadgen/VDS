@@ -74,7 +74,10 @@ export default function Home() {
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 pt-32 pb-16 md:pb-24 w-full">
           <div className="max-w-3xl text-center md:text-left">
-            <p className="text-xs font-mono-tech tracking-[0.3em] text-gold mb-6 opacity-80">
+            <p className="text-xs font-mono-tech tracking-[0.3em] text-gold mb-2 opacity-80">
+              VALET DETAILING SERVICE
+            </p>
+            <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40 mb-6">
               METRO ATLANTA · MOBILE DETAILING
             </p>
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-grotesk font-700 leading-none text-vapor mb-6 tracking-tight">
