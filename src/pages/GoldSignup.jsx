@@ -46,6 +46,8 @@ export default function GoldSignup() {
     setLoading(true);
     const res = await base44.auth.verifyOtp({ email, otpCode: otp });
     base44.auth.setToken(res.access_token);
+    // Save phone to user profile
+    await base44.auth.updateMe({ phone: phone.trim() });
     // Sync new member to GHL CRM
     await base44.functions.invoke('syncContactToGHL', {
       firstName: firstName.trim(),

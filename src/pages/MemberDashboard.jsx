@@ -171,12 +171,8 @@ export default function MemberDashboard() {
           </button>
         </div>
 
-        {/* This Month Banner */}
-        <div className="border border-gold/20 bg-gradient-to-r from-[#0D0B06] to-obsidian p-5 rounded-sm mb-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div>
-            <p className="text-xs font-mono-tech tracking-widest text-gold/60 mb-1">CURRENT BILLING PERIOD</p>
-            <p className="text-vapor font-grotesk font-semibold">{format(new Date(), 'MMMM yyyy')}</p>
-          </div>
+        {/* Schedule Appointment CTA */}
+        <div className="mb-8 flex justify-end">
           <Link
             to="/book"
             className="vds-gold-btn flex items-center gap-2 px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm whitespace-nowrap"
