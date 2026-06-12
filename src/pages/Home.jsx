@@ -224,9 +224,9 @@ export default function Home() {
               <div className="grid grid-cols-1 gap-8">
                 {[
                   { icon: '◆', title: 'Luxury & Performance Specialists', desc: "We're not a high-volume car wash. Our tools, techniques, and professional-grade products are specifically chosen for Porsche, Rolls Royce, and Mercedes-Benz." },
-                  { icon: '✎', title: 'Meticulous, Unrushed Craftsmanship', desc: 'Quality over speed. Every vehicle receives our full attention, ensuring a flawless result without cutting corners.' },
-                  { icon: '⚗', title: 'Professional, Insured & Reliable', desc: 'Registered LLC with comprehensive business insurance. Clear communication, on-time arrivals, and complete peace of mind.' },
-                  { icon: '❖', title: 'Long-Term Client Relationships', desc: "Our goal is to be your trusted partner for car care — delivering consistent, exceptional results every single time." },
+                  { icon: '◆', title: 'Meticulous, Unrushed Craftsmanship', desc: 'Quality over speed. Every vehicle receives our full attention, ensuring a flawless result without cutting corners.' },
+                  { icon: '◆', title: 'Professional, Insured & Reliable', desc: 'Registered LLC with comprehensive business insurance. Clear communication, on-time arrivals, and complete peace of mind.' },
+                  { icon: '◆', title: 'Long-Term Client Relationships', desc: "Our goal is to be your trusted partner for car care — delivering consistent, exceptional results every single time." },
                 ].map(item => (
                   <div key={item.title} className="flex gap-5 group">
                     <span className="text-gold text-sm mt-1 shrink-0">{item.icon}</span>
