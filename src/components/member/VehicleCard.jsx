@@ -50,30 +50,27 @@ export default function VehicleCard({ vehicle, onDelete, onEdit, onEnrollClick, 
         <div className="h-1 w-full bg-gradient-to-r from-vapor/10 via-vapor/20 to-vapor/10" />
       )}
 
-      {/* Vehicle Image */}
-      {vehicle.vehicle_image && (
-        <div className="relative h-48 w-full overflow-hidden bg-obsidian">
-          <img 
-            src={vehicle.vehicle_image} 
-            alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
-            className="w-full h-full object-cover"
-          />
-        </div>
-      )}
-
       <div className="p-5 flex items-start justify-between gap-4">
         <div className="flex items-start gap-4">
-          {/* Logo icon box - Gold or Silver based on membership */}
+          {/* Vehicle logo/badge */}
           <div className={`w-12 h-12 flex items-center justify-center rounded-sm shrink-0 mt-0.5 overflow-hidden ${
             isGold 
               ? 'bg-gradient-to-br from-gold/20 to-gold/5 border border-gold/40 shadow-[0_0_20px_rgba(212,175,55,0.3)]' 
               : 'bg-gradient-to-br from-vapor/10 to-vapor/5 border border-vapor/20'
           }`}>
-            <img 
-              src={isGold ? GOLD_BADGE : SILVER_BADGE} 
-              alt="Membership Badge" 
-              className="w-9 h-9 object-contain transition-all duration-300" 
-            />
+            {vehicle.vehicle_image ? (
+              <img 
+                src={vehicle.vehicle_image} 
+                alt="Vehicle Logo" 
+                className="w-full h-full object-cover" 
+              />
+            ) : (
+              <img 
+                src={isGold ? GOLD_BADGE : SILVER_BADGE} 
+                alt="Membership Badge" 
+                className="w-9 h-9 object-contain transition-all duration-300" 
+              />
+            )}
           </div>
           <div>
             <div className="flex items-center gap-2">
