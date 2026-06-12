@@ -257,13 +257,22 @@ export default function MemberDashboard() {
                   <p className="text-vapor/40 text-xs font-mono-tech mt-0.5">Unlimited Exterior + 1 Interior / Month · Ceramic Sealant Included</p>
                 </div>
               </div>
-              <div className="text-right">
+              <div className="flex flex-col items-end gap-2">
                 <p className="text-gold font-mono-tech text-xs tracking-widest">
                   ${subscriptions.reduce((sum, sub) => sum + (sub.tier === 'truck_suv' ? 300 : 250), 0)} / MO
                 </p>
-                <p className="text-vapor/30 text-xs font-mono-tech mt-0.5">
+                <p className="text-vapor/30 text-xs font-mono-tech">
                   {subscriptions.length} Gold vehicle{subscriptions.length > 1 ? 's' : ''} · Billed via Stripe
                 </p>
+                <button
+                  onClick={() => {
+                    const goldVehicle = vehicles.find(v => subscriptions.some(s => s.vehicle_id === v.id));
+                    if (goldVehicle) handleCancelClick(goldVehicle);
+                  }}
+                  className="text-xs font-mono-tech tracking-widest text-red-400/60 hover:text-red-400 border border-red-400/20 hover:border-red-400/40 px-3 py-1.5 rounded-sm transition-colors"
+                >
+                  CANCEL MEMBERSHIP
+                </button>
               </div>
             </div>
           ) : (
