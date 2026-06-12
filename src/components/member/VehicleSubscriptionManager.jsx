@@ -37,7 +37,11 @@ export default function VehicleSubscriptionManager({ vehicle, onSubscriptionChan
 
   return (
     <>
-      <div className="border-t border-vapor/10 px-5 py-4 bg-asphalt/30">
+      <div className={`border-t px-5 py-4 ${
+        isGoldRegistered 
+          ? 'border-gold/15 bg-gold/5' 
+          : 'border-vapor/10 bg-asphalt/30'
+      }`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {isGoldRegistered ? (
@@ -45,7 +49,7 @@ export default function VehicleSubscriptionManager({ vehicle, onSubscriptionChan
                 <div className="w-2 h-2 rounded-full bg-gold animate-pulse" />
                 <div>
                   <p className="text-gold font-mono-tech text-xs tracking-widest">VDS GOLD ACTIVE</p>
-                  <p className="text-vapor/40 text-xs font-mono-tech">${monthlyRate}/mo · {vehicle.vehicle_type === 'truck_suv' ? 'Truck/SUV' : 'Sedan/Coupe'} Rate</p>
+                  <p className="text-vapor/50 text-xs font-mono-tech">${monthlyRate}/mo · {vehicle.vehicle_type === 'truck_suv' ? 'Truck/SUV' : 'Sedan/Coupe'}</p>
                 </div>
               </>
             ) : (
@@ -53,7 +57,7 @@ export default function VehicleSubscriptionManager({ vehicle, onSubscriptionChan
                 <div className="w-2 h-2 rounded-full bg-vapor/20" />
                 <div>
                   <p className="text-vapor/60 font-mono-tech text-xs tracking-widest">NOT ENROLLED</p>
-                  <p className="text-vapor/30 text-xs font-mono-tech">${monthlyRate}/mo to activate</p>
+                  <p className="text-vapor/40 text-xs font-mono-tech">${monthlyRate}/mo to activate</p>
                 </div>
               </>
             )}
@@ -63,7 +67,7 @@ export default function VehicleSubscriptionManager({ vehicle, onSubscriptionChan
             disabled={isProcessing}
             className={`px-4 py-2 text-xs font-mono-tech tracking-widest rounded-sm transition-colors disabled:opacity-50 ${
               isGoldRegistered
-                ? 'border border-vapor/20 text-vapor/50 hover:border-vapor/40 hover:text-vapor'
+                ? 'border border-gold/30 text-gold/70 hover:border-gold/50 hover:text-gold'
                 : 'bg-gold text-obsidian hover:bg-gold-light'
             }`}
           >
