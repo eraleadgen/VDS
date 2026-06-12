@@ -301,7 +301,8 @@ export default function Home() {
         <img
           src="https://media.base44.com/images/public/6a191df337222815cd0b1f5e/b6ee3461b_ExteriorDetail5.jpg"
           alt="Luxury car"
-          className="absolute inset-0 w-full h-full object-cover"
+          className="absolute inset-0 w-full h-full object-cover object-center"
+          style={{ imageRendering: '-webkit-optimize-contrast' }}
         />
         <div className="absolute inset-0 bg-obsidian/85" />
         <div className="relative max-w-7xl mx-auto px-6 text-center">
