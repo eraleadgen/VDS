@@ -184,7 +184,7 @@ export default function MemberDashboard() {
         {/* Header */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-12">
           <div>
-            <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-2">VDS GOLD MEMBER PORTAL</p>
+            <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-2">{subscriptions.length > 0 ? 'VDS GOLD MEMBER PORTAL' : 'MEMBER PORTAL'}</p>
             <h1 className="text-4xl font-grotesk font-bold text-vapor">
               WELCOME, <GoldShimmer>{user?.full_name?.split(' ')[0]?.toUpperCase() || 'MEMBER'}</GoldShimmer>
             </h1>
