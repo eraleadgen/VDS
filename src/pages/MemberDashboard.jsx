@@ -230,7 +230,7 @@ export default function MemberDashboard() {
         </div>
 
         {/* VDS Gold Quick Booking — Gold members only */}
-        {user?.is_gold_member && (
+        {subscriptions.length > 0 && (
           <div className="mb-8">
             <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40 mb-4">VDS GOLD BOOKING</p>
             <div className="glass-panel border border-gold/20 rounded-sm p-6">
