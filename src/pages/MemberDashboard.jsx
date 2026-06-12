@@ -62,16 +62,16 @@ export default function MemberDashboard() {
   };
 
   const loadData = async () => {
-    const [v, r, a, subs] = await Promise.all([
+    const [v, r, a, subsRes] = await Promise.all([
       base44.entities.MemberVehicle.list(),
       base44.entities.ServiceRecord.list(),
       base44.entities.Appointment.list(),
-      base44.entities.VehicleSubscription.list(),
+      base44.functions.invoke('getMySubscriptions', {}),
     ]);
     setVehicles(v);
     setRecords(r);
     setAppointments(a.sort((x, y) => new Date(y.preferred_date) - new Date(x.preferred_date)));
-    setSubscriptions(subs.filter(s => s.status === 'active'));
+    setSubscriptions(subsRes?.data?.subscriptions || []);
   };
 
   const thisMonthRecords = records.filter(r => r.month_year === currentMonth);
