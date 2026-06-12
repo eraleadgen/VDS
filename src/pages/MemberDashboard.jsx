@@ -307,11 +307,13 @@ export default function MemberDashboard() {
           )}
         </div>
 
-        {/* Usage Tracker */}
-        <div className="mb-12">
-          <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40 mb-4">THIS MONTH'S USAGE</p>
-          <UsageTracker fullDetailsUsed={fullDetailsUsed} exteriorDetailsUsed={exteriorDetailsUsed} />
-        </div>
+        {/* Usage Tracker — Gold members only */}
+        {subscriptions.length > 0 && (
+          <div className="mb-12">
+            <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40 mb-4">THIS MONTH'S USAGE</p>
+            <UsageTracker fullDetailsUsed={fullDetailsUsed} exteriorDetailsUsed={exteriorDetailsUsed} />
+          </div>
+        )}
 
         {/* Service History — grouped by vehicle */}
         {vehicles.length > 0 && (
