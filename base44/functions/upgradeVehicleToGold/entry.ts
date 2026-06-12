@@ -5,7 +5,6 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
 
     const { vehicle_id } = await req.json();
     if (!vehicle_id) {
@@ -16,6 +15,12 @@ Deno.serve(async (req) => {
     const vehicle = await base44.entities.MemberVehicle.get(vehicle_id);
     if (!vehicle || vehicle.created_by_id !== user.id) {
       return Response.json({ error: 'Vehicle not found or unauthorized' }, { status: 404 });
+    }
+
+    // Verify there is an active Stripe-backed subscription for this vehicle
+    const activeSubs = await base44.asServiceRole.entities.VehicleSubscription.filter({ vehicle_id, status: 'active' });
+    if (activeSubs.length === 0) {
+      return Response.json({ error: 'No active Gold subscription found for this vehicle' }, { status: 403 });
     }
 
     // Update vehicle to Gold registered
