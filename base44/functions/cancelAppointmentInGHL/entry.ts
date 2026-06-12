@@ -80,38 +80,58 @@ Deno.serve(async (req) => {
     const eventsData = await eventsRes.json();
     const events = eventsData?.events || [];
 
-    // Find matching appointment by time
+    // Find matching appointment by time (more flexible matching)
+    const appointmentDate = startDate;
+    const appointmentTimeStr = appointment.preferred_time || '';
+    
+    // Parse appointment time: "1:00 PM" -> hour 13, minute 0
+    const timeMatch = appointmentTimeStr.match(/(\d+):(\d+)\s*(AM|PM)/i);
+    let appointmentHour = 0, appointmentMinute = 0;
+    if (timeMatch) {
+      appointmentHour = parseInt(timeMatch[1], 10);
+      appointmentMinute = parseInt(timeMatch[2], 10);
+      const meridiem = timeMatch[3].toUpperCase();
+      if (meridiem === 'PM' && appointmentHour !== 12) appointmentHour += 12;
+      if (meridiem === 'AM' && appointmentHour === 12) appointmentHour = 0;
+    }
+    
     const matchingEvent = events.find(event => {
-      const eventDate = event.startTime?.split('T')[0];
-      const eventTime = event.startTime?.split('T')[1]?.substring(0, 5);
-      const aptTime = appointment.preferred_time?.replace(/[: ]/g, '');
-      const eventTimeFormatted = eventTime?.replace(':', '');
+      if (!event.startTime) return false;
       
-      return eventDate === startDate && eventTimeFormatted === aptTime;
+      const eventDate = event.startTime.split('T')[0];
+      if (eventDate !== appointmentDate) return false;
+      
+      // Parse event start time from ISO format
+      const eventTimeStr = event.startTime.split('T')[1] || '';
+      const [eventHourStr, eventMinuteStr] = eventTimeStr.split(':');
+      const eventHour = parseInt(eventHourStr, 10);
+      const eventMinute = parseInt(eventMinuteStr, 10);
+      
+      // Match if within 5 minutes (account for timezone/stagger differences)
+      const timeDiff = Math.abs((eventHour * 60 + eventMinute) - (appointmentHour * 60 + appointmentMinute));
+      return timeDiff <= 5;
     });
 
     if (matchingEvent && matchingEvent.id) {
-      // Update appointment status to cancelled (GHL prefers status update over DELETE)
-      const cancelRes = await fetch(
+      // DELETE the appointment from GHL calendar (removes it completely)
+      const deleteRes = await fetch(
         `https://services.leadconnectorhq.com/calendars/events/appointments/${matchingEvent.id}`,
         {
-          method: 'PUT',
+          method: 'DELETE',
           headers: GHL_HEADERS,
-          body: JSON.stringify({
-            appointmentStatus: 'cancelled',
-          }),
         }
       );
 
-      if (!cancelRes.ok) {
-        console.error('GHL appointment cancellation failed:', await cancelRes.text());
+      if (!deleteRes.ok) {
+        const errorText = await deleteRes.text();
+        console.error('GHL appointment deletion failed:', deleteRes.status, errorText);
         return Response.json({ success: true, message: 'Local cancelled, GHL sync failed.' });
       }
 
-      console.log('GHL appointment cancelled:', matchingEvent.id);
+      console.log('GHL appointment deleted:', matchingEvent.id);
       return Response.json({ success: true, message: 'Appointment cancelled in GHL.' });
     } else {
-      console.log('No matching GHL appointment found. Local cancellation only.');
+      console.log('No matching GHL appointment found for deletion. Local cancellation only.');
       return Response.json({ success: true, message: 'No GHL appointment found. Local cancellation only.' });
     }
 
