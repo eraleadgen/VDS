@@ -50,6 +50,17 @@ export default function VehicleCard({ vehicle, onDelete, onEdit, onEnrollClick, 
         <div className="h-1 w-full bg-gradient-to-r from-vapor/10 via-vapor/20 to-vapor/10" />
       )}
 
+      {/* Vehicle Image */}
+      {vehicle.vehicle_image && (
+        <div className="relative h-48 w-full overflow-hidden bg-obsidian">
+          <img 
+            src={vehicle.vehicle_image} 
+            alt={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
+
       <div className="p-5 flex items-start justify-between gap-4">
         <div className="flex items-start gap-4">
           {/* Logo icon box - Gold or Silver based on membership */}

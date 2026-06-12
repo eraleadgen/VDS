@@ -38,6 +38,10 @@
       "type": "boolean",
       "default": false,
       "description": "Whether this vehicle is enrolled in VDS Gold membership"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "URL of the vehicle image"
     }
   },
   "required": [
