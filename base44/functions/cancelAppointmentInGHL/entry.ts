@@ -15,9 +15,14 @@ Deno.serve(async (req) => {
     }
 
     // Get appointment from database
-    const appointment = await base44.entities.Appointment.get(appointment_id);
+    const appointment = await base44.asServiceRole.entities.Appointment.get(appointment_id);
     if (!appointment) {
       return Response.json({ success: false, error: 'Appointment not found' }, { status: 404 });
+    }
+
+    // Ownership check: only the appointment owner (or admin) can cancel it
+    if (appointment.created_by_id !== user.id && user.role !== 'admin') {
+      return Response.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
     const GHL_API_KEY = Deno.env.get('GHL_API_KEY');
