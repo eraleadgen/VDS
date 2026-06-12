@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { LogOut, Plus, Calendar, ChevronRight, Star, UserCog, ClipboardList } from 'lucide-react';
+import { LogOut, Plus, Calendar, ChevronRight, Star, UserCog, ClipboardList, CheckCircle, X } from 'lucide-react';
 import { format, startOfMonth } from 'date-fns';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
@@ -26,6 +26,7 @@ export default function MemberDashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [modalAction, setModalAction] = useState(null);
+  const [showGoldSuccess, setShowGoldSuccess] = useState(false);
 
   const currentMonth = format(new Date(), 'yyyy-MM');
 
@@ -33,6 +34,13 @@ export default function MemberDashboard() {
     const init = async () => {
       const me = await base44.auth.me();
       setUser(me);
+      // Check for gold success query param
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('gold_success') === 'true') {
+        setShowGoldSuccess(true);
+        // Clean up URL
+        window.history.replaceState({}, document.title, '/member-dashboard');
+      }
       await loadData();
       setLoading(false);
     };
@@ -132,6 +140,20 @@ export default function MemberDashboard() {
       <Navbar />
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-6 pt-32 pb-20">
+        {/* Gold Success Banner */}
+        {showGoldSuccess && (
+          <div className="mb-8 border border-gold/30 bg-gold/10 rounded-sm p-5 flex items-center gap-4">
+            <CheckCircle size={24} className="text-gold shrink-0" />
+            <div>
+              <p className="text-gold font-grotesk font-semibold">Welcome to VDS Gold!</p>
+              <p className="text-vapor/50 font-mono-tech text-xs">Your membership is active. Enjoy unlimited exterior details and 1 interior detail per month.</p>
+            </div>
+            <button onClick={() => setShowGoldSuccess(false)} className="ml-auto text-vapor/30 hover:text-vapor">
+              <X size={16} />
+            </button>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-12">
           <div>

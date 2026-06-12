@@ -233,20 +233,20 @@ export default function VdsGoldSignup() {
           <div className="flex items-center gap-3 mb-5">
             <CreditCard size={18} className="text-gold" />
             <div>
-              <p className="text-vapor font-grotesk font-semibold">PAYMENT METHOD</p>
-              <p className="text-vapor/40 font-mono-tech text-xs">Secure Stripe checkout</p>
+              <p className="text-vapor font-grotesk font-semibold">SECURE CHECKOUT</p>
+              <p className="text-vapor/40 font-mono-tech text-xs">Powered by Stripe</p>
             </div>
           </div>
 
           <div className="border border-vapor/10 bg-asphalt/50 rounded-sm p-5 mb-4">
-            <p className="text-vapor/60 font-mono-tech text-xs mb-3">STRIPE INTEGRATION REQUIRED</p>
+            <p className="text-vapor/60 font-mono-tech text-xs mb-3">PAYMENT DETAILS</p>
             <p className="text-vapor/40 font-mono-tech text-xs leading-relaxed mb-4">
-              To complete your VDS Gold membership signup, Stripe payment integration needs to be configured. 
-              This will enable secure monthly billing for your selected vehicles.
+              You'll be redirected to Stripe's secure checkout to enter your payment information. 
+              Monthly billing starts immediately after enrollment. Cancel anytime from your dashboard.
             </p>
-            <div className="flex items-center gap-2 text-amber-400/80 text-xs font-mono-tech">
-              <AlertCircle size={12} />
-              <span>Contact admin to enable Stripe payments</span>
+            <div className="flex items-center gap-2 text-gold/80 text-xs font-mono-tech">
+              <CheckCircle size={12} />
+              <span>Encrypted & secure payment processing</span>
             </div>
           </div>
         </div>
