@@ -25,8 +25,8 @@ Respond with ONLY one of these exact strings: sedan_coupe or truck_suv`,
 export default function AddVehicleForm({ onAdd, onCancel, initialData = null }) {
   const [form, setForm] = useState(
     initialData
-      ? { year: initialData.year || '', make: initialData.make || '', model: initialData.model || '', color: initialData.color || '', license_plate: initialData.license_plate || '', notes: initialData.notes || '', vehicle_type: initialData.vehicle_type || '' }
-      : { year: '', make: '', model: '', color: '', license_plate: '', notes: '', vehicle_type: '' }
+      ? { year: initialData.year || '', make: initialData.make || '', model: initialData.model || '', color: initialData.color || '', license_plate: initialData.license_plate || '', notes: initialData.notes || '', vehicle_type: initialData.vehicle_type || '', is_gold_registered: initialData.is_gold_registered || false }
+      : { year: '', make: '', model: '', color: '', license_plate: '', notes: '', vehicle_type: '', is_gold_registered: false }
   );
   const [loading, setLoading] = useState(false);
   const [classifying, setClassifying] = useState(false);
@@ -101,6 +101,33 @@ export default function AddVehicleForm({ onAdd, onCancel, initialData = null }) 
         {field('license_plate', 'LICENSE PLATE', 'ABC-1234')}
       </div>
       {field('notes', 'NOTES (OPTIONAL)', 'e.g. ceramic coated, park in garage')}
+      
+      {/* VDS Gold Registration Toggle */}
+      <div className="border border-gold/20 bg-gold/5 rounded-sm p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full bg-gold animate-pulse" />
+            <p className="text-xs font-mono-tech tracking-widest text-gold">VDS GOLD MEMBERSHIP</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setForm(f => ({ ...f, is_gold_registered: !f.is_gold_registered }))}
+            className={`w-12 h-6 rounded-sm transition-all duration-300 ${
+              form.is_gold_registered ? 'bg-gold' : 'bg-vapor/10'
+            }`}
+          >
+            <div className={`w-4 h-4 bg-obsidian rounded-sm transition-transform duration-300 ${
+              form.is_gold_registered ? 'translate-x-7' : 'translate-x-1'
+            }`} />
+          </button>
+        </div>
+        <p className="text-xs font-mono-tech text-vapor/50 leading-relaxed">
+          {form.is_gold_registered 
+            ? 'This vehicle is enrolled in VDS Gold — $250/mo (Sedan/Coupe) or $300/mo (Truck/SUV)'
+            : 'Enable to enroll this vehicle in VDS Gold membership'}
+        </p>
+      </div>
+      
       <div className="flex gap-3 pt-2">
         <button
           type="button"

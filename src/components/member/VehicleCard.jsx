@@ -22,41 +22,103 @@ export default function VehicleCard({ vehicle, onDelete, onEdit }) {
     );
   }
 
+  const isGold = vehicle.is_gold_registered;
+
   return (
-    <div className="glass-panel border border-vapor/10 hover:border-gold/30 transition-colors duration-200 rounded-sm overflow-hidden">
-      {/* Golden banner for GHL-registered vehicles */}
-      <div className="h-1.5 bg-gradient-to-r from-gold via-gold-light to-gold w-full" />
+    <div className={`glass-panel rounded-sm overflow-hidden transition-all duration-300 ${
+      isGold ? 'border border-gold/40 shadow-[0_0_30px_rgba(212,175,55,0.15)]' : 'border border-vapor/10 hover:border-gold/30'
+    }`}>
+      {/* Animated HD banner for Gold-registered vehicles */}
+      {isGold && (
+        <div className="relative h-2 w-full overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-gold via-gold-light to-gold animate-shimmer" 
+            style={{ 
+              background: 'linear-gradient(90deg, #A08020 0%, #D4AF37 25%, #F5E17A 50%, #D4AF37 75%, #A08020 100%)',
+              backgroundSize: '400% 100%',
+              animation: 'shimmer 3s linear infinite'
+            }} 
+          />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="text-[8px] font-mono-tech tracking-[0.3em] text-obsidian/60 font-bold">◆ VDS GOLD MEMBERSHIP ◆</span>
+          </div>
+        </div>
+      )}
+      
+      {/* Simple silver accent for non-Gold vehicles */}
+      {!isGold && (
+        <div className="h-1 w-full bg-gradient-to-r from-vapor/10 via-vapor/20 to-vapor/10" />
+      )}
+
       <div className="p-5 flex items-start justify-between gap-4">
         <div className="flex items-start gap-4">
-          {/* Gold logo icon box */}
-          <div className="w-10 h-10 bg-gold/10 border border-gold/30 flex items-center justify-center rounded-sm shrink-0 mt-0.5 overflow-hidden">
-            <img src={LOGO} alt="VDS Logo" className="w-7 h-7 object-contain" style={{ filter: 'brightness(0) saturate(100%) invert(76%) sepia(26%) saturate(693%) hue-rotate(1deg) brightness(91%) contrast(86%)' }} />
+          {/* Logo icon box - Gold or Silver based on membership */}
+          <div className={`w-12 h-12 flex items-center justify-center rounded-sm shrink-0 mt-0.5 overflow-hidden ${
+            isGold 
+              ? 'bg-gradient-to-br from-gold/20 to-gold/5 border border-gold/40 shadow-[0_0_20px_rgba(212,175,55,0.3)]' 
+              : 'bg-gradient-to-br from-vapor/10 to-vapor/5 border border-vapor/20'
+          }`}>
+            <img 
+              src={LOGO} 
+              alt="VDS Logo" 
+              className={`w-8 h-8 object-contain transition-all duration-300 ${
+                isGold ? 'scale-110' : 'scale-100'
+              }`} 
+              style={{ 
+                filter: isGold 
+                  ? 'brightness(0) saturate(100%) invert(76%) sepia(26%) saturate(693%) hue-rotate(1deg) brightness(91%) contrast(86%)'
+                  : 'brightness(0) saturate(100%) invert(80%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(95%) contrast(90%)'
+              }} 
+            />
           </div>
           <div>
-            <p className="text-vapor font-grotesk font-semibold">
-              {vehicle.year} {vehicle.make} {vehicle.model}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className={`font-grotesk font-semibold ${
+                isGold ? 'text-vapor' : 'text-vapor/80'
+              }`}>
+                {vehicle.year} {vehicle.make} {vehicle.model}
+              </p>
+              {isGold && (
+                <span className="px-2 py-0.5 bg-gold/20 border border-gold/30 rounded-sm">
+                  <span className="text-[8px] font-mono-tech tracking-widest text-gold font-bold">GOLD</span>
+                </span>
+              )}
+            </div>
             {vehicle.color && (
-              <p className="text-vapor/40 text-xs font-mono-tech mt-0.5">{vehicle.color}</p>
+              <p className={`text-xs font-mono-tech mt-0.5 ${
+                isGold ? 'text-vapor/60' : 'text-vapor/40'
+              }`}>{vehicle.color}</p>
             )}
             {vehicle.license_plate && (
-              <p className="text-xs font-mono-tech text-gold/60 mt-1 tracking-widest">{vehicle.license_plate}</p>
+              <p className={`text-xs font-mono-tech mt-1 tracking-widest ${
+                isGold ? 'text-gold/80' : 'text-gold/60'
+              }`}>{vehicle.license_plate}</p>
             )}
             {vehicle.notes && (
-              <p className="text-vapor/40 text-xs mt-1">{vehicle.notes}</p>
+              <p className={`text-xs mt-1 ${
+                isGold ? 'text-vapor/70' : 'text-vapor/40'
+              }`}>{vehicle.notes}</p>
+            )}
+            {isGold && vehicle.vehicle_type && (
+              <p className="text-xs font-mono-tech text-gold/50 mt-1 tracking-widest">
+                {vehicle.vehicle_type === 'sedan_coupe' ? '$250/MO' : '$300/MO'} · {vehicle.vehicle_type === 'sedan_coupe' ? 'Sedan/Coupe' : 'Truck/SUV'}
+              </p>
             )}
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0 mt-1">
           <button
             onClick={() => setEditing(true)}
-            className="text-vapor/20 hover:text-gold transition-colors duration-200"
+            className={`transition-colors duration-200 ${
+              isGold ? 'text-gold/40 hover:text-gold' : 'text-vapor/20 hover:text-gold'
+            }`}
           >
             <Pencil size={14} />
           </button>
           <button
             onClick={() => onDelete(vehicle.id)}
-            className="text-vapor/20 hover:text-red-400 transition-colors duration-200"
+            className={`transition-colors duration-200 ${
+              isGold ? 'text-gold/30 hover:text-red-400' : 'text-vapor/20 hover:text-red-400'
+            }`}
           >
             <Trash2 size={15} />
           </button>

@@ -33,6 +33,11 @@
     "notes": {
       "type": "string",
       "description": "Any special notes about this vehicle"
+    },
+    "is_gold_registered": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether this vehicle is enrolled in VDS Gold membership"
     }
   },
   "required": [

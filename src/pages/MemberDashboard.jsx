@@ -195,14 +195,14 @@ export default function MemberDashboard() {
               </div>
               <div className="text-right">
                 <p className="text-gold font-mono-tech text-xs tracking-widest">
-                  {vehicles.length === 0
+                  {vehicles.filter(v => v.is_gold_registered).length === 0
                     ? '$250–$300 / MO'
-                    : `$${vehicles.reduce((sum, v) => sum + (v.vehicle_type === 'truck_suv' ? 300 : 250), 0)} / MO`}
+                    : `$${vehicles.filter(v => v.is_gold_registered).reduce((sum, v) => sum + (v.vehicle_type === 'truck_suv' ? 300 : 250), 0)} / MO`}
                 </p>
                 <p className="text-vapor/30 text-xs font-mono-tech mt-0.5">
-                  {vehicles.length === 0
-                    ? 'Add vehicles to calculate rate'
-                    : `${vehicles.length} vehicle${vehicles.length > 1 ? 's' : ''} · Stripe billing coming soon`}
+                  {vehicles.filter(v => v.is_gold_registered).length === 0
+                    ? 'Add Gold vehicles to calculate rate'
+                    : `${vehicles.filter(v => v.is_gold_registered).length} Gold vehicle${vehicles.filter(v => v.is_gold_registered).length > 1 ? 's' : ''} · Stripe billing coming soon`}
                 </p>
               </div>
             </div>

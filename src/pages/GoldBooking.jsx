@@ -208,37 +208,47 @@ export default function GoldBooking() {
             </div>
           </div>
 
-          {/* Vehicle Multi-Select with Pricing */}
+          {/* Vehicle Multi-Select with Pricing - Gold registered only */}
           {vehicles.length > 0 && (
             <div>
-              <label className="block text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">SELECT VEHICLE(S) <span className="text-gold">*</span></label>
-              <p className="text-vapor/30 font-mono-tech text-xs mb-3">Gold services are only available for vehicles registered to your Gold membership.</p>
-              <div className="space-y-2">
-                {vehicles.map(v => {
-                  const label = `${v.year} ${v.make} ${v.model}${v.color ? ', ' + v.color : ''}`;
-                  const checked = selectedVehicles.includes(label);
-                  const vehicleType = v.vehicle_type || 'sedan_coupe';
-                  const monthlyRate = GOLD_PRICING[vehicleType] || GOLD_PRICING.sedan_coupe;
-                  return (
-                    <button
-                      key={v.id}
-                      type="button"
-                      onClick={() => toggleVehicle(label)}
-                      className={`w-full flex items-center justify-between px-5 py-4 border rounded-sm transition-colors text-left ${
-                        checked ? 'border-gold bg-gold/10' : 'border-vapor/10 hover:border-vapor/30'
-                      }`}
-                    >
-                      <div>
-                        <span className="font-mono-tech text-sm text-vapor block">{label}</span>
-                        <span className="text-xs font-mono-tech text-vapor/40 mt-0.5 block">
-                          {vehicleType === 'sedan_coupe' ? 'Sedan/Coupe' : 'Truck/SUV'} · ${monthlyRate}/mo
-                        </span>
-                      </div>
-                      {checked && <X size={13} className="text-gold shrink-0" />}
-                    </button>
-                  );
-                })}
-              </div>
+              <label className="block text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">SELECT GOLD VEHICLE(S) <span className="text-gold">*</span></label>
+              <p className="text-vapor/30 font-mono-tech text-xs mb-3">Only vehicles enrolled in VDS Gold can access Gold services.</p>
+              {vehicles.filter(v => v.is_gold_registered).length === 0 ? (
+                <div className="border border-gold/20 bg-gold/5 rounded-sm px-5 py-6 text-center">
+                  <p className="text-gold font-mono-tech text-xs tracking-widest mb-2">NO GOLD-REGISTERED VEHICLES</p>
+                  <p className="text-vapor/50 font-mono-tech text-xs mb-4">Add a vehicle and mark it as Gold-registered in your dashboard to book Gold services.</p>
+                  <Link to="/member-dashboard" className="inline-block border border-gold bg-gold text-obsidian px-5 py-2 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold-light transition-colors">
+                    GO TO DASHBOARD →
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {vehicles.filter(v => v.is_gold_registered).map(v => {
+                    const label = `${v.year} ${v.make} ${v.model}${v.color ? ', ' + v.color : ''}`;
+                    const checked = selectedVehicles.includes(label);
+                    const vehicleType = v.vehicle_type || 'sedan_coupe';
+                    const monthlyRate = GOLD_PRICING[vehicleType] || GOLD_PRICING.sedan_coupe;
+                    return (
+                      <button
+                        key={v.id}
+                        type="button"
+                        onClick={() => toggleVehicle(label)}
+                        className={`w-full flex items-center justify-between px-5 py-4 border rounded-sm transition-colors text-left ${
+                          checked ? 'border-gold bg-gold/10' : 'border-vapor/10 hover:border-vapor/30'
+                        }`}
+                      >
+                        <div>
+                          <span className="font-mono-tech text-sm text-vapor block">{label}</span>
+                          <span className="text-xs font-mono-tech text-vapor/40 mt-0.5 block">
+                            {vehicleType === 'sedan_coupe' ? 'Sedan/Coupe' : 'Truck/SUV'} · ${monthlyRate}/mo
+                          </span>
+                        </div>
+                        {checked && <X size={13} className="text-gold shrink-0" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
               {selectedVehicles.length > 0 && (
                 <div className="mt-4 border border-gold/20 bg-gold/5 rounded-sm px-5 py-4">
                   <div className="flex items-center justify-between">
