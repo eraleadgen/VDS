@@ -5,7 +5,7 @@ import AddVehicleForm from './AddVehicleForm';
 const GOLD_BADGE = "https://media.base44.com/images/public/6a191df337222815cd0b1f5e/34ae4d998_generated_image.png";
 const SILVER_BADGE = "https://media.base44.com/images/public/6a191df337222815cd0b1f5e/9da0c2348_generated_image.png";
 
-export default function VehicleCard({ vehicle, onDelete, onEdit, onEnrollClick, onCancelClick }) {
+export default function VehicleCard({ vehicle, onDelete, onEdit, onEnrollClick, onCancelClick, subscriptions = [] }) {
   const [editing, setEditing] = useState(false);
 
   const handleEdit = async (formData) => {
@@ -23,7 +23,7 @@ export default function VehicleCard({ vehicle, onDelete, onEdit, onEnrollClick, 
     );
   }
 
-  const isGold = vehicle.is_gold_registered;
+  const isGold = vehicle.is_gold_registered || subscriptions.some(s => s.vehicle_id === vehicle.id);
 
   return (
     <div className={`glass-panel rounded-sm overflow-hidden transition-all duration-300 ${
@@ -107,13 +107,13 @@ export default function VehicleCard({ vehicle, onDelete, onEdit, onEnrollClick, 
       
       {/* Subscription action buttons - modal rendered at dashboard level */}
       <div className={`border-t px-5 py-4 ${
-        vehicle.is_gold_registered 
+        isGold
           ? 'border-gold/15 bg-gold/5' 
           : 'border-vapor/10 bg-asphalt/30'
       }`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            {vehicle.is_gold_registered ? (
+            {isGold ? (
               <>
                 <div className="w-2 h-2 rounded-full bg-gold animate-pulse" />
                 <div>
@@ -132,14 +132,14 @@ export default function VehicleCard({ vehicle, onDelete, onEdit, onEnrollClick, 
             )}
           </div>
           <button
-            onClick={() => vehicle.is_gold_registered ? onCancelClick(vehicle) : onEnrollClick(vehicle)}
+            onClick={() => isGold ? onCancelClick(vehicle) : onEnrollClick(vehicle)}
             className={`px-4 py-2 text-xs font-mono-tech tracking-widest rounded-sm transition-colors ${
-              vehicle.is_gold_registered
+              isGold
                 ? 'border border-gold/30 text-gold/70 hover:border-gold/50 hover:text-gold'
                 : 'bg-gold text-obsidian hover:bg-gold-light'
             }`}
           >
-            {vehicle.is_gold_registered ? 'CANCEL' : 'ENROLL'}
+            {isGold ? 'CANCEL' : 'ENROLL'}
           </button>
         </div>
       </div>

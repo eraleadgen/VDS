@@ -429,7 +429,7 @@ export default function MemberDashboard() {
           ) : (
             <div className="space-y-3">
               {vehicles.map(v => (
-                <VehicleCard key={v.id} vehicle={v} onDelete={handleDeleteVehicle} onEdit={handleEditVehicle} onEnrollClick={handleEnrollClick} onCancelClick={handleCancelClick} />
+                <VehicleCard key={v.id} vehicle={v} onDelete={handleDeleteVehicle} onEdit={handleEditVehicle} onEnrollClick={handleEnrollClick} onCancelClick={handleCancelClick} subscriptions={subscriptions} />
               ))}
             </div>
           )}
