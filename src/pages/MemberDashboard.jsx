@@ -11,6 +11,7 @@ import VehicleCard from '../components/member/VehicleCard';
 import AddVehicleForm from '../components/member/AddVehicleForm';
 import AccountDetailsForm from '../components/member/AccountDetailsForm';
 import AppointmentCard from '../components/member/AppointmentCard';
+import VehicleSubscriptionManager from '../components/member/VehicleSubscriptionManager';
 
 const BOOKING_LINK = 'https://book.vdsmobile.com'; // Replace with your actual Gold member booking link
 
@@ -63,6 +64,10 @@ export default function MemberDashboard() {
 
   const handleEditVehicle = async (id, formData) => {
     await base44.entities.MemberVehicle.update(id, formData);
+    await loadData();
+  };
+
+  const handleVehicleSubscriptionChange = async () => {
     await loadData();
   };
 
@@ -340,7 +345,7 @@ export default function MemberDashboard() {
           ) : (
             <div className="space-y-3">
               {vehicles.map(v => (
-                <VehicleCard key={v.id} vehicle={v} onDelete={handleDeleteVehicle} onEdit={handleEditVehicle} />
+                <VehicleCard key={v.id} vehicle={v} onDelete={handleDeleteVehicle} onEdit={handleEditVehicle} onSubscriptionChange={handleVehicleSubscriptionChange} />
               ))}
             </div>
           )}

@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Trash2, Pencil } from 'lucide-react';
 import AddVehicleForm from './AddVehicleForm';
+import VehicleSubscriptionManager from './VehicleSubscriptionManager';
 
 const MEMBERSHIP_BADGE = "https://media.base44.com/images/public/6a191df337222815cd0b1f5e/dc17586b1_generated_image.png";
 
-export default function VehicleCard({ vehicle, onDelete, onEdit }) {
+export default function VehicleCard({ vehicle, onDelete, onEdit, onSubscriptionChange }) {
   const [editing, setEditing] = useState(false);
 
   const handleEdit = async (formData) => {
@@ -124,6 +125,7 @@ export default function VehicleCard({ vehicle, onDelete, onEdit }) {
           </button>
         </div>
       </div>
+      <VehicleSubscriptionManager vehicle={vehicle} onSubscriptionChange={onSubscriptionChange} />
     </div>
   );
 }
