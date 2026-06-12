@@ -281,6 +281,19 @@ Deno.serve(async (req) => {
           ceramic_coating: 'Ceramic Coating',
           paint_correction: 'Paint Correction',
         };
+        
+        // Build detailed services list from vehicle_details for display
+        let servicesNotes = '';
+        if (vehicle_details) {
+          const vehicleEntries = vehicle_details.split(' | ').map(v => v.trim());
+          servicesNotes = vehicleEntries.map((entry, idx) => {
+            const parts = entry.split(' — ');
+            const vehicleInfo = parts[0]?.replace(/\([^)]+\)/, '').trim() || '';
+            const service = parts[1] || '';
+            return `${idx + 1}. ${vehicleInfo} — ${service}`;
+          }).join('\n');
+        }
+        
         await base44.entities.Appointment.create({
           service_type,
           service_label: serviceLabels[service_type] || service_type.replace(/_/g, ' ').toUpperCase(),
@@ -288,7 +301,7 @@ Deno.serve(async (req) => {
           preferred_date,
           preferred_time,
           status: 'pending',
-          notes: notes || '',
+          notes: servicesNotes || notes || '',
           customer_name: name,
           customer_phone: phone,
           customer_email: email || '',

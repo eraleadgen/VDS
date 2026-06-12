@@ -80,7 +80,12 @@ export default function AppointmentCard({ appointment, onRefresh }) {
 
       {appointment.notes && (
         <div className="border-t border-current border-opacity-20 pt-3 mb-4">
-          <p className="text-xs font-mono-tech opacity-60 line-clamp-2">{appointment.notes}</p>
+          <p className="text-xs font-mono-tech opacity-60 mb-2">SERVICES:</p>
+          <div className="space-y-1">
+            {appointment.notes.split('\n').map((line, idx) => (
+              <p key={idx} className="text-xs font-mono-tech opacity-80">{line}</p>
+            ))}
+          </div>
         </div>
       )}
 
