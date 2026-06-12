@@ -51,28 +51,7 @@ export default function VehicleCard({ vehicle, onDelete, onEdit, onEnrollClick, 
       )}
 
       <div className="p-5 flex items-start justify-between gap-4">
-        <div className="flex items-start gap-4">
-          {/* Vehicle logo/badge */}
-          <div className={`w-12 h-12 flex items-center justify-center rounded-sm shrink-0 mt-0.5 overflow-hidden ${
-            isGold 
-              ? 'bg-gradient-to-br from-gold/20 to-gold/5 border border-gold/40 shadow-[0_0_20px_rgba(212,175,55,0.3)]' 
-              : 'bg-gradient-to-br from-vapor/10 to-vapor/5 border border-vapor/20'
-          }`}>
-            {vehicle.vehicle_image ? (
-              <img 
-                src={vehicle.vehicle_image} 
-                alt="Vehicle Logo" 
-                className="w-full h-full object-cover" 
-              />
-            ) : (
-              <img 
-                src={isGold ? GOLD_BADGE : SILVER_BADGE} 
-                alt="Membership Badge" 
-                className="w-9 h-9 object-contain transition-all duration-300" 
-              />
-            )}
-          </div>
-          <div>
+        <div>
             <div className="flex items-center gap-2">
               <p className={`font-grotesk font-semibold ${
                 isGold ? 'text-vapor' : 'text-vapor/80'
@@ -106,8 +85,7 @@ export default function VehicleCard({ vehicle, onDelete, onEdit, onEnrollClick, 
               </p>
             )}
           </div>
-        </div>
-        <div className="flex items-center gap-3 shrink-0 mt-1">
+          <div className="flex items-center gap-3 shrink-0 mt-1">
           <button
             onClick={() => setEditing(true)}
             className={`transition-colors duration-200 ${
