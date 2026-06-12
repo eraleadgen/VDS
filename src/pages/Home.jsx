@@ -299,7 +299,7 @@ export default function Home() {
       {/* ── FINAL CTA ────────────────────────────────── */}
       <section className="relative py-32 overflow-hidden">
         <img
-          src="https://media.base44.com/images/public/6a191df337222815cd0b1f5e/7b9bc552e_Lamborginidetailing.jpg"
+          src="https://media.base44.com/images/public/6a191df337222815cd0b1f5e/b6ee3461b_ExteriorDetail5.jpg"
           alt="Luxury car"
           className="absolute inset-0 w-full h-full object-cover"
         />
