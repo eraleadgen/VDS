@@ -6,8 +6,6 @@ import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
 import GoldShimmer from '../components/vds/GoldShimmer';
 
-const MEMBERSHIP_BADGE = "https://media.base44.com/images/public/6a191df337222815cd0b1f5e/dc17586b1_generated_image.png";
-
 const PRICING = {
   sedan_coupe: 250,
   truck_suv: 300,
@@ -157,12 +155,9 @@ export default function VdsGoldSignup() {
 
         {/* Vehicle Selection */}
         <div className="glass-panel border border-gold/20 rounded-sm p-6 mb-8">
-          <div className="flex items-center gap-3 mb-5">
-            <img src={MEMBERSHIP_BADGE} alt="Gold Badge" className="w-10 h-10 object-contain" />
-            <div>
-              <p className="text-vapor font-grotesk font-semibold">SELECT VEHICLES TO ENROLL</p>
-              <p className="text-vapor/40 font-mono-tech text-xs">Choose which vehicles get Gold benefits</p>
-            </div>
+          <div className="mb-5">
+            <p className="text-vapor font-grotesk font-semibold">SELECT VEHICLES TO ENROLL</p>
+            <p className="text-vapor/40 font-mono-tech text-xs">Choose which vehicles get Gold benefits</p>
           </div>
 
           {vehicles.length === 0 ? (
