@@ -10,7 +10,7 @@ export default function VehicleSubscriptionModal({ vehicle, actionType, onClose,
 
   const handleConfirm = async () => {
     setIsProcessing(true);
-    await onConfirm(vehicle.id);
+    await onConfirm();
     setIsProcessing(false);
   };
 

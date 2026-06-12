@@ -11,7 +11,7 @@ import VehicleCard from '../components/member/VehicleCard';
 import AddVehicleForm from '../components/member/AddVehicleForm';
 import AccountDetailsForm from '../components/member/AccountDetailsForm';
 import AppointmentCard from '../components/member/AppointmentCard';
-import VehicleSubscriptionManager from '../components/member/VehicleSubscriptionManager';
+import VehicleSubscriptionModal from '../components/member/VehicleSubscriptionModal';
 
 const BOOKING_LINK = 'https://book.vdsmobile.com'; // Replace with your actual Gold member booking link
 
@@ -92,7 +92,6 @@ export default function MemberDashboard() {
     }
     setSelectedVehicle(null);
     setModalAction(null);
-    await loadData();
   };
 
   const handleModalClose = () => {
@@ -383,7 +382,7 @@ export default function MemberDashboard() {
 
       {/* Subscription Modal - rendered at page level to avoid clipping */}
       {selectedVehicle && modalAction && (
-        <VehicleSubscriptionManager
+        <VehicleSubscriptionModal
           vehicle={selectedVehicle}
           actionType={modalAction}
           onConfirm={handleModalConfirm}
