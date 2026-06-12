@@ -1,12 +1,17 @@
 import { useState } from 'react';
-import { AlertTriangle, Check, X } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
+import { AlertTriangle, Check, X, RotateCcw } from 'lucide-react';
 
-export default function VehicleSubscriptionModal({ vehicle, actionType, onClose, onConfirm }) {
+export default function VehicleSubscriptionModal({ vehicle, actionType, subscription, onClose, onConfirm }) {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const isEnroll = actionType === 'enroll';
   const monthlyRate = vehicle.vehicle_type === 'truck_suv' ? 300 : 250;
+
+  // Determine refund eligibility for cancellations
+  const startedAt = subscription?.started_date ? new Date(subscription.started_date) : null;
+  const hoursSinceStart = startedAt ? (Date.now() - startedAt.getTime()) / (1000 * 60 * 60) : 999;
+  const refundEligible = !isEnroll && hoursSinceStart <= 48;
+  const hoursRemaining = refundEligible ? Math.max(0, 48 - hoursSinceStart).toFixed(1) : null;
 
   const handleConfirm = async () => {
     setIsProcessing(true);
@@ -72,11 +77,25 @@ export default function VehicleSubscriptionModal({ vehicle, actionType, onClose,
                 </p>
               </div>
             </div>
-            <div className="bg-destructive/10 border border-destructive/30 rounded-sm p-3">
-              <p className="text-destructive text-xs font-mono-tech leading-relaxed">
-                ⚠ This will cancel your Stripe subscription and remove Gold benefits immediately for this vehicle.
-              </p>
-            </div>
+
+            {refundEligible ? (
+              <div className="bg-emerald-950/40 border border-emerald-500/40 rounded-sm p-3 flex items-start gap-2">
+                <RotateCcw size={13} className="text-emerald-400 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-emerald-400 text-xs font-mono-tech font-bold mb-0.5">REFUND ELIGIBLE</p>
+                  <p className="text-emerald-300/70 text-xs font-mono-tech leading-relaxed">
+                    You're within the 48-hour refund window and haven't used any Gold perks. Your ${monthlyRate} payment will be fully refunded upon cancellation.
+                  </p>
+                  <p className="text-emerald-400/50 text-xs font-mono-tech mt-1">{hoursRemaining}h remaining in refund window</p>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-destructive/10 border border-destructive/30 rounded-sm p-3">
+                <p className="text-destructive text-xs font-mono-tech leading-relaxed">
+                  ⚠ This will cancel your Stripe subscription and remove Gold benefits immediately for this vehicle.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -90,7 +109,7 @@ export default function VehicleSubscriptionModal({ vehicle, actionType, onClose,
                 : 'bg-vapor text-obsidian hover:bg-vapor/80'
             }`}
           >
-            {isProcessing ? 'PROCESSING...' : isEnroll ? 'CONFIRM ENROLLMENT' : 'CONFIRM CANCELLATION'}
+            {isProcessing ? 'PROCESSING...' : isEnroll ? 'CONFIRM ENROLLMENT' : refundEligible ? 'CANCEL & GET REFUND' : 'CONFIRM CANCELLATION'}
           </button>
           <button
             onClick={onClose}

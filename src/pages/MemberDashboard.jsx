@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { LogOut, Plus, Calendar, ChevronRight, Star, UserCog, ClipboardList, CheckCircle, X } from 'lucide-react';
+import { LogOut, Plus, Calendar, ChevronRight, Star, UserCog, ClipboardList, CheckCircle, X, RotateCcw } from 'lucide-react';
 import { format, startOfMonth } from 'date-fns';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
@@ -27,6 +27,7 @@ export default function MemberDashboard() {
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [modalAction, setModalAction] = useState(null);
   const [showGoldSuccess, setShowGoldSuccess] = useState(false);
+  const [showRefundSuccess, setShowRefundSuccess] = useState(false);
 
   const currentMonth = format(new Date(), 'yyyy-MM');
 
@@ -113,6 +114,7 @@ export default function MemberDashboard() {
       try {
         const response = await base44.functions.invoke('cancelGoldSubscription', { vehicle_id: selectedVehicle.id });
         if (response.data.success) {
+          if (response.data.refund_issued) setShowRefundSuccess(true);
           await loadData();
         }
       } catch (error) {
@@ -151,6 +153,20 @@ export default function MemberDashboard() {
       <Navbar />
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-6 pt-32 pb-20">
+        {/* Refund Success Banner */}
+        {showRefundSuccess && (
+          <div className="mb-8 border border-emerald-500/30 bg-emerald-950/30 rounded-sm p-5 flex items-center gap-4">
+            <RotateCcw size={24} className="text-emerald-400 shrink-0" />
+            <div>
+              <p className="text-emerald-400 font-grotesk font-semibold">Refund Issued</p>
+              <p className="text-vapor/50 font-mono-tech text-xs">Your membership has been canceled and a full refund has been processed to your original payment method.</p>
+            </div>
+            <button onClick={() => setShowRefundSuccess(false)} className="ml-auto text-vapor/30 hover:text-vapor">
+              <X size={16} />
+            </button>
+          </div>
+        )}
+
         {/* Gold Success Banner */}
         {showGoldSuccess && (
           <div className="mb-8 border border-gold/30 bg-gold/10 rounded-sm p-5 flex items-center gap-4">
@@ -421,6 +437,7 @@ export default function MemberDashboard() {
         <VehicleSubscriptionModal
           vehicle={selectedVehicle}
           actionType={modalAction}
+          subscription={subscriptions.find(s => s.vehicle_id === selectedVehicle.id)}
           onConfirm={handleModalConfirm}
           onClose={handleModalClose}
         />
