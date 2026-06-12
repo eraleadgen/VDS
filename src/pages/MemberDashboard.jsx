@@ -171,15 +171,7 @@ export default function MemberDashboard() {
           </button>
         </div>
 
-        {/* Schedule Appointment CTA */}
-        <div className="mb-8 flex justify-end">
-          <Link
-            to="/book"
-            className="vds-gold-btn flex items-center gap-2 px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm whitespace-nowrap"
-          >
-            <Calendar size={13} /> SCHEDULE APPOINTMENT →
-          </Link>
-        </div>
+
 
         {/* Upcoming Appointments */}
         <div className="mb-8">
@@ -190,9 +182,9 @@ export default function MemberDashboard() {
               <p className="text-vapor/40 font-mono-tech text-xs">No upcoming appointments</p>
               <Link
                 to="/book"
-                className="mt-4 inline-block border border-gold/40 text-gold px-5 py-2 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold hover:text-obsidian transition-colors"
+                className="mt-4 inline-flex items-center gap-2 vds-gold-btn px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm"
               >
-                BOOK NOW →
+                <Calendar size={13} /> SCHEDULE APPOINTMENT →
               </Link>
             </div>
           ) : (
