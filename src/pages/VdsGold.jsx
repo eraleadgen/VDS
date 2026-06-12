@@ -98,7 +98,7 @@ export default function VdsGold() {
             </div>
 
             <div className="flex flex-wrap gap-4 justify-center md:justify-start">
-              <Link to="/member-dashboard"
+              <Link to="/vds-gold-signup"
                 className="flex items-center gap-3 bg-gold text-obsidian px-8 py-4 text-sm font-mono-tech tracking-widest hover:bg-gold-light transition-colors duration-300 rounded-sm font-bold">
                 JOIN THE CIRCLE <ArrowRight size={14} />
               </Link>
@@ -196,7 +196,7 @@ export default function VdsGold() {
             <p className="text-vapor/40 font-mono-tech text-xs tracking-widest mb-6">
               SAVE $400+ EVERY MONTH · PRIORITY SCHEDULING · CANCEL ANYTIME
             </p>
-            <Link to="/member-dashboard"
+            <Link to="/vds-gold-signup"
               className="inline-flex items-center gap-3 bg-gold text-obsidian px-10 py-4 text-sm font-mono-tech tracking-widest hover:bg-gold-light transition-colors duration-300 rounded-sm font-bold">
               JOIN THE CIRCLE TODAY <ArrowRight size={14} />
             </Link>
@@ -266,9 +266,9 @@ export default function VdsGold() {
             </ul>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <Link to="/member-dashboard"
+              <Link to="/vds-gold-signup"
                 className="flex-1 text-center py-4 bg-gold text-obsidian font-mono-tech text-sm tracking-widest font-bold hover:bg-gold-light transition-colors duration-200 rounded-sm">
-                ENROLL VIA MY ACCOUNT
+                ENROLL NOW
               </Link>
             </div>
             <p className="text-center text-vapor/30 text-xs font-mono-tech mt-4">

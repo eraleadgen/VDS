@@ -20,6 +20,7 @@ import ResetPassword from './pages/ResetPassword';
 import MemberLogin from './pages/MemberLogin';
 import MemberDashboard from './pages/MemberDashboard';
 import GoldSignup from './pages/GoldSignup';
+import VdsGoldSignup from './pages/VdsGoldSignup';
 import Gallery from './pages/Gallery';
 import BookAppointment from './pages/BookAppointment';
 import GoldBooking from './pages/GoldBooking';
@@ -60,6 +61,7 @@ const AuthenticatedApp = () => {
       <Route path="/member-login" element={<MemberLogin />} />
       <Route path="/member-dashboard" element={<MemberDashboard />} />
       <Route path="/gold-signup" element={<GoldSignup />} />
+      <Route path="/vds-gold-signup" element={<VdsGoldSignup />} />
       <Route path="/gallery" element={<Gallery />} />
       <Route path="/book" element={<BookAppointment />} />
       <Route path="/gold-booking" element={<GoldBooking />} />
