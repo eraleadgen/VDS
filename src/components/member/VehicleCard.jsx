@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Trash2, Pencil } from 'lucide-react';
 import AddVehicleForm from './AddVehicleForm';
 
-const LOGO = "https://media.base44.com/images/public/6a191df337222815cd0b1f5e/6a27779cd_1773368635248-a065bd31-ddf6-4b1c-87dc-3a6080dc60f8.png";
+const MEMBERSHIP_BADGE = "https://media.base44.com/images/public/6a191df337222815cd0b1f5e/bb110cd35_generated_image.png";
 
 export default function VehicleCard({ vehicle, onDelete, onEdit }) {
   const [editing, setEditing] = useState(false);
@@ -58,15 +58,15 @@ export default function VehicleCard({ vehicle, onDelete, onEdit }) {
               : 'bg-gradient-to-br from-vapor/10 to-vapor/5 border border-vapor/20'
           }`}>
             <img 
-              src={LOGO} 
-              alt="VDS Logo" 
-              className={`w-8 h-8 object-contain transition-all duration-300 ${
+              src={MEMBERSHIP_BADGE} 
+              alt="Membership Badge" 
+              className={`w-9 h-9 object-contain transition-all duration-300 ${
                 isGold ? 'scale-110' : 'scale-100'
               }`} 
               style={{ 
                 filter: isGold 
-                  ? 'brightness(0) saturate(100%) invert(76%) sepia(26%) saturate(693%) hue-rotate(1deg) brightness(91%) contrast(86%)'
-                  : 'brightness(0) saturate(100%) invert(80%) sepia(0%) saturate(0%) hue-rotate(0deg) brightness(95%) contrast(90%)'
+                  ? 'none'
+                  : 'grayscale(100%) opacity(60%)'
               }} 
             />
           </div>
