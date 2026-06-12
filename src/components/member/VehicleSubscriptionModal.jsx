@@ -58,9 +58,23 @@ export default function VehicleSubscriptionModal({ vehicle, actionType, onClose,
             <p className="text-vapor text-sm font-grotesk">
               Cancel VDS Gold membership for this vehicle?
             </p>
-            <div className="bg-asphalt border border-vapor/20 rounded-sm p-4">
-              <p className="text-vapor/70 text-xs font-mono-tech leading-relaxed">
-                You will lose access to Gold benefits including unlimited exterior details and priority scheduling for this vehicle.
+            <div className="bg-asphalt border border-vapor/20 rounded-sm p-4 space-y-2">
+              <div className="flex items-center gap-2">
+                <Check size={12} className="text-gold" />
+                <p className="text-vapor text-xs font-mono-tech">
+                  {vehicle.year} {vehicle.make} {vehicle.model}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Check size={12} className="text-gold" />
+                <p className="text-vapor text-xs font-mono-tech">
+                  Current rate: ${monthlyRate}/mo
+                </p>
+              </div>
+            </div>
+            <div className="bg-destructive/10 border border-destructive/30 rounded-sm p-3">
+              <p className="text-destructive text-xs font-mono-tech leading-relaxed">
+                ⚠ This will cancel your Stripe subscription and remove Gold benefits immediately for this vehicle.
               </p>
             </div>
           </div>

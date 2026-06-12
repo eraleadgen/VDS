@@ -88,10 +88,17 @@ export default function MemberDashboard() {
 
   const handleModalConfirm = async () => {
     if (!selectedVehicle) return;
-    // For now, redirect to the VDS Gold signup page for Stripe enrollment
-    // The actual subscription will be created via Stripe webhook
     if (modalAction === 'enroll') {
       window.location.href = '/vds-gold-signup';
+    } else if (modalAction === 'cancel') {
+      try {
+        const response = await base44.functions.invoke('cancelGoldSubscription', { vehicle_id: selectedVehicle.id });
+        if (response.data.success) {
+          await loadData();
+        }
+      } catch (error) {
+        console.error('Cancellation error:', error);
+      }
     }
     setSelectedVehicle(null);
     setModalAction(null);
