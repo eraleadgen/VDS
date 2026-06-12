@@ -15,6 +15,7 @@ export default function VdsGoldSignup() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [vehicles, setVehicles] = useState([]);
+  const [enrolledVehicleIds, setEnrolledVehicleIds] = useState([]);
   const [selectedVehicles, setSelectedVehicles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -30,8 +31,13 @@ export default function VdsGoldSignup() {
       }
       const me = await base44.auth.me();
       setUser(me);
-      const v = await base44.entities.MemberVehicle.list();
+      const [v, subsRes] = await Promise.all([
+        base44.entities.MemberVehicle.list(),
+        base44.functions.invoke('getMySubscriptions', {}),
+      ]);
       setVehicles(v);
+      const activeSubs = subsRes?.data?.subscriptions || [];
+      setEnrolledVehicleIds(activeSubs.map(s => s.vehicle_id));
     };
     init();
   }, [navigate]);
@@ -173,15 +179,19 @@ export default function VdsGoldSignup() {
           ) : (
             <div className="space-y-3">
               {vehicles.map(v => {
+                const isEnrolled = enrolledVehicleIds.includes(v.id);
                 const checked = selectedVehicles.includes(v.id);
                 const monthlyRate = PRICING[v.vehicle_type || 'sedan_coupe'];
                 return (
-                  <button
+                  <div
                     key={v.id}
-                    type="button"
-                    onClick={() => toggleVehicle(v.id)}
-                    className={`w-full flex items-center justify-between px-5 py-4 border rounded-sm transition-colors text-left ${
-                      checked ? 'border-gold bg-gold/10' : 'border-vapor/10 hover:border-vapor/30'
+                    onClick={() => !isEnrolled && toggleVehicle(v.id)}
+                    className={`w-full flex items-center justify-between px-5 py-4 border rounded-sm text-left transition-colors ${
+                      isEnrolled
+                        ? 'border-gold/40 bg-gold/5 cursor-not-allowed opacity-70'
+                        : checked
+                          ? 'border-gold bg-gold/10 cursor-pointer'
+                          : 'border-vapor/10 hover:border-vapor/30 cursor-pointer'
                     }`}
                   >
                     <div>
@@ -191,12 +201,16 @@ export default function VdsGoldSignup() {
                       <span className="text-xs font-mono-tech text-vapor/40 mt-0.5 block">
                         {v.vehicle_type === 'truck_suv' ? 'Truck/SUV' : 'Sedan/Coupe'} · ${monthlyRate}/mo
                       </span>
+                      {isEnrolled && (
+                        <span className="text-xs font-mono-tech text-gold mt-1 block tracking-widest">◆ ALREADY ENROLLED IN VDS GOLD</span>
+                      )}
                     </div>
                     <div className="flex items-center gap-3">
-                      {checked && <CheckCircle size={16} className="text-gold shrink-0" />}
-                      {!checked && <div className="w-4 h-4 border-2 border-vapor/30 rounded-sm" />}
+                      {isEnrolled && <span className="text-[10px] font-mono-tech tracking-widest text-gold border border-gold/40 px-2 py-1 rounded-sm">GOLD</span>}
+                      {!isEnrolled && checked && <CheckCircle size={16} className="text-gold shrink-0" />}
+                      {!isEnrolled && !checked && <div className="w-4 h-4 border-2 border-vapor/30 rounded-sm" />}
                     </div>
-                  </button>
+                  </div>
                 );
               })}
             </div>
