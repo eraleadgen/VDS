@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.32';
 import Stripe from 'npm:stripe@17.0.0';
 
 // Fallback: called when user returns from Stripe checkout with gold_success=true.
@@ -16,6 +16,7 @@ Deno.serve(async (req) => {
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     const customer = customers.data[0];
     if (!customer) {
+      console.log('No Stripe customer found for', user.email);
       return Response.json({ skipped: true, reason: 'No Stripe customer found' });
     }
 
@@ -27,6 +28,7 @@ Deno.serve(async (req) => {
     });
 
     if (subscriptions.data.length === 0) {
+      console.log('No active Stripe subscriptions for customer', customer.id);
       return Response.json({ skipped: true, reason: 'No active subscriptions' });
     }
 
@@ -36,31 +38,30 @@ Deno.serve(async (req) => {
       return Response.json({ skipped: true, reason: 'No vehicles found' });
     }
 
-    // Get existing VehicleSubscription records to avoid duplicates (service role needed)
-    const existingSubs = await base44.asServiceRole.entities.VehicleSubscription.list();
-    const enrolledVehicleIds = new Set(existingSubs.map(s => s.vehicle_id));
-
-    // Find the most recent checkout session to get vehicle_ids metadata
-    const sessions = await stripe.checkout.sessions.list({
-      customer: customer.id,
-      limit: 5,
-    });
-
+    // Find the most recent checkout session with matching user_id to get specific vehicle_ids
+    const sessions = await stripe.checkout.sessions.list({ customer: customer.id, limit: 10 });
     let vehicleIdsToEnroll = [];
+
     for (const session of sessions.data) {
       if (session.metadata?.vehicle_ids && session.metadata?.user_id === user.id) {
-        const ids = JSON.parse(session.metadata.vehicle_ids);
-        vehicleIdsToEnroll = ids;
+        vehicleIdsToEnroll = JSON.parse(session.metadata.vehicle_ids);
+        console.log('Found session metadata with vehicle_ids:', vehicleIdsToEnroll);
         break;
       }
     }
 
-    // Fallback: enroll all user vehicles not already enrolled
+    // Fallback: use all user vehicles
     if (vehicleIdsToEnroll.length === 0) {
-      vehicleIdsToEnroll = vehicles.map(v => v.id).filter(id => !enrolledVehicleIds.has(id));
-    } else {
-      vehicleIdsToEnroll = vehicleIdsToEnroll.filter(id => !enrolledVehicleIds.has(id));
+      vehicleIdsToEnroll = vehicles.map(v => v.id);
+      console.log('No session metadata found, using all vehicles:', vehicleIdsToEnroll);
     }
+
+    // Filter out vehicles that already have an active VehicleSubscription
+    const existingActiveSubs = await base44.asServiceRole.entities.VehicleSubscription.filter({ status: 'active' });
+    const enrolledVehicleIds = new Set(existingActiveSubs.map(s => s.vehicle_id));
+    vehicleIdsToEnroll = vehicleIdsToEnroll.filter(id => !enrolledVehicleIds.has(id));
+
+    console.log('Vehicles to enroll after dedup:', vehicleIdsToEnroll);
 
     if (vehicleIdsToEnroll.length === 0) {
       return Response.json({ skipped: true, reason: 'All vehicles already enrolled' });
@@ -71,7 +72,10 @@ Deno.serve(async (req) => {
 
     for (const vehicleId of vehicleIdsToEnroll) {
       const vehicle = vehicles.find(v => v.id === vehicleId);
-      if (!vehicle) continue;
+      if (!vehicle) {
+        console.log('Vehicle not found:', vehicleId);
+        continue;
+      }
       const tier = vehicle.vehicle_type || 'sedan_coupe';
 
       await base44.asServiceRole.entities.VehicleSubscription.create({
@@ -84,16 +88,17 @@ Deno.serve(async (req) => {
         current_period_end: new Date(subscription.current_period_end * 1000).toISOString().split('T')[0],
       });
 
-      // Also mark vehicle as gold registered
-      await base44.entities.MemberVehicle.update(vehicleId, { is_gold_registered: true });
+      // Mark vehicle as gold registered
+      await base44.asServiceRole.entities.MemberVehicle.update(vehicleId, { is_gold_registered: true });
       created++;
+      console.log(`Provisioned Gold for vehicle ${vehicleId}`);
     }
 
-    console.log(`Provisioned ${created} Gold subscriptions for user ${user.id}`);
+    console.log(`Total provisioned: ${created} for user ${user.id}`);
     return Response.json({ success: true, created });
 
   } catch (error) {
-    console.error('provisionGoldOnReturn error:', error.message);
+    console.error('provisionGoldOnReturn error:', error.message, error.stack);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });

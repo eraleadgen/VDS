@@ -41,6 +41,8 @@ export default function MemberDashboard() {
         setShowGoldSuccess(true);
         // Provision subscriptions as fallback in case webhook hasn't fired yet
         await provisionGoldSubscriptions(me);
+        // Small delay to ensure DB writes are settled before loading data
+        await new Promise(resolve => setTimeout(resolve, 1500));
         // Clean up URL
         window.history.replaceState({}, document.title, '/member-dashboard');
       }
