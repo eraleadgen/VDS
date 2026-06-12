@@ -49,9 +49,9 @@ export default function GoldBooking() {
         const v = await base44.entities.MemberVehicle.list();
         setVehicles(v);
         
-        // Load active Gold subscriptions
-        const subscriptions = await base44.entities.VehicleSubscription.filter({ status: 'active' });
-        const goldVehicleIds = subscriptions.map(s => s.vehicle_id);
+        // Load active Gold subscriptions via backend (bypasses RLS)
+        const subsRes = await base44.functions.invoke('getMySubscriptions', {});
+        const goldVehicleIds = (subsRes?.data?.subscriptions || []).map(s => s.vehicle_id);
         setGoldVehicles(v.filter(veh => goldVehicleIds.includes(veh.id)));
       }
       setAuthChecked(true);
