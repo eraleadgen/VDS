@@ -65,26 +65,24 @@ export default function VdsGoldSignup() {
     setError(null);
 
     try {
-      // Step 1: Upgrade user to Gold membership
-      await base44.functions.invoke('upgradeToGold', {});
-
-      // Step 2: Mark selected vehicles as Gold-registered
-      for (const vehicleId of selectedVehicles) {
-        await base44.entities.MemberVehicle.update(vehicleId, {
-          is_gold_registered: true,
-        });
+      // Check if running in iframe
+      if (window.self !== window.top) {
+        setError('Payment checkout only works in the published app, not in preview mode. Please open the app in a browser.');
+        setProcessing(false);
+        return;
       }
 
-      // Step 3: Here you would integrate Stripe payment
-      // For now, we'll simulate success
-      // In production: call Stripe API to create subscription, handle webhook, etc.
+      // Create Stripe checkout session
+      const response = await base44.functions.invoke('createGoldCheckoutSession', { 
+        vehicleIds: selectedVehicles 
+      });
 
-      setSuccess(true);
-      
-      // Redirect to dashboard after 2 seconds
-      setTimeout(() => {
-        navigate('/member-dashboard');
-      }, 2000);
+      if (response.data?.url) {
+        // Redirect to Stripe checkout
+        window.location.href = response.data.url;
+      } else {
+        throw new Error('Failed to create checkout session');
+      }
     } catch (err) {
       console.error('Gold signup error:', err);
       setError(err.message || 'Failed to process Gold membership. Please try again.');

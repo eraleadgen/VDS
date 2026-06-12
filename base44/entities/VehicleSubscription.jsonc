@@ -1,0 +1,67 @@
+{
+  "name": "VehicleSubscription",
+  "type": "object",
+  "properties": {
+    "vehicle_id": {
+      "type": "string",
+      "description": "ID of the MemberVehicle"
+    },
+    "stripe_subscription_id": {
+      "type": "string",
+      "description": "Stripe subscription ID"
+    },
+    "stripe_customer_id": {
+      "type": "string",
+      "description": "Stripe customer ID"
+    },
+    "tier": {
+      "type": "string",
+      "enum": [
+        "sedan_coupe",
+        "truck_suv"
+      ],
+      "description": "Subscription tier"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "canceled",
+        "past_due",
+        "trialing"
+      ],
+      "default": "active",
+      "description": "Subscription status"
+    },
+    "started_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Subscription start date"
+    },
+    "current_period_end": {
+      "type": "string",
+      "format": "date",
+      "description": "Current billing period end date"
+    }
+  },
+  "required": [
+    "vehicle_id",
+    "stripe_subscription_id",
+    "tier",
+    "status"
+  ],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}

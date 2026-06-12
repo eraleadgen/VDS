@@ -58,8 +58,8 @@ const DEFAULT_FORM = {
 export default function BookAppointment() {
   const location = useLocation();
   const [user, setUser] = useState(null);
-  const [isGold, setIsGold] = useState(false);
   const [vehicles, setVehicles] = useState([]);
+  const [goldVehicles, setGoldVehicles] = useState({}); // { [vehicleId]: true } for active subscriptions
   const [form, setForm] = useState(DEFAULT_FORM);
   const [selectedVehicles, setSelectedVehicles] = useState([]);
   // vehicleServices: { [vehicleLabel]: serviceId } — per-vehicle service selection
@@ -80,11 +80,18 @@ export default function BookAppointment() {
       if (isAuth) {
         const me = await base44.auth.me();
         setUser(me);
-        setIsGold(!!me?.is_gold_member);
         if (me?.email) setForm(f => ({ ...f, email: me.email }));
         if (me?.full_name) setForm(f => ({ ...f, name: me.full_name }));
         const v = await base44.entities.MemberVehicle.list();
         setVehicles(v);
+        
+        // Load active Gold subscriptions for each vehicle
+        const subscriptions = await base44.entities.VehicleSubscription.filter({ status: 'active' });
+        const goldMap = {};
+        subscriptions.forEach(sub => {
+          goldMap[sub.vehicle_id] = true;
+        });
+        setGoldVehicles(goldMap);
       }
     };
     init();
@@ -140,6 +147,12 @@ export default function BookAppointment() {
 
   const autoQuote = getAutoQuote(form.service_type, derivedVehicleType);
 
+  // Check if any selected vehicle has Gold subscription (for consultation routing)
+  const hasGoldSubscription = selectedVehicles.some(label => {
+    const v = vehicles.find(veh => `${veh.year} ${veh.make} ${veh.model}${veh.color ? ', ' + veh.color : ''}` === label);
+    return v && goldVehicles[v.id];
+  });
+
   // Determine active vehicle keys for add-ons and totals
   // If user has selected saved vehicles, use those; otherwise use '__global'
   const activeVehicleKeys = selectedVehicles.length > 0 ? selectedVehicles : ['__global'];
@@ -183,7 +196,7 @@ export default function BookAppointment() {
         setLoadingSlots(true);
         const isConsultation = CONSULTATION_IDS.includes(firstService);
         const vtForAvailability = isConsultation
-          ? (isGold ? 'gold' : 'standard')
+          ? (hasGoldSubscription ? 'gold' : 'standard')
           : derivedVehicleType;
         try {
           const res = await base44.functions.invoke('getCalendarAvailability', {
@@ -250,7 +263,7 @@ export default function BookAppointment() {
       const firstService = getVehicleService(selectedVehicles[0]);
       const isConsultation = CONSULTATION_IDS.includes(firstService);
       const submitVehicleType = isConsultation
-        ? (isGold ? 'gold' : 'standard')
+        ? (hasGoldSubscription ? 'gold' : 'standard')
         : (derivedVehicleType || form.vehicle_type);
       await base44.functions.invoke('submitBookingToGHL', {
         ...form,
@@ -277,8 +290,6 @@ export default function BookAppointment() {
   const startPad = getDay(monthStart);
   const today = new Date();
 
-  const visibleServices = SERVICES.filter(s => !s.gold || isGold);
-  
   // Determine if first selected vehicle's service is a consultation (for time slot header)
   const firstSelectedService = selectedVehicles.length > 0 ? getVehicleService(selectedVehicles[0]) : null;
   const isConsultation = firstSelectedService && CONSULTATION_IDS.includes(firstSelectedService);
@@ -430,8 +441,19 @@ export default function BookAppointment() {
                                 className={selectClass}
                               >
                                 <option value="" disabled>Choose a service...</option>
-                                {visibleServices.map(s => {
-                                  const suffix = s.quoteOnly ? ' — Quote Only' : s.gold ? ' — Member Only' : '';
+                                {SERVICES.filter(s => {
+                                  // Check if this is a Gold service
+                                  if (s.gold) {
+                                    // Find the vehicle object to check subscription
+                                    const vehicleObj = vehicles.find(veh => 
+                                      `${veh.year} ${veh.make} ${veh.model}${veh.color ? ', ' + veh.color : ''}` === label
+                                    );
+                                    // Only show Gold services if this vehicle has an active subscription
+                                    return vehicleObj && goldVehicles[vehicleObj.id];
+                                  }
+                                  return true;
+                                }).map(s => {
+                                  const suffix = s.quoteOnly ? ' — Quote Only' : s.gold ? ' — Gold Member' : '';
                                   return (
                                     <option key={s.id} value={s.id}>
                                       {s.label}{suffix}

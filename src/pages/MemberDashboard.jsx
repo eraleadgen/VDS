@@ -18,6 +18,7 @@ const BOOKING_LINK = 'https://book.vdsmobile.com'; // Replace with your actual G
 export default function MemberDashboard() {
   const [user, setUser] = useState(null);
   const [vehicles, setVehicles] = useState([]);
+  const [subscriptions, setSubscriptions] = useState([]); // VehicleSubscription records
   const [records, setRecords] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [showAddVehicle, setShowAddVehicle] = useState(false);
@@ -39,14 +40,16 @@ export default function MemberDashboard() {
   }, []);
 
   const loadData = async () => {
-    const [v, r, a] = await Promise.all([
+    const [v, r, a, subs] = await Promise.all([
       base44.entities.MemberVehicle.list(),
       base44.entities.ServiceRecord.list(),
       base44.entities.Appointment.list(),
+      base44.entities.VehicleSubscription.list(),
     ]);
     setVehicles(v);
     setRecords(r);
     setAppointments(a.sort((x, y) => new Date(y.preferred_date) - new Date(x.preferred_date)));
+    setSubscriptions(subs.filter(s => s.status === 'active'));
   };
 
   const thisMonthRecords = records.filter(r => r.month_year === currentMonth);
@@ -85,10 +88,10 @@ export default function MemberDashboard() {
 
   const handleModalConfirm = async () => {
     if (!selectedVehicle) return;
+    // For now, redirect to the VDS Gold signup page for Stripe enrollment
+    // The actual subscription will be created via Stripe webhook
     if (modalAction === 'enroll') {
-      await base44.functions.invoke('upgradeVehicleToGold', { vehicle_id: selectedVehicle.id });
-    } else {
-      await base44.entities.MemberVehicle.update(selectedVehicle.id, { is_gold_registered: false });
+      window.location.href = '/vds-gold-signup';
     }
     setSelectedVehicle(null);
     setModalAction(null);
@@ -217,7 +220,7 @@ export default function MemberDashboard() {
         {/* Subscription Status */}
         <div className="mb-8">
           <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40 mb-4">MEMBERSHIP STATUS</p>
-          {user?.is_gold_member ? (
+          {subscriptions.length > 0 ? (
             <div className="glass-panel border border-gold/15 rounded-sm p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <div className="w-2 h-2 rounded-full bg-gold animate-pulse" />
@@ -228,14 +231,10 @@ export default function MemberDashboard() {
               </div>
               <div className="text-right">
                 <p className="text-gold font-mono-tech text-xs tracking-widest">
-                  {vehicles.filter(v => v.is_gold_registered).length === 0
-                    ? '$250–$300 / MO'
-                    : `$${vehicles.filter(v => v.is_gold_registered).reduce((sum, v) => sum + (v.vehicle_type === 'truck_suv' ? 300 : 250), 0)} / MO`}
+                  ${subscriptions.reduce((sum, sub) => sum + (sub.tier === 'truck_suv' ? 300 : 250), 0)} / MO
                 </p>
                 <p className="text-vapor/30 text-xs font-mono-tech mt-0.5">
-                  {vehicles.filter(v => v.is_gold_registered).length === 0
-                    ? 'Add Gold vehicles to calculate rate'
-                    : `${vehicles.filter(v => v.is_gold_registered).length} Gold vehicle${vehicles.filter(v => v.is_gold_registered).length > 1 ? 's' : ''} · Stripe billing coming soon`}
+                  {subscriptions.length} Gold vehicle{subscriptions.length > 1 ? 's' : ''} · Billed via Stripe
                 </p>
               </div>
             </div>

@@ -28,8 +28,8 @@ const DEFAULT_FORM = {
 
 export default function GoldBooking() {
   const [user, setUser] = useState(null);
-  const [isGold, setIsGold] = useState(false);
   const [vehicles, setVehicles] = useState([]);
+  const [goldVehicles, setGoldVehicles] = useState([]); // Vehicles with active subscriptions
   const [selectedVehicles, setSelectedVehicles] = useState([]);
   const [form, setForm] = useState(DEFAULT_FORM);
   const [calendarDate, setCalendarDate] = useState(new Date());
@@ -44,11 +44,15 @@ export default function GoldBooking() {
       if (isAuth) {
         const me = await base44.auth.me();
         setUser(me);
-        setIsGold(!!me?.is_gold_member);
         if (me?.email) setForm(f => ({ ...f, email: me.email }));
         if (me?.full_name) setForm(f => ({ ...f, name: me.full_name }));
         const v = await base44.entities.MemberVehicle.list();
         setVehicles(v);
+        
+        // Load active Gold subscriptions
+        const subscriptions = await base44.entities.VehicleSubscription.filter({ status: 'active' });
+        const goldVehicleIds = subscriptions.map(s => s.vehicle_id);
+        setGoldVehicles(v.filter(veh => goldVehicleIds.includes(veh.id)));
       }
       setAuthChecked(true);
     };
@@ -107,7 +111,7 @@ export default function GoldBooking() {
     );
   }
 
-  if (!user || !isGold) {
+  if (!user || goldVehicles.length === 0) {
     return (
       <div className="min-h-screen bg-obsidian flex flex-col">
         <Navbar />
@@ -116,14 +120,14 @@ export default function GoldBooking() {
             <p className="text-4xl mb-4">◆</p>
             <h2 className="text-2xl font-grotesk font-bold text-vapor mb-3">VDS Gold Members Only</h2>
             <p className="text-vapor/50 font-mono-tech text-sm leading-relaxed mb-8">
-              This booking calendar is exclusive to VDS Gold members. Join today to unlock priority scheduling and unlimited details.
+              This booking calendar is exclusive to VDS Gold members. Enroll at least one vehicle to access priority scheduling.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link to="/vds-gold" className="vds-gold-btn px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm text-center">
-                ◆ JOIN VDS GOLD
+              <Link to="/vds-gold-signup" className="vds-gold-btn px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm text-center">
+                ◆ ENROLL VEHICLE
               </Link>
-              <Link to="/member-login" className="border border-vapor/20 text-vapor/60 px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm text-center hover:border-vapor/40 hover:text-vapor transition-colors">
-                MEMBER LOGIN
+              <Link to="/member-dashboard" className="border border-vapor/20 text-vapor/60 px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm text-center hover:border-vapor/40 hover:text-vapor transition-colors">
+                MEMBER DASHBOARD
               </Link>
             </div>
           </div>
@@ -208,47 +212,37 @@ export default function GoldBooking() {
             </div>
           </div>
 
-          {/* Vehicle Multi-Select with Pricing - Gold registered only */}
-          {vehicles.length > 0 && (
+          {/* Vehicle Multi-Select with Pricing - Gold subscribed only */}
+          {goldVehicles.length > 0 && (
             <div>
               <label className="block text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">SELECT GOLD VEHICLE(S) <span className="text-gold">*</span></label>
-              <p className="text-vapor/30 font-mono-tech text-xs mb-3">Only vehicles enrolled in VDS Gold can access Gold services.</p>
-              {vehicles.filter(v => v.is_gold_registered).length === 0 ? (
-                <div className="border border-gold/20 bg-gold/5 rounded-sm px-5 py-6 text-center">
-                  <p className="text-gold font-mono-tech text-xs tracking-widest mb-2">NO GOLD-REGISTERED VEHICLES</p>
-                  <p className="text-vapor/50 font-mono-tech text-xs mb-4">Add a vehicle and mark it as Gold-registered in your dashboard to book Gold services.</p>
-                  <Link to="/member-dashboard" className="inline-block border border-gold bg-gold text-obsidian px-5 py-2 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold-light transition-colors">
-                    GO TO DASHBOARD →
-                  </Link>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {vehicles.filter(v => v.is_gold_registered).map(v => {
-                    const label = `${v.year} ${v.make} ${v.model}${v.color ? ', ' + v.color : ''}`;
-                    const checked = selectedVehicles.includes(label);
-                    const vehicleType = v.vehicle_type || 'sedan_coupe';
-                    const monthlyRate = GOLD_PRICING[vehicleType] || GOLD_PRICING.sedan_coupe;
-                    return (
-                      <button
-                        key={v.id}
-                        type="button"
-                        onClick={() => toggleVehicle(label)}
-                        className={`w-full flex items-center justify-between px-5 py-4 border rounded-sm transition-colors text-left ${
-                          checked ? 'border-gold bg-gold/10' : 'border-vapor/10 hover:border-vapor/30'
-                        }`}
-                      >
-                        <div>
-                          <span className="font-mono-tech text-sm text-vapor block">{label}</span>
-                          <span className="text-xs font-mono-tech text-vapor/40 mt-0.5 block">
-                            {vehicleType === 'sedan_coupe' ? 'Sedan/Coupe' : 'Truck/SUV'} · ${monthlyRate}/mo
-                          </span>
-                        </div>
-                        {checked && <X size={13} className="text-gold shrink-0" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
+              <p className="text-vapor/30 font-mono-tech text-xs mb-3">Only vehicles with active VDS Gold subscriptions can access Gold services.</p>
+              <div className="space-y-2">
+                {goldVehicles.map(v => {
+                  const label = `${v.year} ${v.make} ${v.model}${v.color ? ', ' + v.color : ''}`;
+                  const checked = selectedVehicles.includes(label);
+                  const vehicleType = v.vehicle_type || 'sedan_coupe';
+                  const monthlyRate = GOLD_PRICING[vehicleType] || GOLD_PRICING.sedan_coupe;
+                  return (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => toggleVehicle(label)}
+                      className={`w-full flex items-center justify-between px-5 py-4 border rounded-sm transition-colors text-left ${
+                        checked ? 'border-gold bg-gold/10' : 'border-vapor/10 hover:border-vapor/30'
+                      }`}
+                    >
+                      <div>
+                        <span className="font-mono-tech text-sm text-vapor block">{label}</span>
+                        <span className="text-xs font-mono-tech text-vapor/40 mt-0.5 block">
+                          {vehicleType === 'sedan_coupe' ? 'Sedan/Coupe' : 'Truck/SUV'} · ${monthlyRate}/mo
+                        </span>
+                      </div>
+                      {checked && <X size={13} className="text-gold shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
               {selectedVehicles.length > 0 && (
                 <div className="mt-4 border border-gold/20 bg-gold/5 rounded-sm px-5 py-4">
                   <div className="flex items-center justify-between">
