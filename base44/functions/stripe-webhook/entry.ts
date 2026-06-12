@@ -13,6 +13,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing signature' }, { status: 400 });
     }
 
+    // Webhook authentication: Stripe signature is verified here before any data access.
+    // This is the correct auth pattern for webhook endpoints (no user session available).
     const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
     const event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
 
