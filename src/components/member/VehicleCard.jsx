@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { Trash2, Pencil } from 'lucide-react';
 import AddVehicleForm from './AddVehicleForm';
-import VehicleSubscriptionManager from './VehicleSubscriptionManager';
 
 const MEMBERSHIP_BADGE = "https://media.base44.com/images/public/6a191df337222815cd0b1f5e/dc17586b1_generated_image.png";
 
-export default function VehicleCard({ vehicle, onDelete, onEdit, onSubscriptionChange }) {
+export default function VehicleCard({ vehicle, onDelete, onEdit, onEnrollClick, onCancelClick }) {
   const [editing, setEditing] = useState(false);
 
   const handleEdit = async (formData) => {
@@ -125,7 +124,45 @@ export default function VehicleCard({ vehicle, onDelete, onEdit, onSubscriptionC
           </button>
         </div>
       </div>
-      <VehicleSubscriptionManager vehicle={vehicle} onSubscriptionChange={onSubscriptionChange} />
+      
+      {/* Subscription action buttons - modal rendered at dashboard level */}
+      <div className={`border-t px-5 py-4 ${
+        vehicle.is_gold_registered 
+          ? 'border-gold/15 bg-gold/5' 
+          : 'border-vapor/10 bg-asphalt/30'
+      }`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {vehicle.is_gold_registered ? (
+              <>
+                <div className="w-2 h-2 rounded-full bg-gold animate-pulse" />
+                <div>
+                  <p className="text-gold font-mono-tech text-xs tracking-widest">VDS GOLD ACTIVE</p>
+                  <p className="text-vapor/50 text-xs font-mono-tech">${vehicle.vehicle_type === 'truck_suv' ? 300 : 250}/mo · {vehicle.vehicle_type === 'truck_suv' ? 'Truck/SUV' : 'Sedan/Coupe'}</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="w-2 h-2 rounded-full bg-vapor/20" />
+                <div>
+                  <p className="text-vapor/60 font-mono-tech text-xs tracking-widest">NOT ENROLLED</p>
+                  <p className="text-vapor/40 text-xs font-mono-tech">${vehicle.vehicle_type === 'truck_suv' ? 300 : 250}/mo to activate</p>
+                </div>
+              </>
+            )}
+          </div>
+          <button
+            onClick={() => vehicle.is_gold_registered ? onCancelClick(vehicle) : onEnrollClick(vehicle)}
+            className={`px-4 py-2 text-xs font-mono-tech tracking-widest rounded-sm transition-colors ${
+              vehicle.is_gold_registered
+                ? 'border border-gold/30 text-gold/70 hover:border-gold/50 hover:text-gold'
+                : 'bg-gold text-obsidian hover:bg-gold-light'
+            }`}
+          >
+            {vehicle.is_gold_registered ? 'CANCEL' : 'ENROLL'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -23,6 +23,8 @@ export default function MemberDashboard() {
   const [showAddVehicle, setShowAddVehicle] = useState(false);
   const [showEditAccount, setShowEditAccount] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [selectedVehicle, setSelectedVehicle] = useState(null);
+  const [modalAction, setModalAction] = useState(null);
 
   const currentMonth = format(new Date(), 'yyyy-MM');
 
@@ -69,6 +71,33 @@ export default function MemberDashboard() {
 
   const handleVehicleSubscriptionChange = async () => {
     await loadData();
+  };
+
+  const handleEnrollClick = (vehicle) => {
+    setSelectedVehicle(vehicle);
+    setModalAction('enroll');
+  };
+
+  const handleCancelClick = (vehicle) => {
+    setSelectedVehicle(vehicle);
+    setModalAction('cancel');
+  };
+
+  const handleModalConfirm = async () => {
+    if (!selectedVehicle) return;
+    if (modalAction === 'enroll') {
+      await base44.functions.invoke('upgradeVehicleToGold', { vehicle_id: selectedVehicle.id });
+    } else {
+      await base44.entities.MemberVehicle.update(selectedVehicle.id, { is_gold_registered: false });
+    }
+    setSelectedVehicle(null);
+    setModalAction(null);
+    await loadData();
+  };
+
+  const handleModalClose = () => {
+    setSelectedVehicle(null);
+    setModalAction(null);
   };
 
   const handleAccountSaved = async () => {
@@ -345,12 +374,22 @@ export default function MemberDashboard() {
           ) : (
             <div className="space-y-3">
               {vehicles.map(v => (
-                <VehicleCard key={v.id} vehicle={v} onDelete={handleDeleteVehicle} onEdit={handleEditVehicle} onSubscriptionChange={handleVehicleSubscriptionChange} />
+                <VehicleCard key={v.id} vehicle={v} onDelete={handleDeleteVehicle} onEdit={handleEditVehicle} onEnrollClick={handleEnrollClick} onCancelClick={handleCancelClick} />
               ))}
             </div>
           )}
         </div>
       </main>
+
+      {/* Subscription Modal - rendered at page level to avoid clipping */}
+      {selectedVehicle && modalAction && (
+        <VehicleSubscriptionManager
+          vehicle={selectedVehicle}
+          actionType={modalAction}
+          onConfirm={handleModalConfirm}
+          onClose={handleModalClose}
+        />
+      )}
 
       <Footer />
     </div>
