@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Trash2, Pencil } from 'lucide-react';
 import AddVehicleForm from './AddVehicleForm';
 
-const GOLD_BADGE = "https://media.base44.com/images/public/6a191df337222815cd0b1f5e/a1c722e15_image.png";
+const GOLD_BADGE = "https://media.base44.com/images/public/6a191df337222815cd0b1f5e/34ae4d998_generated_image.png";
+const SILVER_BADGE = "https://media.base44.com/images/public/6a191df337222815cd0b1f5e/9da0c2348_generated_image.png";
 
 export default function VehicleCard({ vehicle, onDelete, onEdit, onEnrollClick, onCancelClick }) {
   const [editing, setEditing] = useState(false);
@@ -58,14 +59,9 @@ export default function VehicleCard({ vehicle, onDelete, onEdit, onEnrollClick, 
               : 'bg-gradient-to-br from-vapor/10 to-vapor/5 border border-vapor/20'
           }`}>
             <img 
-              src={GOLD_BADGE} 
+              src={isGold ? GOLD_BADGE : SILVER_BADGE} 
               alt="Membership Badge" 
               className="w-9 h-9 object-contain transition-all duration-300" 
-              style={{ 
-                filter: isGold 
-                  ? 'none'
-                  : 'grayscale(100%) brightness(1.2) opacity(70%)'
-              }} 
             />
           </div>
           <div>
