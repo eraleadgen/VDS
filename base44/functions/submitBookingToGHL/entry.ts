@@ -10,6 +10,12 @@ Deno.serve(async (req) => {
       return Response.json({ success: false, error: 'Missing required fields.' }, { status: 400 });
     }
 
+    // Basic phone number validation (must contain at least 7 digits)
+    const phoneDigits = phone.replace(/\D/g, '');
+    if (phoneDigits.length < 7) {
+      return Response.json({ success: false, error: 'Please enter a valid phone number.' }, { status: 400 });
+    }
+
     // Calendar ID map: service_type + vehicle_type → GHL calendar ID
     const CALENDAR_IDS = {
       // VDS Gold

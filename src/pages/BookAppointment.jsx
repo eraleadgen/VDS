@@ -235,6 +235,12 @@ export default function BookAppointment() {
       console.log('Missing contact info');
       return;
     }
+    // Validate phone number has at least 7 digits
+    const phoneDigits = form.phone.replace(/\D/g, '');
+    if (phoneDigits.length < 7) {
+      console.log('Invalid phone number');
+      return;
+    }
     if (!form.preferred_date || !form.preferred_time) {
       console.log('Missing date/time');
       return;
