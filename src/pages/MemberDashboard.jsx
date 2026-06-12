@@ -159,7 +159,7 @@ export default function MemberDashboard() {
                 <p className="text-vapor font-grotesk font-semibold">Book Your Gold Services</p>
               </div>
               <p className="text-vapor/40 font-mono-tech text-xs leading-relaxed mb-6">
-                As a VDS Gold member, you have access to unlimited exterior details and 1 interior detail per month — all with ceramic sealant included.
+                As a VDS Gold member, you have access to unlimited exterior details and 1 interior detail per month — all with ceramic sealant included. Rates: $250/mo (sedan/coupe) or $300/mo (truck/SUV) per vehicle.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Link
@@ -194,8 +194,16 @@ export default function MemberDashboard() {
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-gold font-mono-tech text-xs tracking-widest">$250–$300 / MO</p>
-                <p className="text-vapor/30 text-xs font-mono-tech mt-0.5">Stripe billing coming soon</p>
+                <p className="text-gold font-mono-tech text-xs tracking-widest">
+                  {vehicles.length === 0
+                    ? '$250–$300 / MO'
+                    : `$${vehicles.reduce((sum, v) => sum + (v.vehicle_type === 'truck_suv' ? 300 : 250), 0)} / MO`}
+                </p>
+                <p className="text-vapor/30 text-xs font-mono-tech mt-0.5">
+                  {vehicles.length === 0
+                    ? 'Add vehicles to calculate rate'
+                    : `${vehicles.length} vehicle${vehicles.length > 1 ? 's' : ''} · Stripe billing coming soon`}
+                </p>
               </div>
             </div>
           ) : (

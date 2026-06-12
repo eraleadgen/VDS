@@ -14,6 +14,12 @@ const GOLD_SERVICES = [
 
 const TIME_SLOTS = ['7:00 AM', '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
 
+// Gold pricing per vehicle type
+const GOLD_PRICING = {
+  sedan_coupe: 250,
+  truck_suv: 300,
+};
+
 const DEFAULT_FORM = {
   name: '', phone: '', email: '', address: '',
   service_type: '', vehicle_type: '', vehicle_info: '', notes: '',
@@ -68,11 +74,17 @@ export default function GoldBooking() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.service_type || !form.name || !form.phone || !form.address) return;
-    if (!form.preferred_date || !form.preferred_time || !form.vehicle_type) return;
+    if (!form.preferred_date || !form.preferred_time) return;
+    if (selectedVehicles.length === 0) return;
     setLoading(true);
-    const vehicleSummary = selectedVehicles.length > 0 ? selectedVehicles.join(', ') : form.vehicle_info;
+    const vehicleSummary = selectedVehicles.join(', ');
+    // Get vehicle type from first selected vehicle for calendar routing
+    const firstVehicle = vehicles.find(v => 
+      `${v.year} ${v.make} ${v.model}${v.color ? ', ' + v.color : ''}` === selectedVehicles[0]
+    );
     await base44.functions.invoke('submitBookingToGHL', {
       ...form,
+      vehicle_type: firstVehicle?.vehicle_type || 'sedan_coupe',
       vehicle_info: vehicleSummary,
       preferred_date: form.preferred_date,
       preferred_time: form.preferred_time,
@@ -196,50 +208,56 @@ export default function GoldBooking() {
             </div>
           </div>
 
-          {/* Vehicle Multi-Select */}
+          {/* Vehicle Multi-Select with Pricing */}
           {vehicles.length > 0 && (
             <div>
-              <label className="block text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">SELECT VEHICLE(S)</label>
+              <label className="block text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">SELECT VEHICLE(S) <span className="text-gold">*</span></label>
+              <p className="text-vapor/30 font-mono-tech text-xs mb-3">Gold services are only available for vehicles registered to your Gold membership.</p>
               <div className="space-y-2">
                 {vehicles.map(v => {
                   const label = `${v.year} ${v.make} ${v.model}${v.color ? ', ' + v.color : ''}`;
                   const checked = selectedVehicles.includes(label);
+                  const vehicleType = v.vehicle_type || 'sedan_coupe';
+                  const monthlyRate = GOLD_PRICING[vehicleType] || GOLD_PRICING.sedan_coupe;
                   return (
                     <button
                       key={v.id}
                       type="button"
                       onClick={() => toggleVehicle(label)}
-                      className={`w-full flex items-center justify-between px-5 py-3 border rounded-sm transition-colors text-left ${
+                      className={`w-full flex items-center justify-between px-5 py-4 border rounded-sm transition-colors text-left ${
                         checked ? 'border-gold bg-gold/10' : 'border-vapor/10 hover:border-vapor/30'
                       }`}
                     >
-                      <span className="font-mono-tech text-sm text-vapor">{label}</span>
+                      <div>
+                        <span className="font-mono-tech text-sm text-vapor block">{label}</span>
+                        <span className="text-xs font-mono-tech text-vapor/40 mt-0.5 block">
+                          {vehicleType === 'sedan_coupe' ? 'Sedan/Coupe' : 'Truck/SUV'} · ${monthlyRate}/mo
+                        </span>
+                      </div>
                       {checked && <X size={13} className="text-gold shrink-0" />}
                     </button>
                   );
                 })}
               </div>
-            </div>
-          )}
-
-          {/* Vehicle Type */}
-          {form.service_type && (
-            <div>
-              <label className="block text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">VEHICLE TYPE <span className="text-gold">*</span></label>
-              <div className="grid grid-cols-2 gap-3">
-                {[{ id: 'sedan_coupe', label: 'Sedan / Coupe' }, { id: 'truck_suv', label: 'Truck / SUV' }].map(vt => (
-                  <button
-                    key={vt.id}
-                    type="button"
-                    onClick={() => setForm(f => ({ ...f, vehicle_type: vt.id }))}
-                    className={`py-3 border rounded-sm font-mono-tech text-xs tracking-widest transition-colors ${
-                      form.vehicle_type === vt.id ? 'border-gold bg-gold/10 text-gold' : 'border-gold/20 text-vapor/50 hover:border-gold/40 hover:text-vapor'
-                    }`}
-                  >
-                    {vt.label}
-                  </button>
-                ))}
-              </div>
+              {selectedVehicles.length > 0 && (
+                <div className="mt-4 border border-gold/20 bg-gold/5 rounded-sm px-5 py-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-xs font-mono-tech tracking-widest text-gold mb-1">MONTHLY RATE</p>
+                      <p className="text-vapor/50 font-mono-tech text-xs">
+                        {selectedVehicles.length} vehicle{selectedVehicles.length > 1 ? 's' : ''} · Billed via Stripe
+                      </p>
+                    </div>
+                    <p className="text-2xl font-grotesk font-bold text-gold shrink-0 ml-4">
+                      ${selectedVehicles.reduce((sum, label) => {
+                        const v = vehicles.find(veh => `${veh.year} ${veh.make} ${veh.model}${veh.color ? ', ' + veh.color : ''}` === label);
+                        const vt = v?.vehicle_type || 'sedan_coupe';
+                        return sum + (GOLD_PRICING[vt] || GOLD_PRICING.sedan_coupe);
+                      }, 0)}+
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -375,7 +393,7 @@ export default function GoldBooking() {
           <div className="pt-2 space-y-4">
             <button
               type="submit"
-              disabled={loading || !form.service_type || !form.name || !form.phone || !form.address || !form.preferred_date || !form.preferred_time || !form.vehicle_type}
+              disabled={loading || !form.service_type || !form.name || !form.phone || !form.address || !form.preferred_date || !form.preferred_time || selectedVehicles.length === 0}
               className="w-full flex items-center justify-center gap-3 bg-gold hover:bg-gold-light text-obsidian font-mono-tech text-sm tracking-widest py-4 rounded-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {loading
