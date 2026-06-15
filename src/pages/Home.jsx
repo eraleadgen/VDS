@@ -18,7 +18,7 @@ const SERVICES = [
     title: 'FULL DETAIL',
     subtitle: 'Interior & Exterior Restoration',
     specs: ['Interior & Exterior Restoration', 'Odor & Stain Removal', 'Professional Products', 'Ceramic Sealant'],
-    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/c7357965d_FullDetail-CeramicSealant2.jpg',
+    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/322538cef_IMG_3881.jpg',
     bookingId: 'full_detail',
   },
   {
