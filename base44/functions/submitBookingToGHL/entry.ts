@@ -1,13 +1,16 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
-// 4 calendars based on vehicle count (2hr slots each)
+// 4 calendars based on vehicle count
 // 1 vehicle = 2hr, 2 vehicles = 4hr, 3 vehicles = 6hr, 4 vehicles = 8hr
 const CALENDAR_IDS = {
-  1: 'H3DX0ztGWQ4BBliILHim', // 1 Vehicle — 2hr
-  2: 'LO4uEJer1WKHdXvjwxhF', // 2 Vehicles — 4hr
-  3: 'U30SDSZI19VAr9vzX2we', // 3 Vehicles — 6hr
-  4: 'hgqeZGlC2xXg4WoK4GtG', // 4 Vehicles — 8hr
+  1: 'W3HOnJ8bJk1dLVxfLIO', // VDS Calendar — 1 Vehicle (2hr)
+  2: '2HH8Lw4GmTLrPpXoP4',  // VDS Calendar — 2 Vehicles (4hr)
+  3: 'QAcZZ3cyLXJ8LOc7A20', // VDS Calendar — 3 Vehicles (6hr)
+  4: 'nH6W03dhwg81 7hUmg',  // VDS Calendar — 4 Vehicles (8hr)
 };
+
+// Ceramic/Paint Correction consultation calendar
+const CONSULTATION_CALENDAR_ID = 'K85mLRHPLAhJx9MpNgh';
 
 const SERVICE_LABELS = {
   exterior_detail: 'Exterior Detail',
