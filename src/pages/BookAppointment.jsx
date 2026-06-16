@@ -375,9 +375,9 @@ export default function BookAppointment() {
             </p>
             <div className="flex flex-col gap-3">
               {user ? (
-                <Link to="/member-dashboard" className="border border-gold bg-gold text-obsidian px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold-light transition-colors">
+                <a href="/member-dashboard" className="border border-gold bg-gold text-obsidian px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold-light transition-colors text-center">
                   VIEW APPOINTMENT →
-                </Link>
+                </a>
               ) : (
                 <a href="/member-login" className="border border-gold/40 text-gold px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold/10 transition-colors text-center">
                   CREATE ACCOUNT TO TRACK →

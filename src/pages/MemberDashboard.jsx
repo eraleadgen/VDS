@@ -39,9 +39,14 @@ export default function MemberDashboard() {
         setAppointments(updated.sort((x, y) => new Date(y.preferred_date) - new Date(x.preferred_date)));
       }
     });
+    // Re-fetch when user navigates back to this tab (e.g. after completing a booking)
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') loadData();
+    };
+    document.addEventListener('visibilitychange', onVisibility);
     // Delayed re-fetch to catch appointments written just before navigating here
-    const timer = setTimeout(() => loadData(), 2000);
-    return () => { unsubscribe(); clearTimeout(timer); };
+    const timer = setTimeout(() => loadData(), 1500);
+    return () => { unsubscribe(); clearTimeout(timer); document.removeEventListener('visibilitychange', onVisibility); };
   }, []);
 
   useEffect(() => {
@@ -416,17 +421,22 @@ export default function MemberDashboard() {
             <AccountDetailsForm user={user} onSaved={handleAccountSaved} onCancel={() => setShowEditAccount(false)} />
           ) : (
             <div className="glass-panel border border-vapor/10 rounded-sm p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {[
-                { label: 'NAME', value: user?.full_name },
-                { label: 'EMAIL', value: user?.email },
-                { label: 'PHONE', value: user?.phone },
-
-              ].map(({ label, value }) => (
-                <div key={label}>
-                  <p className="text-xs font-mono-tech tracking-widest text-vapor/30 mb-1">{label}</p>
-                  <p className="text-vapor text-sm font-grotesk">{value || <span className="text-vapor/20">—</span>}</p>
-                </div>
-              ))}
+              {(() => {
+                const nameParts = (user?.full_name || '').split(' ');
+                const firstName = nameParts[0] || '';
+                const lastName = nameParts.slice(1).join(' ') || '';
+                return [
+                  { label: 'FIRST NAME', value: firstName },
+                  { label: 'LAST NAME', value: lastName },
+                  { label: 'EMAIL', value: user?.email },
+                  { label: 'PHONE', value: user?.phone },
+                ].map(({ label, value }) => (
+                  <div key={label}>
+                    <p className="text-xs font-mono-tech tracking-widest text-vapor/30 mb-1">{label}</p>
+                    <p className="text-vapor text-sm font-grotesk">{value || <span className="text-vapor/20">—</span>}</p>
+                  </div>
+                ));
+              })()}
             </div>
           )}
         </div>
