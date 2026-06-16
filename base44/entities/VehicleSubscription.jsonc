@@ -42,6 +42,11 @@
       "type": "string",
       "format": "date",
       "description": "Current billing period end date"
+    },
+    "description": {
+      "type": "string",
+      "description": "Optional notes about this subscription",
+      "maxLength": 1000
     }
   },
   "required": [
