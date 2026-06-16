@@ -197,7 +197,7 @@ Deno.serve(async (req) => {
             endTime: endIso,
             title: apptTitle,
             description: apptDescription,
-            appointmentStatus: 'new',
+            appointmentStatus: 'confirmed',
             address: address || '',
           }),
         });
@@ -233,7 +233,7 @@ Deno.serve(async (req) => {
         vehicle_info: vehicle_info || 'TBD',
         preferred_date,
         preferred_time,
-        status: 'pending',
+        status: 'confirmed',
         notes: servicesNotes,
         customer_name: name,
         customer_phone: phone,

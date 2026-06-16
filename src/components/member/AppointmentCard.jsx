@@ -36,7 +36,9 @@ export default function AppointmentCard({ appointment, onRefresh }) {
     cancelled: <X size={14} />,
   };
 
-  const isPast = new Date(appointment.preferred_date) < new Date();
+  // Combine date + time for accurate past check so same-day appointments still show actions
+  const apptDateTime = new Date(`${appointment.preferred_date}T${appointment.preferred_time || '23:59'}`);
+  const isPast = apptDateTime < new Date();
 
   return (
     <div className={`glass-panel border rounded-sm p-5 ${statusColors[appointment.status] || statusColors.pending}`}>
