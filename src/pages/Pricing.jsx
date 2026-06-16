@@ -10,8 +10,7 @@ const PRICING_SECTIONS = [
     subtitle: 'Interior & Exterior Restoration',
     rows: [
       { label: 'Sedan / Coupe', price: '$175+' },
-      { label: 'SUV', price: '$225+' },
-      { label: 'Truck / 3-Row SUV', price: '$250+' },
+      { label: 'Truck / SUV', price: '$250+' },
     ],
   },
   {
@@ -19,8 +18,7 @@ const PRICING_SECTIONS = [
     subtitle: 'Hand Wash, Rims, Sealant',
     rows: [
       { label: 'Sedan / Coupe', price: '$100+' },
-      { label: 'SUV', price: '$100+' },
-      { label: 'Truck / 3-Row SUV', price: '$115+' },
+      { label: 'Truck / SUV', price: '$115+' },
     ],
   },
   {
@@ -28,8 +26,7 @@ const PRICING_SECTIONS = [
     subtitle: 'Steam Clean, Deep Vacuum & More',
     rows: [
       { label: 'Sedan / Coupe', price: '$120+' },
-      { label: 'SUV', price: '$130+' },
-      { label: 'Truck / 3-Row SUV', price: '$150+' },
+      { label: 'Truck / SUV', price: '$150+' },
     ],
   },
   {
@@ -121,7 +118,7 @@ export default function Pricing() {
           <div className="flex flex-col items-center md:items-end gap-4 shrink-0">
             <div className="text-right">
               <p className="text-3xl font-grotesk font-bold text-gold">$250 <span className="text-base text-vapor/50">sedan/coupe</span></p>
-              <p className="text-3xl font-grotesk font-bold text-gold">$300 <span className="text-base text-vapor/50">truck/3-row</span></p>
+              <p className="text-3xl font-grotesk font-bold text-gold">$300 <span className="text-base text-vapor/50">truck/suv</span></p>
               <p className="text-xs font-mono-tech text-vapor/40 tracking-widest mt-1">PER VEHICLE / MONTH</p>
             </div>
             <Link to="/vds-gold"

@@ -32,7 +32,7 @@ const MEMBERSHIP_VALUE = [
   { service: 'Ceramic Sealant (×4/mo)', value: '$200+' },
   { service: 'Total Retail Value', value: '$700+' },
   { service: 'VDS GOLD — SEDAN/COUPE', value: '$250' },
-  { service: 'VDS GOLD — TRUCK/3-ROW', value: '$300' },
+  { service: 'VDS GOLD — TRUCK/SUV', value: '$300' },
 ];
 
 const HERO_IMG = 'https://images.unsplash.com/photo-1542282088-fe8426682b8f?w=1600';
@@ -89,7 +89,7 @@ export default function VdsGold() {
               <div>
                 <p className="text-xs font-mono-tech text-gold/60 tracking-widest mb-1">MEMBERSHIP PRICE</p>
                 <p className="text-5xl font-grotesk font-bold text-gold leading-none">$250<span className="text-2xl font-mono-tech text-vapor/50"> SEDAN/COUPE</span></p>
-                <p className="text-5xl font-grotesk font-bold text-gold leading-none mt-2">$300<span className="text-2xl font-mono-tech text-vapor/50"> TRUCK/3-ROW</span></p>
+                <p className="text-5xl font-grotesk font-bold text-gold leading-none mt-2">$300<span className="text-2xl font-mono-tech text-vapor/50"> TRUCK/SUV</span></p>
                 <p className="text-xs font-mono-tech text-vapor/40 tracking-widest mt-2">PER VEHICLE / MONTH</p>
               </div>
               <div className="pb-2 text-vapor/30 font-mono-tech text-xs">
@@ -251,7 +251,7 @@ export default function VdsGold() {
               </div>
               <div className="text-right">
                 <p className="text-2xl font-grotesk font-bold text-gold">$250 <span className="text-sm font-mono-tech text-vapor/50">sedan/coupe</span></p>
-                <p className="text-2xl font-grotesk font-bold text-gold">$300 <span className="text-sm font-mono-tech text-vapor/50">truck/3-row</span></p>
+                <p className="text-2xl font-grotesk font-bold text-gold">$300 <span className="text-sm font-mono-tech text-vapor/50">truck/suv</span></p>
                 <p className="text-xs font-mono-tech text-vapor/40">/mo per vehicle</p>
               </div>
             </div>
