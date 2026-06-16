@@ -13,6 +13,7 @@ import AccountDetailsForm from '../components/member/AccountDetailsForm';
 import AppointmentCard from '../components/member/AppointmentCard';
 import VehicleSubscriptionModal from '../components/member/VehicleSubscriptionModal';
 
+// v2
 const BOOKING_LINK = 'https://book.vdsmobile.com';
 
 export default function MemberDashboard() {
