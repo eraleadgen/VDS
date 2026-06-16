@@ -4,11 +4,9 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
-    // Authenticate user
-    const user = await base44.auth.me();
-    if (!user) {
-      return Response.json({ success: false, error: 'Unauthorized' }, { status: 401 });
-    }
+    // Authenticate user (optional — guests can book without an account)
+    let user = null;
+    try { user = await base44.auth.me(); } catch (e) { /* guest */ }
 
     const { name, phone, email, address, service_type, vehicle_type, vehicle_info, vehicle_details, notes, preferred_date, preferred_time } = await req.json();
 
@@ -222,9 +220,11 @@ Deno.serve(async (req) => {
         }
         
         // Calculate start time (stagger appointments by 2 hours for each vehicle after the first)
+        // Use -04:00 (EDT) offset - Atlanta observes EDT (UTC-4) during daylight saving time
+        const TZ_OFFSET = '-04:00';
         const staggerHours = i * 2;
         const startHours = hours + staggerHours;
-        const startIso = `${preferred_date}T${String(startHours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:00-05:00`;
+        const startIso = `${preferred_date}T${String(startHours).padStart(2,'0')}:${String(minutes).padStart(2,'0')}:00${TZ_OFFSET}`;
         
         // Calculate end time based on service type
         let endHours = startHours, endMinutes = minutes;
@@ -234,7 +234,7 @@ Deno.serve(async (req) => {
         } else {
           endHours = startHours + 2;
         }
-        const endIso = `${preferred_date}T${String(endHours).padStart(2,'0')}:${String(endMinutes).padStart(2,'0')}:00-05:00`;
+        const endIso = `${preferred_date}T${String(endHours).padStart(2,'0')}:${String(endMinutes).padStart(2,'0')}:00${TZ_OFFSET}`;
 
         // Build appointment description for this specific vehicle
         const vehicleInfoClean = vehicleInfoWithType.replace(/\([^)]+\)/, '').trim();
@@ -274,7 +274,10 @@ Deno.serve(async (req) => {
       console.log('Total appointments created:', appointmentCount);
     }
 
-    // 3. Create Appointment entity record for user dashboard access
+    // 3. Create Appointment entity record for authenticated users only
+    if (!user) {
+      return Response.json({ success: true, contactId });
+    }
     try {
       const serviceLabels = {
         exterior_detail: 'Exterior Detail',
