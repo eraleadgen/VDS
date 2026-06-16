@@ -227,8 +227,7 @@ Deno.serve(async (req) => {
           }).join('\n')
         : notes || '';
 
-      await base44.asServiceRole.entities.Appointment.create({
-        created_by_id: user.id,
+      await base44.entities.Appointment.create({
         service_type,
         service_label: serviceLabel,
         vehicle_info: vehicle_info || 'TBD',
