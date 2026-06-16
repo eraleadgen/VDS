@@ -65,7 +65,7 @@ export default function AppointmentCard({ appointment, onRefresh }) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
         <div className="flex items-center gap-2 text-xs font-mono-tech">
           <Calendar size={12} className="opacity-60" />
-          <span>{format(new Date(appointment.preferred_date), 'EEEE, MMMM d, yyyy')}</span>
+          <span>{format(new Date(appointment.preferred_date + 'T12:00:00'), 'EEEE, MMMM d, yyyy')}</span>
         </div>
         <div className="flex items-center gap-2 text-xs font-mono-tech">
           <Clock size={12} className="opacity-60" />

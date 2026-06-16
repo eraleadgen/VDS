@@ -216,7 +216,11 @@ export default function MemberDashboard() {
         {/* Upcoming Appointments */}
         <div className="mb-8">
           <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40 mb-4">UPCOMING APPOINTMENTS</p>
-          {appointments.filter(a => a.status !== 'cancelled' && a.status !== 'completed').length === 0 ? (
+          {appointments.filter(a => {
+            if (a.status === 'cancelled' || a.status === 'completed') return false;
+            const apptDate = new Date(`${a.preferred_date}T${a.preferred_time || '23:59'}`);
+            return apptDate >= new Date();
+          }).length === 0 ? (
             <div className="glass-panel border border-vapor/10 rounded-sm p-8 text-center">
               <ClipboardList size={24} className="text-vapor/20 mx-auto mb-3" />
               <p className="text-vapor/40 font-mono-tech text-xs">No upcoming appointments</p>
@@ -230,7 +234,11 @@ export default function MemberDashboard() {
           ) : (
             <div className="space-y-3">
               {appointments
-                .filter(a => a.status !== 'cancelled' && a.status !== 'completed')
+                .filter(a => {
+                  if (a.status === 'cancelled' || a.status === 'completed') return false;
+                  const apptDate = new Date(`${a.preferred_date}T${a.preferred_time || '23:59'}`);
+                  return apptDate >= new Date();
+                })
                 .map(apt => (
                   <AppointmentCard
                     key={apt.id}

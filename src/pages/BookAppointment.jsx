@@ -373,10 +373,14 @@ export default function BookAppointment() {
               Your appointment for {format(new Date(form.preferred_date + 'T12:00:00'), 'MMMM d, yyyy')} at {form.preferred_time} has been submitted. We'll confirm shortly.
             </p>
             <div className="flex flex-col gap-3">
-              {user && (
+              {user ? (
                 <Link to="/member-dashboard" className="border border-gold bg-gold text-obsidian px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold-light transition-colors">
                   VIEW APPOINTMENT →
                 </Link>
+              ) : (
+                <a href="/member-login" className="border border-gold/40 text-gold px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold/10 transition-colors text-center">
+                  CREATE ACCOUNT TO TRACK →
+                </a>
               )}
               <button
                 onClick={() => { setSubmitted(false); setForm(DEFAULT_FORM); setSelectedDay(null); setGuestVehicle(DEFAULT_GUEST_VEHICLE); setGuestService(''); setGuestAddOns([]); }}
@@ -639,14 +643,13 @@ export default function BookAppointment() {
                 <div className="grid grid-cols-7 gap-y-1">
                   {Array.from({ length: startPad }).map((_, i) => <div key={`pad-${i}`} />)}
                   {days.map(day => {
-                    const isPast = isBefore(day, todayStart);
+                    const isPast = isBefore(day, todayStart) || isToday(day);
                     const isSelected = selectedDay && isSameDay(day, selectedDay);
                     return (
                       <button key={day.toString()} type="button" disabled={isPast} onClick={() => handleDayClick(day)}
                         className={`mx-auto w-8 h-8 flex items-center justify-center rounded-sm font-mono-tech text-xs transition-colors ${
                           isSelected ? 'bg-gold text-obsidian font-bold'
                           : isPast ? 'text-vapor/15 cursor-not-allowed'
-                          : isToday(day) ? 'border border-gold/40 text-gold hover:bg-gold/10'
                           : 'text-vapor/60 hover:text-vapor hover:bg-vapor/5'
                         }`}>
                         {format(day, 'd')}
