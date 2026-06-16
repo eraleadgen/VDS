@@ -150,10 +150,11 @@ export default function MemberDashboard() {
     setModalAction(null);
   };
 
-  const handleAccountSaved = async () => {
-    const me = await base44.auth.me();
-    setUser(me);
+  const handleAccountSaved = async (updatedFields) => {
+    setUser(prev => ({ ...prev, ...updatedFields }));
     setShowEditAccount(false);
+    // Background re-fetch to get the full canonical user object
+    base44.auth.me().then(setUser).catch(() => {});
   };
 
   const handleLogout = () => {

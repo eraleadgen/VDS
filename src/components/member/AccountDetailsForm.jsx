@@ -16,12 +16,13 @@ export default function AccountDetailsForm({ user, onSaved, onCancel }) {
     e.preventDefault();
     setLoading(true);
     try {
+      const updatedName = `${firstName.trim()} ${lastName.trim()}`.trim();
       await base44.auth.updateMe({
-        full_name: `${firstName.trim()} ${lastName.trim()}`.trim(),
+        full_name: updatedName,
         phone: phone.trim(),
       });
       setSaved(true);
-      onSaved && onSaved();
+      onSaved && onSaved({ full_name: updatedName, phone: phone.trim() });
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
       console.error('Failed to save account details:', err);
