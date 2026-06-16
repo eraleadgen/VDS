@@ -226,7 +226,8 @@ export default function MemberDashboard() {
           <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40 mb-4">UPCOMING APPOINTMENTS</p>
           {appointments.filter(a => {
             if (a.status === 'cancelled' || a.status === 'completed') return false;
-            const apptDate = new Date(`${a.preferred_date}T${a.preferred_time || '23:59'}`);
+            if (!a.preferred_date) return true;
+            const apptDate = new Date(a.preferred_date + 'T23:59:00');
             return apptDate >= new Date();
           }).length === 0 ? (
             <div className="glass-panel border border-vapor/10 rounded-sm p-8 text-center">
@@ -244,7 +245,8 @@ export default function MemberDashboard() {
               {appointments
                 .filter(a => {
                   if (a.status === 'cancelled' || a.status === 'completed') return false;
-                  const apptDate = new Date(`${a.preferred_date}T${a.preferred_time || '23:59'}`);
+                  if (!a.preferred_date) return true;
+                  const apptDate = new Date(a.preferred_date + 'T23:59:00');
                   return apptDate >= new Date();
                 })
                 .map(apt => (
