@@ -314,7 +314,7 @@ export default function Home() {
             YOUR VEHICLE<br />DESERVES THE BEST.
           </h2>
           <div className="flex flex-wrap items-center justify-center gap-4">
-            <Link to="/contact"
+            <Link to="/book"
               className="bg-vapor text-obsidian px-10 py-4 text-sm font-mono-tech tracking-widest hover:bg-gold transition-colors duration-300 rounded-sm">
               BOOK YOUR DETAIL
             </Link>

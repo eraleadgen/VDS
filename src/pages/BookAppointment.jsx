@@ -79,6 +79,7 @@ export default function BookAppointment() {
   const [guestVehicle, setGuestVehicle] = useState(DEFAULT_GUEST_VEHICLE);
   const [guestService, setGuestService] = useState('');
   const [guestAddOns, setGuestAddOns] = useState([]);
+  const [guestConfirmed, setGuestConfirmed] = useState(false);
 
   const today = new Date();
   const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -313,6 +314,53 @@ export default function BookAppointment() {
     );
   }
 
+  // Gate: unauthenticated users must choose sign in or continue as guest
+  if (!user && !guestConfirmed) {
+    return (
+      <div className="min-h-screen bg-obsidian flex flex-col">
+        <Navbar />
+        <main className="flex-1 flex items-center justify-center px-6 py-32">
+          <div className="max-w-md w-full text-center">
+            <div className="w-8 h-px bg-gold mx-auto mb-6" />
+            <p className="text-xs font-mono-tech tracking-[0.4em] text-gold mb-4">SCHEDULE SERVICE</p>
+            <h1 className="text-4xl font-grotesk font-bold text-vapor mb-3">BOOK AN APPOINTMENT</h1>
+            <p className="text-vapor/40 font-mono-tech text-sm mb-10">Metro Atlanta, GA · We come to you</p>
+
+            <div className="space-y-4">
+              <div className="border border-gold/20 bg-gold/5 rounded-sm p-6">
+                <p className="text-xs font-mono-tech tracking-widest text-gold mb-2">MEMBER ACCOUNT</p>
+                <p className="text-vapor/50 font-mono-tech text-xs mb-5">Sign in to auto-fill your details, manage vehicles, and track service history.</p>
+                <div className="flex gap-3">
+                  <a href="/member-login" className="flex-1 text-center border border-gold bg-gold text-obsidian px-4 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold-light transition-colors">
+                    SIGN IN
+                  </a>
+                  <a href="/gold-signup" className="flex-1 text-center border border-gold/40 text-gold px-4 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold/10 transition-colors">
+                    CREATE ACCOUNT
+                  </a>
+                </div>
+              </div>
+
+              <div className="relative flex items-center gap-4">
+                <div className="flex-1 h-px bg-vapor/10" />
+                <span className="text-vapor/30 font-mono-tech text-xs">OR</span>
+                <div className="flex-1 h-px bg-vapor/10" />
+              </div>
+
+              <button
+                onClick={() => setGuestConfirmed(true)}
+                className="w-full border border-vapor/20 text-vapor/60 px-6 py-4 text-sm font-mono-tech tracking-widest rounded-sm hover:border-vapor/40 hover:text-vapor transition-colors"
+              >
+                CONTINUE AS GUEST →
+              </button>
+              <p className="text-vapor/25 font-mono-tech text-xs">One-time booking · No account required</p>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   if (submitted) {
     return (
       <div className="min-h-screen bg-obsidian flex flex-col">
@@ -363,16 +411,7 @@ export default function BookAppointment() {
           </p>
         </div>
 
-        {/* Member sign-in nudge for guests */}
-        {!user && (
-          <div className="border border-vapor/10 bg-asphalt/50 rounded-sm px-5 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-8">
-            <p className="text-vapor/50 font-mono-tech text-xs">Have an account? Sign in to auto-fill your details and track service history.</p>
-            <div className="flex gap-2 shrink-0">
-              <a href="/gold-signup" className="border border-gold/40 text-gold px-4 py-2 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold/10 transition-colors">CREATE ACCOUNT</a>
-              <a href="/member-login" className="border border-vapor/20 text-vapor/50 px-4 py-2 text-xs font-mono-tech tracking-widest rounded-sm hover:border-vapor/40 hover:text-vapor transition-colors">SIGN IN</a>
-            </div>
-          </div>
-        )}
+
 
         <form onSubmit={handleSubmit} className="space-y-8">
 
