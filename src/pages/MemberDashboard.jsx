@@ -32,6 +32,28 @@ export default function MemberDashboard() {
 
   const currentMonth = format(new Date(), 'yyyy-MM');
 
+  const loadData = useCallback(async () => {
+    const [v, r, a, subsRes] = await Promise.allSettled([
+      base44.entities.MemberVehicle.list(),
+      base44.entities.ServiceRecord.list(),
+      base44.entities.Appointment.list(),
+      base44.functions.invoke('getMySubscriptions', {}),
+    ]);
+    if (v.status === 'fulfilled') setVehicles(v.value);
+    if (r.status === 'fulfilled') setRecords(r.value);
+    if (a.status === 'fulfilled') setAppointments(a.value.sort((x, y) => new Date(y.preferred_date) - new Date(x.preferred_date)));
+    if (subsRes.status === 'fulfilled') setSubscriptions(subsRes.value?.data?.subscriptions || []);
+  }, []);
+
+  // Fallback: provision Gold subscriptions if webhook hasn't fired yet
+  const provisionGoldSubscriptions = async (me) => {
+    try {
+      await base44.functions.invoke('provisionGoldOnReturn', { user_id: me?.id });
+    } catch (e) {
+      console.log('Provision fallback skipped:', e.message);
+    }
+  };
+
   // Real-time subscription — auto-refreshes appointments when GHL syncs cancel/confirm
   useEffect(() => {
     const unsubscribe = base44.entities.Appointment.subscribe(() => loadData());
@@ -61,28 +83,6 @@ export default function MemberDashboard() {
       setLoading(false);
     };
     init();
-  }, []);
-
-  // Fallback: provision Gold subscriptions if webhook hasn't fired yet
-  const provisionGoldSubscriptions = async (me) => {
-    try {
-      await base44.functions.invoke('provisionGoldOnReturn', { user_id: me?.id });
-    } catch (e) {
-      console.log('Provision fallback skipped:', e.message);
-    }
-  };
-
-  const loadData = useCallback(async () => {
-    const [v, r, a, subsRes] = await Promise.allSettled([
-      base44.entities.MemberVehicle.list(),
-      base44.entities.ServiceRecord.list(),
-      base44.entities.Appointment.list(),
-      base44.functions.invoke('getMySubscriptions', {}),
-    ]);
-    if (v.status === 'fulfilled') setVehicles(v.value);
-    if (r.status === 'fulfilled') setRecords(r.value);
-    if (a.status === 'fulfilled') setAppointments(a.value.sort((x, y) => new Date(y.preferred_date) - new Date(x.preferred_date)));
-    if (subsRes.status === 'fulfilled') setSubscriptions(subsRes.value?.data?.subscriptions || []);
   }, []);
 
   const thisMonthRecords = records.filter(r => r.month_year === currentMonth);
