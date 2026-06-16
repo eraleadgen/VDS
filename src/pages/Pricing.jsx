@@ -8,7 +8,6 @@ const PRICING_SECTIONS = [
   {
     title: 'FULL DETAIL',
     subtitle: 'Interior & Exterior Restoration',
-    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/322538cef_IMG_3881.jpg',
     rows: [
       { label: 'Sedan / Coupe', price: '$175+' },
       { label: 'SUV', price: '$225+' },
@@ -83,11 +82,7 @@ export default function Pricing() {
       <section className="max-w-7xl mx-auto px-6 pb-24">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-0.5 bg-vapor/5">
           {PRICING_SECTIONS.map((section) => (
-            <div key={section.title} className="bg-obsidian border border-vapor/5">
-              {section.img && (
-                <img src={section.img} alt={section.title} className="w-full h-48 object-cover object-center" />
-              )}
-              <div className="p-8">
+            <div key={section.title} className="bg-obsidian p-8 border border-vapor/5">
               <div className="flex items-center gap-3 mb-1">
                 <div className="w-6 h-px bg-gold" />
                 <p className="text-xs font-mono-tech tracking-[0.3em] text-gold">{section.title}</p>
@@ -102,7 +97,6 @@ export default function Pricing() {
                   </li>
                 ))}
               </ul>
-              </div>
             </div>
           ))}
         </div>
