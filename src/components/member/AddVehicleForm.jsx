@@ -30,7 +30,7 @@ export default function AddVehicleForm({ onAdd, onCancel, initialData = null }) 
   );
   const [loading, setLoading] = useState(false);
   const [classifying, setClassifying] = useState(false);
-  const [uploadingImage, setUploadingImage] = useState(false);
+
 
   const isEdit = !!initialData;
 
@@ -43,15 +43,6 @@ export default function AddVehicleForm({ onAdd, onCancel, initialData = null }) 
   };
 
   const handleModelBlur = () => handleClassify();
-
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setUploadingImage(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    setForm(f => ({ ...f, vehicle_image: file_url }));
-    setUploadingImage(false);
-  };
 
   const handleSubmit = async () => {
     if (!form.year || !form.make || !form.model) return;
@@ -112,39 +103,6 @@ export default function AddVehicleForm({ onAdd, onCancel, initialData = null }) 
       </div>
       {field('notes', 'NOTES (OPTIONAL)', 'e.g. ceramic coated, park in garage')}
       
-      {/* Vehicle Image Upload */}
-      <div>
-        <label className="block text-xs font-mono-tech tracking-widest text-vapor/50 mb-2">VEHICLE PHOTO (OPTIONAL)</label>
-        <div className="border border-vapor/10 rounded-sm p-4 bg-asphalt/50">
-          {form.vehicle_image ? (
-            <div className="relative">
-              <img src={form.vehicle_image} alt="Vehicle" className="w-full h-48 object-cover rounded-sm mb-3" />
-              <button
-                type="button"
-                onClick={() => setForm(f => ({ ...f, vehicle_image: '' }))}
-                className="absolute top-2 right-2 bg-obsidian/80 text-vapor/70 hover:text-vapor p-2 rounded-sm transition-colors"
-              >
-                <X size={14} />
-              </button>
-            </div>
-          ) : (
-            <label className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-vapor/20 hover:border-gold/50 transition-colors cursor-pointer rounded-sm">
-              {uploadingImage ? (
-                <div className="flex flex-col items-center gap-2">
-                  <Loader2 size={20} className="text-gold animate-spin" />
-                  <span className="text-xs font-mono-tech text-vapor/40">UPLOADING...</span>
-                </div>
-              ) : (
-                <>
-                  <Plus size={24} className="text-vapor/30 mb-2" />
-                  <span className="text-xs font-mono-tech text-vapor/40">CLICK TO UPLOAD VEHICLE PHOTO</span>
-                </>
-              )}
-              <input type="file" accept="image/*" onChange={handleImageUpload} disabled={uploadingImage} className="hidden" />
-            </label>
-          )}
-        </div>
-      </div>
       
       <div className="flex gap-3 pt-2">
         <button
