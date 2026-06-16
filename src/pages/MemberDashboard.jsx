@@ -31,6 +31,17 @@ export default function MemberDashboard() {
 
   const currentMonth = format(new Date(), 'yyyy-MM');
 
+  // Real-time subscription — auto-refreshes appointments when GHL syncs cancel/confirm
+  useEffect(() => {
+    const unsubscribe = base44.entities.Appointment.subscribe(async (event) => {
+      if (event.type === 'update' || event.type === 'create' || event.type === 'delete') {
+        const updated = await base44.entities.Appointment.list();
+        setAppointments(updated.sort((x, y) => new Date(y.preferred_date) - new Date(x.preferred_date)));
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
   useEffect(() => {
     const init = async () => {
       const me = await base44.auth.me();

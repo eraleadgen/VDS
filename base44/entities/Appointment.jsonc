@@ -53,6 +53,10 @@
     "service_address": {
       "type": "string",
       "description": "Service location address"
+    },
+    "ghl_appointment_ids": {
+      "type": "string",
+      "description": "Comma-separated GHL appointment IDs for this booking"
     }
   },
   "required": [
