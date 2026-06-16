@@ -57,16 +57,9 @@
       }
     },
     "read": {
-      "$or": [
-        {
-          "data.userId": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "user_condition": {
+        "role": "admin"
+      }
     },
     "update": {
       "user_condition": {
