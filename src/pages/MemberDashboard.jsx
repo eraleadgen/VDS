@@ -39,7 +39,9 @@ export default function MemberDashboard() {
         setAppointments(updated.sort((x, y) => new Date(y.preferred_date) - new Date(x.preferred_date)));
       }
     });
-    return () => unsubscribe();
+    // Delayed re-fetch to catch appointments written just before navigating here
+    const timer = setTimeout(() => loadData(), 2000);
+    return () => { unsubscribe(); clearTimeout(timer); };
   }, []);
 
   useEffect(() => {

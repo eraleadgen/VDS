@@ -15,14 +15,19 @@ export default function AccountDetailsForm({ user, onSaved, onCancel }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    await base44.auth.updateMe({
-      full_name: `${firstName.trim()} ${lastName.trim()}`.trim(),
-      phone,
-    });
-    setLoading(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
-    onSaved && onSaved();
+    try {
+      await base44.auth.updateMe({
+        full_name: `${firstName.trim()} ${lastName.trim()}`.trim(),
+        phone: phone.trim(),
+      });
+      setSaved(true);
+      onSaved && onSaved();
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      console.error('Failed to save account details:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
