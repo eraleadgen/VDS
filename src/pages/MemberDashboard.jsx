@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { LogOut, Plus, Calendar, ChevronRight, Star, UserCog, ClipboardList, CheckCircle, X, RotateCcw } from 'lucide-react';
@@ -33,21 +33,13 @@ export default function MemberDashboard() {
 
   // Real-time subscription — auto-refreshes appointments when GHL syncs cancel/confirm
   useEffect(() => {
-    const unsubscribe = base44.entities.Appointment.subscribe(async (event) => {
-      if (event.type === 'update' || event.type === 'create' || event.type === 'delete') {
-        const updated = await base44.entities.Appointment.list();
-        setAppointments(updated.sort((x, y) => new Date(y.preferred_date) - new Date(x.preferred_date)));
-      }
-    });
-    // Re-fetch when user navigates back to this tab (e.g. after completing a booking)
+    const unsubscribe = base44.entities.Appointment.subscribe(() => loadData());
     const onVisibility = () => {
       if (document.visibilityState === 'visible') loadData();
     };
     document.addEventListener('visibilitychange', onVisibility);
-    // Delayed re-fetch to catch appointments written just before navigating here
-    const timer = setTimeout(() => loadData(), 1500);
-    return () => { unsubscribe(); clearTimeout(timer); document.removeEventListener('visibilitychange', onVisibility); };
-  }, []);
+    return () => { unsubscribe(); document.removeEventListener('visibilitychange', onVisibility); };
+  }, [loadData]);
 
   useEffect(() => {
     const init = async () => {
@@ -79,18 +71,18 @@ export default function MemberDashboard() {
     }
   };
 
-  const loadData = async () => {
-    const [v, r, a, subsRes] = await Promise.all([
+  const loadData = useCallback(async () => {
+    const [v, r, a, subsRes] = await Promise.allSettled([
       base44.entities.MemberVehicle.list(),
       base44.entities.ServiceRecord.list(),
       base44.entities.Appointment.list(),
       base44.functions.invoke('getMySubscriptions', {}),
     ]);
-    setVehicles(v);
-    setRecords(r);
-    setAppointments(a.sort((x, y) => new Date(y.preferred_date) - new Date(x.preferred_date)));
-    setSubscriptions(subsRes?.data?.subscriptions || []);
-  };
+    if (v.status === 'fulfilled') setVehicles(v.value);
+    if (r.status === 'fulfilled') setRecords(r.value);
+    if (a.status === 'fulfilled') setAppointments(a.value.sort((x, y) => new Date(y.preferred_date) - new Date(x.preferred_date)));
+    if (subsRes.status === 'fulfilled') setSubscriptions(subsRes.value?.data?.subscriptions || []);
+  }, []);
 
   const thisMonthRecords = records.filter(r => r.month_year === currentMonth);
   const fullDetailsUsed = thisMonthRecords.filter(r => r.service_type === 'full_detail').length;
@@ -151,10 +143,14 @@ export default function MemberDashboard() {
   };
 
   const handleAccountSaved = async (updatedFields) => {
-    setUser(prev => ({ ...prev, ...updatedFields }));
     setShowEditAccount(false);
-    // Background re-fetch to get the full canonical user object
-    base44.auth.me().then(setUser).catch(() => {});
+    // Re-fetch user from server after save to get canonical data
+    try {
+      const fresh = await base44.auth.me();
+      setUser(fresh);
+    } catch (e) {
+      setUser(prev => ({ ...prev, ...updatedFields }));
+    }
   };
 
   const handleLogout = () => {

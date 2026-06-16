@@ -23,6 +23,8 @@ export default function AccountDetailsForm({ user, onSaved, onCancel }) {
         phone: phone.trim(),
       });
       setSaved(true);
+      // Small delay to let server commit before dashboard re-fetches
+      await new Promise(r => setTimeout(r, 500));
       onSaved && onSaved({ full_name: updatedName, phone: phone.trim() });
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
