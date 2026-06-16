@@ -5,7 +5,8 @@ import { Save, X } from 'lucide-react';
 const inputClass = "w-full bg-asphalt border border-vapor/10 focus:border-gold/40 text-vapor placeholder:text-vapor/20 px-4 py-3 text-sm font-mono-tech rounded-sm outline-none transition-colors";
 
 export default function AccountDetailsForm({ user, onSaved, onCancel }) {
-  const nameParts = (user?.full_name || '').split(' ');
+  const isEmailName = (user?.full_name || '').includes('@');
+  const nameParts = isEmailName ? [] : (user?.full_name || '').split(' ');
   const [firstName, setFirstName] = useState(nameParts[0] || '');
   const [lastName, setLastName] = useState(nameParts.slice(1).join(' ') || '');
   const [phone, setPhone] = useState(user?.phone || '');

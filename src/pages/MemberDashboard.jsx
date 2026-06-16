@@ -207,7 +207,7 @@ export default function MemberDashboard() {
           <div>
             <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-2">{subscriptions.length > 0 ? 'VDS GOLD MEMBER PORTAL' : 'MEMBER PORTAL'}</p>
             <h1 className="text-4xl font-grotesk font-bold text-vapor">
-              WELCOME, <GoldShimmer>{user?.full_name?.split(' ')[0]?.toUpperCase() || 'MEMBER'}</GoldShimmer>
+              WELCOME, <GoldShimmer>{(user?.full_name?.includes('@') ? '' : user?.full_name?.split(' ')[0])?.toUpperCase() || 'MEMBER'}</GoldShimmer>
             </h1>
             <p className="text-vapor/40 text-xs font-mono-tech mt-2 tracking-widest">{user?.email}</p>
           </div>
@@ -423,7 +423,8 @@ export default function MemberDashboard() {
           ) : (
             <div className="glass-panel border border-vapor/10 rounded-sm p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
               {(() => {
-                const nameParts = (user?.full_name || '').split(' ');
+                const isEmailName = (user?.full_name || '').includes('@');
+                const nameParts = isEmailName ? [] : (user?.full_name || '').split(' ');
                 const firstName = nameParts[0] || '';
                 const lastName = nameParts.slice(1).join(' ') || '';
                 return [
