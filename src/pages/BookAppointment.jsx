@@ -215,6 +215,7 @@ export default function BookAppointment() {
             service_type: currentServiceForCalendar,
             vehicle_type: vtForAvailability,
             date: format(day, 'yyyy-MM-dd'),
+            vehicle_count: user ? selectedVehicles.length || 1 : 1,
           });
           setBookedSlots(res.data?.bookedSlots || []);
         } catch (err) {
