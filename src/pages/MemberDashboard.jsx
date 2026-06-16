@@ -216,7 +216,7 @@ export default function MemberDashboard() {
         {/* Upcoming Appointments */}
         <div className="mb-8">
           <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40 mb-4">UPCOMING APPOINTMENTS</p>
-          {appointments.filter(a => a.status !== 'cancelled').length === 0 ? (
+          {appointments.filter(a => a.status !== 'cancelled' && a.status !== 'completed').length === 0 ? (
             <div className="glass-panel border border-vapor/10 rounded-sm p-8 text-center">
               <ClipboardList size={24} className="text-vapor/20 mx-auto mb-3" />
               <p className="text-vapor/40 font-mono-tech text-xs">No upcoming appointments</p>
@@ -230,7 +230,7 @@ export default function MemberDashboard() {
           ) : (
             <div className="space-y-3">
               {appointments
-                .filter(a => a.status !== 'cancelled')
+                .filter(a => a.status !== 'cancelled' && a.status !== 'completed')
                 .map(apt => (
                   <AppointmentCard
                     key={apt.id}
@@ -325,6 +325,20 @@ export default function MemberDashboard() {
           <div className="mb-12">
             <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40 mb-4">THIS MONTH'S USAGE</p>
             <UsageTracker fullDetailsUsed={fullDetailsUsed} exteriorDetailsUsed={exteriorDetailsUsed} />
+          </div>
+        )}
+
+        {/* Completed Appointments */}
+        {appointments.filter(a => a.status === 'completed').length > 0 && (
+          <div className="mb-12">
+            <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40 mb-4">COMPLETED APPOINTMENTS</p>
+            <div className="space-y-3">
+              {appointments
+                .filter(a => a.status === 'completed')
+                .map(apt => (
+                  <AppointmentCard key={apt.id} appointment={apt} onRefresh={loadData} />
+                ))}
+            </div>
           </div>
         )}
 
