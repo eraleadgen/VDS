@@ -29,26 +29,8 @@ export default function VehicleCard({ vehicle, onDelete, onEdit, onEnrollClick, 
     <div className={`glass-panel rounded-sm overflow-hidden transition-all duration-300 ${
       isGold ? 'border border-gold/40 shadow-[0_0_30px_rgba(212,175,55,0.15)]' : 'border border-vapor/10 hover:border-gold/30'
     }`}>
-      {/* Animated HD banner for Gold-registered vehicles */}
-      {isGold && (
-        <div className="relative h-2 w-full overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-gold via-gold-light to-gold animate-shimmer" 
-            style={{ 
-              background: 'linear-gradient(90deg, #A08020 0%, #D4AF37 25%, #F5E17A 50%, #D4AF37 75%, #A08020 100%)',
-              backgroundSize: '400% 100%',
-              animation: 'shimmer 3s linear infinite'
-            }} 
-          />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-[8px] font-mono-tech tracking-[0.3em] text-obsidian/60 font-bold">◆ VDS GOLD MEMBERSHIP ◆</span>
-          </div>
-        </div>
-      )}
-      
-      {/* Simple silver accent for non-Gold vehicles */}
-      {!isGold && (
-        <div className="h-1 w-full bg-gradient-to-r from-vapor/10 via-vapor/20 to-vapor/10" />
-      )}
+      {/* Subtle top accent line */}
+      <div className={`h-1 w-full ${isGold ? 'bg-gold/30' : 'bg-gradient-to-r from-vapor/10 via-vapor/20 to-vapor/10'}`} />
 
       <div className="p-5 flex items-start justify-between gap-4">
         <div>
@@ -58,11 +40,7 @@ export default function VehicleCard({ vehicle, onDelete, onEdit, onEnrollClick, 
               }`}>
                 {vehicle.year} {vehicle.make} {vehicle.model}
               </p>
-              {isGold && (
-                <span className="px-2 py-0.5 bg-gold/20 border border-gold/30 rounded-sm">
-                  <span className="text-[8px] font-mono-tech tracking-widest text-gold font-bold">GOLD</span>
-                </span>
-              )}
+
             </div>
             {vehicle.color && (
               <p className={`text-xs font-mono-tech mt-0.5 ${

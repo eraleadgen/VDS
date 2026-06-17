@@ -408,19 +408,17 @@ export default function MemberDashboard() {
         <div className="mb-12">
           <div className="flex items-center justify-between mb-4">
             <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40">ACCOUNT DETAILS</p>
-            {!showEditAccount && (
-              <button
-                onClick={() => setShowEditAccount(true)}
-                className="flex items-center gap-2 text-xs font-mono-tech tracking-widest text-gold/60 hover:text-gold transition-colors border border-gold/20 hover:border-gold/40 px-4 py-2 rounded-sm"
-              >
-                <UserCog size={12} /> EDIT
-              </button>
-            )}
+            <button
+              onClick={() => setShowEditAccount(v => !v)}
+              className="flex items-center gap-2 text-xs font-mono-tech tracking-widest text-gold/60 hover:text-gold transition-colors border border-gold/20 hover:border-gold/40 px-4 py-2 rounded-sm"
+            >
+              <UserCog size={12} /> {showEditAccount ? 'CANCEL' : 'EDIT'}
+            </button>
           </div>
           {showEditAccount ? (
             <AccountDetailsForm user={user} onSaved={handleAccountSaved} onCancel={() => setShowEditAccount(false)} />
           ) : (
-            <div className="glass-panel border border-vapor/10 rounded-sm p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="glass-panel border border-vapor/10 rounded-sm p-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
               {(() => {
                 const isEmailName = (user?.full_name || '').includes('@');
                 const nameParts = isEmailName ? [] : (user?.full_name || '').split(' ');
@@ -429,8 +427,8 @@ export default function MemberDashboard() {
                 return [
                   { label: 'FIRST NAME', value: firstName },
                   { label: 'LAST NAME', value: lastName },
+                  { label: 'PHONE NUMBER', value: user?.phone },
                   { label: 'EMAIL', value: user?.email },
-                  { label: 'PHONE', value: user?.phone },
                 ].map(({ label, value }) => (
                   <div key={label}>
                     <p className="text-xs font-mono-tech tracking-widest text-vapor/30 mb-1">{label}</p>
