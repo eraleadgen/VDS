@@ -18,10 +18,10 @@ export default function AccountDetailsForm({ user, onSaved, onCancel }) {
     setLoading(true);
     try {
       const updatedName = `${firstName.trim()} ${lastName.trim()}`.trim();
-      await base44.auth.updateMe({
-        full_name: updatedName,
-        phone: phone.trim(),
-      });
+      await Promise.all([
+        base44.auth.updateMe({ full_name: updatedName }),
+        base44.entities.User.update(user.id, { phone: phone.trim() }),
+      ]);
       setSaved(true);
       // Small delay to let server commit before dashboard re-fetches
       await new Promise(r => setTimeout(r, 500));
