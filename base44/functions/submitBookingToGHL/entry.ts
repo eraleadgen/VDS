@@ -211,11 +211,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // ── 5. Save Appointment entity (authenticated users only) ─────────────
-    if (!user) {
-      return Response.json({ success: true, contactId });
-    }
-
+    // ── 5. Save Appointment entity (all users, service role to bypass RLS) ──
     try {
       const serviceLabel = SERVICE_LABELS[service_type] || service_type.replace(/_/g, ' ').toUpperCase();
       const servicesNotes = vehicleEntries.length > 0
@@ -227,7 +223,7 @@ Deno.serve(async (req) => {
           }).join('\n')
         : notes || '';
 
-      await base44.entities.Appointment.create({
+      await base44.asServiceRole.entities.Appointment.create({
         service_type,
         service_label: serviceLabel,
         vehicle_info: vehicle_info || 'TBD',
