@@ -43,8 +43,8 @@ Deno.serve(async (req) => {
     // Create line items for each vehicle
     const line_items = vehicles.map(vehicle => {
       const priceId = vehicle.vehicle_type === 'truck_suv' 
-        ? 'price_1ThJX4IYwvfj5W6Ae4GdNGeE' // Truck/SUV $300
-        : 'price_1ThJX4IYwvfj5W6AyzgNaRAt'; // Sedan/Coupe $250
+        ? 'price_1TgzT42MUlDjgwKfwRW7jAX7' // Truck/SUV $300
+        : 'price_1TgzSW2MUlDjgwKfTAhVmkUP'; // Sedan/Coupe $250
       
       return {
         price: priceId,
