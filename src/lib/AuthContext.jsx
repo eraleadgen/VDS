@@ -70,20 +70,15 @@ export const AuthProvider = ({ children }) => {
             });
           }
         } else {
-          setAuthError({
-            type: 'unknown',
-            message: appError.message || 'Failed to load app'
-          });
+          // For unknown errors (network issues, etc.) - don't block the app, just log and continue
+          console.warn('Non-critical app state error, continuing:', appError.message);
         }
         setIsLoadingPublicSettings(false);
         setIsLoadingAuth(false);
       }
     } catch (error) {
-      console.error('Unexpected error:', error);
-      setAuthError({
-        type: 'unknown',
-        message: error.message || 'An unexpected error occurred'
-      });
+      console.error('Unexpected error in checkAppState:', error);
+      // Don't block the app for unexpected errors - just stop loading
       setIsLoadingPublicSettings(false);
       setIsLoadingAuth(false);
     }

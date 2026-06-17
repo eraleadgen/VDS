@@ -40,9 +40,15 @@ const AuthenticatedApp = () => {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
-      window.location.href = '/member-login';
-      return null;
+      // Only redirect if a token was present but is invalid/expired
+      // Don't redirect unauthenticated users on a public app
+      if (typeof window !== 'undefined' && window.location.pathname === '/member-dashboard') {
+        window.location.href = '/member-login';
+        return null;
+      }
+      // For all other pages, just render normally
     }
+    // For unknown errors, still render the app rather than blocking
   }
 
   return (
