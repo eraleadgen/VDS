@@ -76,6 +76,12 @@
           "created_by_id": "{{user.id}}"
         },
         {
+          "data.customer_email": "{{user.email}}"
+        },
+        {
+          "data.customer_phone": "{{user.phone}}"
+        },
+        {
           "user_condition": {
             "role": "admin"
           }
