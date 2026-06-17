@@ -40,7 +40,7 @@ const AuthenticatedApp = () => {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
-      navigateToLogin();
+      window.location.href = '/member-login';
       return null;
     }
   }
