@@ -7,8 +7,8 @@ export default function VehicleSubscriptionModal({ vehicle, actionType, subscrip
   const isEnroll = actionType === 'enroll';
   const monthlyRate = vehicle.vehicle_type === 'truck_suv' ? 300 : 250;
 
-  // Determine refund eligibility for cancellations
-  const startedAt = subscription?.started_date ? new Date(subscription.started_date) : null;
+  // Determine refund eligibility — use created_date (exact timestamp) not started_date (date-only field)
+  const startedAt = subscription?.created_date ? new Date(subscription.created_date) : null;
   const hoursSinceStart = startedAt ? (Date.now() - startedAt.getTime()) / (1000 * 60 * 60) : 999;
   const refundEligible = !isEnroll && hoursSinceStart <= 48;
   const hoursRemaining = refundEligible ? Math.max(0, 48 - hoursSinceStart).toFixed(1) : null;
