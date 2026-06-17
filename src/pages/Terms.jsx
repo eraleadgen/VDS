@@ -50,16 +50,26 @@ const SECTIONS = [
   },
   {
     num: '10.',
+    title: 'VDS Gold Membership',
+    content: 'VDS Gold is a recurring monthly membership program that provides enrolled vehicles with unlimited exterior details and one (1) full interior detail per month, each service including ceramic sealant protection. Membership is billed on a per-vehicle basis at a flat monthly rate of $250/month for Sedan/Coupe vehicles and $300/month for Truck/SUV vehicles, charged automatically via Stripe. Membership benefits are non-transferable and apply only to the specific enrolled vehicle(s).',
+  },
+  {
+    num: '11.',
+    title: 'VDS Gold Cancellation & Refund Policy',
+    content: 'Members may cancel their VDS Gold subscription at any time from the Member Dashboard. A full refund will be issued only if: (1) the cancellation request is submitted within 48 hours of the initial subscription start date, AND (2) no VDS Gold membership services (exterior detail or interior detail) have been redeemed or scheduled during that period. If either condition is not met — the 48-hour window has passed, or any Gold service has been used — no refund will be issued and membership benefits will continue through the end of the current billing period. Cancellations after the refund window will take effect at the end of the active billing cycle. Valet Detailing Service LLC reserves the right to revoke membership access in cases of abuse or violation of these terms.',
+  },
+  {
+    num: '12.',
     title: 'Governing Law',
     content: 'These Terms and Conditions shall be governed by and construed in accordance with the laws of the State of Georgia.',
   },
   {
-    num: '11.',
+    num: '13.',
     title: 'Changes to Terms',
     content: 'Valet Detailing Service LLC reserves the right to modify these Terms and Conditions at any time. The most current version will always be posted on our website. Your continued use of our services after any changes constitutes your acceptance of the new terms.',
   },
   {
-    num: '12.',
+    num: '14.',
     title: 'Contact Us',
     content: 'If you have any questions about these Terms and Conditions, please contact us through the official channels listed on our website at vdsmobile.com or via email at Valetdetailingservice@gmail.com.',
   },
@@ -72,11 +82,11 @@ export default function Terms() {
       <section className="pt-36 pb-20 max-w-4xl mx-auto px-6">
         <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">LEGAL</p>
         <h1 className="text-5xl font-grotesk font-bold text-vapor mb-3">TERMS & CONDITIONS</h1>
-        <p className="text-xs font-mono-tech text-vapor/30 mb-16 tracking-widest">VALET DETAILING SERVICE LLC · LAST UPDATED: FEBRUARY 23, 2026</p>
+        <p className="text-xs font-mono-tech text-vapor/30 mb-16 tracking-widest">VALET DETAILING SERVICE LLC · LAST UPDATED: JUNE 17, 2026</p>
 
         <div className="space-y-10">
           {SECTIONS.map(sec => (
-            <div key={sec.num} className="border-l border-gold/20 pl-8">
+            <div key={sec.title} className="border-l border-gold/20 pl-8">
               <div className="flex items-center gap-3 mb-3">
                 <span className="text-xs font-mono-tech text-gold/50">{sec.num}</span>
                 <h2 className="text-lg font-grotesk font-semibold text-vapor">{sec.title}</h2>

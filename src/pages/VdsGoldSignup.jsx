@@ -256,6 +256,14 @@ export default function VdsGoldSignup() {
           </div>
         </div>
 
+        {/* Cancellation Policy Notice */}
+        <div className="border border-vapor/10 bg-asphalt/50 rounded-sm px-5 py-4 mb-6">
+          <p className="text-xs font-mono-tech tracking-widest text-gold/70 mb-2">CANCELLATION & REFUND POLICY</p>
+          <p className="text-vapor/50 font-mono-tech text-xs leading-relaxed">
+            A full refund is available within <span className="text-vapor">48 hours</span> of your initial subscription start date, provided no VDS Gold services have been redeemed or scheduled. After 48 hours, or if any Gold service has been used, no refund will be issued — your membership benefits continue through the end of the current billing period. You may cancel anytime from your Member Dashboard.
+          </p>
+        </div>
+
         {/* Error Message */}
         {error && (
           <div className="border border-red-500/30 bg-red-500/5 rounded-sm px-5 py-4 mb-6 flex items-start gap-3">
@@ -281,7 +289,9 @@ export default function VdsGoldSignup() {
         </button>
 
         <p className="text-center text-vapor/25 text-xs font-mono-tech mt-4">
-          By enrolling, you agree to our Terms & Conditions · Cancel anytime
+          By enrolling, you agree to our{' '}
+          <Link to="/terms" className="text-gold/50 hover:text-gold underline transition-colors">Terms & Conditions</Link>
+          {' '}including the VDS Gold cancellation & refund policy.
         </p>
       </main>
 
