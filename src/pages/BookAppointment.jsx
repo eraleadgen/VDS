@@ -49,7 +49,7 @@ const SERVICE_LABELS = {
 };
 
 const DEFAULT_FORM = {
-  name: '', phone: '', email: '', address: '',
+  firstName: '', lastName: '', phone: '', email: '', address: '',
   service_type: '', vehicle_type: '', vehicle_info: '', notes: '',
   preferred_date: '', preferred_time: '',
 };
@@ -91,7 +91,10 @@ export default function BookAppointment() {
         const me = await base44.auth.me();
         setUser(me);
         if (me?.email) setForm(f => ({ ...f, email: me.email }));
-        if (me?.full_name) setForm(f => ({ ...f, name: me.full_name }));
+        if (me?.full_name && !me.full_name.includes('@')) {
+          const parts = me.full_name.split(' ');
+          setForm(f => ({ ...f, firstName: parts[0] || '', lastName: parts.slice(1).join(' ') || '' }));
+        }
         if (me?.phone) setForm(f => ({ ...f, phone: me.phone || '' }));
         const v = await base44.entities.MemberVehicle.list();
         setVehicles(v);
@@ -243,8 +246,8 @@ export default function BookAppointment() {
     : CONSULTATION_IDS.includes(guestService);
 
   const canSubmit = user
-    ? !loading && form.name && form.phone && form.address && form.preferred_date && form.preferred_time && selectedVehicles.length > 0 && selectedVehicles.every(v => getVehicleService(v))
-    : !loading && form.name && form.phone && form.address && form.preferred_date && form.preferred_time && guestVehicle.year && guestVehicle.make && guestVehicle.model && guestVehicle.vehicle_type && guestService;
+    ? !loading && form.firstName && form.phone && form.address && form.preferred_date && form.preferred_time && selectedVehicles.length > 0 && selectedVehicles.every(v => getVehicleService(v))
+    : !loading && form.firstName && form.phone && form.address && form.preferred_date && form.preferred_time && guestVehicle.year && guestVehicle.make && guestVehicle.model && guestVehicle.vehicle_type && guestService;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -282,6 +285,7 @@ export default function BookAppointment() {
 
       await base44.functions.invoke('submitBookingToGHL', {
         ...form,
+        name: `${form.firstName.trim()} ${form.lastName.trim()}`.trim(),
         service_type: firstService,
         vehicle_type: submitVehicleType,
         vehicle_info: vehicleSummary,
@@ -697,26 +701,26 @@ export default function BookAppointment() {
           <div>
             <p className="text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">YOUR DETAILS</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {[
-                { name: 'name', label: 'Full Name', placeholder: 'John Smith', required: true },
-                { name: 'phone', label: 'Phone / Text', placeholder: '(404) 555-0000', required: true },
-                { name: 'email', label: 'Email', placeholder: 'you@email.com', required: false },
-                { name: 'address', label: 'Service Address', placeholder: '123 Main St, Atlanta GA', required: true },
-              ].map(field => (
-                <div key={field.name} className={field.name === 'address' ? 'sm:col-span-2' : ''}>
-                  <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">
-                    {field.label}{field.required && <span className="text-gold ml-1">*</span>}
-                  </label>
-                  <input
-                    name={field.name}
-                    value={form[field.name]}
-                    onChange={handleChange}
-                    placeholder={field.placeholder}
-                    required={field.required}
-                    className={inputClass}
-                  />
-                </div>
-              ))}
+              <div>
+                <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">FIRST NAME <span className="text-gold">*</span></label>
+                <input name="firstName" value={form.firstName} onChange={handleChange} placeholder="John" required className={inputClass} />
+              </div>
+              <div>
+                <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">LAST NAME</label>
+                <input name="lastName" value={form.lastName} onChange={handleChange} placeholder="Smith" className={inputClass} />
+              </div>
+              <div>
+                <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">PHONE / TEXT <span className="text-gold">*</span></label>
+                <input name="phone" value={form.phone} onChange={handleChange} placeholder="(404) 555-0000" required className={inputClass} />
+              </div>
+              <div>
+                <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">EMAIL</label>
+                <input name="email" value={form.email} onChange={handleChange} placeholder="you@email.com" className={inputClass} />
+              </div>
+              <div className="sm:col-span-2">
+                <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">SERVICE ADDRESS <span className="text-gold">*</span></label>
+                <input name="address" value={form.address} onChange={handleChange} placeholder="123 Main St, Atlanta GA" required className={inputClass} />
+              </div>
             </div>
           </div>
 
