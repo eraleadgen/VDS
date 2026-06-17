@@ -232,7 +232,7 @@ export default function MemberDashboard() {
               <p className="text-vapor/40 font-mono-tech text-xs">No upcoming appointments</p>
               <Link
                 to="/book"
-                className="mt-4 inline-flex items-center gap-2 vds-gold-btn px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm"
+                className="mt-4 inline-flex items-center gap-2 vds-gold-btn px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm whitespace-nowrap"
               >
                 <Calendar size={13} /> SCHEDULE APPOINTMENT →
               </Link>
@@ -420,8 +420,9 @@ export default function MemberDashboard() {
           ) : (
             <div className="glass-panel border border-vapor/10 rounded-sm p-5 grid grid-cols-1 sm:grid-cols-2 gap-5">
               {(() => {
-                const isEmailName = (user?.full_name || '').includes('@');
-                const nameParts = isEmailName ? [] : (user?.full_name || '').split(' ');
+                const rawName = user?.full_name || '';
+                const isEmailName = rawName.includes('@');
+                const nameParts = isEmailName ? [] : rawName.split(' ').filter(Boolean);
                 const firstName = nameParts[0] || '';
                 const lastName = nameParts.slice(1).join(' ') || '';
                 return [
