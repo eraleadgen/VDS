@@ -47,18 +47,24 @@ export default function Register() {
       if (result?.access_token) {
         base44.auth.setToken(result.access_token);
       }
+      // Persist the real full name (platform may default to email prefix otherwise)
+      const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+      if (fullName) {
+        try { await base44.auth.updateMe({ full_name: fullName }); } catch (_) {}
+      }
       // Sync new account to GHL CRM
-      await base44.functions.invoke('syncContactToGHL', {
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        email,
-        source: 'VDS Website Account Registration',
-        tags: ['website-signup'],
-      });
-      window.location.href = "/";
+      try {
+        await base44.functions.invoke('syncContactToGHL', {
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          email,
+          source: 'VDS Website Account Registration',
+          tags: ['website-signup'],
+        });
+      } catch (_) {}
+      window.location.href = "/member-dashboard";
     } catch (err) {
       setError(err.message || "Invalid verification code");
-    } finally {
       setLoading(false);
     }
   };
@@ -84,8 +90,8 @@ export default function Register() {
     return (
       <AuthLayout
         icon={Mail}
-        title="Verify your email"
-        subtitle={`We sent a code to ${email}`}
+        title="Check your email"
+        subtitle={`We sent a verification code to ${email}`}
       >
         {error && (
           <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
