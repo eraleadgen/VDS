@@ -61,10 +61,6 @@ export default function VdsGold() {
         <img src={HERO_IMG} alt="VDS Gold" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-r from-obsidian via-obsidian/80 to-obsidian/30" />
         <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-transparent to-obsidian/50" />
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse at 70% 50%, rgba(212,175,55,0.05) 0%, transparent 60%)' }}
-        />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 py-32 w-full">
           <div className="max-w-2xl text-center md:text-left mx-auto md:mx-0">
