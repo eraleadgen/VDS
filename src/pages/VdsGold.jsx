@@ -68,11 +68,9 @@ export default function VdsGold() {
               <div className="w-12 h-px bg-gold" />
               <p className="text-xs font-mono-tech tracking-[0.4em] text-gold">INTRODUCING</p>
             </div>
-            <h1 className="text-7xl md:text-9xl font-grotesk font-bold leading-none mb-2">
+            <h1 className="text-7xl md:text-9xl font-grotesk font-bold leading-none mb-8 flex items-center gap-4 justify-center md:justify-start">
               <GoldShimmer>VDS</GoldShimmer>
-            </h1>
-            <h1 className="text-7xl md:text-9xl font-grotesk font-bold leading-none text-vapor mb-8">
-              GOLD
+              <span className="text-vapor">GOLD</span>
             </h1>
             <p className="text-xl text-vapor/60 leading-relaxed mb-4 font-grotesk">
               The premium monthly membership that keeps your vehicle in a permanent state of perfection.
