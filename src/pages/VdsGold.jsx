@@ -35,7 +35,7 @@ const MEMBERSHIP_VALUE = [
   { service: 'VDS GOLD — TRUCK/SUV', value: '$300' },
 ];
 
-const HERO_IMG = 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/6a97584d3_Copilot_20260618_223116.png';
+const HERO_IMG = 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/46ffcb03f_Copilot_20260618_223641.png';
 
 export default function VdsGold() {
   const [scrollY, setScrollY] = useState(0);
