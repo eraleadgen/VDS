@@ -21,6 +21,7 @@ export default function VdsGoldSignup() {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [policyAgreed, setPolicyAgreed] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -257,11 +258,22 @@ export default function VdsGoldSignup() {
         </div>
 
         {/* Cancellation Policy Notice */}
-        <div className="border border-vapor/10 bg-asphalt/50 rounded-sm px-5 py-4 mb-6">
-          <p className="text-xs font-mono-tech tracking-widest text-gold/70 mb-2">CANCELLATION & REFUND POLICY</p>
-          <p className="text-vapor/50 font-mono-tech text-xs leading-relaxed">
-            A full refund is available within <span className="text-vapor">48 hours</span> of your initial subscription start date, provided no VDS Gold services have been redeemed or scheduled. After 48 hours, or if any Gold service has been used, no refund will be issued — your membership benefits continue through the end of the current billing period. You may cancel anytime from your Member Dashboard.
-          </p>
+        <div
+          onClick={() => setPolicyAgreed(prev => !prev)}
+          className={`border rounded-sm px-5 py-4 mb-6 cursor-pointer transition-colors ${policyAgreed ? 'border-gold/40 bg-gold/5' : 'border-vapor/10 bg-asphalt/50 hover:border-vapor/20'}`}
+        >
+          <div className="flex items-start gap-3">
+            <div className={`mt-0.5 w-4 h-4 shrink-0 border-2 rounded-sm flex items-center justify-center transition-colors ${policyAgreed ? 'border-gold bg-gold' : 'border-vapor/30'}`}>
+              {policyAgreed && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4L3.5 6.5L9 1" stroke="#0A0B0D" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+            </div>
+            <div>
+              <p className="text-xs font-mono-tech tracking-widest text-gold/70 mb-2">CANCELLATION & REFUND POLICY <span className="text-red-400">*</span></p>
+              <p className="text-vapor/50 font-mono-tech text-xs leading-relaxed">
+                A full refund is available within <span className="text-vapor">48 hours</span> of your initial subscription start date, provided no VDS Gold services have been redeemed or scheduled. After 48 hours, or if any Gold service has been used, no refund will be issued — your membership benefits continue through the end of the current billing period. You may cancel anytime from your Member Dashboard.
+              </p>
+              {!policyAgreed && <p className="text-xs font-mono-tech text-vapor/30 mt-2">Click to acknowledge this policy before enrolling.</p>}
+            </div>
+          </div>
         </div>
 
         {/* Error Message */}
@@ -275,7 +287,7 @@ export default function VdsGoldSignup() {
         {/* Submit Button */}
         <button
           onClick={handleUpgradeToGold}
-          disabled={processing || selectedVehicles.length === 0}
+          disabled={processing || selectedVehicles.length === 0 || !policyAgreed}
           className="w-full flex items-center justify-center gap-3 bg-gold hover:bg-gold-light text-obsidian font-mono-tech text-sm tracking-widest py-4 rounded-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {processing ? (
