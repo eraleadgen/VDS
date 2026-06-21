@@ -64,7 +64,7 @@ const FAQS = [
       },
       {
         q: 'How do I schedule my VDS Gold appointments?',
-        a: 'Simply call or text us to schedule. As a Gold member, you receive priority scheduling and we\'ll work around your schedule.',
+        a: 'Log in to your Member Dashboard and use the VDS Gold Booking section to schedule your exterior or interior detail. As a Gold member, you receive priority scheduling — book directly through your portal anytime.',
       },
     ],
   },
