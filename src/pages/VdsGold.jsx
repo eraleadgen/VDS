@@ -57,8 +57,17 @@ export default function VdsGold() {
       <Navbar />
 
       {/* ── HERO ─────────────────────────────────────── */}
-      <section ref={heroRef} className="relative min-h-screen flex items-center overflow-hidden">
-        <img src={HERO_IMG} alt="VDS Gold" className="absolute inset-0 w-full h-full object-cover" />
+      <section
+        ref={heroRef}
+        className="relative min-h-screen flex items-center overflow-hidden"
+        style={{
+          backgroundImage: `url(${HERO_IMG})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center center',
+          backgroundRepeat: 'no-repeat',
+          imageRendering: 'auto',
+        }}
+      >
         <div className="absolute inset-0 bg-gradient-to-r from-obsidian via-obsidian/80 to-obsidian/30" />
         <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-transparent to-obsidian/50" />
 
