@@ -1,14 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { LogOut, Plus, Calendar, ChevronRight, Star, UserCog, ClipboardList, CheckCircle, X, RotateCcw } from 'lucide-react';
+import { LogOut, Calendar, Star, ClipboardList, CheckCircle, X, RotateCcw } from 'lucide-react';
 import { format, startOfMonth } from 'date-fns';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
 import GoldShimmer from '../components/vds/GoldShimmer';
-import UsageTracker from '../components/member/UsageTracker';
-import VehicleCard from '../components/member/VehicleCard';
-import AddVehicleForm from '../components/member/AddVehicleForm';
+import VehicleGarageSection from '../components/member/VehicleGarageSection';
 import AccountDetailsForm from '../components/member/AccountDetailsForm';
 import AppointmentCard from '../components/member/AppointmentCard';
 import VehicleSubscriptionModal from '../components/member/VehicleSubscriptionModal';
@@ -335,14 +333,6 @@ export default function MemberDashboard() {
           )}
         </div>
 
-        {/* Usage Tracker — Gold members only */}
-        {subscriptions.length > 0 && (
-          <div className="mb-12">
-            <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40 mb-4">THIS MONTH'S USAGE</p>
-            <UsageTracker fullDetailsUsed={fullDetailsUsed} exteriorDetailsUsed={exteriorDetailsUsed} />
-          </div>
-        )}
-
         {/* Completed Appointments */}
         {appointments.filter(a => a.status === 'completed').length > 0 && (
           <div className="mb-12">
@@ -357,93 +347,20 @@ export default function MemberDashboard() {
           </div>
         )}
 
-        {/* Service History — grouped by vehicle */}
-        {vehicles.length > 0 && (
-          <div className="mb-12">
-            <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40 mb-4">SERVICE HISTORY</p>
-            <div className="space-y-4">
-              {vehicles.map(v => {
-                const vehicleRecords = records
-                  .filter(r => r.vehicle_id === v.id)
-                  .sort((a, b) => new Date(b.service_date) - new Date(a.service_date));
-                return (
-                  <div key={v.id} className="glass-panel border border-vapor/10 rounded-sm overflow-hidden">
-                    {/* Vehicle header */}
-                    <div className="px-5 py-3 border-b border-vapor/10 flex items-center gap-3 bg-asphalt/50">
-                      <span className="text-gold text-xs">◆</span>
-                      <p className="text-vapor font-grotesk font-semibold text-sm">
-                        {v.year} {v.make} {v.model}
-                      </p>
-                      {v.color && <span className="text-vapor/30 font-mono-tech text-xs">{v.color}</span>}
-                    </div>
-                    {vehicleRecords.length === 0 ? (
-                      <div className="px-5 py-6 text-center">
-                        <p className="text-vapor/25 text-xs font-mono-tech">No services recorded yet.</p>
-                      </div>
-                    ) : (
-                      <div className="divide-y divide-vapor/5">
-                        {vehicleRecords.map(record => (
-                          <div key={record.id} className="px-5 py-3 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-1.5 h-1.5 rounded-full ${record.service_type === 'full_detail' ? 'bg-gold' : 'bg-vapor/40'}`} />
-                              <p className="text-vapor/80 text-sm font-grotesk">
-                                {record.service_type === 'full_detail' ? 'Full Interior Detail' : 'Exterior Detail'}
-                              </p>
-                            </div>
-                            <p className="text-vapor/40 text-xs font-mono-tech">
-                              {record.service_date ? format(new Date(record.service_date), 'MMM d, yyyy') : '—'}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-
-
-        {/* Vehicles */}
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40">MY VEHICLES</p>
-            {!showAddVehicle && (
-              <button
-                onClick={() => setShowAddVehicle(true)}
-                className="flex items-center gap-2 text-xs font-mono-tech tracking-widest text-gold/60 hover:text-gold transition-colors border border-gold/20 hover:border-gold/40 px-4 py-2 rounded-sm"
-              >
-                <Plus size={12} /> ADD VEHICLE
-              </button>
-            )}
-          </div>
-
-          {showAddVehicle && (
-            <div className="mb-4">
-              <AddVehicleForm onAdd={handleAddVehicle} onCancel={() => setShowAddVehicle(false)} />
-            </div>
-          )}
-
-          {vehicles.length === 0 && !showAddVehicle ? (
-            <div className="border border-dashed border-vapor/10 rounded-sm p-12 text-center">
-              <p className="text-vapor/30 font-mono-tech text-sm">No vehicles added yet.</p>
-              <button
-                onClick={() => setShowAddVehicle(true)}
-                className="mt-4 text-xs font-mono-tech tracking-widest text-gold/60 hover:text-gold transition-colors"
-              >
-                + ADD YOUR FIRST VEHICLE
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {vehicles.map(v => (
-                <VehicleCard key={v.id} vehicle={v} onDelete={handleDeleteVehicle} onEdit={handleEditVehicle} onEnrollClick={handleEnrollClick} onCancelClick={handleCancelClick} subscriptions={subscriptions} />
-              ))}
-            </div>
-          )}
-        </div>
+        {/* My Garage — vehicles with per-vehicle usage & history */}
+        <VehicleGarageSection
+          vehicles={vehicles}
+          records={records}
+          subscriptions={subscriptions}
+          currentMonth={currentMonth}
+          onEdit={handleEditVehicle}
+          onDelete={handleDeleteVehicle}
+          onEnrollClick={handleEnrollClick}
+          onCancelClick={handleCancelClick}
+          showAddVehicle={showAddVehicle}
+          setShowAddVehicle={setShowAddVehicle}
+          onAddVehicle={handleAddVehicle}
+        />
       </main>
 
       {/* Subscription Modal - rendered at page level to avoid clipping */}
