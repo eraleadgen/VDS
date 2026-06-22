@@ -4,6 +4,7 @@ import { Check, ArrowRight } from 'lucide-react';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
 import GoldShimmer from '../components/vds/GoldShimmer';
+import GoldParticles from '../components/vds/GoldParticles';
 
 const EXTERIOR_SPECS = [
   'HAND WASH — Rims & Wheel Barrels',
@@ -35,41 +36,31 @@ const MEMBERSHIP_VALUE = [
   { service: 'VDS GOLD — TRUCK/SUV', value: '$300' },
 ];
 
-const HERO_IMG = 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/46ffcb03f_Copilot_20260618_223641.png';
-
 export default function VdsGold() {
-  const [scrollY, setScrollY] = useState(0);
-  const heroRef = useRef(null);
-
-  useEffect(() => {
-    const onScroll = () => setScrollY(window.scrollY);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
-
-  const goldTint = Math.min(scrollY / 2000, 0.06);
-
   return (
-    <div
-      className="min-h-screen"
-      style={{ backgroundColor: `rgb(${Math.round(10 + goldTint * 40)}, ${Math.round(11 + goldTint * 30)}, 13)` }}
-    >
+    <div className="min-h-screen bg-obsidian">
       <Navbar />
 
       {/* ── HERO ─────────────────────────────────────── */}
-      <section
-        ref={heroRef}
-        className="relative min-h-screen flex items-center overflow-hidden"
-        style={{
-          backgroundImage: `url(${HERO_IMG})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center center',
-          backgroundRepeat: 'no-repeat',
-          imageRendering: 'auto',
-        }}
-      >
-        <div className="absolute inset-0 bg-gradient-to-r from-obsidian via-obsidian/80 to-obsidian/30" />
-        <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-transparent to-obsidian/50" />
+      <section className="relative min-h-screen flex items-center overflow-hidden bg-obsidian">
+        {/* Deep layered gradient background */}
+        <div className="absolute inset-0" style={{
+          background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(212,175,55,0.10) 0%, transparent 60%), radial-gradient(ellipse 60% 80% at 80% 50%, rgba(180,140,20,0.06) 0%, transparent 55%), linear-gradient(180deg, #08090a 0%, #0a0b0d 40%, #0d0a05 100%)'
+        }} />
+        {/* Animated slow-pulse glow orb */}
+        <div className="absolute inset-0 pointer-events-none" style={{
+          background: 'radial-gradient(ellipse 50% 40% at 50% 30%, rgba(212,175,55,0.07) 0%, transparent 70%)',
+          animation: 'goldPulse 6s ease-in-out infinite'
+        }} />
+        {/* Subtle grid lines */}
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: 'linear-gradient(rgba(212,175,55,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(212,175,55,0.8) 1px, transparent 1px)',
+          backgroundSize: '80px 80px'
+        }} />
+        {/* Gold particles */}
+        <GoldParticles count={60} />
+        {/* Bottom fade to page */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-obsidian to-transparent" />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 py-32 w-full">
           <div className="max-w-2xl text-center md:text-left mx-auto md:mx-0">
