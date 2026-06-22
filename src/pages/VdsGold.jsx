@@ -52,11 +52,7 @@ export default function VdsGold() {
           background: 'radial-gradient(ellipse 50% 40% at 50% 30%, rgba(212,175,55,0.07) 0%, transparent 70%)',
           animation: 'goldPulse 6s ease-in-out infinite'
         }} />
-        {/* Subtle grid lines */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: 'linear-gradient(rgba(212,175,55,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(212,175,55,0.8) 1px, transparent 1px)',
-          backgroundSize: '80px 80px'
-        }} />
+
         {/* Gold particles */}
         <GoldParticles count={60} />
         {/* Bottom fade to page */}
