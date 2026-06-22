@@ -75,8 +75,17 @@ function VehicleHistory({ records }) {
 function VehicleRow({ vehicle, records, subscriptions, currentMonth, onEdit, onDelete, onEnrollClick, onCancelClick }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [showGoldWarning, setShowGoldWarning] = useState(false);
 
   const isGold = vehicle.is_gold_registered || subscriptions.some(s => s.vehicle_id === vehicle.id);
+
+  const handleDeleteClick = () => {
+    if (isGold) {
+      setShowGoldWarning(true);
+      return;
+    }
+    onDelete(vehicle.id);
+  };
 
   const handleEdit = async (formData) => {
     await onEdit(vehicle.id, formData);
@@ -136,7 +145,7 @@ function VehicleRow({ vehicle, records, subscriptions, currentMonth, onEdit, onD
                 <Pencil size={12} /> EDIT
               </button>
               <span className="text-vapor/20">|</span>
-              <button onClick={() => onDelete(vehicle.id)} className="flex items-center gap-1.5 text-xs font-mono-tech text-vapor/40 hover:text-red-400 transition-colors">
+              <button onClick={handleDeleteClick} className="flex items-center gap-1.5 text-xs font-mono-tech text-vapor/40 hover:text-red-400 transition-colors">
                 <Trash2 size={12} /> DELETE
               </button>
             </div>
@@ -166,6 +175,16 @@ function VehicleRow({ vehicle, records, subscriptions, currentMonth, onEdit, onD
               )}
             </div>
           </div>
+
+          {/* Gold delete warning */}
+          {showGoldWarning && (
+            <div className="mx-5 mt-3 p-4 border border-red-400/30 bg-red-400/5 rounded-sm flex items-start justify-between gap-4">
+              <p className="text-xs font-mono-tech text-red-400/80 leading-relaxed">
+                ⚠ This vehicle has an active VDS Gold membership. Please cancel the Gold subscription before removing it from your garage.
+              </p>
+              <button onClick={() => setShowGoldWarning(false)} className="text-vapor/30 hover:text-vapor/60 text-xs font-mono-tech shrink-0">✕</button>
+            </div>
+          )}
 
           {/* Usage — Gold only */}
           {isGold && (
