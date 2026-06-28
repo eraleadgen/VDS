@@ -60,16 +60,21 @@ const SECTIONS = [
   },
   {
     num: '12.',
+    title: 'Post-Service Maintenance Responsibility',
+    content: 'Valet Detailing Service LLC is not responsible for any damage, degradation, or diminished results caused by improper care or maintenance of the vehicle following a completed service. This includes, but is not limited to: water spots, mineral deposits, or etching that develop on ceramic-coated or sealed surfaces due to improper washing techniques, hard water exposure, or failure to follow our recommended aftercare guidelines; interior soiling or odors that return due to ongoing use without proper upkeep; and any other condition attributable to how the vehicle is maintained after our team has departed. Our services are performed to the highest professional standard, and optimal results depend on the customer\'s commitment to appropriate post-service care.',
+  },
+  {
+    num: '13.',
     title: 'Governing Law',
     content: 'These Terms and Conditions shall be governed by and construed in accordance with the laws of the State of Georgia.',
   },
   {
-    num: '13.',
+    num: '14.',
     title: 'Changes to Terms',
     content: 'Valet Detailing Service LLC reserves the right to modify these Terms and Conditions at any time. The most current version will always be posted on our website. Your continued use of our services after any changes constitutes your acceptance of the new terms.',
   },
   {
-    num: '14.',
+    num: '15.',
     title: 'Contact Us',
     content: 'If you have any questions about these Terms and Conditions, please contact us through the official channels listed on our website at vdsmobile.com or via email at Valetdetailingservice@gmail.com.',
   },
@@ -82,7 +87,7 @@ export default function Terms() {
       <section className="pt-36 pb-20 max-w-4xl mx-auto px-6">
         <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">LEGAL</p>
         <h1 className="text-5xl font-grotesk font-bold text-vapor mb-3">TERMS & CONDITIONS</h1>
-        <p className="text-xs font-mono-tech text-vapor/30 mb-16 tracking-widest">VALET DETAILING SERVICE LLC · LAST UPDATED: JUNE 17, 2026</p>
+        <p className="text-xs font-mono-tech text-vapor/30 mb-16 tracking-widest">VALET DETAILING SERVICE LLC · LAST UPDATED: JUNE 28, 2026</p>
 
         <div className="space-y-10">
           {SECTIONS.map(sec => (
