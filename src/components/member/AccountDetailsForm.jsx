@@ -146,7 +146,6 @@ export default function AccountDetailsForm({ user, subscriptions = [], onSaved, 
 
       {/* Delete Account */}
       <div className="glass-panel border border-red-500/10 rounded-sm p-6">
-        <p className="text-xs font-mono-tech tracking-widest text-red-400/70 mb-2">DANGER ZONE</p>
         <p className="text-vapor/50 font-mono-tech text-xs mb-4 leading-relaxed">
           Permanently delete your account and all associated data. This cannot be undone.
         </p>
