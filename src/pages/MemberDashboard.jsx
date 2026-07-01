@@ -379,8 +379,16 @@ export default function MemberDashboard() {
           ) : (
             <div className="glass-panel border border-vapor/10 rounded-sm p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div>
-                <p className="text-xs font-mono-tech tracking-widest text-vapor/30 mb-1">NAME</p>
-                <p className="text-vapor font-mono-tech text-sm">{user?.full_name?.includes('@') ? '—' : (user?.full_name || '—')}</p>
+                <p className="text-xs font-mono-tech tracking-widest text-vapor/30 mb-1">FIRST NAME</p>
+                <p className="text-vapor font-mono-tech text-sm">
+                  {user?.full_name?.includes('@') ? '—' : (user?.full_name?.split(' ')[0] || '—')}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-mono-tech tracking-widest text-vapor/30 mb-1">LAST NAME</p>
+                <p className="text-vapor font-mono-tech text-sm">
+                  {user?.full_name?.includes('@') ? '—' : (user?.full_name?.split(' ').slice(1).join(' ') || '—')}
+                </p>
               </div>
               <div>
                 <p className="text-xs font-mono-tech tracking-widest text-vapor/30 mb-1">EMAIL</p>
