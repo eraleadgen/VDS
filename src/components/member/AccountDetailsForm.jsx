@@ -36,10 +36,11 @@ export default function AccountDetailsForm({ user, subscriptions = [], onSaved, 
     setLoading(true);
     try {
       const updatedName = `${firstName.trim()} ${lastName.trim()}`.trim();
-      await Promise.all([
-        base44.auth.updateMe({ full_name: updatedName }),
-        base44.entities.User.update(user.id, { phone: phone.trim(), saved_addresses: addresses }),
-      ]);
+      await base44.entities.User.update(user.id, {
+        full_name: updatedName,
+        phone: phone.trim(),
+        saved_addresses: addresses,
+      });
       setSaved(true);
       await new Promise(r => setTimeout(r, 500));
       onSaved && onSaved({ full_name: updatedName, phone: phone.trim(), saved_addresses: addresses });
