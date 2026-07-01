@@ -1,5 +1,6 @@
 {
   "type": "object",
+  "name": "User",
   "properties": {
     "role": {
       "type": "string",
@@ -19,7 +20,42 @@
         "type": "string"
       },
       "description": "List of saved service addresses"
+    },
+    "ghl_contact_id": {
+      "type": "string",
+      "description": "GoHighLevel contact ID"
+    },
+    "stripe_customer_id": {
+      "type": "string",
+      "description": "Stripe customer ID"
+    },
+    "preferred_contact_method": {
+      "type": "string",
+      "enum": [
+        "phone",
+        "sms",
+        "email"
+      ],
+      "default": "sms"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Internal notes about this customer"
+    },
+    "last_detail_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date of most recent completed service"
+    },
+    "total_details_completed": {
+      "type": "number",
+      "default": 0,
+      "description": "Lifetime count of completed services"
+    },
+    "lifetime_spend": {
+      "type": "number",
+      "default": 0,
+      "description": "Total lifetime spend in dollars"
     }
-  },
-  "name": "User"
+  }
 }

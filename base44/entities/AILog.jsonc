@@ -1,0 +1,57 @@
+{
+  "type": "object",
+  "name": "AILog",
+  "properties": {
+    "call_id": {
+      "type": "string",
+      "description": "Retell call ID"
+    },
+    "action": {
+      "type": "string",
+      "description": "Action invoked (e.g. create_quote, book_service)"
+    },
+    "customer_phone": {
+      "type": "string"
+    },
+    "customer_name": {
+      "type": "string"
+    },
+    "vehicle_info": {
+      "type": "string"
+    },
+    "transcript": {
+      "type": "string"
+    },
+    "duration_seconds": {
+      "type": "number"
+    },
+    "outcome": {
+      "type": "string",
+      "enum": [
+        "quote_created",
+        "appointment_booked",
+        "customer_updated",
+        "info_provided",
+        "error",
+        "other"
+      ]
+    },
+    "quote_id": {
+      "type": "string"
+    },
+    "appointment_id": {
+      "type": "string"
+    },
+    "raw_request": {
+      "type": "string",
+      "description": "JSON string of the incoming request payload"
+    },
+    "raw_response": {
+      "type": "string",
+      "description": "JSON string of the outgoing response payload"
+    }
+  },
+  "required": [
+    "action"
+  ]
+}
