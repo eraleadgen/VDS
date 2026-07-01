@@ -84,6 +84,8 @@ export default function BookAppointment() {
   const today = new Date();
   const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
+  const [savedAddresses, setSavedAddresses] = useState([]);
+
   useEffect(() => {
     const init = async () => {
       const isAuth = await base44.auth.isAuthenticated();
@@ -102,6 +104,14 @@ export default function BookAppointment() {
         const goldMap = {};
         (subsRes?.data?.subscriptions || []).forEach(sub => { goldMap[sub.vehicle_id] = true; });
         setGoldVehicles(goldMap);
+        // Load saved addresses from User entity
+        try {
+          const userEntities = await base44.entities.User.list();
+          const myEntity = userEntities.find(u => u.id === me.id);
+          if (myEntity?.saved_addresses?.length) {
+            setSavedAddresses(myEntity.saved_addresses);
+          }
+        } catch {}
       }
       setAuthChecked(true);
     };
@@ -719,6 +729,24 @@ export default function BookAppointment() {
               </div>
               <div className="sm:col-span-2">
                 <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">SERVICE ADDRESS <span className="text-gold">*</span></label>
+                {user && savedAddresses.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {savedAddresses.map((addr, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setForm(f => ({ ...f, address: addr }))}
+                        className={`text-xs font-mono-tech px-3 py-1.5 rounded-sm border transition-colors ${
+                          form.address === addr
+                            ? 'border-gold bg-gold/10 text-gold'
+                            : 'border-vapor/20 text-vapor/50 hover:border-vapor/40 hover:text-vapor'
+                        }`}
+                      >
+                        {addr}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <input name="address" value={form.address} onChange={handleChange} placeholder="123 Main St, Atlanta GA" required className={inputClass} />
               </div>
             </div>

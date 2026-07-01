@@ -1,5 +1,4 @@
 {
-  "name": "User",
   "type": "object",
   "properties": {
     "role": {
@@ -10,13 +9,17 @@
       ],
       "default": "user"
     },
-    "is_gold_member": {
-      "type": "boolean",
-      "default": false
-    },
     "phone": {
       "type": "string",
-      "description": "Member phone number"
+      "description": "User phone number"
+    },
+    "saved_addresses": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of saved service addresses"
     }
-  }
+  },
+  "name": "User"
 }

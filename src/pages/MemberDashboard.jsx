@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { LogOut, Calendar, Star, ClipboardList, CheckCircle, X, RotateCcw } from 'lucide-react';
+import { LogOut, Calendar, Star, ClipboardList, CheckCircle, X, RotateCcw, User } from 'lucide-react';
 import { format, startOfMonth } from 'date-fns';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
@@ -65,7 +65,14 @@ export default function MemberDashboard() {
   useEffect(() => {
     const init = async () => {
       const me = await base44.auth.me();
-      setUser(me);
+      // Also load saved_addresses from User entity (not always in auth.me())
+      try {
+        const userEntities = await base44.entities.User.list();
+        const myEntity = userEntities.find(u => u.id === me.id);
+        setUser({ ...me, saved_addresses: myEntity?.saved_addresses || [] });
+      } catch {
+        setUser(me);
+      }
       // Check for gold success query param
       const params = new URLSearchParams(window.location.search);
       if (params.get('gold_success') === 'true') {
@@ -143,10 +150,12 @@ export default function MemberDashboard() {
 
   const handleAccountSaved = async (updatedFields) => {
     setShowEditAccount(false);
-    // Re-fetch user from server after save to get canonical data
     try {
       const fresh = await base44.auth.me();
-      setUser(fresh);
+      // Merge saved_addresses from entity since auth.me() may not include it
+      const userEntity = await base44.entities.User.list();
+      const myEntity = userEntity.find(u => u.id === fresh.id);
+      setUser({ ...fresh, saved_addresses: myEntity?.saved_addresses || updatedFields.saved_addresses || [] });
     } catch (e) {
       setUser(prev => ({ ...prev, ...updatedFields }));
     }
@@ -346,6 +355,56 @@ export default function MemberDashboard() {
             </div>
           </div>
         )}
+
+        {/* Account Details */}
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40">ACCOUNT DETAILS</p>
+            {!showEditAccount && (
+              <button
+                onClick={() => setShowEditAccount(true)}
+                className="flex items-center gap-2 text-xs font-mono-tech tracking-widest text-gold/70 hover:text-gold border border-gold/20 hover:border-gold/40 px-4 py-2 rounded-sm transition-colors"
+              >
+                <User size={12} /> EDIT ACCOUNT
+              </button>
+            )}
+          </div>
+          {showEditAccount ? (
+            <AccountDetailsForm
+              user={user}
+              subscriptions={subscriptions}
+              onSaved={handleAccountSaved}
+              onCancel={() => setShowEditAccount(false)}
+            />
+          ) : (
+            <div className="glass-panel border border-vapor/10 rounded-sm p-6 grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <div>
+                <p className="text-xs font-mono-tech tracking-widest text-vapor/30 mb-1">NAME</p>
+                <p className="text-vapor font-mono-tech text-sm">{user?.full_name?.includes('@') ? '—' : (user?.full_name || '—')}</p>
+              </div>
+              <div>
+                <p className="text-xs font-mono-tech tracking-widest text-vapor/30 mb-1">EMAIL</p>
+                <p className="text-vapor font-mono-tech text-sm">{user?.email || '—'}</p>
+              </div>
+              <div>
+                <p className="text-xs font-mono-tech tracking-widest text-vapor/30 mb-1">PHONE</p>
+                <p className="text-vapor font-mono-tech text-sm">{user?.phone || '—'}</p>
+              </div>
+              <div>
+                <p className="text-xs font-mono-tech tracking-widest text-vapor/30 mb-1">SAVED ADDRESSES</p>
+                {(user?.saved_addresses || []).length > 0 ? (
+                  <div className="space-y-1">
+                    {(user.saved_addresses).map((addr, i) => (
+                      <p key={i} className="text-vapor/60 font-mono-tech text-xs">{addr}</p>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-vapor/30 font-mono-tech text-xs">No saved addresses</p>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* My Garage — vehicles with per-vehicle usage & history */}
         <VehicleGarageSection
