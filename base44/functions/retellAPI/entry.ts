@@ -198,6 +198,17 @@ async function handleSpecialistFollowup(base44, data, ghlApiKey, ghlLocationId) 
 
 Deno.serve(async (req) => {
   try {
+    // ── Shared-secret auth: only Retell may call this endpoint ────────────
+    const RETELL_API_KEY = Deno.env.get('RETELL_API_KEY');
+    if (RETELL_API_KEY) {
+      const auth = req.headers.get('Authorization') || '';
+      const provided = auth.replace(/^Bearer\s+/i, '').trim();
+      if (!provided || provided !== RETELL_API_KEY) {
+        console.error('retellAPI auth failed: invalid or missing API key');
+        return Response.json({ error: 'Unauthorized — invalid API key.' }, { status: 401 });
+      }
+    }
+
     const base44 = createClientFromRequest(req);
     const body = await req.json();
     const { action, data, call_id, transcript, duration } = body;
