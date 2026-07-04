@@ -24,6 +24,12 @@ const SERVICE_LABELS = {
 
 Deno.serve(async (req) => {
   try {
+    // Public endpoint (guests book without login) — restrict to app origin.
+    const origin = req.headers.get('Origin') || req.headers.get('Referer') || '';
+    if (!/vdsmobile\.com|base44\.com|localhost/.test(origin)) {
+      return Response.json({ success: false, error: 'Forbidden — invalid origin.' }, { status: 403 });
+    }
+
     const base44 = createClientFromRequest(req);
 
     // Auth is optional — guests can book without an account

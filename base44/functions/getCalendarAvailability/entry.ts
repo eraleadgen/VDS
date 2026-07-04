@@ -16,6 +16,12 @@ const CONSULTATION_SERVICES = ['ceramic_coating', 'paint_correction'];
 
 Deno.serve(async (req) => {
   try {
+    // Public endpoint (guests check availability without login) — restrict to app origin.
+    const origin = req.headers.get('Origin') || req.headers.get('Referer') || '';
+    if (!/vdsmobile\.com|base44\.com|localhost/.test(origin)) {
+      return Response.json({ error: 'Forbidden — invalid origin.' }, { status: 403 });
+    }
+
     const base44 = createClientFromRequest(req);
 
     const { service_type, vehicle_type, date, vehicle_count } = await req.json();

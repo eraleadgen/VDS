@@ -32,6 +32,13 @@ const BOOKING_URL = 'https://vdsmobile.com/book';
 
 Deno.serve(async (req) => {
   try {
+    const RETELL_API_KEY = Deno.env.get('RETELL_API_KEY');
+    if (RETELL_API_KEY) {
+      const auth = req.headers.get('Authorization') || '';
+      const provided = auth.replace(/^Bearer\s+/i, '').trim();
+      if (!provided || provided !== RETELL_API_KEY) return Response.json({ error: 'Unauthorized.' }, { status: 401 });
+    }
+
     const { vehicle_type, services } = await req.json();
 
     if (!vehicle_type || !services || !Array.isArray(services)) {
