@@ -325,10 +325,10 @@ Deno.serve(async (req) => {
 
     const base44 = createClientFromRequest(req);
     const body = await req.json();
-    const { action, data } = body;
+    const { action } = body;
+    const data = body.data || {};
 
     if (!action) return Response.json({ error: 'action is required.' }, { status: 400 });
-    data = data || {};
 
     const GHL_API_KEY = Deno.env.get('GHL_API_KEY');
     const GHL_LOCATION_ID = Deno.env.get('GHL_LOCATION_ID');
