@@ -6,11 +6,11 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
-    // Allow both scheduled (no auth header) and admin manual calls
+    // Require an authenticated admin — blocks anonymous callers.
     let user = null;
-    try { user = await base44.auth.me(); } catch (e) { /* scheduled */ }
-    if (user && user.role !== 'admin') {
-      return Response.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    try { user = await base44.auth.me(); } catch (e) { /* no session */ }
+    if (!user || user.role !== 'admin') {
+      return Response.json({ success: false, error: 'Forbidden — admin required.' }, { status: 403 });
     }
 
     const GHL_API_KEY = Deno.env.get('GHL_API_KEY');
