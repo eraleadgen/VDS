@@ -43,6 +43,14 @@ const GHL_HEADERS = (key) => ({
 
 // ── Helpers ────────────────────────────────────────────────────────────
 function normalizePhone(p) { return p ? p.replace(/[^\d+]/g, '') : ''; }
+function toE164(phone) {
+  if (!phone) return '';
+  let d = phone.replace(/\D/g, '');
+  if (d.length === 10) d = '1' + d;            // US 10-digit → +1
+  else if (d.length === 11 && d.startsWith('1')) d = d;
+  else if (d.length > 11) d = d;                 // intl, keep as-is
+  return '+' + d;
+}
 function vehicleTier(type) {
   if (!type) return 'sedan_coupe';
   return VEHICLE_TYPE_MAP[type.toLowerCase()] || (PRICING[type] ? type : 'sedan_coupe');
@@ -105,7 +113,10 @@ async function sendGHLSms(ghlKey, contactId, message) {
     method: 'POST', headers: GHL_HEADERS(ghlKey),
     body: JSON.stringify({ type: 'SMS', contactId, message }),
   });
-  return r.ok;
+  if (r.ok) return { ok: true };
+  const errText = await r.text().catch(() => '');
+  console.error('GHL SMS failed:', r.status, errText);
+  return { ok: false, status: r.status, error: errText };
 }
 
 // ── Action Handlers ────────────────────────────────────────────────────
@@ -154,7 +165,7 @@ async function actCreateQuote(base44, data) {
 
   const user = await findUser(base44, phone);
   const quote = await base44.asServiceRole.entities.Quote.create({
-    customer_name: user?.full_name || 'Unknown', customer_phone: normalizePhone(phone),
+    customer_name: user?.full_name || 'Unknown', customer_phone: toE164(phone),
     customer_email: user?.email || '', vehicle_year: String(vehicleYear || ''),
     vehicle_make: vehicleMake || '', vehicle_model: vehicleModel || '',
     vehicle_type: tier, requested_services: [svcKey],
@@ -180,7 +191,7 @@ async function actSendQuote(base44, data, ghlKey, ghlLoc) {
 
   if (!ghlKey || !ghlLoc) return { error: 'SMS gateway not configured.' };
 
-  const phone = normalizePhone(quote.customer_phone);
+  const phone = toE164(quote.customer_phone || data.customer_phone);
   const name = quote.customer_name || 'there';
   const firstName = name.split(' ')[0];
   const serviceLabel = quote.quote_summary || 'Detail Service';
@@ -204,8 +215,8 @@ Reply if you have any questions!
 
 -Valerie`;
 
-  const sent = await sendGHLSms(ghlKey, contactId, smsBody);
-  if (!sent) return { error: 'SMS delivery failed.' };
+  const sendResult = await sendGHLSms(ghlKey, contactId, smsBody);
+  if (!sendResult.ok) return { error: 'SMS delivery failed.', ghl_status: sendResult.status, ghl_error: sendResult.error };
 
   await base44.asServiceRole.entities.Quote.update(quoteId, { status: 'sent', sms_sent: true });
   return { success: true, message: 'Quote sent successfully.' };
@@ -246,7 +257,7 @@ async function actSpecialistFollowup(base44, data, ghlKey, ghlLoc, teamPhone) {
   if (!reason) return { error: 'reason is required.' };
 
   if (!ghlKey || !ghlLoc) return { error: 'CRM not configured.' };
-  const cleanPhone = normalizePhone(phone);
+  const cleanPhone = toE164(phone);
   const user = await findUser(base44, phone);
   const name = user?.full_name || 'Customer';
   const contactId = await upsertGHLContact(name, cleanPhone, user?.email, ghlKey, ghlLoc, ['valerie-escalation', 'high-priority']);
@@ -277,7 +288,7 @@ async function actCreateLead(base44, data, ghlKey, ghlLoc) {
   if (!phone) return { error: 'phone is required.' };
   if (!ghlKey || !ghlLoc) return { error: 'CRM not configured.' };
 
-  const cleanPhone = normalizePhone(phone);
+  const cleanPhone = toE164(phone);
   const contactId = await upsertGHLContact(customerName, cleanPhone, null, ghlKey, ghlLoc, ['retell-ai-lead', `service:${service || 'general'}`]);
   const noteBody = `VALERIE LEAD\nService: ${service || 'Not specified'}\nQuote: ${quoteSummary || 'N/A'}`;
   await addGHLNote(ghlKey, contactId, noteBody);
