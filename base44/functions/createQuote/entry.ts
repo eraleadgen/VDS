@@ -68,11 +68,9 @@ async function upsertGHLContact(customer_name, customer_phone, customer_email, l
 Deno.serve(async (req) => {
   try {
     const RETELL_API_KEY = Deno.env.get('RETELL_API_KEY');
-    if (RETELL_API_KEY) {
-      const auth = req.headers.get('Authorization') || '';
-      const provided = auth.replace(/^Bearer\s+/i, '').trim();
-      if (!provided || provided !== RETELL_API_KEY) return Response.json({ error: 'Unauthorized.' }, { status: 401 });
-    }
+    const auth = req.headers.get('Authorization') || '';
+    const provided = auth.replace(/^Bearer\s+/i, '').trim();
+    if (!RETELL_API_KEY || !provided || provided !== RETELL_API_KEY) return Response.json({ error: 'Unauthorized.' }, { status: 401 });
 
     const base44 = createClientFromRequest(req);
     const body = await req.json();

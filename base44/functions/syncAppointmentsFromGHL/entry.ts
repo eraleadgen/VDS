@@ -6,11 +6,15 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
-    // Require an authenticated admin — blocks anonymous callers.
+    // Require an authenticated admin OR a valid scheduler token — blocks anonymous callers.
     let user = null;
     try { user = await base44.auth.me(); } catch (e) { /* no session */ }
-    if (!user || user.role !== 'admin') {
-      return Response.json({ success: false, error: 'Forbidden — admin required.' }, { status: 403 });
+    const schedulerToken = req.headers.get('X-Scheduler-Token') || '';
+    const SCHEDULER_TOKEN = Deno.env.get('SCHEDULER_TOKEN');
+    const isAdmin = user && user.role === 'admin';
+    const validToken = SCHEDULER_TOKEN && schedulerToken && schedulerToken === SCHEDULER_TOKEN;
+    if (!isAdmin && !validToken) {
+      return Response.json({ success: false, error: 'Forbidden — admin or scheduler token required.' }, { status: 403 });
     }
 
     const GHL_API_KEY = Deno.env.get('GHL_API_KEY');
