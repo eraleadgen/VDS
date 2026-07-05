@@ -5,27 +5,28 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
+// Pricing mirrors vdsmobile.com/pricing exactly — all values are STARTING prices.
 const PRICING = {
   sedan_coupe: {
-    exterior_detail:       { price: 150, duration: 60,  label: 'Exterior Detail' },
-    interior_detail:       { price: 150, duration: 90,  label: 'Interior Detail' },
-    full_detail:           { price: 250, duration: 180, label: 'Full Interior + Exterior Detail' },
-    engine_bay:            { price: 75,  duration: 45,  label: 'Engine Bay Detail' },
-    headlight_restoration: { price: 75,  duration: 60,  label: 'Headlight Restoration' },
-    ceramic_sealant:       { price: 75,  duration: 30,  label: 'Ceramic Sealant' },
-    ceramic_coating:       { price: null, duration: null, label: 'Ceramic Coating (Consultation Required)' },
-    paint_correction:      { price: null, duration: null, label: 'Paint Correction (Consultation Required)' },
+    exterior_detail:       { price: 100, duration: 60,  label: 'Exterior Detail' },
+    interior_detail:       { price: 120, duration: 90,  label: 'Interior Detail' },
+    full_detail:           { price: 175, duration: 180, label: 'Full Detail' },
+    ceramic_sealant:       { price: 50,  duration: 30,  label: 'Ceramic Sealant (3 Month)' },
+    engine_bay:            { price: 50,  duration: 45,  label: 'Engine Bay Detail' },
+    headlight_restoration: { price: 100, duration: 60,  label: 'Headlight Restoration' },
+    ceramic_coating:       { price: 900, duration: null, label: 'Ceramic Coating (2 Year)' },
+    paint_correction:      { price: 600, duration: null, label: 'Paint Correction (Stage 1)' },
     vds_gold:              { price: 250, duration: 0,   label: 'VDS Gold Membership ($250/mo)' },
   },
   truck_suv: {
-    exterior_detail:       { price: 175, duration: 75,  label: 'Exterior Detail' },
-    interior_detail:       { price: 175, duration: 105, label: 'Interior Detail' },
-    full_detail:           { price: 300, duration: 210, label: 'Full Interior + Exterior Detail' },
-    engine_bay:            { price: 100, duration: 60,  label: 'Engine Bay Detail' },
-    headlight_restoration: { price: 75,  duration: 60,  label: 'Headlight Restoration' },
-    ceramic_sealant:       { price: 100, duration: 45,  label: 'Ceramic Sealant' },
-    ceramic_coating:       { price: null, duration: null, label: 'Ceramic Coating (Consultation Required)' },
-    paint_correction:      { price: null, duration: null, label: 'Paint Correction (Consultation Required)' },
+    exterior_detail:       { price: 115, duration: 75,  label: 'Exterior Detail' },
+    interior_detail:       { price: 150, duration: 105, label: 'Interior Detail' },
+    full_detail:           { price: 250, duration: 210, label: 'Full Detail' },
+    ceramic_sealant:       { price: 50,  duration: 45,  label: 'Ceramic Sealant (3 Month)' },
+    engine_bay:            { price: 50,  duration: 60,  label: 'Engine Bay Detail' },
+    headlight_restoration: { price: 100, duration: 60,  label: 'Headlight Restoration' },
+    ceramic_coating:       { price: 900, duration: null, label: 'Ceramic Coating (2 Year)' },
+    paint_correction:      { price: 600, duration: null, label: 'Paint Correction (Stage 1)' },
     vds_gold:              { price: 300, duration: 0,   label: 'VDS Gold Membership ($300/mo)' },
   },
 };

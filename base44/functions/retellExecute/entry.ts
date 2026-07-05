@@ -6,27 +6,28 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 // ── Pricing & Service Catalog (Base44 is source of truth) ──────────────
+// Pricing mirrors vdsmobile.com/pricing exactly — all values are STARTING prices.
 const PRICING = {
   sedan_coupe: {
-    exterior_detail:       { price: 150, duration: 60,  label: 'Exterior Detail' },
-    interior_detail:       { price: 150, duration: 90,  label: 'Interior Detail' },
-    full_detail:           { price: 250, duration: 180, label: 'Full Interior + Exterior Detail' },
-    engine_bay:            { price: 75,  duration: 45,  label: 'Engine Bay Detail' },
-    headlight_restoration: { price: 75,  duration: 60,  label: 'Headlight Restoration' },
-    ceramic_sealant:       { price: 75,  duration: 30,  label: 'Ceramic Sealant' },
-    ceramic_coating:       { price: null, duration: null, label: 'Ceramic Coating (Consultation Required)' },
-    paint_correction:      { price: null, duration: null, label: 'Paint Correction (Consultation Required)' },
+    exterior_detail:       { price: 100, duration: 60,  label: 'Exterior Detail' },
+    interior_detail:       { price: 120, duration: 90,  label: 'Interior Detail' },
+    full_detail:           { price: 175, duration: 180, label: 'Full Detail' },
+    ceramic_sealant:       { price: 50,  duration: 30,  label: 'Ceramic Sealant (3 Month)' },
+    engine_bay:            { price: 50,  duration: 45,  label: 'Engine Bay Detail' },
+    headlight_restoration: { price: 100, duration: 60,  label: 'Headlight Restoration' },
+    ceramic_coating:       { price: 900, duration: null, label: 'Ceramic Coating (2 Year)' },
+    paint_correction:      { price: 600, duration: null, label: 'Paint Correction (Stage 1)' },
     vds_gold:              { price: 250, duration: 0,   label: 'VDS Gold Membership ($250/mo)' },
   },
   truck_suv: {
-    exterior_detail:       { price: 175, duration: 75,  label: 'Exterior Detail' },
-    interior_detail:       { price: 175, duration: 105, label: 'Interior Detail' },
-    full_detail:           { price: 300, duration: 210, label: 'Full Interior + Exterior Detail' },
-    engine_bay:            { price: 100, duration: 60,  label: 'Engine Bay Detail' },
-    headlight_restoration: { price: 75,  duration: 60,  label: 'Headlight Restoration' },
-    ceramic_sealant:       { price: 100, duration: 45,  label: 'Ceramic Sealant' },
-    ceramic_coating:       { price: null, duration: null, label: 'Ceramic Coating (Consultation Required)' },
-    paint_correction:      { price: null, duration: null, label: 'Paint Correction (Consultation Required)' },
+    exterior_detail:       { price: 115, duration: 75,  label: 'Exterior Detail' },
+    interior_detail:       { price: 150, duration: 105, label: 'Interior Detail' },
+    full_detail:           { price: 250, duration: 210, label: 'Full Detail' },
+    ceramic_sealant:       { price: 50,  duration: 45,  label: 'Ceramic Sealant (3 Month)' },
+    engine_bay:            { price: 50,  duration: 60,  label: 'Engine Bay Detail' },
+    headlight_restoration: { price: 100, duration: 60,  label: 'Headlight Restoration' },
+    ceramic_coating:       { price: 900, duration: null, label: 'Ceramic Coating (2 Year)' },
+    paint_correction:      { price: 600, duration: null, label: 'Paint Correction (Stage 1)' },
     vds_gold:              { price: 300, duration: 0,   label: 'VDS Gold Membership ($300/mo)' },
   },
 };
@@ -174,8 +175,8 @@ async function actCreateQuote(base44, data) {
   });
 
   const speech = startingPrice != null
-    ? `A ${entry.label} for your ${vehicleDesc} starts at $${startingPrice}. Would you like me to text this quote along with a link to book your appointment?`
-    : `A ${entry.label} for your ${vehicleDesc} requires a specialist consultation. Would you like me to connect you with our team?`;
+    ? `For a ${entry.label} on your ${vehicleDesc}, pricing starts at $${startingPrice}. Would you like me to text you this quote with a link to book?`
+    : `A ${entry.label} for your ${vehicleDesc} needs a specialist consultation. Would you like me to connect you with our team?`;
 
   return {
     success: true, quoteId: quote.id,
@@ -184,14 +185,27 @@ async function actCreateQuote(base44, data) {
 }
 
 async function actSendQuote(base44, data, ghlKey, ghlLoc) {
-  const { quoteId } = data;
-  if (!quoteId) return { error: 'quoteId is required.' };
+  let { quoteId } = data;
+  const lookupPhone = toE164(data.phone || data.customer_phone);
+
+  // No quoteId? Find the most recent unsent quote for this phone so Valerie
+  // doesn't have to carry the quote id between tools.
+  if (!quoteId) {
+    if (!lookupPhone) return { error: "I need the customer's phone number to find the quote. Ask them for it, then call send_quote again." };
+    const quotes = await base44.asServiceRole.entities.Quote.filter({ customer_phone: lookupPhone });
+    const recent = quotes
+      .filter(q => !q.sms_sent && q.status !== 'expired')
+      .sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
+    quoteId = recent?.id;
+    if (!quoteId) return { error: 'No pending quote found for that number. Please create a quote first using create_quote.' };
+  }
+
   const quote = await base44.asServiceRole.entities.Quote.get(quoteId);
   if (!quote) return { error: 'Quote not found.' };
 
   if (!ghlKey || !ghlLoc) return { error: 'SMS gateway not configured.' };
 
-  const phone = toE164(quote.customer_phone || data.customer_phone);
+  const phone = toE164(quote.customer_phone) || lookupPhone;
   const name = quote.customer_name || 'there';
   const firstName = name.split(' ')[0];
   const serviceLabel = quote.quote_summary || 'Detail Service';
