@@ -405,6 +405,11 @@ Deno.serve(async (req) => {
         result = actGetServices();
         outcome = 'info_provided';
         break;
+      case 'test_tool':
+        // Retell's connectivity probe — always ack so the "Test" button passes.
+        result = { success: true, message: 'retellExecute reachable.' };
+        outcome = 'other';
+        break;
       default:
         result = { error: `Unknown action: ${action}` };
         outcome = 'error';
