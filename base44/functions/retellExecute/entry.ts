@@ -341,6 +341,13 @@ Deno.serve(async (req) => {
     const data = body.data || body.args || {};
     const call_id = body.call_id || body.call?.call_id || data.call_id || data.callId || '';
 
+    // Auto-inject the caller's phone number from the Retell call object
+    // so Valerie never has to ask for it on inbound calls.
+    const callerPhone = body.call?.from_number || body.call?.to_number || '';
+    if (callerPhone && !data.phone && !data.customer_phone) {
+      data.phone = callerPhone;
+    }
+
     if (!action) return Response.json({ error: 'action is required.' }, { status: 400 });
 
     const GHL_API_KEY = Deno.env.get('GHL_API_KEY');
