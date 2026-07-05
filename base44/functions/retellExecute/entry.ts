@@ -323,8 +323,12 @@ Deno.serve(async (req) => {
 
     const base44 = createClientFromRequest(req);
     const body = await req.json();
-    const { action } = body;
-    const data = body.data || {};
+    // Accept both payload formats:
+    //   - Manual/internal calls: { action, data, call_id }
+    //   - Retell native calls:    { name, args, call: { call_id, ... } }
+    const action = body.action || body.name;
+    const data = body.data || body.args || {};
+    const call_id = body.call_id || body.call?.call_id || data.call_id || data.callId || '';
 
     if (!action) return Response.json({ error: 'action is required.' }, { status: 400 });
 
@@ -336,6 +340,7 @@ Deno.serve(async (req) => {
     let outcome = 'other';
 
     switch (action) {
+      case 'check_existing_customer':
       case 'lookup_customer':
         result = await actLookupCustomer(base44, data);
         outcome = 'info_provided';
@@ -377,7 +382,7 @@ Deno.serve(async (req) => {
     const elapsed = Date.now() - t0;
     try {
       await base44.asServiceRole.entities.AILog.create({
-        call_id: data.callId || data.call_id || '', action,
+        call_id, action,
         customer_phone: normalizePhone(data.phone || data.customer_phone || ''),
         customer_name: data.customerName || data.customer_name || '',
         vehicle_info: [data.vehicleYear, data.vehicleMake, data.vehicleModel].filter(Boolean).join(' '),
