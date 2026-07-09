@@ -14,13 +14,17 @@
       "type": "string",
       "description": "Vehicle model (e.g. 911)"
     },
+    "trim": {
+      "type": "string",
+      "description": "Trim level (e.g. Carrera S)"
+    },
     "color": {
       "type": "string",
-      "description": "Vehicle color"
+      "description": "Exterior color"
     },
-    "license_plate": {
+    "interior_color": {
       "type": "string",
-      "description": "License plate number"
+      "description": "Interior color"
     },
     "vehicle_type": {
       "type": "string",
@@ -28,20 +32,42 @@
         "sedan_coupe",
         "truck_suv"
       ],
-      "description": "Auto-classified vehicle type"
+      "description": "Auto-classified vehicle class"
+    },
+    "license_plate": {
+      "type": "string",
+      "description": "License plate number"
+    },
+    "vin": {
+      "type": "string",
+      "description": "VIN (optional)"
     },
     "notes": {
       "type": "string",
-      "description": "Any special notes about this vehicle"
+      "description": "Special notes about this vehicle"
+    },
+    "previous_services": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Quick-reference log of past services (structured history lives in ServiceRecord)"
+    },
+    "photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Vehicle photo URLs"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Primary vehicle image URL"
     },
     "is_gold_registered": {
       "type": "boolean",
       "default": false,
-      "description": "Whether this vehicle is enrolled in VDS Gold membership"
-    },
-    "image_url": {
-      "type": "string",
-      "description": "URL of the vehicle image"
+      "description": "Whether this vehicle is enrolled in VDS Gold"
     }
   },
   "required": [

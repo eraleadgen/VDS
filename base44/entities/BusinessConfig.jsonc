@@ -1,0 +1,303 @@
+{
+  "name": "BusinessConfig",
+  "type": "object",
+  "description": "Single source of truth for all business configuration \u2014 services, pricing, memberships, hours, scheduling rules, technicians, branding, and links. Designed multi-tenant (business_id) for the ERA Systems future.",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "Unique identifier for this business (multi-tenant future)",
+      "default": "vds"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Only one active config per business_id"
+    },
+    "business_name": {
+      "type": "string",
+      "default": "VDS Mobile"
+    },
+    "logo_url": {
+      "type": "string"
+    },
+    "tagline": {
+      "type": "string"
+    },
+    "brand_colors": {
+      "type": "object",
+      "properties": {
+        "primary": {
+          "type": "string"
+        },
+        "secondary": {
+          "type": "string"
+        },
+        "background": {
+          "type": "string"
+        },
+        "surface": {
+          "type": "string"
+        },
+        "text": {
+          "type": "string"
+        }
+      }
+    },
+    "business_phone": {
+      "type": "string"
+    },
+    "business_email": {
+      "type": "string"
+    },
+    "business_address": {
+      "type": "string"
+    },
+    "service_areas": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "timezone": {
+      "type": "string",
+      "default": "America/New_York"
+    },
+    "currency": {
+      "type": "string",
+      "default": "USD"
+    },
+    "business_hours": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "string",
+            "enum": [
+              "mon",
+              "tue",
+              "wed",
+              "thu",
+              "fri",
+              "sat",
+              "sun"
+            ]
+          },
+          "open": {
+            "type": "string",
+            "description": "HH:MM 24h"
+          },
+          "close": {
+            "type": "string",
+            "description": "HH:MM 24h"
+          },
+          "closed": {
+            "type": "boolean",
+            "default": false
+          }
+        }
+      }
+    },
+    "scheduling_rules": {
+      "type": "object",
+      "properties": {
+        "booking_buffer_hours": {
+          "type": "number",
+          "default": 24
+        },
+        "min_notice_hours": {
+          "type": "number",
+          "default": 24
+        },
+        "cancellation_hours": {
+          "type": "number",
+          "default": 48
+        },
+        "slot_interval_minutes": {
+          "type": "number",
+          "default": 60
+        },
+        "max_bookings_per_day": {
+          "type": "number",
+          "default": 4
+        }
+      }
+    },
+    "vehicle_types": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "services": {
+      "type": "array",
+      "description": "Master service catalog. All pricing originates here \u2014 never hardcode prices in Retell or frontend.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "detail",
+              "coating",
+              "correction",
+              "addon",
+              "membership"
+            ]
+          },
+          "requires_consultation": {
+            "type": "boolean",
+            "default": false
+          },
+          "tiers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "tier": {
+                  "type": "string",
+                  "description": "Vehicle type key"
+                },
+                "price": {
+                  "type": "number",
+                  "description": "Starting price"
+                },
+                "duration_minutes": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "membership_plans": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "tier": {
+            "type": "string"
+          },
+          "price_monthly": {
+            "type": "number"
+          },
+          "stripe_product_id": {
+            "type": "string"
+          },
+          "benefits": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "technicians": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "phone": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "color": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "referral_program": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "default": false
+        },
+        "credit_amount": {
+          "type": "number"
+        }
+      }
+    },
+    "website_links": {
+      "type": "object",
+      "properties": {
+        "booking_url": {
+          "type": "string"
+        },
+        "gold_signup_url": {
+          "type": "string"
+        },
+        "gallery_url": {
+          "type": "string"
+        }
+      }
+    },
+    "social_links": {
+      "type": "object",
+      "properties": {
+        "instagram": {
+          "type": "string"
+        },
+        "tiktok": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "required": [
+    "business_id",
+    "is_active",
+    "business_name"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

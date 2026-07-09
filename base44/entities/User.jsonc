@@ -19,11 +19,7 @@
       "items": {
         "type": "string"
       },
-      "description": "List of saved service addresses"
-    },
-    "ghl_contact_id": {
-      "type": "string",
-      "description": "GoHighLevel contact ID"
+      "description": "Saved service addresses"
     },
     "stripe_customer_id": {
       "type": "string",
@@ -38,9 +34,23 @@
       ],
       "default": "sms"
     },
+    "customer_since": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the customer joined VDS"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active",
+      "description": "CRM status"
+    },
     "notes": {
       "type": "string",
-      "description": "Internal notes about this customer"
+      "description": "Internal CRM notes"
     },
     "last_detail_date": {
       "type": "string",

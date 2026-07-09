@@ -1,6 +1,6 @@
 {
-  "type": "object",
   "name": "Quote",
+  "type": "object",
   "properties": {
     "customer_name": {
       "type": "string"
@@ -32,10 +32,34 @@
       "items": {
         "type": "string"
       },
-      "description": "List of requested service keys"
+      "description": "Service keys from BusinessConfig catalog"
     },
     "starting_price": {
-      "type": "number"
+      "type": "number",
+      "description": "Sum of service starting prices"
+    },
+    "discount_amount": {
+      "type": "number",
+      "default": 0,
+      "description": "Dollar discount applied"
+    },
+    "discount_reason": {
+      "type": "string"
+    },
+    "membership_discount_applied": {
+      "type": "boolean",
+      "default": false
+    },
+    "upsells": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Add-on service keys offered"
+    },
+    "final_price": {
+      "type": "number",
+      "description": "starting_price - discount_amount (+ upsells if priced)"
     },
     "quote_summary": {
       "type": "string"
@@ -43,9 +67,14 @@
     "booking_url": {
       "type": "string"
     },
+    "expiration_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Quote validity date"
+    },
     "ai_notes": {
       "type": "string",
-      "description": "Notes from the AI interaction"
+      "description": "Notes from the Valerie interaction"
     },
     "status": {
       "type": "string",
@@ -53,7 +82,8 @@
         "pending",
         "sent",
         "booked",
-        "expired"
+        "expired",
+        "declined"
       ],
       "default": "pending"
     },
@@ -65,34 +95,5 @@
   "required": [
     "customer_phone",
     "requested_services"
-  ],
-  "rls": {
-    "create": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "read": {
-      "$or": [
-        {
-          "data.customer_email": "{{user.email}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
-    },
-    "update": {
-      "user_condition": {
-        "role": "admin"
-      }
-    },
-    "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
-    }
-  }
+  ]
 }
