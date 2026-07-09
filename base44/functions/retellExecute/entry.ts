@@ -314,6 +314,43 @@ Deno.serve(async (req) => {
         result = actGetServices(config);
         outcome = 'info_provided';
         break;
+      case 'check_availability': {
+        const r = await base44.functions.invoke('scheduler', { action: 'check_availability', date: data.date, service: data.service, vehicle_type: data.vehicleType });
+        result = r?.data ?? r;
+        outcome = 'info_provided';
+        break;
+      }
+      case 'book_appointment': {
+        const r = await base44.functions.invoke('scheduler', {
+          action: 'book', date: data.date, startUtc: data.startUtc, service: data.service,
+          vehicle_type: data.vehicleType, customer_name: data.customerName || data.customer_name,
+          customer_phone: data.phone || data.customer_phone, customer_email: data.customerEmail || data.customer_email,
+          vehicle_info: [data.vehicleYear, data.vehicleMake, data.vehicleModel].filter(Boolean).join(' '),
+          service_address: data.serviceAddress, notes: data.notes,
+        });
+        result = r?.data ?? r;
+        outcome = result && result.success ? 'appointment_booked' : 'error';
+        break;
+      }
+      case 'reschedule_appointment': {
+        const r = await base44.functions.invoke('scheduler', {
+          action: 'reschedule', appointment_id: data.appointmentId || data.appointment_id,
+          new_startUtc: data.newStartUtc || data.startUtc, new_date: data.newDate || data.date,
+          customer_phone: data.phone || data.customer_phone,
+        });
+        result = r?.data ?? r;
+        outcome = result && result.success ? 'appointment_booked' : 'error';
+        break;
+      }
+      case 'cancel_appointment': {
+        const r = await base44.functions.invoke('scheduler', {
+          action: 'cancel', appointment_id: data.appointmentId || data.appointment_id,
+          customer_phone: data.phone || data.customer_phone,
+        });
+        result = r?.data ?? r;
+        outcome = 'other';
+        break;
+      }
       case 'book_service':
         result = { success: true, booking_url: config.bookingUrl, speech: `You can book online at ${config.bookingUrl}. Would you like me to send you the link?` };
         outcome = 'appointment_booked';
