@@ -369,6 +369,116 @@ async function updateJobStatus(base44, data, cfg, appt) {
   return { success: true, appointment_id: appt.id, job_status: newStatus };
 }
 
+// ── Contractor self-service (auth required) ────────────────────────────
+async function getMyProfile(base44) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!me) return { error: 'Unauthorized.' };
+  const list = await base44.asServiceRole.entities.Contractor.filter({ user_id: me.id });
+  const c = list && list[0];
+  if (!c) return { error: 'No contractor profile is linked to your account.' };
+  return { success: true, contractor: c };
+}
+
+async function myJobs(base44) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!me) return { error: 'Unauthorized.' };
+  const list = await base44.asServiceRole.entities.Contractor.filter({ user_id: me.id });
+  const c = list && list[0];
+  if (!c) return { error: 'No contractor profile is linked to your account.' };
+  const appts = await base44.asServiceRole.entities.Appointment.filter({ contractor_id: c.id });
+  const jobs = (appts || []).filter(a => a.status !== 'cancelled')
+    .sort((a, b) => new Date((a.preferred_date || '') + 'T00:00:00Z') - new Date((b.preferred_date || '') + 'T00:00:00Z'));
+  return { success: true, contractor_id: c.id, jobs };
+}
+
+async function updateMyProfile(base44, data) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!me) return { error: 'Unauthorized.' };
+  const list = await base44.asServiceRole.entities.Contractor.filter({ user_id: me.id });
+  const c = list && list[0];
+  if (!c) return { error: 'No contractor profile is linked to your account.' };
+  const allowed = {};
+  for (const k of ['weekly_availability', 'blocked_dates', 'status', 'phone', 'email', 'home_address', 'profile_photo']) {
+    if (data[k] !== undefined) allowed[k] = data[k];
+  }
+  await base44.asServiceRole.entities.Contractor.update(c.id, allowed);
+  return { success: true };
+}
+
+// ── Admin actions ───────────────────────────────────────────────────────
+function requireAdmin(me) { return !!(me && me.role === 'admin'); }
+
+async function adminContractors(base44) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const all = await base44.asServiceRole.entities.Contractor.list();
+  return { success: true, contractors: all || [] };
+}
+
+async function adminAppointments(base44, body) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!requireAdmin(me)) return { error: 'Admin only.' };
+  let appts;
+  if (body.date) appts = await base44.asServiceRole.entities.Appointment.filter({ preferred_date: body.date });
+  else if (body.status) appts = await base44.asServiceRole.entities.Appointment.filter({ status: body.status });
+  else appts = await base44.asServiceRole.entities.Appointment.list();
+  return { success: true, appointments: appts || [] };
+}
+
+async function adminUpdateContractor(base44, body) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const { contractor_id, ...updates } = body;
+  if (!contractor_id) return { error: 'contractor_id is required.' };
+  const allowed = {};
+  for (const k of ['name', 'phone', 'email', 'status', 'is_enabled', 'skills', 'service_areas', 'home_address', 'weekly_availability', 'blocked_dates', 'profile_photo']) {
+    if (updates[k] !== undefined) allowed[k] = updates[k];
+  }
+  await base44.asServiceRole.entities.Contractor.update(contractor_id, allowed);
+  return { success: true };
+}
+
+async function adminCreateContractor(base44, body) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const { name, phone, email, skills, service_areas, home_address } = body;
+  if (!name || !phone || !email) return { error: 'name, phone and email are required.' };
+  try { await base44.users.inviteUser(email, 'contractor'); }
+  catch (e) { console.error('invite error:', e.message); }
+  const all = await base44.asServiceRole.entities.User.list();
+  const u = (all || []).find(x => x.email && x.email.toLowerCase() === email.toLowerCase());
+  const c = await base44.asServiceRole.entities.Contractor.create({
+    name, phone, email, user_id: u ? u.id : '',
+    skills: skills || [], service_areas: service_areas || { counties: [], max_travel_distance_miles: 0 },
+    home_address: home_address || '', status: 'active', is_enabled: true,
+  });
+  return { success: true, contractor_id: c.id };
+}
+
+async function adminMetrics(base44) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const [contractors, appts] = await Promise.all([
+    base44.asServiceRole.entities.Contractor.list(),
+    base44.asServiceRole.entities.Appointment.list(),
+  ]);
+  const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
+  const cs = contractors || [];
+  const as = appts || [];
+  return {
+    success: true,
+    metrics: {
+      total_contractors: cs.length,
+      active_contractors: cs.filter(c => c.status === 'active' && c.is_enabled !== false).length,
+      todays_jobs: as.filter(a => a.preferred_date === today && a.status !== 'cancelled').length,
+      upcoming_jobs: as.filter(a => a.status === 'confirmed' && a.preferred_date >= today).length,
+      completed_jobs: as.filter(a => a.status === 'completed').length,
+      cancelled_jobs: as.filter(a => a.status === 'cancelled').length,
+    },
+    jobs_by_contractor: cs.map(c => ({ name: c.name, jobs: (c.metrics && c.metrics.jobs_completed) || 0 })),
+  };
+}
+
 // ── Main Handler ────────────────────────────────────────────────────────
 Deno.serve(async (req) => {
   try {
@@ -387,6 +497,14 @@ Deno.serve(async (req) => {
       const all = await base44.asServiceRole.entities.Contractor.filter({ status: 'active' });
       return Response.json({ contractors: all.map(c => ({ id: c.id, name: c.name, skills: c.skills || [], status: c.status, is_enabled: c.is_enabled !== false })) });
     }
+    if (action === 'get_my_profile') return Response.json(await getMyProfile(base44));
+    if (action === 'my_jobs') return Response.json(await myJobs(base44));
+    if (action === 'update_my_profile') return Response.json(await updateMyProfile(base44, body));
+    if (action === 'admin_contractors') return Response.json(await adminContractors(base44));
+    if (action === 'admin_appointments') return Response.json(await adminAppointments(base44, body));
+    if (action === 'admin_update_contractor') return Response.json(await adminUpdateContractor(base44, body));
+    if (action === 'admin_create_contractor') return Response.json(await adminCreateContractor(base44, body));
+    if (action === 'admin_metrics') return Response.json(await adminMetrics(base44));
 
     // ── Appointment-scoped actions (need an appointment) ──
     if (['reschedule', 'cancel', 'reassign', 'update_job_status'].includes(action)) {

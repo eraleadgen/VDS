@@ -24,6 +24,10 @@ import VdsGoldSignup from './pages/VdsGoldSignup';
 import Gallery from './pages/Gallery';
 import BookAppointment from './pages/BookAppointment';
 import GoldBooking from './pages/GoldBooking';
+import ContractorLogin from './pages/ContractorLogin';
+import ContractorPortal from './pages/ContractorPortal';
+import AdminLogin from './pages/AdminLogin';
+import AdminDashboard from './pages/AdminDashboard';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -71,6 +75,10 @@ const AuthenticatedApp = () => {
       <Route path="/gallery" element={<Gallery />} />
       <Route path="/book" element={<BookAppointment />} />
       <Route path="/gold-booking" element={<GoldBooking />} />
+      <Route path="/contractor-login" element={<ContractorLogin />} />
+      <Route path="/contractor-portal" element={<ContractorPortal />} />
+      <Route path="/admin-login" element={<AdminLogin />} />
+      <Route path="/admin" element={<AdminDashboard />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );
