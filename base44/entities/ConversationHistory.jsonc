@@ -1,0 +1,60 @@
+{
+  "name": "ConversationHistory",
+  "type": "object",
+  "description": "SMS conversation history for Valerie (AI concierge). One record per inbound (user) or outbound (assistant) message, keyed by customer phone. Used to reconstruct context for every conversation turn.",
+  "properties": {
+    "customer_phone": {
+      "type": "string",
+      "description": "Customer phone (E.164)"
+    },
+    "customer_name": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string",
+      "enum": [
+        "user",
+        "assistant"
+      ],
+      "description": "user = inbound SMS from customer, assistant = Valerie's reply"
+    },
+    "content": {
+      "type": "string",
+      "description": "Message text"
+    },
+    "tokens_used": {
+      "type": "number"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Optional context (tool rounds, model, etc.)"
+    }
+  },
+  "required": [
+    "customer_phone",
+    "role",
+    "content"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

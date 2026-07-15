@@ -250,16 +250,20 @@ function actGetServices(config) {
 Deno.serve(async (req) => {
   const t0 = Date.now();
   try {
-    // ── Auth ──
-    const RETELL_API_KEY = Deno.env.get('RETELL_API_KEY');
-    const auth = req.headers.get('Authorization') || '';
-    const provided = auth.replace(/^Bearer\s+/i, '').trim();
-    if (!RETELL_API_KEY || !provided || provided !== RETELL_API_KEY) {
-      return Response.json({ error: 'Unauthorized — invalid or missing API key.' }, { status: 401 });
-    }
-
     const base44 = createClientFromRequest(req);
     const body = await req.json();
+
+    // ── Auth: external Retell (Bearer RETELL_API_KEY) or internal Base44 function call (_internal_token) ──
+    const RETELL_API_KEY = Deno.env.get('RETELL_API_KEY');
+    const SCHEDULER_TOKEN = Deno.env.get('SCHEDULER_TOKEN');
+    const auth = req.headers.get('Authorization') || '';
+    const provided = auth.replace(/^Bearer\s+/i, '').trim();
+    const externalOk = !!(RETELL_API_KEY && provided && provided === RETELL_API_KEY);
+    const internalOk = !!(SCHEDULER_TOKEN && body._internal_token && body._internal_token === SCHEDULER_TOKEN);
+    if (!externalOk && !internalOk) {
+      return Response.json({ error: 'Unauthorized — invalid or missing API key.' }, { status: 401 });
+    }
+    if (body._internal_token) delete body._internal_token;
     // Accept both payload formats:
     //   - Manual/internal: { action, data, conversation_id }
     //   - Retell native:    { name, args, call: {...} / conversation: {...} }
