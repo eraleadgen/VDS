@@ -1,6 +1,7 @@
 {
   "name": "Appointment",
   "type": "object",
+  "description": "Customer appointment. Auto-assigned to an available contractor by the scheduling engine and mirrored to Google Calendar. Tracks the contractor job workflow (assigned -> completed) and job-completion details in place of clock in/out.",
   "properties": {
     "service_type": {
       "type": "string",
@@ -21,23 +22,88 @@
     },
     "preferred_time": {
       "type": "string",
-      "description": "Requested time slot"
+      "description": "Requested time slot (zoned HH:MM)"
     },
     "estimated_duration_minutes": {
       "type": "number",
       "description": "Estimated service duration"
     },
-    "technician_id": {
+    "contractor_id": {
       "type": "string",
-      "description": "Assigned technician (from BusinessConfig)"
+      "description": "Assigned contractor (Contractor entity id)"
+    },
+    "contractor_name": {
+      "type": "string",
+      "description": "Assigned contractor name (denormalized for display + Google Calendar)"
+    },
+    "job_status": {
+      "type": "string",
+      "enum": [
+        "assigned",
+        "accepted",
+        "driving",
+        "arrived",
+        "in_progress",
+        "quality_check",
+        "completed",
+        "photos_uploaded",
+        "invoice_complete"
+      ],
+      "default": "assigned",
+      "description": "Contractor job workflow status (replaces clock in/out)"
+    },
+    "service_county": {
+      "type": "string",
+      "description": "County of the service address (used for contractor service-area matching)"
+    },
+    "before_photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Before photos (URLs)"
+    },
+    "after_photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "After photos (URLs)"
+    },
+    "services_completed": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "products_used": {
+      "type": "string",
+      "description": "Products used (optional, free text)"
+    },
+    "completion_notes": {
+      "type": "string",
+      "description": "Additional notes submitted on completion"
+    },
+    "upsell_recommendation": {
+      "type": "string",
+      "description": "Upsell recommendation from contractor"
+    },
+    "recommended_next_detail_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Recommended next detail date"
+    },
+    "damage_notes": {
+      "type": "string",
+      "description": "Pre-existing damage notes (optional)"
+    },
+    "customer_feedback": {
+      "type": "string",
+      "description": "Customer feedback captured at completion (optional)"
     },
     "google_calendar_event_id": {
       "type": "string",
-      "description": "Google Calendar event ID (source of truth for scheduling)"
-    },
-    "ghl_appointment_ids": {
-      "type": "string",
-      "description": "Legacy GHL appointment IDs \u2014 deprecated, removed during GHL migration"
+      "description": "Google Calendar event ID (event mirror source of truth)"
     },
     "status": {
       "type": "string",

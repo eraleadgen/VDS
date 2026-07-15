@@ -1,0 +1,208 @@
+{
+  "name": "Contractor",
+  "type": "object",
+  "description": "Independent detailer/contractor profile. Replaces the traditional employee model. Contractors set their own recurring weekly availability and service areas, which drive the auto-assignment scheduling engine. No clock-in/clock-out, timesheets, or shift tracking.",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Linked Base44 User id (for portal login). The linked user should have role 'contractor'."
+    },
+    "name": {
+      "type": "string",
+      "description": "Full name"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "profile_photo": {
+      "type": "string",
+      "description": "Profile photo URL"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "offline",
+        "vacation"
+      ],
+      "default": "active",
+      "description": "Employment status"
+    },
+    "is_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Admins can disable a contractor account. Disabled contractors are never auto-assigned."
+    },
+    "service_areas": {
+      "type": "object",
+      "properties": {
+        "counties": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Counties served"
+        },
+        "max_travel_distance_miles": {
+          "type": "number",
+          "description": "Maximum travel distance"
+        }
+      }
+    },
+    "home_address": {
+      "type": "string",
+      "description": "Home base address (used for travel/distance)"
+    },
+    "latitude": {
+      "type": "number"
+    },
+    "longitude": {
+      "type": "number"
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "interior_detail",
+          "exterior_detail",
+          "full_detail",
+          "paint_correction",
+          "ceramic_coating",
+          "engine_bay",
+          "headlight_restoration"
+        ]
+      },
+      "description": "Services this contractor can perform"
+    },
+    "weekly_availability": {
+      "type": "array",
+      "description": "Recurring weekly availability set by the contractor. This drives the scheduling engine.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "string",
+            "enum": [
+              "mon",
+              "tue",
+              "wed",
+              "thu",
+              "fri",
+              "sat",
+              "sun"
+            ]
+          },
+          "available": {
+            "type": "boolean",
+            "default": true
+          },
+          "start": {
+            "type": "string",
+            "description": "HH:MM 24h. Omit/blank if available all day."
+          },
+          "end": {
+            "type": "string",
+            "description": "HH:MM 24h"
+          }
+        }
+      }
+    },
+    "blocked_dates": {
+      "type": "array",
+      "description": "Specific dates the contractor is unavailable (vacation, personal, etc.).",
+      "items": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "reason": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "description": "Performance metrics, visible to administrators only. Updated as jobs complete.",
+      "properties": {
+        "jobs_completed": {
+          "type": "number",
+          "default": 0
+        },
+        "avg_review_rating": {
+          "type": "number"
+        },
+        "avg_job_duration_minutes": {
+          "type": "number"
+        },
+        "revenue_generated": {
+          "type": "number"
+        },
+        "upsells_sold": {
+          "type": "number",
+          "default": 0
+        },
+        "gold_conversions": {
+          "type": "number",
+          "default": 0
+        },
+        "completion_rate": {
+          "type": "number"
+        },
+        "cancellation_rate": {
+          "type": "number"
+        },
+        "response_time_minutes": {
+          "type": "number"
+        }
+      }
+    }
+  },
+  "required": [
+    "name",
+    "phone",
+    "email"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "data.user_id": "{{user.id}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "data.user_id": "{{user.id}}"
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
