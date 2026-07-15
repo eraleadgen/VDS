@@ -443,15 +443,27 @@ async function adminCreateContractor(base44, body) {
   if (!requireAdmin(me)) return { error: 'Admin only.' };
   const { name, phone, email, skills, service_areas, home_address } = body;
   if (!name || !phone || !email) return { error: 'name, phone and email are required.' };
-  try { await base44.users.inviteUser(email, 'contractor'); }
+  // Platform invites only accept 'user' or 'admin' roles — invite as user, then elevate to contractor.
+  try { await base44.users.inviteUser(email, 'user'); }
   catch (e) { console.error('invite error:', e.message); }
-  const all = await base44.asServiceRole.entities.User.list();
-  const u = (all || []).find(x => x.email && x.email.toLowerCase() === email.toLowerCase());
+  let u = null;
+  try {
+    const all = await base44.asServiceRole.entities.User.list();
+    u = (all || []).find(x => x.email && x.email.toLowerCase() === email.toLowerCase());
+    if (u && u.role !== 'contractor') {
+      try { await base44.asServiceRole.entities.User.update(u.id, { role: 'contractor' }); }
+      catch (e) { console.error('role update error:', e.message); }
+    }
+  } catch (e) { console.error('user lookup error:', e.message); }
   const c = await base44.asServiceRole.entities.Contractor.create({
     name, phone, email, user_id: u ? u.id : '',
     skills: skills || [], service_areas: service_areas || { counties: [], max_travel_distance_miles: 0 },
     home_address: home_address || '', status: 'active', is_enabled: true,
   });
+  // Auto-send the Contractor Welcome Email.
+  try {
+    await base44.functions.invoke('sendContractorWelcomeEmail', { email, firstName: (name || '').split(' ')[0] });
+  } catch (e) { console.error('welcome email error:', e.message); }
   return { success: true, contractor_id: c.id };
 }
 
