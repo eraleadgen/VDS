@@ -306,6 +306,14 @@ export default function BookAppointment() {
         preferred_date: form.preferred_date || null,
         preferred_time: form.preferred_time || null,
       });
+      // Reschedule flow: cancel the previous appointment once the new booking is submitted
+      if (location.state?.reschedule_from) {
+        try {
+          await base44.functions.invoke('cancelAppointmentInGHL', { appointment_id: location.state.reschedule_from });
+        } catch (e) {
+          console.error('Reschedule: cancelling previous appointment failed:', e);
+        }
+      }
       setSubmitted(true);
     } catch (err) {
       console.error('Booking submission error:', err);

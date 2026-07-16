@@ -13,9 +13,27 @@ Deno.serve(async (req) => {
     const appointment = await base44.asServiceRole.entities.Appointment.get(appointment_id);
     if (!appointment) return Response.json({ success: false, error: 'Appointment not found' }, { status: 404 });
 
-    // Ownership check
-    if (appointment.created_by_id !== user.id && user.role !== 'admin') {
+    // Ownership check — mirror the Appointment RLS: created_by, email, or phone match
+    const owns =
+      appointment.created_by_id === user.id ||
+      (appointment.customer_email && user.email && appointment.customer_email.toLowerCase() === user.email.toLowerCase()) ||
+      (appointment.customer_phone && user.phone && appointment.customer_phone.replace(/\D/g, '') === user.phone.replace(/\D/g, ''));
+    if (!owns && user.role !== 'admin') {
       return Response.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
+
+    // ── Delete Google Calendar event mirror (if present) ──────────────────
+    if (appointment.google_calendar_event_id) {
+      try {
+        const { accessToken } = await base44.asServiceRole.connectors.getConnection('googlecalendar');
+        await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${appointment.google_calendar_event_id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        console.log('GCal event deleted:', appointment.google_calendar_event_id);
+      } catch (e) {
+        console.error('GCal event deletion failed (non-blocking):', e.message);
+      }
     }
 
     const GHL_API_KEY = Deno.env.get('GHL_API_KEY');

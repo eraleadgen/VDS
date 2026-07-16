@@ -121,7 +121,7 @@ export default function AppointmentCard({ appointment, onRefresh }) {
           )}
           <Link
             to="/book"
-            state={{ preselect_service: appointment.service_type }}
+            state={{ preselect_service: appointment.service_type, reschedule_from: appointment.id }}
             className="ml-auto text-xs font-mono-tech tracking-widest opacity-60 hover:opacity-100 transition-colors"
           >
             RESCHEDULE →
