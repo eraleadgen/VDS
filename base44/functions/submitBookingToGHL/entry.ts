@@ -13,6 +13,8 @@ const CALENDAR_IDS = {
 };
 
 const CONSULTATION_CALENDAR_ID = 'K65mCRHHLWHJwXI7uIQn';
+const FONT = "'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+const MONO = "'Space Mono','Courier New',monospace";
 
 const SERVICE_LABELS = {
   exterior_detail: 'Exterior Detail',
@@ -370,41 +372,76 @@ Deno.serve(async (req) => {
       } catch (e) { console.error('Auto-assign contractor failed:', e.message); }
     }
 
-    // ── Internal booking notification email ────────────────────────────────
+    // ── Internal booking notification email (VDS-themed HTML) ───────────────
     try {
       const vehicleCount = Math.min(vehicleEntries.length || 1, 4);
       const durationHours = vehicleEntries.length > 0 ? vehicleCount * 2 : 2;
       const vehicleLines = vehicleEntries.length > 0
-        ? vehicleEntries.map((entry, i) => `${i + 1}. ${entry}`).join('\n')
-        : (vehicle_info || 'N/A');
-      const emailBody = [
-        isGoldBooking ? '◆ VDS GOLD MEMBER BOOKING' : 'NEW BOOKING REQUEST',
-        'From: VDS Website',
-        '',
-        'CLIENT',
-        `Name: ${name}`,
-        `Phone: ${phone}`,
-        email ? `Email: ${email}` : '',
-        `Address: ${address || 'N/A'}`,
-        '',
-        'APPOINTMENT',
-        `Date: ${preferred_date}`,
-        `Time: ${preferred_time}`,
-        `Estimated Duration: ~${durationHours} hours`,
-        `Service: ${SERVICE_LABELS[service_type] || service_type}`,
-        '',
-        `VEHICLES (${vehicleCount})`,
-        vehicleLines,
-        '',
-        notes ? `Notes / Add-ons / Quote:\n${notes}` : '',
-        gcalEventId ? `Google Calendar Event ID: ${gcalEventId}` : '',
-        appt ? `Appointment ID: ${appt.id}` : '',
-      ].filter(Boolean).join('\n');
+        ? vehicleEntries.map((entry, i) => `<tr><td style="padding:6px 0 6px 0;font-size:14px;line-height:22px;color:#CBD5E1;"><span style="color:#D4AF37;font-weight:700;">${i + 1}.</span>&nbsp;&nbsp;${entry.replace(/\n/g, '<br>')}</td></tr>`)
+        : `<tr><td style="padding:6px 0;font-size:14px;color:#CBD5E1;">${vehicle_info || 'N/A'}</td></tr>`;
+      const goldBanner = isGoldBooking
+        ? `<tr><td style="padding:16px 28px 0 28px;"><p style="margin:0;font-family:${MONO};font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#0A0B0D;background:#D4AF37;display:inline-block;padding:6px 14px;border-radius:4px;">◆ VDS Gold Member Booking</p></td></tr>`
+        : '';
+
+      const fieldRow = (label, value) => value
+        ? `<tr><td style="padding:4px 0;"><span style="font-family:${MONO};font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#94A3B8;">${label}</span><br><span style="font-size:15px;color:#E2E8F0;font-weight:500;">${value}</span></td></tr>`
+        : '';
+
+      const html = `<!DOCTYPE html>
+<html lang="en" style="margin:0;padding:0;">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background-color:#0A0B0D;font-family:${FONT};color:#E2E8F0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0A0B0D;">
+<tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#14161A;border-radius:14px;overflow:hidden;border:1px solid rgba(212,175,55,0.15);box-shadow:0 8px 30px rgba(0,0,0,0.5);">
+  <tr><td style="background-color:#0A0B0D;padding:22px 28px;border-bottom:2px solid #D4AF37;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td style="font-size:18px;font-weight:700;letter-spacing:3px;color:#FFFFFF;">VDS&nbsp;MOBILE</td>
+      <td align="right" style="font-family:${MONO};font-size:11px;letter-spacing:2px;color:#D4AF37;font-weight:700;text-transform:uppercase;">New Booking</td>
+    </tr></table>
+  </td></tr>
+  ${goldBanner}
+  <tr><td style="padding:28px 28px 6px 28px;">
+    <p style="margin:0 0 6px 0;font-family:${MONO};font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#D4AF37;font-weight:700;">${isGoldBooking ? 'Gold Member Booking' : 'Booking Request'}</p>
+    <h1 style="margin:0;font-size:24px;line-height:32px;color:#E2E8F0;font-weight:700;">${name}</h1>
+    <p style="margin:4px 0 0 0;font-family:${MONO};font-size:13px;color:#94A3B8;">From VDS Website — ${preferred_date} at ${preferred_time}</p>
+  </td></tr>
+  <tr><td style="padding:20px 28px 8px 28px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+    ${fieldRow('Client Name', name)}
+    ${fieldRow('Phone', phone)}
+    ${email ? fieldRow('Email', email) : ''}
+    ${fieldRow('Service Address', address || 'N/A')}
+  </table></td></tr>
+  <tr><td style="padding:16px 28px 8px 28px;background-color:#0F1115;">
+    <p style="margin:0 0 12px 0;padding-top:14px;font-family:${MONO};font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#D4AF37;">Appointment</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      ${fieldRow('Date', preferred_date)}
+      ${fieldRow('Time', preferred_time)}
+      ${fieldRow('Estimated Duration', `~${durationHours} hours`)}
+      ${fieldRow('Service', SERVICE_LABELS[service_type] || service_type)}
+    </table>
+  </td></tr>
+  <tr><td style="padding:16px 28px 8px 28px;">
+    <p style="margin:0 0 10px 0;font-family:${MONO};font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#D4AF37;">Vehicles (${vehicleCount})</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${vehicleLines}</table>
+  </td></tr>
+  ${notes ? `<tr><td style="padding:16px 28px 8px 28px;background-color:#0F1115;">
+    <p style="margin:0 0 10px 0;padding-top:14px;font-family:${MONO};font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#D4AF37;">Notes / Add-ons / Quote</p>
+    <p style="margin:0;font-size:14px;line-height:22px;color:#CBD5E1;white-space:pre-wrap;">${notes.replace(/</g,'&lt;')}</p>
+  </td></tr>` : ''}
+  <tr><td style="background-color:#0A0B0D;padding:22px 28px;border-top:2px solid #D4AF37;">
+    <p style="margin:0 0 6px 0;font-size:15px;color:#E2E8F0;font-weight:600;">&mdash; The VDS Mobile Team</p>
+    <p style="margin:0;font-family:${MONO};font-size:11px;color:#64748B;letter-spacing:0.5px;">&copy; ${new Date().getUTCFullYear()} VALET DETAILING SERVICE LLC. ALL RIGHTS RESERVED.</p>
+  </td></tr>
+</table>
+</td></tr></table>
+</body></html>`;
 
       await base44.integrations.Core.SendEmail({
         to: 'Support@vdsmobile.com',
-        subject: `New Booking — ${name} — ${preferred_date} ${preferred_time}`,
-        body: emailBody,
+        subject: `${isGoldBooking ? '◆ Gold' : 'New'} Booking — ${name} — ${preferred_date} ${preferred_time}`,
+        body: html,
+        from_name: 'VDS Mobile',
       });
     } catch (e) {
       console.error('Internal notification email failed:', e.message);
