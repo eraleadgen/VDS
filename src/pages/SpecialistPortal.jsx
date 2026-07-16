@@ -27,6 +27,7 @@ export default function SpecialistPortal() {
   const load = useCallback(async () => {
     setLoading(true); setError('');
     try {
+      if (user?.role === 'admin') { setProfile(null); setJobs([]); return; }
       const [p, j] = await Promise.all([invoke({ action: 'get_my_profile' }), invoke({ action: 'my_jobs' })]);
       if (p.error) { setError(p.error); return; }
       setProfile(p.contractor);
@@ -34,17 +35,16 @@ export default function SpecialistPortal() {
       setPf({ phone: p.contractor.phone || '', email: p.contractor.email || '', home_address: p.contractor.home_address || '', status: p.contractor.status || 'active' });
     } catch (e) { setError(e.message); }
     finally { setLoading(false); }
-  }, []);
+  }, [user?.role]);
 
   // Login wall: only VDS Specialists (role 'contractor') may open this portal.
   useEffect(() => {
     if (!authChecked) return;
     if (!user) { window.location.href = '/specialist-login'; return; }
-    if (user.role === 'admin') { window.location.href = '/admin'; return; }
-    if (user.role !== 'contractor') { window.location.href = '/specialist-login'; return; }
+    if (user.role !== 'admin' && user.role !== 'contractor') { window.location.href = '/specialist-login'; return; }
   }, [authChecked, user]);
 
-  useEffect(() => { if (authChecked && user && user.role === 'contractor') load(); }, [authChecked, user, load]);
+  useEffect(() => { if (authChecked && user && (user.role === 'contractor' || user.role === 'admin')) load(); }, [authChecked, user, load]);
 
   if (!authChecked || isLoadingAuth) return <div className="min-h-screen bg-obsidian flex items-center justify-center"><div className="w-8 h-8 border-2 border-gold/20 border-t-gold rounded-full animate-spin" /></div>;
   if (error && !profile) return <div className="min-h-screen bg-obsidian flex items-center justify-center p-6 text-center"><div><p className="text-red-400 text-sm font-mono-tech mb-4">{error}</p><a href="/specialist-login" className="text-gold text-xs font-mono-tech tracking-widest">← BACK TO LOGIN</a></div></div>;
@@ -100,6 +100,11 @@ export default function SpecialistPortal() {
         <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-gold/20 border-t-gold rounded-full animate-spin" /></div>
       ) : (
         <>
+          {user?.role === 'admin' && !profile && (
+            <div className="glass-panel border border-gold/20 bg-gold/5 rounded-sm p-3 mb-4 text-xs font-mono-tech text-gold/80">
+              ADMIN PREVIEW — No specialist profile is linked to your admin account, so jobs and availability appear empty here.
+            </div>
+          )}
           {tab === 'overview' && (
             <div className="space-y-6">
               <div>
