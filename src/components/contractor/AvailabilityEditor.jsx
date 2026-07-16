@@ -12,14 +12,14 @@ export default function AvailabilityEditor({ contractor, onSave, saving }) {
   const [avail, setAvail] = useState(() => {
     const map = {};
     for (const d of DAYS) {
-      const ex = (contractor.weekly_availability || []).find(a => a.day === d.key);
+      const ex = (contractor?.weekly_availability || []).find(a => a.day === d.key);
       map[d.key] = ex
         ? { available: ex.available, start: ex.start || '', end: ex.end || '' }
         : { available: false, start: '', end: '' };
     }
     return map;
   });
-  const [blocked, setBlocked] = useState(contractor.blocked_dates || []);
+  const [blocked, setBlocked] = useState(contractor?.blocked_dates || []);
   const [newDate, setNewDate] = useState('');
   const [newReason, setNewReason] = useState('');
 
