@@ -122,25 +122,34 @@ export default function Home() {
       </section>
 
       {/* ── VDS GOLD BANNER ──────────────────────────── */}
-      <section className="relative py-20 overflow-hidden border-y border-gold/20" style={{
-        background: 'linear-gradient(180deg, #0A0B0D 0%, #0D0B06 50%, #0A0B0D 100%)',
-      }}>
-        <div className="absolute inset-0 bg-gradient-to-r from-obsidian via-[#0D0B06] to-obsidian" />
+      <section className="relative py-16 md:py-20 overflow-hidden">
         <div className="relative max-w-7xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-8 gold-rotating-glow rounded-sm px-8 py-6 border border-gold/20">
-            <div className="text-center md:text-left">
-              <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-3">NEW — MONTHLY MEMBERSHIP</p>
-              <h2 className="text-4xl md:text-5xl font-grotesk font-bold text-vapor">
-                <GoldShimmer>VDS GOLD</GoldShimmer>
-              </h2>
-              <p className="text-vapor/50 font-mono-tech text-sm mt-3 max-w-lg">
-                Unlimited exterior details + 1 deep interior clean per month. Your vehicle, perpetually immaculate.
-              </p>
+          <div className="relative glass-panel rounded-sm overflow-hidden">
+            {/* Subtle gold sheen overlay */}
+            <div className="absolute inset-0 bg-gradient-to-br from-gold/[0.06] via-transparent to-gold/[0.03] pointer-events-none" />
+            {/* Top hairline accent */}
+            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold/40 to-transparent" />
+
+            <div className="relative flex flex-col md:flex-row items-center justify-between gap-8 px-6 sm:px-10 py-10 md:py-12">
+              <div className="text-center md:text-left">
+                <div className="flex items-center justify-center md:justify-start gap-3 mb-4">
+                  <span className="w-8 h-px bg-gold/40" />
+                  <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/80">NEW — MONTHLY MEMBERSHIP</p>
+                  <span className="w-8 h-px bg-gold/40 hidden md:block" />
+                </div>
+                <h2 className="text-4xl md:text-5xl font-grotesk font-bold text-vapor mb-4">
+                  <GoldShimmer>VDS GOLD</GoldShimmer>
+                </h2>
+                <p className="text-vapor/50 font-mono-tech text-sm leading-relaxed max-w-lg">
+                  Unlimited exterior details + 1 deep interior clean per month. Your vehicle, perpetually immaculate.
+                </p>
+              </div>
+              <Link to="/vds-gold"
+                className="group flex items-center gap-3 bg-gold/90 hover:bg-gold text-obsidian px-8 py-4 text-sm font-mono-tech tracking-widest rounded-sm whitespace-nowrap transition-all duration-300 hover:shadow-[0_0_30px_rgba(212,175,55,0.3)]">
+                VIEW MEMBERSHIP
+                <ArrowRight size={14} className="transition-transform duration-300 group-hover:translate-x-1" />
+              </Link>
             </div>
-            <Link to="/vds-gold"
-              className="vds-gold-btn px-8 py-4 text-sm font-mono-tech tracking-widest rounded-sm whitespace-nowrap">
-              VIEW MEMBERSHIP →
-            </Link>
           </div>
         </div>
       </section>
