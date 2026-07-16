@@ -21,7 +21,7 @@ export default function ContractorLogin() {
       await base44.auth.loginViaEmailPassword(email, password);
       const me = await base44.auth.me();
       if (me.role === 'admin') { window.location.href = '/admin'; return; }
-      if (me.role !== 'contractor') { setError('This account is not registered as a contractor.'); return; }
+      if (me.role !== 'contractor') { setError('This account is not registered as a specialist.'); return; }
       window.location.href = '/contractor-portal';
     } catch (err) {
       setError('Invalid email or password. Please try again.');
@@ -36,9 +36,9 @@ export default function ContractorLogin() {
       <div className="flex-1 flex items-center justify-center px-6 pt-32 pb-16">
         <div className="w-full max-w-md">
           <div className="text-center mb-10">
-            <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">CONTRACTOR PORTAL</p>
+            <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">SPECIALIST PORTAL</p>
             <h1 className="text-4xl font-grotesk font-bold text-vapor mb-3">
-              CONTRACTOR <GoldShimmer>LOGIN</GoldShimmer>
+              SPECIALIST <GoldShimmer>LOGIN</GoldShimmer>
             </h1>
             <p className="text-vapor/50 text-sm font-mono-tech">
               Access your schedule, manage jobs & update availability.
@@ -55,7 +55,7 @@ export default function ContractorLogin() {
                   onChange={e => setEmail(e.target.value)}
                   required
                   className="w-full bg-asphalt border border-vapor/10 focus:border-gold/50 outline-none text-vapor px-4 py-3 text-sm font-mono-tech rounded-sm transition-colors duration-200"
-                  placeholder="contractor@vdsmobile.com"
+                  placeholder="specialist@vdsmobile.com"
                 />
               </div>
               <div>

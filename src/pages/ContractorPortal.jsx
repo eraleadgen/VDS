@@ -84,7 +84,7 @@ export default function ContractorPortal() {
   ];
 
   return (
-    <PortalShell title="Contractor Portal" navItems={navItems} active={tab} onNavigate={setTab} userLabel={profile?.name || user?.email} onLogout={() => base44.auth.logout('/contractor-login')}>
+    <PortalShell title="Specialist Portal" navItems={navItems} active={tab} onNavigate={setTab} userLabel={profile?.name || user?.email} onLogout={() => base44.auth.logout('/contractor-login')}>
       {loading ? (
         <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-gold/20 border-t-gold rounded-full animate-spin" /></div>
       ) : (
