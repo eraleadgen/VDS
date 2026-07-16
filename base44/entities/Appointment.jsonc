@@ -161,7 +161,7 @@
           "data.customer_email": "{{user.email}}"
         },
         {
-          "data.customer_phone": "{{user.phone}}"
+          "data.customer_phone": "{{user.data.phone}}"
         },
         {
           "user_condition": {
