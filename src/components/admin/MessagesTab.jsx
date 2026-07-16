@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
-import { MessageSquare, Search, ArrowLeft, Phone, UserCircle } from 'lucide-react';
+import { MessageSquare, Search, ArrowLeft, Phone, UserCircle, Send, Trash2 } from 'lucide-react';
 
 const fmtTime = (iso) => {
   try { return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(iso)); }
@@ -13,6 +13,11 @@ export default function MessagesTab() {
   const [error, setError] = useState('');
   const [selectedPhone, setSelectedPhone] = useState(null);
   const [query, setQuery] = useState('');
+  const [reply, setReply] = useState('');
+  const [sending, setSending] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [notice, setNotice] = useState('');
 
   const load = async () => {
     setLoading(true); setError('');
@@ -23,6 +28,33 @@ export default function MessagesTab() {
     finally { setLoading(false); }
   };
   useEffect(() => { load(); }, []);
+
+  const sendReply = async () => {
+    if (!selected || !reply.trim() || sending) return;
+    setSending(true); setNotice('');
+    try {
+      const res = await base44.functions.invoke('sendSms', { to: selected.phone, content: reply.trim(), customer_name: selected.name });
+      if (res?.data?.error) { alert(res.data.error); }
+      else {
+        if (res?.data?.sent === false && res?.data?.message) setNotice(res.data.message);
+        setReply('');
+        await load();
+      }
+    } catch (e) { alert(e.message); }
+    finally { setSending(false); }
+  };
+
+  const deleteConversation = async () => {
+    if (!selected || deleting) return;
+    setDeleting(true);
+    try {
+      await base44.entities.ConversationHistory.deleteMany({ customer_phone: selected.phone });
+      setConfirmingDelete(false);
+      setSelectedPhone(null);
+      await load();
+    } catch (e) { alert(e.message); }
+    finally { setDeleting(false); }
+  };
 
   const conversations = useMemo(() => {
     const map = new Map();
@@ -118,6 +150,14 @@ export default function MessagesTab() {
                   <p className="text-xs font-mono-tech text-vapor/40">{selected.phone}</p>
                 </div>
                 <span className="text-[10px] font-mono-tech text-vapor/40">{selected.messages.length} MSGS</span>
+                {confirmingDelete ? (
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setConfirmingDelete(false)} disabled={deleting} className="text-xs font-mono-tech text-vapor/50 hover:text-vapor px-2 py-1">CANCEL</button>
+                    <button onClick={deleteConversation} disabled={deleting} className="text-xs font-mono-tech text-red-400 border border-red-400/40 bg-red-400/10 hover:bg-red-400/20 px-2 py-1 rounded-sm">CONFIRM DELETE</button>
+                  </div>
+                ) : (
+                  <button onClick={() => setConfirmingDelete(true)} className="text-vapor/50 hover:text-red-400"><Trash2 size={16} /></button>
+                )}
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {selected.messages.map(m => (
@@ -129,6 +169,21 @@ export default function MessagesTab() {
                     </div>
                   </div>
                 ))}
+              </div>
+              <div className="border-t border-vapor/10 p-3">
+                {notice && <p className="text-[11px] font-mono-tech text-gold/70 mb-2">{notice}</p>}
+                <div className="flex items-center gap-2">
+                  <input
+                    value={reply}
+                    onChange={e => setReply(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendReply(); } }}
+                    placeholder="Reply to customer..."
+                    className="flex-1 bg-asphalt border border-vapor/10 focus:border-gold/40 outline-none text-vapor px-3 py-2.5 text-sm font-mono-tech rounded-sm"
+                  />
+                  <button onClick={sendReply} disabled={sending || !reply.trim()} className="flex items-center gap-2 bg-gold hover:bg-gold-light text-obsidian px-4 py-2.5 text-xs font-mono-tech tracking-widest rounded-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                    {sending ? <div className="w-4 h-4 border-2 border-obsidian/30 border-t-obsidian rounded-full animate-spin" /> : <><span>SEND</span><Send size={13} /></>}
+                  </button>
+                </div>
               </div>
             </>
           )}
