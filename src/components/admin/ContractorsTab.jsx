@@ -53,9 +53,9 @@ export default function ContractorsTab() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-grotesk font-bold text-vapor">Contractors</h1>
+        <h1 className="text-2xl font-grotesk font-bold text-vapor">Specialists</h1>
         <button onClick={() => setEditing({})} className="flex items-center gap-2 bg-gold/10 border border-gold/30 text-gold px-4 py-2 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold/20">
-          <Plus size={14} /> NEW CONTRACTOR
+          <Plus size={14} /> NEW SPECIALIST
         </button>
       </div>
       {loading ? (
@@ -106,7 +106,7 @@ export default function ContractorsTab() {
               ))}
             </tbody>
           </table>
-          {list.length === 0 && <p className="p-8 text-center text-vapor/40 font-mono-tech text-sm">No contractors yet. Click "New Contractor" to add one.</p>}
+          {list.length === 0 && <p className="p-8 text-center text-vapor/40 font-mono-tech text-sm">No specialists yet. Click "New Specialist" to add one.</p>}
         </div>
       )}
       {editing && <ContractorModal contractor={editing} onClose={() => setEditing(null)} onSave={save} busy={busy} />}

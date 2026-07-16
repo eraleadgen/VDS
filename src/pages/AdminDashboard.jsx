@@ -35,7 +35,7 @@ export default function AdminDashboard() {
 
   const navItems = [
     { key: 'overview', label: 'OVERVIEW', icon: LayoutDashboard },
-    { key: 'contractors', label: 'CONTRACTORS', icon: Users },
+    { key: 'contractors', label: 'SPECIALISTS', icon: Users },
     { key: 'appointments', label: 'APPOINTMENTS', icon: CalendarRange },
     { key: 'messages', label: 'MESSAGES', icon: MessageSquare },
   ];
@@ -63,7 +63,7 @@ function Overview({ metrics }) {
     <div className="space-y-6">
       <h1 className="text-2xl font-grotesk font-bold text-vapor">Overview</h1>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <Stat icon={Users} label="CONTRACTORS" value={m.total_contractors} />
+        <Stat icon={Users} label="SPECIALISTS" value={m.total_contractors} />
         <Stat icon={Users} label="ACTIVE" value={m.active_contractors} />
         <Stat icon={Clock} label="TODAY'S JOBS" value={m.todays_jobs} />
         <Stat icon={CalendarRange} label="UPCOMING" value={m.upcoming_jobs} />
@@ -71,7 +71,7 @@ function Overview({ metrics }) {
         <Stat icon={XCircle} label="CANCELLED" value={m.cancelled_jobs} />
       </div>
       <div className="glass-panel border border-vapor/10 rounded-sm p-6">
-        <h2 className="text-xs font-mono-tech tracking-widest text-gold/70 mb-4">JOBS COMPLETED BY CONTRACTOR</h2>
+        <h2 className="text-xs font-mono-tech tracking-widest text-gold/70 mb-4">JOBS COMPLETED BY SPECIALIST</h2>
         {data.length ? (
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={data}>

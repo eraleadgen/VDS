@@ -47,7 +47,7 @@ export default function ContractorModal({ contractor, onClose, onSave, busy }) {
     <div className="fixed inset-0 z-[100] bg-obsidian/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
       <div className="glass-panel border border-gold/20 rounded-sm w-full max-w-lg max-h-[90vh] overflow-y-auto p-6" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-lg font-grotesk font-bold text-vapor">{isNew ? 'New Contractor' : 'Edit Contractor'}</h3>
+          <h3 className="text-lg font-grotesk font-bold text-vapor">{isNew ? 'New Specialist' : 'Edit Specialist'}</h3>
           <button onClick={onClose}><X size={18} className="text-vapor/50 hover:text-vapor" /></button>
         </div>
         <form onSubmit={submit} className="space-y-4">
@@ -55,7 +55,7 @@ export default function ContractorModal({ contractor, onClose, onSave, busy }) {
             <div><label className={LABEL}>NAME</label><input value={form.name} onChange={e => set('name', e.target.value)} required className={INPUT} /></div>
             <div><label className={LABEL}>PHONE</label><input value={form.phone} onChange={e => set('phone', e.target.value)} required className={INPUT} /></div>
           </div>
-          <div><label className={LABEL}>EMAIL {isNew && <span className="text-gold/60">(will be invited as contractor)</span>}</label>
+          <div><label className={LABEL}>EMAIL {isNew && <span className="text-gold/60">(will be invited as specialist)</span>}</label>
             <input type="email" value={form.email} onChange={e => set('email', e.target.value)} required={isNew} disabled={!isNew} className={INPUT} /></div>
           <div><label className={LABEL}>HOME ADDRESS</label><input value={form.home_address} onChange={e => set('home_address', e.target.value)} className={INPUT} /></div>
           <div className="grid grid-cols-2 gap-4">
@@ -88,7 +88,7 @@ export default function ContractorModal({ contractor, onClose, onSave, busy }) {
           </div>
           <button type="submit" disabled={busy}
             className="w-full bg-gold text-obsidian py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold-light disabled:opacity-50">
-            {busy ? 'SAVING...' : isNew ? 'CREATE CONTRACTOR' : 'SAVE CHANGES'}
+            {busy ? 'SAVING...' : isNew ? 'CREATE SPECIALIST' : 'SAVE CHANGES'}
           </button>
         </form>
       </div>
