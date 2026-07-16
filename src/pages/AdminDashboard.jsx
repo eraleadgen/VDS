@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { LayoutDashboard, Users, CalendarRange, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarRange, Clock, CheckCircle2, XCircle, MessageSquare } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import PortalShell from '@/components/portal/PortalShell';
 import ContractorsTab from '@/components/admin/ContractorsTab';
 import AppointmentsTab from '@/components/admin/AppointmentsTab';
+import MessagesTab from '@/components/admin/MessagesTab';
 
 const invoke = (payload) => base44.functions.invoke('scheduler', payload).then(r => r.data ?? r);
 
@@ -36,6 +37,7 @@ export default function AdminDashboard() {
     { key: 'overview', label: 'OVERVIEW', icon: LayoutDashboard },
     { key: 'contractors', label: 'CONTRACTORS', icon: Users },
     { key: 'appointments', label: 'APPOINTMENTS', icon: CalendarRange },
+    { key: 'messages', label: 'MESSAGES', icon: MessageSquare },
   ];
 
   return (
@@ -47,6 +49,7 @@ export default function AdminDashboard() {
           {tab === 'overview' && <Overview metrics={metrics} />}
           {tab === 'contractors' && <ContractorsTab />}
           {tab === 'appointments' && <AppointmentsTab />}
+          {tab === 'messages' && <MessagesTab />}
         </>
       )}
     </PortalShell>
