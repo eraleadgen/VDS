@@ -599,6 +599,23 @@ async function adminDeleteAppointment(base44, body) {
   return { success: true };
 }
 
+// Admin: permanently delete multiple appointments at once (removes GCal events + Base44 records).
+async function adminBulkDeleteAppointments(base44, body) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const ids = Array.isArray(body.appointment_ids) ? body.appointment_ids.filter(Boolean) : [];
+  if (!ids.length) return { error: 'appointment_ids is required.' };
+  let deleted = 0;
+  for (const id of ids) {
+    const appt = await base44.asServiceRole.entities.Appointment.get(id).catch(() => null);
+    if (!appt) continue;
+    await removeGcalEvent(base44, appt.google_calendar_event_id);
+    try { await base44.asServiceRole.entities.Appointment.delete(id); deleted++; }
+    catch (e) { console.error('delete error:', id, e.message); }
+  }
+  return { success: true, deleted };
+}
+
 async function adminAppointments(base44, body) {
   const me = await base44.auth.me().catch(() => null);
   if (!requireAdmin(me)) return { error: 'Admin only.' };
@@ -740,6 +757,7 @@ Deno.serve(async (req) => {
     if (action === 'admin_add_appointment') return Response.json(await adminBookAppointment(base44, body, cfg));
     if (action === 'admin_change_status') return Response.json(await adminChangeStatus(base44, body));
     if (action === 'admin_delete_appointment') return Response.json(await adminDeleteAppointment(base44, body));
+    if (action === 'admin_bulk_delete_appointments') return Response.json(await adminBulkDeleteAppointments(base44, body));
     if (action === 'admin_metrics') return Response.json(await adminMetrics(base44));
 
     // ── Appointment-scoped actions (need an appointment) ──
