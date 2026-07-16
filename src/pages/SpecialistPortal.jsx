@@ -15,7 +15,7 @@ const SKILL_LABELS = {
 const INPUT = 'w-full bg-asphalt border border-vapor/10 focus:border-gold/50 outline-none text-vapor px-4 py-3 text-sm font-mono-tech rounded-sm transition-colors duration-200';
 const ORDER = ['assigned', 'accepted', 'driving', 'arrived', 'in_progress', 'quality_check', 'completed', 'photos_uploaded', 'invoice_complete'];
 
-export default function ContractorPortal() {
+export default function SpecialistPortal() {
   const { user, isLoadingAuth, authChecked } = useAuth();
   const [tab, setTab] = useState('overview');
   const [profile, setProfile] = useState(null);
@@ -38,11 +38,18 @@ export default function ContractorPortal() {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { if (authChecked && user) load(); }, [authChecked, user, load]);
-  useEffect(() => { if (authChecked && !user) window.location.href = '/contractor-login'; }, [authChecked, user]);
+  // Login wall: only VDS Specialists (role 'contractor') may open this portal.
+  useEffect(() => {
+    if (!authChecked) return;
+    if (!user) { window.location.href = '/specialist-login'; return; }
+    if (user.role === 'admin') { window.location.href = '/admin'; return; }
+    if (user.role !== 'contractor') { window.location.href = '/specialist-login'; return; }
+  }, [authChecked, user]);
+
+  useEffect(() => { if (authChecked && user && user.role === 'contractor') load(); }, [authChecked, user, load]);
 
   if (!authChecked || isLoadingAuth) return <div className="min-h-screen bg-obsidian flex items-center justify-center"><div className="w-8 h-8 border-2 border-gold/20 border-t-gold rounded-full animate-spin" /></div>;
-  if (error && !profile) return <div className="min-h-screen bg-obsidian flex items-center justify-center p-6 text-center"><div><p className="text-red-400 text-sm font-mono-tech mb-4">{error}</p><a href="/contractor-login" className="text-gold text-xs font-mono-tech tracking-widest">← BACK TO LOGIN</a></div></div>;
+  if (error && !profile) return <div className="min-h-screen bg-obsidian flex items-center justify-center p-6 text-center"><div><p className="text-red-400 text-sm font-mono-tech mb-4">{error}</p><a href="/specialist-login" className="text-gold text-xs font-mono-tech tracking-widest">← BACK TO LOGIN</a></div></div>;
 
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
   const todaysJobs = jobs.filter(j => j.preferred_date === today && j.status !== 'completed');
@@ -84,7 +91,7 @@ export default function ContractorPortal() {
   ];
 
   return (
-    <PortalShell title="Specialist Portal" navItems={navItems} active={tab} onNavigate={setTab} userLabel={profile?.name || user?.email} onLogout={() => base44.auth.logout('/contractor-login')}>
+    <PortalShell title="Specialist Portal" navItems={navItems} active={tab} onNavigate={setTab} userLabel={profile?.name || user?.email} onLogout={() => base44.auth.logout('/specialist-login')}>
       {loading ? (
         <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-gold/20 border-t-gold rounded-full animate-spin" /></div>
       ) : (
@@ -92,7 +99,7 @@ export default function ContractorPortal() {
           {tab === 'overview' && (
             <div className="space-y-6">
               <div>
-                <h1 className="text-2xl font-grotesk font-bold text-vapor mb-1">Welcome, {profile?.name?.split(' ')[0] || 'Contractor'}</h1>
+                <h1 className="text-2xl font-grotesk font-bold text-vapor mb-1">Welcome, {profile?.name?.split(' ')[0] || 'Specialist'}</h1>
                 <p className="text-sm text-vapor/50 font-mono-tech">Here's your day at a glance.</p>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

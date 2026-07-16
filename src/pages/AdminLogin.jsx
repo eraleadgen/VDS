@@ -5,6 +5,8 @@ import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 import Navbar from '@/components/vds/Navbar';
 import Footer from '@/components/vds/Footer';
 import GoldShimmer from '@/components/vds/GoldShimmer';
+import RememberDevice from '@/components/vds/RememberDevice';
+import { applyRememberDevice } from '../lib/remember-device';
 
 export default function AdminLogin() {
   const [email, setEmail] = useState('');
@@ -12,6 +14,7 @@ export default function AdminLogin() {
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [remember, setRemember] = useState(true);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -19,8 +22,9 @@ export default function AdminLogin() {
     setLoading(true);
     try {
       await base44.auth.loginViaEmailPassword(email, password);
+      applyRememberDevice(remember);
       const me = await base44.auth.me();
-      if (me.role === 'contractor') { window.location.href = '/contractor-portal'; return; }
+      if (me.role === 'contractor') { window.location.href = '/specialist-portal'; return; }
       if (me.role !== 'admin') { setError('This account does not have admin access.'); return; }
       window.location.href = '/admin';
     } catch (err) {
@@ -64,6 +68,7 @@ export default function AdminLogin() {
                   </button>
                 </div>
               </div>
+              <RememberDevice checked={remember} onChange={setRemember} />
               {error && <p className="text-red-400 text-xs font-mono-tech border border-red-400/20 bg-red-400/5 px-4 py-3 rounded-sm">{error}</p>}
               <button type="submit" disabled={loading}
                 className="w-full bg-vapor text-obsidian py-4 text-sm font-mono-tech tracking-widest hover:bg-gold transition-colors duration-200 rounded-sm flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed mt-2">

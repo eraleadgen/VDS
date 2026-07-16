@@ -1,6 +1,7 @@
 const isNode = typeof window === 'undefined';
-const windowObj = isNode ? { localStorage: new Map() } : window;
+const windowObj = isNode ? { localStorage: new Map(), sessionStorage: new Map() } : window;
 const storage = windowObj.localStorage;
+const sessionStore = windowObj.sessionStorage;
 
 const toSnakeCase = (str) => {
 	return str.replace(/([A-Z])/g, '_$1').toLowerCase();
@@ -31,6 +32,11 @@ const getAppParamValue = (paramName, { defaultValue = undefined, removeFromUrl =
 	if (storedValue) {
 		return storedValue;
 	}
+	// "Remember this device" off → token lives in sessionStorage (cleared on browser close)
+	if (storageKey === 'base44_access_token') {
+		const ssVal = sessionStore.getItem(storageKey);
+		if (ssVal) return ssVal;
+	}
 	return null;
 }
 
@@ -38,6 +44,15 @@ const getAppParams = () => {
 	if (getAppParamValue("clear_access_token") === 'true') {
 		storage.removeItem('base44_access_token');
 		storage.removeItem('token');
+		sessionStore.removeItem('base44_access_token');
+		sessionStore.removeItem('token');
+	}
+	// Honor 30-day "Remember this device" expiry for remembered logins
+	const rememberExp = storage.getItem('vds_remember_expires');
+	if (rememberExp && Number(rememberExp) < Date.now()) {
+		storage.removeItem('base44_access_token');
+		storage.removeItem('token');
+		storage.removeItem('vds_remember_expires');
 	}
 	return {
 		appId: getAppParamValue("app_id", { defaultValue: import.meta.env.VITE_BASE44_APP_ID }),

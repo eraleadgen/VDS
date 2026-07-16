@@ -5,11 +5,14 @@ import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 import Navbar from '@/components/vds/Navbar';
 import Footer from '@/components/vds/Footer';
 import GoldShimmer from '@/components/vds/GoldShimmer';
+import RememberDevice from '@/components/vds/RememberDevice';
+import { applyRememberDevice } from '@/lib/remember-device';
 
-export default function ContractorLogin() {
+export default function SpecialistLogin() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
+  const [remember, setRemember] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -19,10 +22,11 @@ export default function ContractorLogin() {
     setLoading(true);
     try {
       await base44.auth.loginViaEmailPassword(email, password);
+      applyRememberDevice(remember);
       const me = await base44.auth.me();
       if (me.role === 'admin') { window.location.href = '/admin'; return; }
       if (me.role !== 'contractor') { setError('This account is not registered as a specialist.'); return; }
-      window.location.href = '/contractor-portal';
+      window.location.href = '/specialist-portal';
     } catch (err) {
       setError('Invalid email or password. Please try again.');
     } finally {
@@ -74,6 +78,8 @@ export default function ContractorLogin() {
                   </button>
                 </div>
               </div>
+
+              <RememberDevice checked={remember} onChange={setRemember} />
 
               {error && (
                 <p className="text-red-400 text-xs font-mono-tech border border-red-400/20 bg-red-400/5 px-4 py-3 rounded-sm">{error}</p>

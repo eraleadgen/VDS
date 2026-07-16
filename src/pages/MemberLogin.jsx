@@ -5,6 +5,8 @@ import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
 import GoldShimmer from '../components/vds/GoldShimmer';
+import RememberDevice from '../components/vds/RememberDevice';
+import { applyRememberDevice } from '../lib/remember-device';
 
 export default function MemberLogin() {
   const [email, setEmail] = useState('');
@@ -12,6 +14,7 @@ export default function MemberLogin() {
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [remember, setRemember] = useState(true);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -19,6 +22,7 @@ export default function MemberLogin() {
     setLoading(true);
     try {
       await base44.auth.loginViaEmailPassword(email, password);
+      applyRememberDevice(remember);
       window.location.href = '/member-dashboard';
     } catch (err) {
       setError('Invalid email or password. Please try again.');
@@ -77,6 +81,8 @@ export default function MemberLogin() {
                   </button>
                 </div>
               </div>
+
+              <RememberDevice checked={remember} onChange={setRemember} />
 
               {error && (
                 <p className="text-red-400 text-xs font-mono-tech border border-red-400/20 bg-red-400/5 px-4 py-3 rounded-sm">
