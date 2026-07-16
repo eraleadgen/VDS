@@ -54,6 +54,16 @@ async function gcal(token, method, path, body) {
   return text ? JSON.parse(text) : null;
 }
 
+// Remove a Google Calendar event mirror. Used when a job is completed or cancelled — the Base44
+// appointment record is always retained as the audit log; only the live calendar entry is removed.
+async function removeGcalEvent(base44, eventId) {
+  if (!eventId) return;
+  try {
+    const { accessToken } = await base44.asServiceRole.connectors.getConnection('googlecalendar');
+    await gcal(accessToken, 'DELETE', `/calendars/primary/events/${eventId}`, null);
+  } catch (e) { console.error('GCal delete error:', e.message); }
+}
+
 // ── Contractor helpers ──────────────────────────────────────────────────
 // Map a BusinessConfig service key to a Contractor skill.
 function serviceToSkill(serviceKey) {
@@ -454,6 +464,8 @@ async function updateJobStatus(base44, data, cfg, appt) {
 
   // Notify the customer the first time a job reaches 'completed'.
   if (newStatus === 'completed' && appt.job_status !== 'completed') {
+    // Remove the live Google Calendar event (the Base44 record is kept as the audit log).
+    await removeGcalEvent(base44, appt.google_calendar_event_id);
     try {
       const first = (appt.customer_name || '').split(' ')[0] || 'there';
       const msg = `Hi ${first}, your VDS detail is complete! Your specialist has finished servicing your vehicle. We hope you love the results. — VDS Mobile`;
@@ -484,11 +496,17 @@ async function updateJobStatus(base44, data, cfg, appt) {
 }
 
 // ── Contractor self-service (auth required) ────────────────────────────
+// A specialist profile may be shared by business partners: user_id is the primary owner and
+// linked_user_ids holds additional partners who all see the same jobs/availability/metrics.
+function findMyContractor(all, meId) {
+  return (all || []).find(c => c.user_id === meId || (c.linked_user_ids || []).includes(meId));
+}
+
 async function getMyProfile(base44) {
   const me = await base44.auth.me().catch(() => null);
   if (!me) return { error: 'Unauthorized.' };
-  const list = await base44.asServiceRole.entities.Contractor.filter({ user_id: me.id });
-  const c = list && list[0];
+  const all = await base44.asServiceRole.entities.Contractor.list();
+  const c = findMyContractor(all, me.id);
   if (!c) return { error: 'No contractor profile is linked to your account.' };
   return { success: true, contractor: c };
 }
@@ -496,8 +514,8 @@ async function getMyProfile(base44) {
 async function myJobs(base44) {
   const me = await base44.auth.me().catch(() => null);
   if (!me) return { error: 'Unauthorized.' };
-  const list = await base44.asServiceRole.entities.Contractor.filter({ user_id: me.id });
-  const c = list && list[0];
+  const all = await base44.asServiceRole.entities.Contractor.list();
+  const c = findMyContractor(all, me.id);
   if (!c) return { error: 'No contractor profile is linked to your account.' };
   const appts = await base44.asServiceRole.entities.Appointment.filter({ contractor_id: c.id });
   const jobs = (appts || []).filter(a => a.status !== 'cancelled')
@@ -508,8 +526,8 @@ async function myJobs(base44) {
 async function updateMyProfile(base44, data) {
   const me = await base44.auth.me().catch(() => null);
   if (!me) return { error: 'Unauthorized.' };
-  const list = await base44.asServiceRole.entities.Contractor.filter({ user_id: me.id });
-  const c = list && list[0];
+  const all = await base44.asServiceRole.entities.Contractor.list();
+  const c = findMyContractor(all, me.id);
   if (!c) return { error: 'No contractor profile is linked to your account.' };
   const allowed = {};
   for (const k of ['weekly_availability', 'blocked_dates', 'status', 'phone', 'email', 'home_address', 'profile_photo']) {
@@ -525,8 +543,60 @@ function requireAdmin(me) { return !!(me && me.role === 'admin'); }
 async function adminContractors(base44) {
   const me = await base44.auth.me().catch(() => null);
   if (!requireAdmin(me)) return { error: 'Admin only.' };
-  const all = await base44.asServiceRole.entities.Contractor.list();
-  return { success: true, contractors: all || [] };
+  const [all, users] = await Promise.all([
+    base44.asServiceRole.entities.Contractor.list(),
+    base44.asServiceRole.entities.User.list(),
+  ]);
+  const byId = (users || []).reduce((m, u) => { m[u.id] = u; return m; }, {});
+  const contractors = (all || []).map(c => ({
+    ...c,
+    linked_user_emails: (c.linked_user_ids || []).map(id => byId[id] ? byId[id].email : '').filter(Boolean).join(', '),
+  }));
+  return { success: true, contractors };
+}
+
+// Admin: create a new appointment (mirrors to Google Calendar + auto-assigns a specialist),
+// exactly like the public book flow but gated to admins.
+async function adminBookAppointment(base44, body, cfg) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const { date, time, service, customer_name, customer_phone } = body;
+  if (!date || !time || !service || !customer_name || !customer_phone) {
+    return { error: 'date, time, service, customer_name, customer_phone are required.' };
+  }
+  const tz = cfg.timezone || 'America/New_York';
+  const startUtc = zonedToUtc(date, time, tz).toISOString();
+  return await bookAppointment(base44, { ...body, startUtc }, cfg);
+}
+
+// Admin: change an appointment's lifecycle status and keep Google Calendar in sync.
+async function adminChangeStatus(base44, body) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const { appointment_id, status } = body;
+  const VALID = ['pending', 'confirmed', 'completed', 'cancelled'];
+  if (!VALID.includes(status)) return { error: 'Invalid status.' };
+  const appt = await base44.asServiceRole.entities.Appointment.get(appointment_id).catch(() => null);
+  if (!appt) return { error: 'Appointment not found.' };
+  await base44.asServiceRole.entities.Appointment.update(appointment_id, { status });
+  // Completed/cancelled jobs are removed from the live calendar; the Base44 record is retained.
+  if (status === 'cancelled' || status === 'completed') {
+    await removeGcalEvent(base44, appt.google_calendar_event_id);
+  }
+  return { success: true, status };
+}
+
+// Admin: permanently delete an appointment (removes the Google Calendar event + the Base44 record).
+async function adminDeleteAppointment(base44, body) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const { appointment_id } = body;
+  if (!appointment_id) return { error: 'appointment_id is required.' };
+  const appt = await base44.asServiceRole.entities.Appointment.get(appointment_id).catch(() => null);
+  if (!appt) return { error: 'Appointment not found.' };
+  await removeGcalEvent(base44, appt.google_calendar_event_id);
+  await base44.asServiceRole.entities.Appointment.delete(appointment_id);
+  return { success: true };
 }
 
 async function adminAppointments(base44, body) {
@@ -545,8 +615,20 @@ async function adminUpdateContractor(base44, body) {
   const { contractor_id, ...updates } = body;
   if (!contractor_id) return { error: 'contractor_id is required.' };
   const allowed = {};
-  for (const k of ['name', 'phone', 'email', 'status', 'is_enabled', 'skills', 'service_areas', 'home_address', 'weekly_availability', 'blocked_dates', 'profile_photo']) {
+  for (const k of ['name', 'phone', 'email', 'status', 'is_enabled', 'skills', 'service_areas', 'home_address', 'weekly_availability', 'blocked_dates', 'profile_photo', 'linked_user_ids']) {
     if (updates[k] !== undefined) allowed[k] = updates[k];
+  }
+  // Resolve comma-separated partner emails into linked user ids (shared specialist profile).
+  if (typeof updates.linked_user_emails === 'string') {
+    const emails = updates.linked_user_emails.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+    if (emails.length) {
+      const all = await base44.asServiceRole.entities.User.list();
+      allowed.linked_user_ids = (all || [])
+        .filter(u => u.email && emails.includes(u.email.toLowerCase()) && u.id !== updates.contractor_id)
+        .map(u => u.id);
+    } else {
+      allowed.linked_user_ids = [];
+    }
   }
   await base44.asServiceRole.entities.Contractor.update(contractor_id, allowed);
   return { success: true };
@@ -651,6 +733,9 @@ Deno.serve(async (req) => {
     if (action === 'admin_update_contractor') return Response.json(await adminUpdateContractor(base44, body));
     if (action === 'admin_create_contractor') return Response.json(await adminCreateContractor(base44, body));
     if (action === 'admin_delete_contractor') return Response.json(await adminDeleteContractor(base44, body));
+    if (action === 'admin_add_appointment') return Response.json(await adminBookAppointment(base44, body, cfg));
+    if (action === 'admin_change_status') return Response.json(await adminChangeStatus(base44, body));
+    if (action === 'admin_delete_appointment') return Response.json(await adminDeleteAppointment(base44, body));
     if (action === 'admin_metrics') return Response.json(await adminMetrics(base44));
 
     // ── Appointment-scoped actions (need an appointment) ──
