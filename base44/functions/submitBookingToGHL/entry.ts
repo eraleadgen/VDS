@@ -385,7 +385,7 @@ Deno.serve(async (req) => {
       ].filter(Boolean).join('\n');
 
       await base44.integrations.Core.SendEmail({
-        to: 'Valetdetailingservice@gmail.com',
+        to: 'Support@vdsmobile.com',
         subject: `New Booking — ${name} — ${preferred_date} ${preferred_time}`,
         body: emailBody,
       });
