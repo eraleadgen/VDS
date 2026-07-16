@@ -61,7 +61,7 @@ export default function VdsGold() {
         <div className="relative z-10 max-w-7xl mx-auto px-6 py-32 w-full">
           <div className="max-w-2xl text-center md:text-left mx-auto md:mx-0">
             <div className="flex items-center gap-3 mb-8 justify-center md:justify-start">
-              <div className="w-12 h-px bg-gold" />
+              <div className="hidden md:block w-12 h-px bg-gold" />
               <p className="text-xs font-mono-tech tracking-[0.4em] text-gold">INTRODUCING</p>
             </div>
             <h1 className="text-5xl sm:text-7xl md:text-9xl font-grotesk font-bold leading-none mb-8 flex items-center gap-4 justify-center md:justify-start">
