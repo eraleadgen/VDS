@@ -55,9 +55,18 @@ async function gcalCreate(accessToken, event) {
 
 Deno.serve(async (req) => {
   try {
-    // Public endpoint (guests book without login) — restrict to app origin.
-    const origin = req.headers.get('Origin') || req.headers.get('Referer') || '';
-    if (!/vdsmobile\.com|base44\.com|localhost/.test(origin)) {
+    // Public endpoint (guests book without login) — strict origin allowlist.
+    // Origin/Referer are client-controlled, so match the EXACT host (not a loose substring)
+    // to prevent lookalike-domain and cross-app bypass.
+    const originHeader = req.headers.get('Origin') || req.headers.get('Referer') || '';
+    let originHost = '';
+    try { originHost = new URL(originHeader).host.toLowerCase(); } catch { originHost = ''; }
+    const allowed = ['vdsmobile.com', 'www.vdsmobile.com'].includes(originHost)
+      || originHost === 'localhost'
+      || originHost.endsWith('.localhost')
+      || originHost.endsWith('.base44.app')
+      || originHost.endsWith('.base44.com');
+    if (!allowed) {
       return Response.json({ success: false, error: 'Forbidden — invalid origin.' }, { status: 403 });
     }
 
