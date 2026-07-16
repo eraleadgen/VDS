@@ -632,7 +632,17 @@ Deno.serve(async (req) => {
       const all = await base44.asServiceRole.entities.Contractor.filter({ status: 'active' });
       return Response.json({ contractors: all.map(c => ({ id: c.id, name: c.name, skills: c.skills || [], status: c.status, is_enabled: c.is_enabled !== false })) });
     }
-    if (action === 'assign_contractor') return Response.json(await assignContractor(base44, body, cfg));
+    if (action === 'assign_contractor') {
+      // Internal auto-assignment used by the website booking flow (server-to-server via SCHEDULER_TOKEN)
+      // or an authenticated admin. Never exposed to anonymous callers.
+      const schedulerToken = Deno.env.get('SCHEDULER_TOKEN');
+      const tokenOk = !!(schedulerToken && body.scheduler_token && body.scheduler_token === schedulerToken);
+      if (!tokenOk) {
+        const me = await base44.auth.me().catch(() => null);
+        if (!me || me.role !== 'admin') return Response.json({ error: 'Admin only.' }, { status: 403 });
+      }
+      return Response.json(await assignContractor(base44, body, cfg));
+    }
     if (action === 'get_my_profile') return Response.json(await getMyProfile(base44));
     if (action === 'my_jobs') return Response.json(await myJobs(base44));
     if (action === 'update_my_profile') return Response.json(await updateMyProfile(base44, body));
@@ -676,12 +686,18 @@ Deno.serve(async (req) => {
       }
 
       if (action === 'reschedule' || action === 'cancel') {
-        // Non-admins may only touch their own appointments.
-        if (!isAdmin && me) {
-          const owns = appt.created_by_id === me.id ||
+        // Non-admins may only touch their own appointments. Ownership is verified
+        // for both authenticated users (session match) and guests (phone match) —
+        // the check is NOT skipped when no session user exists.
+        if (!isAdmin) {
+          const ownsBySession = !!me && (
+            appt.created_by_id === me.id ||
             (appt.customer_email && me.email && appt.customer_email.toLowerCase() === me.email.toLowerCase()) ||
-            (appt.customer_phone && me.phone && appt.customer_phone.replace(/\D/g, '') === me.phone.replace(/\D/g, ''));
-          if (!owns) return Response.json({ error: 'Unauthorized to modify this appointment.' }, { status: 403 });
+            (appt.customer_phone && me.phone && appt.customer_phone.replace(/\D/g, '') === me.phone.replace(/\D/g, ''))
+          );
+          const ownsByPhone = !me && body.customer_phone && appt.customer_phone &&
+            body.customer_phone.replace(/\D/g, '') === appt.customer_phone.replace(/\D/g, '');
+          if (!ownsBySession && !ownsByPhone) return Response.json({ error: 'Unauthorized to modify this appointment.' }, { status: 403 });
         }
       }
 

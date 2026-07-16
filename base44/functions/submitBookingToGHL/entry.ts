@@ -356,7 +356,7 @@ Deno.serve(async (req) => {
     // ── Auto-assign Noah based on his contractor-portal availability ─────────
     if (appt) {
       try {
-        const r = await base44.functions.invoke('scheduler', { action: 'assign_contractor', appointment_id: appt.id, target: 'Noah' });
+        const r = await base44.functions.invoke('scheduler', { action: 'assign_contractor', appointment_id: appt.id, target: 'Noah', scheduler_token: Deno.env.get('SCHEDULER_TOKEN') });
         console.log('Auto-assign result:', JSON.stringify(r?.data || r));
       } catch (e) { console.error('Auto-assign contractor failed:', e.message); }
     }
