@@ -404,6 +404,41 @@ async function reassignAppointment(base44, data, cfg, appt) {
 const JOB_STATUSES = ['assigned', 'accepted', 'driving', 'arrived', 'in_progress', 'quality_check', 'completed', 'photos_uploaded', 'invoice_complete'];
 const COMPLETION_FIELDS = ['before_photos', 'after_photos', 'services_completed', 'products_used', 'completion_notes', 'upsell_recommendation', 'recommended_next_detail_date', 'damage_notes', 'customer_feedback'];
 
+// Send an outbound SMS via Twilio (and log it to ConversationHistory). No-op (log only) if Twilio is not configured.
+async function sendTwilioSms(base44, to, body, customerName) {
+  if (!to) return;
+  try {
+    await base44.asServiceRole.entities.ConversationHistory.create({
+      customer_phone: to, customer_name: customerName || '', role: 'assistant', content: body,
+    });
+  } catch (e) { console.error('log sms error:', e.message); }
+  const sid = Deno.env.get('TWILIO_ACCOUNT_SID');
+  const token = Deno.env.get('TWILIO_AUTH_TOKEN');
+  const from = Deno.env.get('TWILIO_FROM_NUMBER');
+  if (!sid || !token || !from) { console.log('Twilio not configured — SMS logged only.'); return; }
+  try {
+    const url = `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`;
+    const params = new URLSearchParams({ From: from, To: to, Body: body });
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { Authorization: 'Basic ' + btoa(`${sid}:${token}`), 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: params.toString(),
+    });
+    if (!res.ok) { const d = await res.json().catch(() => ({})); console.error('Twilio send error:', d); }
+  } catch (e) { console.error('twilio send error:', e.message); }
+}
+
+// Send a review-request SMS, unless the customer already reviewed or a request was already sent.
+async function requestReview(base44, data, cfg, appt) {
+  if (appt.review_submitted) return { error: 'Customer has already submitted a review for this job.' };
+  if (appt.review_requested) return { error: 'A review request was already sent for this job.' };
+  await base44.asServiceRole.entities.Appointment.update(appt.id, { review_requested: true });
+  const first = (appt.customer_name || '').split(' ')[0] || 'there';
+  const msg = `Hi ${first}, your VDS detail is complete! We'd love your feedback — please rate your experience by replying with a score from 1-5. Thanks for choosing VDS Mobile!`;
+  await sendTwilioSms(base44, appt.customer_phone, msg, appt.customer_name);
+  return { success: true };
+}
+
 async function updateJobStatus(base44, data, cfg, appt) {
   const newStatus = data.job_status;
   if (!JOB_STATUSES.includes(newStatus)) return { error: 'Invalid job_status.' };
@@ -416,6 +451,15 @@ async function updateJobStatus(base44, data, cfg, appt) {
     updates.status = 'completed';
   }
   await base44.asServiceRole.entities.Appointment.update(appt.id, updates);
+
+  // Notify the customer the first time a job reaches 'completed'.
+  if (newStatus === 'completed' && appt.job_status !== 'completed') {
+    try {
+      const first = (appt.customer_name || '').split(' ')[0] || 'there';
+      const msg = `Hi ${first}, your VDS detail is complete! Your specialist has finished servicing your vehicle. We hope you love the results. — VDS Mobile`;
+      await sendTwilioSms(base44, appt.customer_phone, msg, appt.customer_name);
+    } catch (e) { console.error('completion sms error:', e.message); }
+  }
 
   // Increment contractor jobs_completed the first time a job reaches 'completed'.
   if (newStatus === 'completed' && appt.job_status !== 'completed' && appt.contractor_id) {
@@ -600,7 +644,7 @@ Deno.serve(async (req) => {
     if (action === 'admin_metrics') return Response.json(await adminMetrics(base44));
 
     // ── Appointment-scoped actions (need an appointment) ──
-    if (['reschedule', 'cancel', 'reassign', 'update_job_status'].includes(action)) {
+    if (['reschedule', 'cancel', 'reassign', 'update_job_status', 'request_review'].includes(action)) {
       const appt = body.appointment_id ? await base44.asServiceRole.entities.Appointment.get(body.appointment_id) : null;
       if (!appt) return Response.json({ error: 'Appointment not found.' }, { status: 404 });
 
@@ -624,11 +668,11 @@ Deno.serve(async (req) => {
       const isAdmin = !!(me && me.role === 'admin');
       if (action === 'reassign' && !isAdmin) return Response.json({ error: 'Admin only.' }, { status: 403 });
 
-      if (action === 'update_job_status' && !isAdmin) {
-        // Only the assigned contractor may update job status.
+      if ((action === 'update_job_status' || action === 'request_review') && !isAdmin) {
+        // Only the assigned contractor may update job status or request reviews.
         if (!appt.contractor_id) return Response.json({ error: 'No contractor assigned.' }, { status: 403 });
         const c = await base44.asServiceRole.entities.Contractor.get(appt.contractor_id).catch(() => null);
-        if (!c || !me || c.user_id !== me.id) return Response.json({ error: 'Only the assigned contractor may update job status.' }, { status: 403 });
+        if (!c || !me || c.user_id !== me.id) return Response.json({ error: 'Only the assigned contractor may perform this action.' }, { status: 403 });
       }
 
       if (action === 'reschedule' || action === 'cancel') {
@@ -645,6 +689,7 @@ Deno.serve(async (req) => {
       if (action === 'reschedule') result = await rescheduleAppointment(base44, body, cfg, appt);
       else if (action === 'cancel') result = await cancelAppointment(base44, body, cfg, appt);
       else if (action === 'reassign') result = await reassignAppointment(base44, body, cfg, appt);
+      else if (action === 'request_review') result = await requestReview(base44, body, cfg, appt);
       else result = await updateJobStatus(base44, body, cfg, appt);
       return Response.json(result);
     }

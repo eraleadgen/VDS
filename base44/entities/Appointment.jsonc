@@ -101,6 +101,16 @@
       "type": "string",
       "description": "Customer feedback captured at completion (optional)"
     },
+    "review_requested": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once a review-request SMS has been sent to the customer for this job"
+    },
+    "review_submitted": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the customer has submitted a review for this job"
+    },
     "google_calendar_event_id": {
       "type": "string",
       "description": "Google Calendar event ID (event mirror source of truth)"

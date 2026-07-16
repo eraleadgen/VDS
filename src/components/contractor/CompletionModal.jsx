@@ -48,7 +48,7 @@ export default function CompletionModal({ job, onClose, onSubmit, saving }) {
     <div className="fixed inset-0 z-[100] bg-obsidian/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={onClose}>
       <div className="glass-panel border border-gold/20 rounded-sm w-full max-w-lg max-h-[90vh] overflow-y-auto p-6" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-5">
-          <h3 className="text-lg font-grotesk font-bold text-vapor">Complete Job</h3>
+          <h3 className="text-lg font-grotesk font-bold text-vapor">Upload Photos & Details</h3>
           <button onClick={onClose}><X size={18} className="text-vapor/50 hover:text-vapor" /></button>
         </div>
         <p className="text-xs font-mono-tech text-gold/70 mb-4">{job.service_label} · {job.customer_name}</p>
@@ -85,7 +85,7 @@ export default function CompletionModal({ job, onClose, onSubmit, saving }) {
           </div>
           <button type="submit" disabled={saving || uploading}
             className="w-full bg-gold text-obsidian py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold-light disabled:opacity-50 flex items-center justify-center gap-2">
-            {saving ? <><Loader2 size={14} className="animate-spin" /> SUBMITTING...</> : <><Upload size={14} /> SUBMIT & COMPLETE</>}
+            {saving ? <><Loader2 size={14} className="animate-spin" /> SAVING...</> : <><Upload size={14} /> SAVE PHOTOS</>}
           </button>
         </form>
       </div>

@@ -1,4 +1,4 @@
-import { MapPin, Clock, Phone, Mail, FileText, ChevronRight, Camera } from 'lucide-react';
+import { MapPin, Clock, Phone, Mail, FileText, Play, CheckCircle2, Camera, Star } from 'lucide-react';
 
 const STATUS_COLORS = {
   assigned: 'text-vapor/60 bg-vapor/5 border-vapor/20',
@@ -12,9 +12,15 @@ const STATUS_COLORS = {
   invoice_complete: 'text-green-200 bg-green-200/5 border-green-200/20',
 };
 
-export default function JobCard({ job, onAdvance, onComplete, disabled }) {
+const IN_PROGRESS_LIKE = ['accepted', 'driving', 'arrived', 'in_progress', 'quality_check'];
+const DONE_LIKE = ['completed', 'photos_uploaded', 'invoice_complete'];
+
+export default function JobCard({ job, onStart, onComplete, onPhotos, onReview, disabled }) {
   const status = job.job_status || 'assigned';
-  const canComplete = ['in_progress', 'quality_check'].includes(status);
+  const isStarted = IN_PROGRESS_LIKE.includes(status);
+  const isDone = DONE_LIKE.includes(status);
+  const reviewSent = job.review_requested || job.review_submitted;
+  const reviewLabel = job.review_submitted ? 'REVIEW SUBMITTED' : 'REVIEW SENT';
 
   return (
     <div className="glass-panel border border-gold/10 rounded-sm p-5">
@@ -40,18 +46,30 @@ export default function JobCard({ job, onAdvance, onComplete, disabled }) {
           </div>
         ) : null}
       </div>
-      <div className="flex gap-2">
-        {status !== 'completed' && status !== 'photos_uploaded' && status !== 'invoice_complete' && (
-          <button onClick={() => onAdvance(job)} disabled={disabled}
-            className="flex-1 flex items-center justify-center gap-2 bg-vapor/5 hover:bg-gold/10 border border-vapor/15 hover:border-gold/40 text-vapor/70 hover:text-gold text-xs font-mono-tech tracking-widest py-3 rounded-sm transition-colors disabled:opacity-50">
-            ADVANCE <ChevronRight size={14} />
+      <div className="flex flex-wrap gap-2">
+        {!isStarted && !isDone && (
+          <button onClick={() => onStart(job)} disabled={disabled}
+            className="flex-1 flex items-center justify-center gap-2 bg-gold/10 hover:bg-gold border border-gold/40 text-gold hover:text-obsidian text-xs font-mono-tech tracking-widest py-3 rounded-sm transition-colors disabled:opacity-50">
+            <Play size={14} /> START
           </button>
         )}
-        {canComplete && (
+        {isStarted && !isDone && (
           <button onClick={() => onComplete(job)} disabled={disabled}
             className="flex-1 flex items-center justify-center gap-2 bg-gold/10 hover:bg-gold border border-gold/40 text-gold hover:text-obsidian text-xs font-mono-tech tracking-widest py-3 rounded-sm transition-colors disabled:opacity-50">
-            <Camera size={14} /> COMPLETE JOB
+            <CheckCircle2 size={14} /> JOB COMPLETED
           </button>
+        )}
+        {isDone && (
+          <>
+            <button onClick={() => onPhotos(job)} disabled={disabled}
+              className="flex-1 flex items-center justify-center gap-2 bg-vapor/5 hover:bg-gold/10 border border-vapor/15 hover:border-gold/40 text-vapor/70 hover:text-gold text-xs font-mono-tech tracking-widest py-3 rounded-sm transition-colors disabled:opacity-50">
+              <Camera size={14} /> {(job.before_photos?.length || job.after_photos?.length) ? 'EDIT PHOTOS' : 'UPLOAD PHOTOS'}
+            </button>
+            <button onClick={() => onReview(job)} disabled={disabled || reviewSent}
+              className={`flex-1 flex items-center justify-center gap-2 border text-xs font-mono-tech tracking-widest py-3 rounded-sm transition-colors ${reviewSent ? 'border-vapor/10 text-vapor/30 cursor-not-allowed' : 'border-gold/40 text-gold bg-gold/5 hover:bg-gold/10 disabled:opacity-50'}`}>
+              <Star size={14} /> {reviewSent ? reviewLabel : 'REQUEST REVIEW'}
+            </button>
+          </>
         )}
       </div>
     </div>

@@ -13,8 +13,6 @@ const SKILL_LABELS = {
   paint_correction: 'Paint Correction', ceramic_coating: 'Ceramic Coating', engine_bay: 'Engine Bay', headlight_restoration: 'Headlight Restoration',
 };
 const INPUT = 'w-full bg-asphalt border border-vapor/10 focus:border-gold/50 outline-none text-vapor px-4 py-3 text-sm font-mono-tech rounded-sm transition-colors duration-200';
-const ORDER = ['assigned', 'accepted', 'driving', 'arrived', 'in_progress', 'quality_check', 'completed', 'photos_uploaded', 'invoice_complete'];
-
 export default function SpecialistPortal() {
   const { user, isLoadingAuth, authChecked } = useAuth();
   const [tab, setTab] = useState('overview');
@@ -22,7 +20,7 @@ export default function SpecialistPortal() {
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [completing, setCompleting] = useState(null);
+  const [photoJob, setPhotoJob] = useState(null);
   const [saving, setSaving] = useState(false);
   const [pf, setPf] = useState({ phone: '', email: '', home_address: '', status: 'active' });
 
@@ -57,18 +55,24 @@ export default function SpecialistPortal() {
   const completed = jobs.filter(j => j.status === 'completed');
   const metrics = profile?.metrics || {};
 
-  const advanceStatus = async (appt) => {
-    const idx = ORDER.indexOf(appt.job_status || 'assigned');
-    const next = ORDER[idx + 1];
-    if (!next) return;
-    if (next === 'completed') { setCompleting(appt); return; }
+  const startJob = async (appt) => {
     setSaving(true);
-    try { const r = await invoke({ action: 'update_job_status', appointment_id: appt.id, job_status: next }); if (r.error) alert(r.error); else await load(); }
+    try { const r = await invoke({ action: 'update_job_status', appointment_id: appt.id, job_status: 'in_progress' }); if (r.error) alert(r.error); else await load(); }
     finally { setSaving(false); }
   };
-  const submitCompletion = async (payload) => {
+  const completeJob = async (appt) => {
     setSaving(true);
-    try { const r = await invoke({ action: 'update_job_status', appointment_id: completing.id, job_status: 'completed', ...payload }); if (r.error) { alert(r.error); return false; } setCompleting(null); await load(); return true; }
+    try { const r = await invoke({ action: 'update_job_status', appointment_id: appt.id, job_status: 'completed' }); if (r.error) alert(r.error); else await load(); }
+    finally { setSaving(false); }
+  };
+  const submitPhotos = async (payload) => {
+    setSaving(true);
+    try { const r = await invoke({ action: 'update_job_status', appointment_id: photoJob.id, job_status: 'photos_uploaded', ...payload }); if (r.error) { alert(r.error); return false; } setPhotoJob(null); await load(); return true; }
+    finally { setSaving(false); }
+  };
+  const requestReview = async (appt) => {
+    setSaving(true);
+    try { const r = await invoke({ action: 'request_review', appointment_id: appt.id }); if (r.error) alert(r.error); else await load(); }
     finally { setSaving(false); }
   };
   const saveAvailability = async (patch) => {
@@ -111,7 +115,7 @@ export default function SpecialistPortal() {
               <div>
                 <h2 className="text-xs font-mono-tech tracking-widest text-gold/70 mb-3">TODAY'S SCHEDULE</h2>
                 {todaysJobs.length ? (
-                  <div className="space-y-3">{todaysJobs.map(j => <JobCard key={j.id} job={j} onAdvance={advanceStatus} onComplete={setCompleting} disabled={saving} />)}</div>
+                  <div className="space-y-3">{todaysJobs.map(j => <JobCard key={j.id} job={j} onStart={startJob} onComplete={completeJob} onPhotos={setPhotoJob} onReview={requestReview} disabled={saving} />)}</div>
                 ) : (
                   <div className="glass-panel border border-vapor/10 rounded-sm p-8 text-center text-sm text-vapor/40 font-mono-tech">No jobs scheduled today.</div>
                 )}
@@ -123,7 +127,7 @@ export default function SpecialistPortal() {
             <div className="space-y-4">
               <h1 className="text-2xl font-grotesk font-bold text-vapor mb-2">My Jobs</h1>
               {jobs.length ? (
-                <div className="space-y-3">{jobs.map(j => <JobCard key={j.id} job={j} onAdvance={advanceStatus} onComplete={setCompleting} disabled={saving} />)}</div>
+                <div className="space-y-3">{jobs.map(j => <JobCard key={j.id} job={j} onStart={startJob} onComplete={completeJob} onPhotos={setPhotoJob} onReview={requestReview} disabled={saving} />)}</div>
               ) : (
                 <div className="glass-panel border border-vapor/10 rounded-sm p-8 text-center text-sm text-vapor/40 font-mono-tech">No jobs assigned yet.</div>
               )}
@@ -176,7 +180,7 @@ export default function SpecialistPortal() {
           )}
         </>
       )}
-      {completing && <CompletionModal job={completing} onClose={() => setCompleting(null)} onSubmit={submitCompletion} saving={saving} />}
+      {photoJob && <CompletionModal job={photoJob} onClose={() => setPhotoJob(null)} onSubmit={submitPhotos} saving={saving} />}
     </PortalShell>
   );
 }
