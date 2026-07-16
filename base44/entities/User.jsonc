@@ -2,6 +2,14 @@
   "type": "object",
   "name": "User",
   "properties": {
+    "first_name": {
+      "type": "string",
+      "description": "User's first name. Editable custom field (the built-in full_name is platform-managed and immutable after registration)."
+    },
+    "last_name": {
+      "type": "string",
+      "description": "User's last name. Editable custom field (the built-in full_name is platform-managed and immutable after registration)."
+    },
     "role": {
       "type": "string",
       "enum": [

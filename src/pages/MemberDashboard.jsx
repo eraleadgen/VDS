@@ -69,7 +69,13 @@ export default function MemberDashboard() {
       try {
         const userEntities = await base44.entities.User.list();
         const myEntity = userEntities.find(u => u.id === me.id);
-        setUser({ ...me, saved_addresses: myEntity?.saved_addresses || [] });
+        setUser({
+          ...me,
+          first_name: myEntity?.first_name || me.first_name,
+          last_name: myEntity?.last_name || me.last_name,
+          phone: myEntity?.phone || me.phone,
+          saved_addresses: myEntity?.saved_addresses || [],
+        });
       } catch {
         setUser(me);
       }
@@ -155,7 +161,13 @@ export default function MemberDashboard() {
       // Merge saved_addresses from entity since auth.me() may not include it
       const userEntity = await base44.entities.User.list();
       const myEntity = userEntity.find(u => u.id === fresh.id);
-      setUser({ ...fresh, saved_addresses: myEntity?.saved_addresses || updatedFields.saved_addresses || [] });
+      setUser({
+        ...fresh,
+        first_name: myEntity?.first_name || updatedFields.first_name || fresh.first_name,
+        last_name: myEntity?.last_name || updatedFields.last_name || fresh.last_name,
+        phone: myEntity?.phone || updatedFields.phone || fresh.phone,
+        saved_addresses: myEntity?.saved_addresses || updatedFields.saved_addresses || [],
+      });
     } catch (e) {
       setUser(prev => ({ ...prev, ...updatedFields }));
     }
@@ -211,7 +223,7 @@ export default function MemberDashboard() {
           <div>
             <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-2">{subscriptions.length > 0 ? 'VDS GOLD MEMBER PORTAL' : 'MEMBER PORTAL'}</p>
             <h1 className="text-4xl font-grotesk font-bold text-vapor">
-              WELCOME, <GoldShimmer>{(user?.full_name?.includes('@') ? '' : user?.full_name?.split(' ')[0])?.toUpperCase() || 'MEMBER'}</GoldShimmer>
+              WELCOME, <GoldShimmer>{(user?.first_name || (user?.full_name?.includes('@') ? '' : user?.full_name?.split(' ')[0]) || 'MEMBER').toUpperCase()}</GoldShimmer>
             </h1>
             <p className="text-vapor/40 text-xs font-mono-tech mt-2 tracking-widest">{user?.email}</p>
           </div>
@@ -381,13 +393,13 @@ export default function MemberDashboard() {
               <div>
                 <p className="text-xs font-mono-tech tracking-widest text-vapor/30 mb-1">FIRST NAME</p>
                 <p className="text-vapor font-mono-tech text-sm">
-                  {user?.full_name?.includes('@') ? '—' : (user?.full_name?.split(' ')[0] || '—')}
+                  {user?.first_name || (user?.full_name?.includes('@') ? '' : user?.full_name?.split(' ')[0]) || '—'}
                 </p>
               </div>
               <div>
                 <p className="text-xs font-mono-tech tracking-widest text-vapor/30 mb-1">LAST NAME</p>
                 <p className="text-vapor font-mono-tech text-sm">
-                  {user?.full_name?.includes('@') ? '—' : (user?.full_name?.split(' ').slice(1).join(' ') || '—')}
+                  {user?.last_name || (user?.full_name?.includes('@') ? '' : user?.full_name?.split(' ').slice(1).join(' ')) || '—'}
                 </p>
               </div>
               <div>

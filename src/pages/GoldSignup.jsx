@@ -52,9 +52,10 @@ export default function GoldSignup() {
     setLoading(true);
     const res = await base44.auth.verifyOtp({ email, otpCode: otp });
     base44.auth.setToken(res.access_token);
-    // Persist full name + phone (platform may default full_name to the email prefix otherwise)
+    // Persist first/last name + phone (the built-in full_name is immutable after signup)
     await base44.auth.updateMe({
-      full_name: `${firstName.trim()} ${lastName.trim()}`.trim(),
+      first_name: firstName.trim(),
+      last_name: lastName.trim(),
       phone: phone.trim(),
     });
     // Sync new member to GHL CRM

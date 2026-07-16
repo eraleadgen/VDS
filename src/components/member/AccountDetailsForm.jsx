@@ -7,8 +7,8 @@ const inputClass = "w-full bg-asphalt border border-vapor/10 focus:border-gold/4
 export default function AccountDetailsForm({ user, subscriptions = [], onSaved, onCancel, onAccountDeleted }) {
   const isEmailName = (user?.full_name || '').includes('@');
   const nameParts = isEmailName ? [] : (user?.full_name || '').split(' ');
-  const [firstName, setFirstName] = useState(nameParts[0] || '');
-  const [lastName, setLastName] = useState(nameParts.slice(1).join(' ') || '');
+  const [firstName, setFirstName] = useState(user?.first_name || nameParts[0] || '');
+  const [lastName, setLastName] = useState(user?.last_name || nameParts.slice(1).join(' ') || '');
   const [phone, setPhone] = useState(user?.phone || '');
   const [addresses, setAddresses] = useState(user?.saved_addresses || []);
   const [newAddress, setNewAddress] = useState('');
@@ -35,15 +35,15 @@ export default function AccountDetailsForm({ user, subscriptions = [], onSaved, 
     e.preventDefault();
     setLoading(true);
     try {
-      const updatedName = `${firstName.trim()} ${lastName.trim()}`.trim();
       await base44.entities.User.update(user.id, {
-        full_name: updatedName,
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
         phone: phone.trim(),
         saved_addresses: addresses,
       });
       setSaved(true);
       await new Promise(r => setTimeout(r, 500));
-      onSaved && onSaved({ full_name: updatedName, phone: phone.trim(), saved_addresses: addresses });
+      onSaved && onSaved({ first_name: firstName.trim(), last_name: lastName.trim(), phone: phone.trim(), saved_addresses: addresses });
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
       console.error('Failed to save account details:', err);

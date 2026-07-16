@@ -47,11 +47,10 @@ export default function Register() {
       if (result?.access_token) {
         base44.auth.setToken(result.access_token);
       }
-      // Persist the real full name (platform may default to email prefix otherwise)
-      const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
-      if (fullName) {
-        try { await base44.auth.updateMe({ full_name: fullName }); } catch (_) {}
-      }
+      // Persist first/last name (the built-in full_name is immutable after signup)
+      try {
+        await base44.auth.updateMe({ first_name: firstName.trim(), last_name: lastName.trim() });
+      } catch (_) {}
       // Sync new account to GHL CRM
       try {
         await base44.functions.invoke('syncContactToGHL', {
