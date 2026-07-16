@@ -127,20 +127,14 @@ export default function Home() {
           <div className="relative glass-panel rounded-sm overflow-hidden">
             {/* Subtle gold sheen overlay */}
             <div className="absolute inset-0 bg-gradient-to-br from-gold/[0.06] via-transparent to-gold/[0.03] pointer-events-none" />
-            {/* Top hairline accent */}
-            <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold/40 to-transparent" />
 
-            <div className="relative flex flex-col md:flex-row items-center justify-between gap-8 px-6 sm:px-10 py-10 md:py-12">
-              <div className="text-center md:text-left">
-                <div className="flex items-center justify-center md:justify-start gap-3 mb-4">
-                  <span className="w-8 h-px bg-gold/40" />
-                  <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/80">NEW — MONTHLY MEMBERSHIP</p>
-                  <span className="w-8 h-px bg-gold/40 hidden md:block" />
-                </div>
+            <div className="relative flex flex-col items-center text-center gap-6 px-6 py-10 md:flex-row md:items-center md:justify-between md:text-left md:px-10 md:py-12">
+              <div className="max-w-xl">
+                <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/80 mb-4">NEW — MONTHLY MEMBERSHIP</p>
                 <h2 className="text-4xl md:text-5xl font-grotesk font-bold text-vapor mb-4">
                   <GoldShimmer>VDS GOLD</GoldShimmer>
                 </h2>
-                <p className="text-vapor/50 font-mono-tech text-sm leading-relaxed max-w-lg">
+                <p className="text-vapor/50 font-mono-tech text-sm leading-relaxed">
                   Unlimited exterior details + 1 deep interior clean per month. Your vehicle, perpetually immaculate.
                 </p>
               </div>

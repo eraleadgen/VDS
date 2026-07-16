@@ -94,22 +94,13 @@ export default function Navbar() {
           </Link>
           </div>
 
-        {/* Mobile quick buttons */}
-        <div className="lg:hidden flex items-center gap-2">
-          <Link
-            to="/specialist-login"
-            className="flex items-center gap-1.5 border border-vapor/20 text-vapor/60 px-3 py-2 text-[10px] font-mono-tech tracking-widest rounded-sm hover:border-gold/40 hover:text-gold transition-colors duration-200"
-          >
-            <UserCircle size={13} />
-            SPECIALIST
-          </Link>
-          <button
-            onClick={() => setOpen(!open)}
-            className="text-vapor p-2"
-          >
-            {open ? <X size={22} /> : <Menu size={22} />}
-          </button>
-        </div>
+        {/* Mobile hamburger */}
+        <button
+          onClick={() => setOpen(!open)}
+          className="lg:hidden text-vapor p-2"
+        >
+          {open ? <X size={22} /> : <Menu size={22} />}
+        </button>
       </div>
 
       {/* Mobile Menu */}
