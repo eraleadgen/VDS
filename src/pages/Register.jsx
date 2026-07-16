@@ -61,6 +61,10 @@ export default function Register() {
           tags: ['website-signup'],
         });
       } catch (_) {}
+      // Send themed member welcome email (Gold upsell included if no active membership)
+      try {
+        await base44.functions.invoke('sendMemberWelcomeEmail', { firstName: firstName.trim() });
+      } catch (_) {}
       window.location.href = "/member-dashboard";
     } catch (err) {
       setError(err.message || "Invalid verification code");
