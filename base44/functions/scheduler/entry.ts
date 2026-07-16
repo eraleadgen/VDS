@@ -576,7 +576,7 @@ async function adminCreateContractor(base44, body) {
   });
   // Auto-send the Contractor Welcome Email.
   try {
-    await base44.functions.invoke('sendContractorWelcomeEmail', { email, firstName: (name || '').split(' ')[0] });
+    await base44.functions.invoke('sendContractorWelcomeEmail', { email, firstName: (name || '').split(' ')[0], scheduler_token: Deno.env.get('SCHEDULER_TOKEN') });
   } catch (e) { console.error('welcome email error:', e.message); }
   return { success: true, contractor_id: c.id };
 }

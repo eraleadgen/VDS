@@ -174,6 +174,18 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const body = await req.json().catch(() => ({}));
+
+    // Auth: an authenticated admin, or an internal service call via SCHEDULER_TOKEN.
+    // This prevents unauthenticated callers from triggering branded VDS emails with
+    // arbitrary (potentially phishing) portal links.
+    const schedulerToken = Deno.env.get('SCHEDULER_TOKEN');
+    const tokenOk = !!(schedulerToken && body.scheduler_token && body.scheduler_token === schedulerToken);
+    if (!tokenOk) {
+      const me = await base44.auth.me().catch(() => null);
+      if (!me || me.role !== 'admin') return Response.json({ error: 'Admin only.' }, { status: 403 });
+    }
+    if (body.scheduler_token) delete body.scheduler_token;
+
     const email = (body.email || '').trim();
     if (!email) return Response.json({ error: 'email is required.' }, { status: 400 });
 
