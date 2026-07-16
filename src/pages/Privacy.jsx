@@ -21,7 +21,7 @@ const SECTIONS = [
   {
     num: '4.',
     title: 'SMS/Text Message Policy',
-    content: 'By providing your mobile phone number and opting in, you consent to receive SMS text messages from Valet Detailing Service LLC (VDS Mobile) sent from (470) 412-8986 regarding your appointments, service updates, and promotional offers. Message frequency varies. You can opt out at any time by replying "STOP" to any message. For help, reply "HELP." Standard message and data rates may apply. We will not share your SMS opt-in data or consent with any third parties. To withdraw consent or change your number, contact us at Valetdetailingservice@gmail.com.',
+    content: 'By providing your mobile phone number and opting in, you consent to receive SMS text messages from Valet Detailing Service LLC (VDS Mobile). We do not sell or share mobile phone numbers. Mobile information will not be shared with third parties for marketing. SMS consent is not shared. Message frequency varies. Message and data rates may apply. Reply STOP to opt out. Reply HELP for assistance.',
   },
   {
     num: '5.',

@@ -11,7 +11,7 @@ const SECTIONS = [
   {
     num: '2.',
     title: 'SMS Messaging Terms',
-    content: 'By providing your mobile phone number and checking the SMS consent box on our website forms, you affirmatively consent to receive SMS text messages from Valet Detailing Service LLC ("VDS Mobile") sent from our business line (470) 412-8986. These messages may include appointment confirmations, appointment reminders, service updates, customer support responses, and promotional offers or discounts. Message frequency may vary (typically 1–10 messages per month). You can opt out at any time by replying STOP to any message. For help, reply HELP. Standard message and data rates may apply. Mobile carriers are not liable for delayed or undelivered messages. You must be 18 years of age or older to opt into SMS messaging. Consent is not a condition of any purchase. To withdraw consent or update your number, contact us at Valetdetailingservice@gmail.com.',
+    content: 'By providing your phone number and checking the SMS consent box on our website forms, customers consent to receive conversational SMS messages from Valet Detailing Service LLC (VDS Mobile) related to detailing services, including appointment confirmations, reminders, service updates, and customer support. Message frequency varies. Message and data rates may apply. Reply STOP to unsubscribe. Reply HELP for assistance.',
   },
   {
     num: '3.',
