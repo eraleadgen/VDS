@@ -668,10 +668,9 @@ Deno.serve(async (req) => {
         try { me = await base44.auth.me(); } catch {}
         if (me) authorized = true; // any logged-in user; admin/owner checks below enforce scoping
       }
-      if (!authorized && body.customer_phone && appt.customer_phone &&
-          body.customer_phone.replace(/\D/g, '') === appt.customer_phone.replace(/\D/g, '')) {
-        authorized = true;
-      }
+      // Anonymous callers (no Retell key, no authenticated session) are NOT authorized to
+      // modify appointments — a phone-number match alone is too weak (enumerable/harvestable)
+      // for destructive actions. Guests must go through the Retell concierge or log in.
       if (!authorized) return Response.json({ error: 'Unauthorized to modify this appointment.' }, { status: 403 });
 
       // Admin-only actions / scoping
@@ -686,18 +685,21 @@ Deno.serve(async (req) => {
       }
 
       if (action === 'reschedule' || action === 'cancel') {
-        // Non-admins may only touch their own appointments. Ownership is verified
-        // for both authenticated users (session match) and guests (phone match) —
-        // the check is NOT skipped when no session user exists.
+        // Non-admins may only touch their own appointments.
         if (!isAdmin) {
-          const ownsBySession = !!me && (
-            appt.created_by_id === me.id ||
-            (appt.customer_email && me.email && appt.customer_email.toLowerCase() === me.email.toLowerCase()) ||
-            (appt.customer_phone && me.phone && appt.customer_phone.replace(/\D/g, '') === me.phone.replace(/\D/g, ''))
-          );
-          const ownsByPhone = !me && body.customer_phone && appt.customer_phone &&
-            body.customer_phone.replace(/\D/g, '') === appt.customer_phone.replace(/\D/g, '');
-          if (!ownsBySession && !ownsByPhone) return Response.json({ error: 'Unauthorized to modify this appointment.' }, { status: 403 });
+          if (me) {
+            // Authenticated user: verify via immutable, verified identity only (user id or verified auth email).
+            // Phone is a mutable/enumerable contact field and must not serve as an authorization key.
+            const owns = appt.created_by_id === me.id ||
+              (appt.customer_email && me.email && appt.customer_email.toLowerCase() === me.email.toLowerCase());
+            if (!owns) return Response.json({ error: 'Unauthorized to modify this appointment.' }, { status: 403 });
+          } else {
+            // Service caller (Retell concierge) already authorized via API key: verify it is acting on the
+            // customer whose phone matches the appointment of record.
+            const owns = body.customer_phone && appt.customer_phone &&
+              body.customer_phone.replace(/\D/g, '') === appt.customer_phone.replace(/\D/g, '');
+            if (!owns) return Response.json({ error: 'Unauthorized to modify this appointment.' }, { status: 403 });
+          }
         }
       }
 

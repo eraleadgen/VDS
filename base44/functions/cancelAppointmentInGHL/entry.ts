@@ -13,11 +13,12 @@ Deno.serve(async (req) => {
     const appointment = await base44.asServiceRole.entities.Appointment.get(appointment_id);
     if (!appointment) return Response.json({ success: false, error: 'Appointment not found' }, { status: 404 });
 
-    // Ownership check — mirror the Appointment RLS: created_by, email, or phone match
+    // Ownership check — verify against immutable, verified identity only (user id or verified auth email).
+    // Phone is a mutable/enumerable contact field and must NOT be used as an authorization key
+    // (a user could otherwise set their phone to a victim's to bypass ownership).
     const owns =
       appointment.created_by_id === user.id ||
-      (appointment.customer_email && user.email && appointment.customer_email.toLowerCase() === user.email.toLowerCase()) ||
-      (appointment.customer_phone && user.phone && appointment.customer_phone.replace(/\D/g, '') === user.phone.replace(/\D/g, ''));
+      (appointment.customer_email && user.email && appointment.customer_email.toLowerCase() === user.email.toLowerCase());
     if (!owns && user.role !== 'admin') {
       return Response.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }

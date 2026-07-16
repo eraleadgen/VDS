@@ -32,10 +32,13 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'update') {
+      // Only non-sensitive, non-identity custom fields are self-writable. phone is intentionally
+      // excluded (it is a contact/identity attribute relied on elsewhere); role/email are
+      // platform-managed. Values are type-checked and length-capped to prevent abuse via asServiceRole.
       const allowed = {};
-      for (const k of ['first_name', 'last_name', 'phone', 'saved_addresses']) {
-        if (body[k] !== undefined) allowed[k] = body[k];
-      }
+      if (typeof body.first_name === 'string') allowed.first_name = body.first_name.slice(0, 50);
+      if (typeof body.last_name === 'string') allowed.last_name = body.last_name.slice(0, 50);
+      if (Array.isArray(body.saved_addresses)) allowed.saved_addresses = body.saved_addresses.slice(0, 20);
       await base44.asServiceRole.entities.User.update(me.id, allowed);
       const u = await base44.asServiceRole.entities.User.get(me.id);
       return Response.json({ success: true, account: project(u) });
