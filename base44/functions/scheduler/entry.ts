@@ -210,6 +210,76 @@ async function autoAssign(base44, cfg, dateStr, serviceKey, slotStart, slotEnd) 
   return scored[0].contractor;
 }
 
+// ── assign_contractor (internal: auto-assign a named contractor by portal availability) ──
+// Used by the website booking flow to assign a specific contractor (e.g. Noah)
+// to a job already mirrored to Google Calendar, gated by their weekly_availability + blocked_dates.
+async function assignContractor(base44, data, cfg) {
+  const { appointment_id, target } = data;
+  if (!appointment_id) return { error: 'appointment_id is required.' };
+  const appt = await base44.asServiceRole.entities.Appointment.get(appointment_id);
+  if (!appt) return { error: 'Appointment not found.' };
+
+  const all = await base44.asServiceRole.entities.Contractor.list();
+  const targetName = (target || '').toLowerCase().trim();
+  const contractor = (targetName ? all.find(c => (c.name || '').toLowerCase().includes(targetName)) : null) ||
+    all.find(c => c.id === target);
+  if (!contractor) return { assigned: false, reason: 'contractor_not_found' };
+  if (contractor.is_enabled === false) return { assigned: false, reason: 'disabled', contractor: contractor.name };
+  if (contractor.status !== 'active') return { assigned: false, reason: 'inactive', contractor: contractor.name };
+
+  const tz = cfg.timezone || 'America/New_York';
+  const dateStr = appt.preferred_date;
+  if (!dateStr) return { assigned: false, reason: 'no_date', contractor: contractor.name };
+  if ((contractor.blocked_dates || []).some(b => b.date === dateStr)) return { assigned: false, reason: 'blocked_date', contractor: contractor.name };
+
+  const dayKey = weekdayKey(dateStr);
+  const dayAvail = (contractor.weekly_availability || []).find(a => a.day === dayKey);
+  if (!dayAvail || !dayAvail.available) return { assigned: false, reason: 'not_available_day', contractor: contractor.name };
+
+  // Parse preferred_time ("9:00 AM" or "09:00") → 24h "HH:MM"
+  const t24 = (() => {
+    const m = (appt.preferred_time || '').match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+    if (!m) return null;
+    let h = parseInt(m[1], 10); const min = parseInt(m[2], 10);
+    const mer = (m[3] || '').toUpperCase();
+    if (mer === 'PM' && h !== 12) h += 12;
+    if (mer === 'AM' && h === 12) h = 0;
+    return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
+  })();
+  if (!t24) return { assigned: false, reason: 'no_start_time', contractor: contractor.name };
+
+  const dur = appt.estimated_duration_minutes || 120;
+  const startMs = zonedToUtc(dateStr, t24, tz).getTime();
+  if (!Number.isFinite(startMs)) return { assigned: false, reason: 'no_start_time', contractor: contractor.name };
+  const endMs = startMs + dur * 60000;
+
+  if (dayAvail.start && dayAvail.end) {
+    const aStart = zonedToUtc(dateStr, dayAvail.start, tz).getTime();
+    const aEnd = zonedToUtc(dateStr, dayAvail.end, tz).getTime();
+    if (startMs < aStart || endMs > aEnd) return { assigned: false, reason: 'outside_window', contractor: contractor.name };
+  }
+
+  await base44.asServiceRole.entities.Appointment.update(appt.id, {
+    contractor_id: contractor.id,
+    contractor_name: contractor.name,
+    job_status: 'assigned',
+    status: 'confirmed',
+  });
+
+  // Mirror the assignment onto the Google Calendar event so the assigned contractor + full job details appear there too.
+  if (appt.google_calendar_event_id) {
+    try {
+      const { accessToken } = await base44.asServiceRole.connectors.getConnection('googlecalendar');
+      await gcal(accessToken, 'PATCH', `/calendars/primary/events/${appt.google_calendar_event_id}`, {
+        summary: `VDS — ${appt.service_label || 'Appointment'} — ${appt.customer_name} — ${contractor.name}`,
+        extendedProperties: { shared: { type: 'vds_appointment', service: appt.service_type || '', contractor_id: contractor.id } },
+      });
+    } catch (e) { console.error('GCal assign patch error:', e.message); }
+  }
+
+  return { success: true, assigned: true, contractor: { id: contractor.id, name: contractor.name } };
+}
+
 // ── book ────────────────────────────────────────────────────────────────
 async function bookAppointment(base44, data, cfg) {
   const { date, startUtc, service, customer_name, customer_phone } = data;
@@ -509,6 +579,7 @@ Deno.serve(async (req) => {
       const all = await base44.asServiceRole.entities.Contractor.filter({ status: 'active' });
       return Response.json({ contractors: all.map(c => ({ id: c.id, name: c.name, skills: c.skills || [], status: c.status, is_enabled: c.is_enabled !== false })) });
     }
+    if (action === 'assign_contractor') return Response.json(await assignContractor(base44, body, cfg));
     if (action === 'get_my_profile') return Response.json(await getMyProfile(base44));
     if (action === 'my_jobs') return Response.json(await myJobs(base44));
     if (action === 'update_my_profile') return Response.json(await updateMyProfile(base44, body));

@@ -1,4 +1,4 @@
-import { MapPin, Clock, Phone, ChevronRight, Camera } from 'lucide-react';
+import { MapPin, Clock, Phone, Mail, FileText, ChevronRight, Camera } from 'lucide-react';
 
 const STATUS_COLORS = {
   assigned: 'text-vapor/60 bg-vapor/5 border-vapor/20',
@@ -31,7 +31,14 @@ export default function JobCard({ job, onAdvance, onComplete, disabled }) {
       <div className="space-y-1 text-xs font-mono-tech text-vapor/50 mb-4">
         <p className="flex items-center gap-2"><MapPin size={12} /> {job.service_address || 'Address N/A'}</p>
         <p className="flex items-center gap-2"><Phone size={12} /> {job.customer_phone || 'N/A'}</p>
+        {job.customer_email ? <p className="flex items-center gap-2"><Mail size={12} /> {job.customer_email}</p> : null}
         {job.estimated_duration_minutes ? <p className="flex items-center gap-2"><Clock size={12} /> {job.estimated_duration_minutes} min est.</p> : null}
+        {job.notes ? (
+          <div className="mt-2 pt-2 border-t border-vapor/10">
+            <p className="flex items-center gap-2 text-gold/60 mb-1"><FileText size={12} /> JOB DETAILS</p>
+            <p className="whitespace-pre-line text-vapor/60 pl-5">{job.notes}</p>
+          </div>
+        ) : null}
       </div>
       <div className="flex gap-2">
         {status !== 'completed' && status !== 'photos_uploaded' && status !== 'invoice_complete' && (

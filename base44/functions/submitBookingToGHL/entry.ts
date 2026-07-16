@@ -353,6 +353,14 @@ Deno.serve(async (req) => {
       console.error('Google Calendar mirror failed (non-blocking):', e.message);
     }
 
+    // ── Auto-assign Noah based on his contractor-portal availability ─────────
+    if (appt) {
+      try {
+        const r = await base44.functions.invoke('scheduler', { action: 'assign_contractor', appointment_id: appt.id, target: 'Noah' });
+        console.log('Auto-assign result:', JSON.stringify(r?.data || r));
+      } catch (e) { console.error('Auto-assign contractor failed:', e.message); }
+    }
+
     // ── Internal booking notification email ────────────────────────────────
     try {
       const vehicleCount = Math.min(vehicleEntries.length || 1, 4);
