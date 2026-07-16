@@ -65,17 +65,11 @@ export default function MemberDashboard() {
   useEffect(() => {
     const init = async () => {
       const me = await base44.auth.me();
-      // Also load saved_addresses from User entity (not always in auth.me())
+      // Load full profile (custom fields like first_name/saved_addresses) via service-role function
       try {
-        const userEntities = await base44.entities.User.list();
-        const myEntity = userEntities.find(u => u.id === me.id);
-        setUser({
-          ...me,
-          first_name: myEntity?.first_name || me.first_name,
-          last_name: myEntity?.last_name || me.last_name,
-          phone: myEntity?.phone || me.phone,
-          saved_addresses: myEntity?.saved_addresses || [],
-        });
+        const res = await base44.functions.invoke('account', { action: 'get' });
+        const acc = res?.data?.account || {};
+        setUser({ ...me, ...acc });
       } catch {
         setUser(me);
       }
@@ -158,16 +152,13 @@ export default function MemberDashboard() {
     setShowEditAccount(false);
     try {
       const fresh = await base44.auth.me();
-      // Merge saved_addresses from entity since auth.me() may not include it
-      const userEntity = await base44.entities.User.list();
-      const myEntity = userEntity.find(u => u.id === fresh.id);
-      setUser({
-        ...fresh,
-        first_name: myEntity?.first_name || updatedFields.first_name || fresh.first_name,
-        last_name: myEntity?.last_name || updatedFields.last_name || fresh.last_name,
-        phone: myEntity?.phone || updatedFields.phone || fresh.phone,
-        saved_addresses: myEntity?.saved_addresses || updatedFields.saved_addresses || [],
-      });
+      try {
+        const res = await base44.functions.invoke('account', { action: 'get' });
+        const acc = res?.data?.account || {};
+        setUser({ ...fresh, ...acc });
+      } catch (e) {
+        setUser(prev => ({ ...prev, ...updatedFields }));
+      }
     } catch (e) {
       setUser(prev => ({ ...prev, ...updatedFields }));
     }

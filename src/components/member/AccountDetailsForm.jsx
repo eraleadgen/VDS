@@ -35,7 +35,8 @@ export default function AccountDetailsForm({ user, subscriptions = [], onSaved, 
     e.preventDefault();
     setLoading(true);
     try {
-      await base44.entities.User.update(user.id, {
+      await base44.functions.invoke('account', {
+        action: 'update',
         first_name: firstName.trim(),
         last_name: lastName.trim(),
         phone: phone.trim(),
