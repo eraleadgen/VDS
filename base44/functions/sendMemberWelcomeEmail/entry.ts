@@ -81,7 +81,7 @@ function buildHtml(firstName, hasGold) {
 
 <!-- Intro -->
 <tr><td style="padding:14px 32px 0 32px;">
-  <p style="margin:0 0 16px 0;font-size:15px;line-height:25px;color:#CBD5E1;">Welcome to VDS Mobile &mdash; Atlanta's premier concierge detailing service. Your member account is ready, and you can now book premium detailing from the convenience of your phone.</p>
+  <p style="margin:0 0 16px 0;font-size:15px;line-height:25px;color:#CBD5E1;">Welcome to VDS Mobile &mdash; Atlanta's premier concierge detailing service, operated by Valet Detailing Service LLC. Your member account is ready, and you can now book premium detailing from the convenience of your phone.</p>
   <p style="margin:0 0 22px 0;font-size:15px;line-height:25px;color:#CBD5E1;">We bring the spa to your vehicle. Here's everything you can do with your new account:</p>
 </td></tr>
 

@@ -15,6 +15,7 @@ import FAQ from './pages/FAQ';
 import Terms from './pages/Terms';
 import Pricing from './pages/Pricing';
 import Privacy from './pages/Privacy';
+import Cookies from './pages/Cookies';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import MemberLogin from './pages/MemberLogin';
@@ -67,6 +68,7 @@ const AuthenticatedApp = () => {
 
       <Route path="/terms" element={<Terms />} />
       <Route path="/privacy" element={<Privacy />} />
+      <Route path="/cookies" element={<Cookies />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/member-login" element={<MemberLogin />} />

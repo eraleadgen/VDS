@@ -86,7 +86,13 @@ export default function Navbar() {
           >
             ◆ VDS GOLD
           </Link>
-        </div>
+          <Link
+            to="/specialist-login"
+            className="text-xs font-mono-tech tracking-widest text-vapor/50 hover:text-gold transition-colors duration-200"
+          >
+            SPECIALIST
+          </Link>
+          </div>
 
         {/* Mobile hamburger */}
         <button
@@ -132,6 +138,12 @@ export default function Navbar() {
               className="vds-gold-btn px-4 py-3 text-sm font-mono-tech tracking-widest text-center rounded-sm"
             >
               ◆ VDS GOLD — FROM $250/MO
+            </Link>
+            <Link
+              to="/specialist-login"
+              className="text-sm font-mono-tech tracking-widest text-vapor/50 border border-vapor/20 px-4 py-3 text-center rounded-sm hover:text-gold hover:border-gold/40 transition-colors"
+            >
+              SPECIALIST PORTAL
             </Link>
           </div>
         </div>
