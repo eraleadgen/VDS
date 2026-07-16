@@ -174,11 +174,11 @@ export default function SpecialistPortal() {
               <div className="glass-panel border border-vapor/10 rounded-sm p-6">
                 <h3 className="text-xs font-mono-tech tracking-widest text-gold/70 mb-3">SKILLS & SERVICE AREAS</h3>
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {(profile.skills || []).map(s => <span key={s} className="text-xs font-mono-tech bg-gold/10 text-gold border border-gold/30 px-3 py-1 rounded-sm">{SKILL_LABELS[s] || s}</span>)}
-                  {!profile.skills?.length && <span className="text-xs font-mono-tech text-vapor/30">None set</span>}
+                  {(profile?.skills || []).map(s => <span key={s} className="text-xs font-mono-tech bg-gold/10 text-gold border border-gold/30 px-3 py-1 rounded-sm">{SKILL_LABELS[s] || s}</span>)}
+                  {!profile?.skills?.length && <span className="text-xs font-mono-tech text-vapor/30">None set</span>}
                 </div>
-                <p className="text-xs font-mono-tech text-vapor/50 mb-1">Counties: {(profile.service_areas?.counties || []).join(', ') || 'None set'}</p>
-                <p className="text-xs font-mono-tech text-vapor/50">Max travel: {profile.service_areas?.max_travel_distance_miles || 0} mi</p>
+                <p className="text-xs font-mono-tech text-vapor/50 mb-1">Counties: {(profile?.service_areas?.counties || []).join(', ') || 'None set'}</p>
+                <p className="text-xs font-mono-tech text-vapor/50">Max travel: {profile?.service_areas?.max_travel_distance_miles || 0} mi</p>
                 <p className="text-xs text-vapor/30 mt-2">Contact an admin to update skills or service areas.</p>
               </div>
             </div>
