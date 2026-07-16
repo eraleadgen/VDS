@@ -11,7 +11,7 @@ const SECTIONS = [
   {
     num: '2.',
     title: 'SMS Messaging Terms',
-    content: 'By providing your phone number and opting in through our website forms, you consent to receive SMS messages from Valet Detailing Service LLC (VDS Mobile). These messages may include appointment confirmations, appointment reminders, service updates, customer support responses, and promotional offers or discounts. Message frequency may vary. You can opt out at any time by replying STOP. Reply HELP for assistance. Message and data rates may apply. Mobile carriers are not liable for delayed or undelivered messages. Users must be 18 years or older to opt into SMS messaging.',
+    content: 'By providing your mobile phone number and checking the SMS consent box on our website forms, you affirmatively consent to receive SMS text messages from Valet Detailing Service LLC ("VDS Mobile") sent from our business line (470) 412-8986. These messages may include appointment confirmations, appointment reminders, service updates, customer support responses, and promotional offers or discounts. Message frequency may vary (typically 1–10 messages per month). You can opt out at any time by replying STOP to any message. For help, reply HELP. Standard message and data rates may apply. Mobile carriers are not liable for delayed or undelivered messages. You must be 18 years of age or older to opt into SMS messaging. Consent is not a condition of any purchase. To withdraw consent or update your number, contact us at Valetdetailingservice@gmail.com.',
   },
   {
     num: '3.',
@@ -87,7 +87,7 @@ export default function Terms() {
       <section className="pt-36 pb-20 max-w-4xl mx-auto px-6">
         <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">LEGAL</p>
         <h1 className="text-5xl font-grotesk font-bold text-vapor mb-3">TERMS & CONDITIONS</h1>
-        <p className="text-xs font-mono-tech text-vapor/30 mb-16 tracking-widest">VALET DETAILING SERVICE LLC · LAST UPDATED: JUNE 28, 2026</p>
+        <p className="text-xs font-mono-tech text-vapor/30 mb-16 tracking-widest">VALET DETAILING SERVICE LLC · LAST UPDATED: JULY 16, 2026</p>
 
         <div className="space-y-10">
           {SECTIONS.map(sec => (

@@ -7,6 +7,7 @@ import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
 import GoldShimmer from '../components/vds/GoldShimmer';
 import AddVehicleForm from '../components/member/AddVehicleForm';
+import SmsConsent from '../components/vds/SmsConsent';
 
 const SERVICES = [
   { id: 'exterior_detail', label: 'Exterior Detail', duration: '1–2 hrs' },
@@ -74,6 +75,7 @@ export default function BookAppointment() {
   const [submitted, setSubmitted] = useState(false);
   const [bookedSlots, setBookedSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
+  const [smsConsent, setSmsConsent] = useState(false);
 
   // Guest vehicle state
   const [guestVehicle, setGuestVehicle] = useState(DEFAULT_GUEST_VEHICLE);
@@ -256,8 +258,8 @@ export default function BookAppointment() {
     : CONSULTATION_IDS.includes(guestService);
 
   const canSubmit = user
-    ? !loading && form.firstName && form.phone && form.address && form.preferred_date && form.preferred_time && selectedVehicles.length > 0 && selectedVehicles.every(v => getVehicleService(v))
-    : !loading && form.firstName && form.phone && form.address && form.preferred_date && form.preferred_time && guestVehicle.year && guestVehicle.make && guestVehicle.model && guestVehicle.vehicle_type && guestService;
+    ? !loading && smsConsent && form.firstName && form.phone && form.address && form.preferred_date && form.preferred_time && selectedVehicles.length > 0 && selectedVehicles.every(v => getVehicleService(v))
+    : !loading && smsConsent && form.firstName && form.phone && form.address && form.preferred_date && form.preferred_time && guestVehicle.year && guestVehicle.make && guestVehicle.model && guestVehicle.vehicle_type && guestService;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -398,7 +400,7 @@ export default function BookAppointment() {
                 </a>
               )}
               <button
-                onClick={() => { setSubmitted(false); setForm(DEFAULT_FORM); setSelectedDay(null); setGuestVehicle(DEFAULT_GUEST_VEHICLE); setGuestService(''); setGuestAddOns([]); }}
+                onClick={() => { setSubmitted(false); setForm(DEFAULT_FORM); setSelectedDay(null); setGuestVehicle(DEFAULT_GUEST_VEHICLE); setGuestService(''); setGuestAddOns([]); setSmsConsent(false); }}
                 className="border border-vapor/20 text-vapor/60 px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:border-vapor/50 hover:text-vapor transition-colors"
               >
                 BOOK ANOTHER
@@ -756,6 +758,11 @@ export default function BookAppointment() {
           <div>
             <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">NOTES</label>
             <input name="notes" value={form.notes} onChange={handleChange} placeholder="Any special requests..." className={inputClass} />
+          </div>
+
+          {/* SMS Opt-In (A2P 10DLC consent) */}
+          <div className="border border-vapor/10 bg-asphalt/50 rounded-sm px-5 py-4">
+            <SmsConsent checked={smsConsent} onChange={setSmsConsent} />
           </div>
 
           {/* Submit */}

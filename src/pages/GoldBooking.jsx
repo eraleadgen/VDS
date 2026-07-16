@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
 import GoldShimmer from '../components/vds/GoldShimmer';
+import SmsConsent from '../components/vds/SmsConsent';
 
 const GOLD_SERVICES = [
   { id: 'vds_gold_exterior', label: 'Exterior Detail', sub: 'Unlimited / Month · Ceramic sealant included', duration: '~1 hr' },
@@ -37,6 +38,7 @@ export default function GoldBooking() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
+  const [smsConsent, setSmsConsent] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -393,11 +395,16 @@ export default function GoldBooking() {
             </div>
           </div>
 
+          {/* SMS Opt-In (A2P 10DLC consent) */}
+          <div className="border border-vapor/10 bg-asphalt/50 rounded-sm px-5 py-4">
+            <SmsConsent checked={smsConsent} onChange={setSmsConsent} />
+          </div>
+
           {/* Submit */}
           <div className="pt-2 space-y-4">
             <button
               type="submit"
-              disabled={loading || !form.service_type || !form.name || !form.phone || !form.address || !form.preferred_date || !form.preferred_time || selectedVehicles.length === 0}
+              disabled={loading || !smsConsent || !form.service_type || !form.name || !form.phone || !form.address || !form.preferred_date || !form.preferred_time || selectedVehicles.length === 0}
               className="w-full flex items-center justify-center gap-3 bg-gold hover:bg-gold-light text-obsidian font-mono-tech text-sm tracking-widest py-4 rounded-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               {loading

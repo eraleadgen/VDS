@@ -5,6 +5,7 @@ import { Eye, EyeOff, ArrowRight } from 'lucide-react';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
 import GoldShimmer from '../components/vds/GoldShimmer';
+import SmsConsent from '../components/vds/SmsConsent';
 
 export default function GoldSignup() {
   const [step, setStep] = useState('register'); // 'register' | 'otp'
@@ -18,6 +19,7 @@ export default function GoldSignup() {
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [smsConsent, setSmsConsent] = useState(false);
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -32,6 +34,10 @@ export default function GoldSignup() {
     }
     if (password.length < 8) {
       setError('Password must be at least 8 characters.');
+      return;
+    }
+    if (!smsConsent) {
+      setError('Please provide SMS consent to continue.');
       return;
     }
     setLoading(true);
@@ -160,13 +166,17 @@ export default function GoldSignup() {
                   />
                 </div>
 
+                <div className="border border-vapor/10 bg-asphalt/50 rounded-sm px-4 py-3.5">
+                  <SmsConsent checked={smsConsent} onChange={setSmsConsent} />
+                </div>
+
                 {error && (
                   <p className="text-red-400 text-xs font-mono-tech border border-red-400/20 bg-red-400/5 px-4 py-3 rounded-sm">{error}</p>
                 )}
 
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || !smsConsent}
                   className="w-full bg-gold text-obsidian py-4 text-sm font-mono-tech tracking-widest hover:bg-gold-light transition-colors duration-200 rounded-sm flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed font-bold mt-2"
                 >
                   {loading ? 'CREATING ACCOUNT...' : <>CREATE ACCOUNT <ArrowRight size={14} /></>}

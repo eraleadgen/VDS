@@ -21,7 +21,7 @@ const SECTIONS = [
   {
     num: '4.',
     title: 'SMS/Text Message Policy',
-    content: 'By providing your mobile phone number and opting in, you consent to receive text messages from Valet Detailing Service LLC regarding your appointments. Message frequency varies. You can opt-out at any time by replying "STOP." Standard message and data rates may apply.',
+    content: 'By providing your mobile phone number and opting in, you consent to receive SMS text messages from Valet Detailing Service LLC (VDS Mobile) sent from (470) 412-8986 regarding your appointments, service updates, and promotional offers. Message frequency varies. You can opt out at any time by replying "STOP" to any message. For help, reply "HELP." Standard message and data rates may apply. We will not share your SMS opt-in data or consent with any third parties. To withdraw consent or change your number, contact us at Valetdetailingservice@gmail.com.',
   },
   {
     num: '5.',
@@ -67,7 +67,7 @@ export default function Privacy() {
       <section className="pt-36 pb-20 max-w-4xl mx-auto px-6">
         <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">LEGAL</p>
         <h1 className="text-5xl font-grotesk font-bold text-vapor mb-3">PRIVACY POLICY</h1>
-        <p className="text-xs font-mono-tech text-vapor/30 mb-16 tracking-widest">VALET DETAILING SERVICE LLC · LAST UPDATED: FEBRUARY 23, 2026</p>
+        <p className="text-xs font-mono-tech text-vapor/30 mb-16 tracking-widest">VALET DETAILING SERVICE LLC · LAST UPDATED: JULY 16, 2026</p>
 
         <p className="text-vapor/60 leading-relaxed mb-12 border-l border-gold/20 pl-8">
           Valet Detailing Service LLC ("VDS," "we," "us," or "our") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our mobile detailing services.
