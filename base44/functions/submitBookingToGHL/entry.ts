@@ -24,6 +24,35 @@ const SERVICE_LABELS = {
   paint_correction: 'Paint Correction Consultation',
 };
 
+// Timezone helpers (Deno runtime is UTC; convert wall times to UTC instants for Google Calendar)
+function getTzOffsetMs(date, tz) {
+  const tzDate = new Date(date.toLocaleString('en-US', { timeZone: tz }));
+  const utcDate = new Date(date.toLocaleString('en-US', { timeZone: 'UTC' }));
+  return tzDate.getTime() - utcDate.getTime();
+}
+function zonedToUtc(dateStr, timeStr, tz) {
+  const wallAsUtc = new Date(`${dateStr}T${timeStr}:00.000Z`);
+  return new Date(wallAsUtc.getTime() - getTzOffsetMs(wallAsUtc, tz));
+}
+function parseTimeTo24h(preferred_time) {
+  if (!preferred_time) return { hours: 8, minutes: 0 };
+  const [timePart, meridiem] = preferred_time.split(' ');
+  let [hours, minutes] = timePart.split(':').map(Number);
+  if (meridiem === 'PM' && hours !== 12) hours += 12;
+  if (meridiem === 'AM' && hours === 12) hours = 0;
+  return { hours, minutes };
+}
+async function gcalCreate(accessToken, event) {
+  const res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(event),
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`GCal create ${res.status}: ${text}`);
+  return text ? JSON.parse(text) : null;
+}
+
 Deno.serve(async (req) => {
   try {
     // Public endpoint (guests book without login) — restrict to app origin.
@@ -227,8 +256,10 @@ Deno.serve(async (req) => {
     }
 
     // ── Save Appointment entity (source of truth) ─────────────────────────
+    let appt = null;
+    let serviceLabel = '';
     try {
-      const serviceLabel = SERVICE_LABELS[service_type] || service_type.replace(/_/g, ' ').toUpperCase();
+      serviceLabel = SERVICE_LABELS[service_type] || service_type.replace(/_/g, ' ').toUpperCase();
       const servicesNotes = vehicleEntries.length > 0
         ? vehicleEntries.map((entry, idx) => {
             const parts = entry.split(' — ');
@@ -238,7 +269,7 @@ Deno.serve(async (req) => {
           }).join('\n')
         : notes || '';
 
-      await base44.asServiceRole.entities.Appointment.create({
+      appt = await base44.asServiceRole.entities.Appointment.create({
         service_type,
         service_label: serviceLabel,
         vehicle_info: vehicle_info || 'TBD',
@@ -255,7 +286,114 @@ Deno.serve(async (req) => {
       console.error('Failed to create Appointment entity:', err.message);
     }
 
-    return Response.json({ success: true, contactId });
+    // ── Google Calendar mirror (event with full job + client + time details) ─
+    let gcalEventId = null;
+    try {
+      let tz = 'America/New_York';
+      try {
+        const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
+        if (configs && configs[0] && configs[0].timezone) tz = configs[0].timezone;
+      } catch {}
+
+      const vehicleCount = Math.min(vehicleEntries.length || 1, 4);
+      const durationHours = vehicleEntries.length > 0 ? vehicleCount * 2 : 2;
+      const { hours, minutes } = parseTimeTo24h(preferred_time);
+      const startUtc = zonedToUtc(preferred_date, `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`, tz);
+      const endUtc = new Date(startUtc.getTime() + durationHours * 3600000);
+
+      const vehicleLines = vehicleEntries.length > 0
+        ? vehicleEntries.map((entry, i) => {
+            const parts = entry.split(' — ');
+            const vehicleInfoClean = parts[0]?.replace(/\([^)]+\)/g, '').trim();
+            const serviceInfo = parts[1] || '';
+            return `${i + 1}. ${vehicleInfoClean} — ${serviceInfo}`;
+          }).join('\n')
+        : (vehicle_info || 'N/A');
+
+      const membershipTag = isGoldBooking ? '◆ VDS GOLD MEMBER\n\n' : '';
+      const description = [
+        `${membershipTag}CLIENT:`,
+        `Name: ${name}`,
+        `Phone: ${phone}`,
+        email ? `Email: ${email}` : null,
+        `Address: ${address || 'N/A'}`,
+        '',
+        `APPOINTMENT:`,
+        `Date: ${preferred_date}`,
+        `Start: ${preferred_time}`,
+        `Duration: ~${durationHours} hours`,
+        `Service: ${serviceLabel}`,
+        '',
+        `VEHICLES (${vehicleCount}):`,
+        vehicleLines,
+        '',
+        notes ? `Notes / Add-ons / Quote: ${notes}` : null,
+      ].filter(v => v !== null).join('\n');
+
+      const { accessToken } = await base44.asServiceRole.connectors.getConnection('googlecalendar');
+      const created = await gcalCreate(accessToken, {
+        summary: `VDS — ${name} — ${vehicleCount} Vehicle${vehicleCount > 1 ? 's' : ''}${isGoldBooking ? ' ◆ Gold' : ''}`,
+        description,
+        location: address || undefined,
+        start: { dateTime: startUtc.toISOString(), timeZone: tz },
+        end: { dateTime: endUtc.toISOString(), timeZone: tz },
+        extendedProperties: { shared: { type: 'vds_appointment' } },
+      });
+      gcalEventId = created?.id || null;
+
+      if (appt && gcalEventId) {
+        try {
+          await base44.asServiceRole.entities.Appointment.update(appt.id, {
+            google_calendar_event_id: gcalEventId,
+            estimated_duration_minutes: durationHours * 60,
+          });
+        } catch (e) { console.error('Failed to link GCal event to appointment:', e.message); }
+      }
+    } catch (e) {
+      console.error('Google Calendar mirror failed (non-blocking):', e.message);
+    }
+
+    // ── Internal booking notification email ────────────────────────────────
+    try {
+      const vehicleCount = Math.min(vehicleEntries.length || 1, 4);
+      const durationHours = vehicleEntries.length > 0 ? vehicleCount * 2 : 2;
+      const vehicleLines = vehicleEntries.length > 0
+        ? vehicleEntries.map((entry, i) => `${i + 1}. ${entry}`).join('\n')
+        : (vehicle_info || 'N/A');
+      const emailBody = [
+        isGoldBooking ? '◆ VDS GOLD MEMBER BOOKING' : 'NEW BOOKING REQUEST',
+        'From: VDS Website',
+        '',
+        'CLIENT',
+        `Name: ${name}`,
+        `Phone: ${phone}`,
+        email ? `Email: ${email}` : '',
+        `Address: ${address || 'N/A'}`,
+        '',
+        'APPOINTMENT',
+        `Date: ${preferred_date}`,
+        `Time: ${preferred_time}`,
+        `Estimated Duration: ~${durationHours} hours`,
+        `Service: ${SERVICE_LABELS[service_type] || service_type}`,
+        '',
+        `VEHICLES (${vehicleCount})`,
+        vehicleLines,
+        '',
+        notes ? `Notes / Add-ons / Quote:\n${notes}` : '',
+        gcalEventId ? `Google Calendar Event ID: ${gcalEventId}` : '',
+        appt ? `Appointment ID: ${appt.id}` : '',
+      ].filter(Boolean).join('\n');
+
+      await base44.integrations.Core.SendEmail({
+        to: 'Valetdetailingservice@gmail.com',
+        subject: `New Booking — ${name} — ${preferred_date} ${preferred_time}`,
+        body: emailBody,
+      });
+    } catch (e) {
+      console.error('Internal notification email failed:', e.message);
+    }
+
+    return Response.json({ success: true, contactId, google_calendar_event_id: gcalEventId });
 
   } catch (error) {
     console.error('submitBookingToGHL error:', error.message);
