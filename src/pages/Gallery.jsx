@@ -165,12 +165,12 @@ export default function Gallery() {
 
       {/* Grid */}
       <div className="max-w-7xl mx-auto px-6 pb-24">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-0.5 bg-vapor/5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-0.5 bg-vapor/5">
           {filtered.map((photo, i) => (
             <div
               key={i}
               onClick={() => setLightbox(photo)}
-              className="bg-obsidian group relative overflow-hidden cursor-pointer"
+              className="bg-obsidian group relative overflow-hidden cursor-pointer border border-vapor/5 rounded-sm md:rounded-none"
             >
               <div className="aspect-[4/3] overflow-hidden">
                 <img

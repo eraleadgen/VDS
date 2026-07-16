@@ -64,10 +64,10 @@ export default function Contact() {
         </div>
       </section>
 
-      <div className="max-w-7xl mx-auto px-6 pb-24">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-0.5 bg-vapor/5">
+      <div className="max-w-7xl mx-auto px-6 pb-16 md:pb-24">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-0.5 bg-vapor/5">
           {/* Contact Info */}
-          <div className="bg-asphalt p-10 lg:p-12 flex flex-col justify-between">
+          <div className="bg-asphalt p-6 sm:p-10 lg:p-12 flex flex-col justify-between border border-vapor/5 rounded-sm md:rounded-none">
             <div>
               <p className="text-xs font-mono-tech tracking-[0.3em] text-gold mb-8">// GET IN TOUCH</p>
               <div className="space-y-8">
@@ -108,7 +108,7 @@ export default function Contact() {
                 <p className="text-xs font-mono-tech text-vapor/30 tracking-widest mb-6">OR JOIN VDS GOLD</p>
                 <Link to="/vds-gold"
                   className="vds-gold-btn flex items-center justify-between px-5 py-4 text-sm font-mono-tech tracking-widest rounded-sm">
-                  <span>◆ VDS GOLD — $200/MO</span>
+                  <span>◆ VDS GOLD — FROM $250/MO</span>
                   <ArrowRight size={14} />
                 </Link>
               </div>
@@ -130,7 +130,7 @@ export default function Contact() {
           </div>
 
           {/* Form */}
-          <div className="lg:col-span-2 bg-obsidian p-10 lg:p-12">
+          <div className="lg:col-span-2 bg-obsidian p-6 sm:p-10 lg:p-12 border border-vapor/5 rounded-sm md:rounded-none">
             {submitted ? (
               <div className="h-full flex items-center justify-center">
                 <div className="text-center max-w-md">

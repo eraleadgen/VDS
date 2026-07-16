@@ -119,7 +119,7 @@ export default function FAQ() {
       </section>
 
       {/* ── FAQ SECTIONS ─────────────────────────────── */}
-      <div className="max-w-4xl mx-auto px-6 pb-24 space-y-16">
+      <div className="max-w-4xl mx-auto px-6 pb-16 md:pb-24 space-y-12 md:space-y-16">
         {FAQS.map((cat, catIdx) => (
           <div key={catIdx}>
             <div className="flex items-center gap-4 mb-8">
@@ -158,7 +158,7 @@ export default function FAQ() {
       </div>
 
       {/* ── CTA ──────────────────────────────────────── */}
-      <section className="border-t border-vapor/5 py-24 text-center max-w-3xl mx-auto px-6 mb-8">
+      <section className="border-t border-vapor/5 py-16 md:py-24 text-center max-w-3xl mx-auto px-6 mb-8">
         <h2 className="text-3xl font-grotesk font-bold text-vapor mb-4">STILL HAVE QUESTIONS?</h2>
         <p className="text-vapor/50 mb-10">We're happy to walk you through everything. Reach out by call or text.</p>
         <div className="flex flex-wrap justify-center gap-4">

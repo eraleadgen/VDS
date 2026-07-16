@@ -64,22 +64,22 @@ export default function VdsGold() {
               <div className="w-12 h-px bg-gold" />
               <p className="text-xs font-mono-tech tracking-[0.4em] text-gold">INTRODUCING</p>
             </div>
-            <h1 className="text-7xl md:text-9xl font-grotesk font-bold leading-none mb-8 flex items-center gap-4 justify-center md:justify-start">
+            <h1 className="text-5xl sm:text-7xl md:text-9xl font-grotesk font-bold leading-none mb-8 flex items-center gap-4 justify-center md:justify-start">
               <GoldShimmer>VDS</GoldShimmer>
               <span className="text-vapor">GOLD</span>
             </h1>
-            <p className="text-xl text-vapor/60 leading-relaxed mb-4 font-grotesk">
+            <p className="text-lg sm:text-xl text-vapor/60 leading-relaxed mb-4 font-grotesk">
               The premium monthly membership that keeps your vehicle in a permanent state of perfection.
             </p>
             <p className="text-sm font-mono-tech text-vapor/40 tracking-widest mb-12">
               UNLIMITED EXTERIOR DETAILS + 1 INTERIOR DETAIL / MONTH + CERAMIC SEALANT EVERY DETAIL
             </p>
 
-            <div className="flex flex-wrap items-end gap-8 mb-12 justify-center md:justify-start">
+            <div className="flex flex-wrap items-end gap-6 sm:gap-8 mb-12 justify-center md:justify-start">
               <div>
                 <p className="text-xs font-mono-tech text-gold/60 tracking-widest mb-1">MEMBERSHIP PRICE</p>
-                <p className="text-5xl font-grotesk font-bold text-gold leading-none">$250<span className="text-2xl font-mono-tech text-vapor/50"> SEDAN/COUPE</span></p>
-                <p className="text-5xl font-grotesk font-bold text-gold leading-none mt-2">$300<span className="text-2xl font-mono-tech text-vapor/50"> TRUCK/SUV</span></p>
+                <p className="text-4xl sm:text-5xl font-grotesk font-bold text-gold leading-none">$250<span className="text-xl sm:text-2xl font-mono-tech text-vapor/50"> SEDAN/COUPE</span></p>
+                <p className="text-4xl sm:text-5xl font-grotesk font-bold text-gold leading-none mt-2">$300<span className="text-xl sm:text-2xl font-mono-tech text-vapor/50"> TRUCK/SUV</span></p>
                 <p className="text-xs font-mono-tech text-vapor/40 tracking-widest mt-2">PER VEHICLE / MONTH</p>
               </div>
               <div className="pb-2 text-vapor/30 font-mono-tech text-xs">
@@ -98,15 +98,15 @@ export default function VdsGold() {
       </section>
 
       {/* ── SPEC SPLIT ───────────────────────────────── */}
-      <section className="py-24 max-w-7xl mx-auto px-6">
-        <div className="text-center mb-16">
+      <section className="py-16 md:py-24 max-w-7xl mx-auto px-6">
+        <div className="text-center mb-12 md:mb-16">
           <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">THE TECHNICAL STACK</p>
-          <h2 className="text-4xl md:text-5xl font-grotesk font-bold text-vapor">WHAT'S INCLUDED</h2>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-grotesk font-bold text-vapor">WHAT'S INCLUDED</h2>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-0.5 bg-vapor/5">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-0.5 bg-vapor/5">
           {/* Exterior */}
-          <div className="bg-asphalt p-10 lg:p-14">
+          <div className="bg-asphalt p-6 sm:p-10 lg:p-14 border border-vapor/5 rounded-sm md:rounded-none">
             <div className="flex items-center gap-4 mb-2">
               <div className="w-8 h-px bg-gold" />
               <p className="text-xs font-mono-tech tracking-[0.3em] text-gold">EXTERIOR</p>
@@ -128,7 +128,7 @@ export default function VdsGold() {
           </div>
 
           {/* Interior */}
-          <div className="bg-asphalt p-10 lg:p-14 relative overflow-hidden">
+          <div className="bg-asphalt p-6 sm:p-10 lg:p-14 border border-vapor/5 rounded-sm md:rounded-none relative overflow-hidden">
             <div className="absolute top-0 right-0 w-64 h-64 pointer-events-none"
               style={{ background: 'radial-gradient(ellipse at top right, rgba(212,175,55,0.08) 0%, transparent 70%)' }} />
             <div className="flex items-center gap-4 mb-2">
@@ -154,9 +154,9 @@ export default function VdsGold() {
       </section>
 
       {/* ── VALUE CALCULATOR ─────────────────────────── */}
-      <section className="py-24 border-y border-vapor/5">
+      <section className="py-16 md:py-24 border-y border-vapor/5">
         <div className="max-w-3xl mx-auto px-6">
-          <div className="text-center mb-16">
+          <div className="text-center mb-12 md:mb-16">
             <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">THE MATH</p>
             <h2 className="text-4xl font-grotesk font-bold text-vapor">VALUE BREAKDOWN</h2>
           </div>
@@ -195,19 +195,19 @@ export default function VdsGold() {
       </section>
 
       {/* ── HOW IT WORKS ─────────────────────────────── */}
-      <section className="py-24 max-w-7xl mx-auto px-6">
-        <div className="text-center mb-16">
+      <section className="py-16 md:py-24 max-w-7xl mx-auto px-6">
+        <div className="text-center mb-12 md:mb-16">
           <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">THE PROCESS</p>
-          <h2 className="text-4xl font-grotesk font-bold text-vapor">HOW VDS GOLD WORKS</h2>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-grotesk font-bold text-vapor">HOW VDS GOLD WORKS</h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-0.5 bg-vapor/5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 md:gap-0.5 bg-vapor/5">
           {[
             { step: '01', title: 'CREATE ACCOUNT', desc: 'Sign up online in minutes. Add your vehicle(s), set your preferences, and get instant access to your member portal.' },
             { step: '02', title: 'SCHEDULE', desc: 'Book your exterior details any time — as many as you need throughout the month.' },
             { step: '03', title: 'WE COME TO YOU', desc: 'Our team arrives at your location with professional equipment and premium detailing products.' },
             { step: '04', title: 'STAY PERFECT', desc: 'Your vehicle remains in a permanent state of immaculate perfection, month after month.' },
           ].map((item) => (
-            <div key={item.step} className="bg-asphalt p-8">
+            <div key={item.step} className="bg-asphalt p-6 sm:p-8 border border-vapor/5 rounded-sm md:rounded-none vds-card-hover">
               <p className="text-4xl font-grotesk font-bold text-gold/20 mb-4 font-mono-tech">{item.step}</p>
               <h4 className="text-vapor font-grotesk font-bold text-lg mb-3">{item.title}</h4>
               <p className="text-vapor/50 text-sm leading-relaxed font-mono-tech">{item.desc}</p>
@@ -217,7 +217,7 @@ export default function VdsGold() {
       </section>
 
       {/* ── SIGN UP CARD ─────────────────────────────── */}
-      <section className="py-24 relative overflow-hidden">
+      <section className="py-16 md:py-24 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-obsidian via-[#0D0B06] to-obsidian" />
         <div className="absolute inset-0 pointer-events-none"
           style={{ background: 'radial-gradient(ellipse at 50% 50%, rgba(212,175,55,0.06) 0%, transparent 70%)' }} />
@@ -226,7 +226,7 @@ export default function VdsGold() {
           <div className="vds-gold-btn inline-block px-4 py-2 text-xs font-mono-tech tracking-widest mb-8 rounded-sm">
             ◆ VDS GOLD MEMBERSHIP
           </div>
-          <h2 className="text-5xl md:text-6xl font-grotesk font-bold text-vapor mb-6">
+          <h2 className="text-4xl sm:text-5xl md:text-6xl font-grotesk font-bold text-vapor mb-6">
             JOIN<br /><GoldShimmer>THE CIRCLE.</GoldShimmer>
           </h2>
           <p className="text-vapor/50 leading-relaxed mb-12">

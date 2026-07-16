@@ -109,11 +109,11 @@ export default function Services() {
       </div>
 
       {/* ── SERVICE MODULES ──────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-6 space-y-0.5 mb-24">
+      <div className="max-w-7xl mx-auto px-6 space-y-4 md:space-y-0.5 mb-16 md:mb-24">
         {SERVICES.map((svc, i) => (
-          <div key={svc.id} className={`grid grid-cols-1 lg:grid-cols-2 ${i % 2 === 1 ? 'lg:grid-flow-dense' : ''} bg-vapor/5`}>
+          <div key={svc.id} className={`grid grid-cols-1 lg:grid-cols-2 ${i % 2 === 1 ? 'lg:grid-flow-dense' : ''} bg-vapor/5 rounded-sm md:rounded-none overflow-hidden border border-vapor/5`}>
             {/* Image */}
-            <div className={`relative overflow-hidden h-80 lg:h-auto ${i % 2 === 1 ? 'lg:col-start-2' : ''}`}>
+            <div className={`relative overflow-hidden h-56 sm:h-64 md:h-80 lg:h-auto ${i % 2 === 1 ? 'lg:col-start-2' : ''}`}>
               <img src={svc.img} alt={svc.title} className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-r from-asphalt/80 to-transparent lg:hidden" />
               {svc.gold && (
@@ -124,7 +124,7 @@ export default function Services() {
             </div>
 
             {/* Content */}
-            <div className={`bg-asphalt p-10 lg:p-14 flex flex-col justify-center ${i % 2 === 1 ? 'lg:col-start-1' : ''}`}>
+            <div className={`bg-asphalt p-6 sm:p-10 lg:p-14 flex flex-col justify-center ${i % 2 === 1 ? 'lg:col-start-1' : ''}`}>
               {svc.gold && (
                 <div className="flex items-center gap-2 mb-6">
                   <span className="text-xs font-mono-tech text-gold tracking-widest">◆ INCLUDED IN VDS GOLD</span>
@@ -171,7 +171,7 @@ export default function Services() {
       </div>
 
       {/* ── CTA ──────────────────────────────────────── */}
-      <section className="py-24 border-t border-vapor/5 text-center max-w-3xl mx-auto px-6 mb-8">
+      <section className="py-16 md:py-24 border-t border-vapor/5 text-center max-w-3xl mx-auto px-6 mb-8">
         <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-6">GET STARTED TODAY</p>
         <h2 className="text-4xl font-grotesk font-bold text-vapor mb-6">
           NOT SURE WHICH SERVICE?<br />WE'LL HELP.

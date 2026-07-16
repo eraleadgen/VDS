@@ -101,9 +101,12 @@ export default function Terms() {
           ))}
         </div>
 
-        <div className="mt-16 pt-8 border-t border-vapor/10 flex gap-6">
+        <div className="mt-16 pt-8 border-t border-vapor/10 flex flex-wrap gap-6">
           <Link to="/privacy" className="text-sm font-mono-tech text-gold/60 hover:text-gold transition-colors">
             PRIVACY POLICY →
+          </Link>
+          <Link to="/cookies" className="text-sm font-mono-tech text-gold/60 hover:text-gold transition-colors">
+            COOKIES POLICY →
           </Link>
           <Link to="/contact" className="text-sm font-mono-tech text-vapor/40 hover:text-vapor transition-colors">
             CONTACT US →

@@ -227,7 +227,7 @@ export default function VdsGoldSignup() {
                   </p>
                 </div>
                 <p className="text-2xl font-grotesk font-bold text-gold shrink-0 ml-4">
-                  ${calculateTotal()}+
+                  ${calculateTotal()}
                 </p>
               </div>
             </div>

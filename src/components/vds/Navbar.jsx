@@ -45,7 +45,7 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex items-center gap-8">
+        <nav className="hidden lg:flex items-center gap-6 lg:gap-8">
           {navLinks.map(link => (
             <Link
               key={link.path}
@@ -62,7 +62,7 @@ export default function Navbar() {
         </nav>
 
         {/* Right */}
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden lg:flex items-center gap-4">
           {isLoggedIn ? (
             <Link
               to="/member-dashboard"
@@ -97,7 +97,7 @@ export default function Navbar() {
         {/* Mobile hamburger */}
         <button
           onClick={() => setOpen(!open)}
-          className="md:hidden text-vapor p-2"
+          className="lg:hidden text-vapor p-2"
         >
           {open ? <X size={22} /> : <Menu size={22} />}
         </button>
@@ -105,7 +105,7 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {open && (
-        <div className="md:hidden glass-header border-t border-gold/10 mt-2">
+        <div className="lg:hidden glass-header border-t border-gold/10 mt-2">
           <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col gap-5">
             {navLinks.map(link => (
               <Link

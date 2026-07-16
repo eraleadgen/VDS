@@ -80,35 +80,35 @@ export default function Home() {
             <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40 mb-6">
               METRO ATLANTA · MOBILE DETAILING
             </p>
-            <h1 className="text-5xl md:text-7xl lg:text-8xl font-grotesk font-700 leading-none text-vapor mb-6 tracking-tight">
+            <h1 className="text-5xl md:text-7xl lg:text-8xl font-grotesk font-bold leading-none text-vapor mb-6 tracking-tight">
               THE RITUAL<br />OF
-              <GoldShimmer className="ml-4">REFLECTION.</GoldShimmer>
+              <GoldShimmer className="ml-2 md:ml-4">REFLECTION.</GoldShimmer>
             </h1>
-            <p className="text-lg text-vapor/60 font-grotesk max-w-xl leading-relaxed mb-10 mx-auto md:mx-0">
+            <p className="text-base sm:text-lg text-vapor/60 font-grotesk max-w-xl leading-relaxed mb-10 mx-auto md:mx-0">
               Premium mobile detailing for luxury and performance vehicles across Metro Atlanta. We come to you — no shop visit required.
             </p>
 
-            <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+            <div className="flex flex-wrap gap-3 sm:gap-4 justify-center md:justify-start">
               <Link to="/pricing"
-                className="flex items-center gap-3 border border-vapor/40 text-vapor px-7 py-4 text-sm font-mono-tech tracking-widest hover:border-vapor transition-colors duration-300 rounded-sm">
+                className="flex items-center gap-3 border border-vapor/40 text-vapor px-6 sm:px-7 py-3.5 sm:py-4 text-xs sm:text-sm font-mono-tech tracking-widest hover:border-vapor hover:bg-vapor/5 transition-all duration-300 rounded-sm">
                 PRICING <ArrowRight size={14} />
               </Link>
               <Link to="/book"
-                className="flex items-center gap-3 border border-vapor/40 text-vapor px-7 py-4 text-sm font-mono-tech tracking-widest hover:border-vapor transition-colors duration-300 rounded-sm">
+                className="flex items-center gap-3 border border-vapor/40 text-vapor px-6 sm:px-7 py-3.5 sm:py-4 text-xs sm:text-sm font-mono-tech tracking-widest hover:border-vapor hover:bg-vapor/5 transition-all duration-300 rounded-sm">
                 BOOK NOW <ArrowRight size={14} />
               </Link>
               <Link to="/vds-gold"
-                className="vds-gold-btn flex items-center gap-3 px-7 py-4 text-sm font-mono-tech tracking-widest rounded-sm">
+                className="vds-gold-btn flex items-center gap-3 px-6 sm:px-7 py-3.5 sm:py-4 text-xs sm:text-sm font-mono-tech tracking-widest rounded-sm">
                 ◆ EXPLORE VDS GOLD
               </Link>
             </div>
 
             {/* Stats strip */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16 pt-12 border-t border-vapor/10">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 mt-12 sm:mt-16 pt-10 sm:pt-12 border-t border-vapor/10">
               {STATS.map(s => (
                 <div key={s.value}>
-                  <p className="text-3xl font-grotesk font-bold text-vapor">{s.value}</p>
-                  <p className="text-xs font-mono-tech text-vapor/40 tracking-widest mt-1">{s.label}</p>
+                  <p className="text-2xl sm:text-3xl font-grotesk font-bold text-gold">{s.value}</p>
+                  <p className="text-[10px] sm:text-xs font-mono-tech text-vapor/40 tracking-widest mt-1">{s.label}</p>
                 </div>
               ))}
             </div>
@@ -116,7 +116,7 @@ export default function Home() {
         </div>
 
         {/* Scroll indicator */}
-        <div className="absolute bottom-8 right-8 flex flex-col items-center gap-2 animate-bounce opacity-40">
+        <div className="absolute bottom-8 right-8 hidden md:flex flex-col items-center gap-2 animate-bounce opacity-40">
           <ChevronDown size={18} className="text-gold" />
         </div>
       </section>
@@ -146,15 +146,15 @@ export default function Home() {
       </section>
 
       {/* ── SERVICES ─────────────────────────────────── */}
-      <section className="py-24 max-w-7xl mx-auto px-6">
-        <div className="mb-16 text-center md:text-left">
+      <section className="py-16 md:py-24 max-w-7xl mx-auto px-6">
+        <div className="mb-12 md:mb-16 text-center md:text-left">
           <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">WHAT WE OFFER</p>
           <h2 className="text-4xl md:text-5xl font-grotesk font-bold text-vapor">OUR SERVICES</h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-0.5 bg-vapor/5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-0.5 bg-vapor/5">
           {SERVICES.map((svc) => (
-            <div key={svc.title} className="bg-obsidian group relative overflow-hidden">
+            <div key={svc.title} className="bg-obsidian border border-vapor/5 rounded-sm md:rounded-none group relative overflow-hidden vds-card-hover">
               <div className="relative h-64 overflow-hidden">
                 <img src={svc.img} alt={svc.title}
                   className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105" />
@@ -209,9 +209,9 @@ export default function Home() {
       </section>
 
       {/* ── ABOUT ────────────────────────────────────── */}
-      <section className="py-24 border-y border-vapor/5">
+      <section className="py-16 md:py-24 border-y border-vapor/5">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
             <div className="text-center lg:text-left">
               <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">WHO WE ARE</p>
               <h2 className="text-4xl md:text-5xl font-grotesk font-bold text-vapor leading-tight mb-8">
@@ -245,7 +245,7 @@ export default function Home() {
                 alt="Premium detailing"
                 className="w-full aspect-[3/4] object-cover rounded-sm"
               />
-              <div className="absolute -bottom-6 -left-6 glass-panel p-6 border border-gold/20">
+              <div className="absolute -bottom-6 left-4 right-4 lg:left-auto lg:right-auto lg:-left-6 glass-panel p-6 border border-gold/20">
                 <div className="flex items-center gap-2 mb-2">
                   {[1,2,3,4,5].map(i => <Star key={i} size={12} className="text-gold fill-gold" />)}
                 </div>
@@ -260,7 +260,7 @@ export default function Home() {
       </section>
 
       {/* ── FAQ PREVIEW ──────────────────────────────── */}
-      <section className="py-24 max-w-7xl mx-auto px-6">
+      <section className="py-16 md:py-24 max-w-7xl mx-auto px-6">
         <div className="max-w-3xl mx-auto">
           <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4 text-center">STILL NOT SURE?</p>
           <h2 className="text-4xl md:text-5xl font-grotesk font-bold text-vapor text-center mb-16">
@@ -300,7 +300,7 @@ export default function Home() {
       </section>
 
       {/* ── FINAL CTA ────────────────────────────────── */}
-      <section className="relative py-32 overflow-hidden">
+      <section className="relative py-24 md:py-32 overflow-hidden">
         <img
           src="https://media.base44.com/images/public/6a191df337222815cd0b1f5e/b6ee3461b_ExteriorDetail5.jpg"
           alt="Luxury car"
