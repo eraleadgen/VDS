@@ -1,11 +1,19 @@
 {
   "name": "Contractor",
   "type": "object",
-  "description": "Independent detailer/contractor profile. Replaces the traditional employee model. Contractors set their own recurring weekly availability and service areas, which drive the auto-assignment scheduling engine. No clock-in/clock-out, timesheets, or shift tracking.",
+  "description": "Independent detailer/contractor profile. Replaces the traditional employee model. Contractors set their own recurring weekly availability and service areas, which drive the auto-assignment scheduling engine. No clock-in/clock-out, timesheets, or shift tracking. A profile may be shared by business partners via linked_user_ids.",
   "properties": {
     "user_id": {
       "type": "string",
-      "description": "Linked Base44 User id (for portal login). The linked user should have role 'contractor'."
+      "description": "Primary linked Base44 User id (for portal login). The linked user should have role 'contractor'."
+    },
+    "linked_user_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": [],
+      "description": "Additional Base44 User ids that share this specialist profile (e.g. business partners). Each linked user sees the same jobs, availability, and metrics when logging into the Specialist Portal."
     },
     "name": {
       "type": "string",
@@ -184,6 +192,9 @@
         },
         {
           "data.user_id": "{{user.id}}"
+        },
+        {
+          "data.linked_user_ids": "{{user.id}}"
         }
       ]
     },
@@ -196,6 +207,9 @@
         },
         {
           "data.user_id": "{{user.id}}"
+        },
+        {
+          "data.linked_user_ids": "{{user.id}}"
         }
       ]
     },
