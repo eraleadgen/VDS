@@ -73,7 +73,10 @@ export default function ContractorsTab() {
             <tbody>
               {list.map(c => (
                 <tr key={c.id} className="border-t border-vapor/10">
-                  <td className="p-4 text-vapor font-grotesk">{c.name}</td>
+                  <td className="p-4 text-vapor font-grotesk">
+                    {c.name}
+                    {c.linked_user_emails && <div className="text-xs text-gold/60 font-mono-tech mt-1">👥 Shared: {c.linked_user_emails}</div>}
+                  </td>
                   <td className="p-4 text-vapor/60 font-mono-tech text-xs">{c.phone}<br />{c.email}</td>
                   <td className="p-4">
                     <div className="flex flex-wrap gap-1">

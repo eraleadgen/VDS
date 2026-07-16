@@ -21,6 +21,7 @@ export default function ContractorModal({ contractor, onClose, onSave, busy }) {
     counties: (contractor.service_areas?.counties || []).join(', '),
     max_travel: contractor.service_areas?.max_travel_distance_miles || 0,
     home_address: contractor.home_address || '',
+    linked_user_emails: contractor.linked_user_emails || '',
   });
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
@@ -40,6 +41,7 @@ export default function ContractorModal({ contractor, onClose, onSave, busy }) {
         max_travel_distance_miles: Number(form.max_travel) || 0,
       },
       home_address: form.home_address,
+      linked_user_emails: form.linked_user_emails,
     }, isNew);
   };
 
@@ -57,6 +59,8 @@ export default function ContractorModal({ contractor, onClose, onSave, busy }) {
           </div>
           <div><label className={LABEL}>EMAIL {isNew && <span className="text-gold/60">(will be invited as specialist)</span>}</label>
             <input type="email" value={form.email} onChange={e => set('email', e.target.value)} required={isNew} disabled={!isNew} className={INPUT} /></div>
+          <div><label className={LABEL}>SHARED PARTNERS <span className="text-gold/40">(comma-separated emails)</span></label>
+            <input value={form.linked_user_emails} onChange={e => set('linked_user_emails', e.target.value)} className={INPUT} placeholder="partner@example.com" /></div>
           <div><label className={LABEL}>HOME ADDRESS</label><input value={form.home_address} onChange={e => set('home_address', e.target.value)} className={INPUT} /></div>
           <div className="grid grid-cols-2 gap-4">
             <div><label className={LABEL}>STATUS</label>

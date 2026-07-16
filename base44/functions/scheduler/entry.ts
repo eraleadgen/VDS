@@ -622,9 +622,13 @@ async function adminUpdateContractor(base44, body) {
   if (typeof updates.linked_user_emails === 'string') {
     const emails = updates.linked_user_emails.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
     if (emails.length) {
-      const all = await base44.asServiceRole.entities.User.list();
+      const [all, existing] = await Promise.all([
+        base44.asServiceRole.entities.User.list(),
+        base44.asServiceRole.entities.Contractor.get(contractor_id).catch(() => null),
+      ]);
+      const primaryUserId = existing ? existing.user_id : '';
       allowed.linked_user_ids = (all || [])
-        .filter(u => u.email && emails.includes(u.email.toLowerCase()) && u.id !== updates.contractor_id)
+        .filter(u => u.email && emails.includes(u.email.toLowerCase()) && u.id !== primaryUserId)
         .map(u => u.id);
     } else {
       allowed.linked_user_ids = [];
