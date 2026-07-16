@@ -135,6 +135,20 @@
         }
       }
     },
+    "invite_token": {
+      "type": "string",
+      "description": "One-time token for the themed specialist setup link. Cleared once the account is created."
+    },
+    "invite_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the admin has sent the themed invite email."
+    },
+    "account_created": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the specialist has set their password and verified their account via the setup page."
+    },
     "metrics": {
       "type": "object",
       "description": "Performance metrics, visible to administrators only. Updated as jobs complete.",

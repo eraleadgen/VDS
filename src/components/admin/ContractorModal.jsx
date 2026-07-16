@@ -57,7 +57,7 @@ export default function ContractorModal({ contractor, onClose, onSave, busy }) {
             <div><label className={LABEL}>NAME</label><input value={form.name} onChange={e => set('name', e.target.value)} required className={INPUT} /></div>
             <div><label className={LABEL}>PHONE</label><input value={form.phone} onChange={e => set('phone', e.target.value)} required className={INPUT} /></div>
           </div>
-          <div><label className={LABEL}>EMAIL {isNew && <span className="text-gold/60">(will be invited as specialist)</span>}</label>
+          <div><label className={LABEL}>EMAIL {isNew && <span className="text-gold/60">(used for invite & login)</span>}</label>
             <input type="email" value={form.email} onChange={e => set('email', e.target.value)} required={isNew} disabled={!isNew} className={INPUT} /></div>
           <div><label className={LABEL}>SHARED PARTNERS <span className="text-gold/40">(comma-separated emails)</span></label>
             <input value={form.linked_user_emails} onChange={e => set('linked_user_emails', e.target.value)} className={INPUT} placeholder="partner@example.com" /></div>

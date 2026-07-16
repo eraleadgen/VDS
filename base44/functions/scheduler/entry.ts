@@ -660,26 +660,74 @@ async function adminCreateContractor(base44, body) {
   if (!requireAdmin(me)) return { error: 'Admin only.' };
   const { name, phone, email, skills, service_areas, home_address } = body;
   if (!name || !phone || !email) return { error: 'name, phone and email are required.' };
-  // Platform invites only accept 'user' or 'admin' roles — invite as user, then elevate to contractor.
-  try { await base44.users.inviteUser(email, 'user'); }
-  catch (e) { console.error('invite error:', e.message); }
-  let u = null;
-  try {
-    const all = await base44.asServiceRole.entities.User.list();
-    u = (all || []).find(x => x.email && x.email.toLowerCase() === email.toLowerCase());
-    if (u && u.role !== 'contractor') {
-      try { await base44.asServiceRole.entities.User.update(u.id, { role: 'contractor' }); }
-      catch (e) { console.error('role update error:', e.message); }
-    }
-  } catch (e) { console.error('user lookup error:', e.message); }
+  // Create the specialist profile only. The specialist sets their own password from the themed
+  // invite email link — we intentionally do NOT call inviteUser (that sends a platform invite email).
+  const inviteToken = crypto.randomUUID();
   const c = await base44.asServiceRole.entities.Contractor.create({
-    name, phone, email, user_id: u ? u.id : '',
+    name, phone, email, user_id: '',
     skills: skills || [], service_areas: service_areas || { counties: [], max_travel_distance_miles: 0 },
     home_address: home_address || '', status: 'active', is_enabled: true,
+    invite_token: inviteToken, invite_sent: false, account_created: false,
   });
-  // Auto-send the Contractor Welcome Email.
+  return { success: true, contractor_id: c.id };
+}
+
+// Admin: send the themed specialist invite email (with a private set-password link).
+async function adminSendSpecialistInvite(base44, body) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const { contractor_id } = body;
+  if (!contractor_id) return { error: 'contractor_id is required.' };
+  const c = await base44.asServiceRole.entities.Contractor.get(contractor_id).catch(() => null);
+  if (!c) return { error: 'Contractor not found.' };
+  if (c.account_created) return { error: 'This specialist has already created their account.' };
+  const inviteToken = c.invite_token || crypto.randomUUID();
+  await base44.asServiceRole.entities.Contractor.update(contractor_id, { invite_token: inviteToken, invite_sent: true });
   try {
-    await base44.functions.invoke('sendContractorWelcomeEmail', { email, firstName: (name || '').split(' ')[0], scheduler_token: Deno.env.get('SCHEDULER_TOKEN') });
+    await base44.functions.invoke('sendSpecialistInvite', {
+      email: c.email, firstName: (c.name || '').split(' ')[0], invite_token: inviteToken,
+      scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
+    });
+  } catch (e) { console.error('invite email error:', e.message); return { error: 'Failed to send the invite email.' }; }
+  return { success: true, invite_sent: true };
+}
+
+// Public: validate a setup token from the invite email link (returns the specialist name + email).
+async function validateSpecialistToken(base44, body) {
+  const { token } = body;
+  if (!token) return { error: 'Missing invite token.' };
+  const all = await base44.asServiceRole.entities.Contractor.filter({ invite_token: token });
+  const c = (all && all[0]) || null;
+  if (!c) return { error: 'This invite link is invalid or no longer active.' };
+  if (c.account_created) return { error: 'This invite has already been used. Please log in to your Specialist Portal.', alreadyUsed: true };
+  if (c.is_enabled === false) return { error: 'This specialist account is disabled. Please contact your administrator.' };
+  return { success: true, name: c.name, email: c.email };
+}
+
+// Authenticated: after the specialist verifies their email, link the new account to the
+// specialist profile, elevate the role to contractor, and send the themed welcome email.
+async function finalizeSpecialistSetup(base44, body) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!me) return { error: 'Unauthorized.' };
+  const { invite_token } = body;
+  if (!invite_token) return { error: 'Missing invite token.' };
+  const all = await base44.asServiceRole.entities.Contractor.filter({ invite_token });
+  const c = (all && all[0]) || null;
+  if (!c) return { error: 'This invite link is invalid or no longer active.' };
+  if (c.account_created) return { error: 'This invite has already been used.' };
+  if (!me.email || !c.email || me.email.toLowerCase() !== c.email.toLowerCase()) {
+    return { error: 'The verified email does not match this specialist invite.' };
+  }
+  await base44.asServiceRole.entities.Contractor.update(c.id, {
+    user_id: me.id, account_created: true, invite_token: '',
+  });
+  try { await base44.asServiceRole.entities.User.update(me.id, { role: 'contractor' }); }
+  catch (e) { console.error('role update error:', e.message); }
+  try {
+    await base44.functions.invoke('sendContractorWelcomeEmail', {
+      email: c.email, firstName: (c.name || '').split(' ')[0],
+      scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
+    });
   } catch (e) { console.error('welcome email error:', e.message); }
   return { success: true, contractor_id: c.id };
 }
@@ -758,6 +806,9 @@ Deno.serve(async (req) => {
     if (action === 'admin_change_status') return Response.json(await adminChangeStatus(base44, body));
     if (action === 'admin_delete_appointment') return Response.json(await adminDeleteAppointment(base44, body));
     if (action === 'admin_bulk_delete_appointments') return Response.json(await adminBulkDeleteAppointments(base44, body));
+    if (action === 'send_specialist_invite') return Response.json(await adminSendSpecialistInvite(base44, body));
+    if (action === 'validate_specialist_token') return Response.json(await validateSpecialistToken(base44, body));
+    if (action === 'finalize_specialist_setup') return Response.json(await finalizeSpecialistSetup(base44, body));
     if (action === 'admin_metrics') return Response.json(await adminMetrics(base44));
 
     // ── Appointment-scoped actions (need an appointment) ──

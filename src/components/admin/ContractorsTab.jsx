@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Plus, Edit, Power, Trash2 } from 'lucide-react';
+import { Plus, Edit, Power, Trash2, Mail } from 'lucide-react';
 import ContractorModal from '@/components/admin/ContractorModal';
 
 const invoke = (payload) => base44.functions.invoke('scheduler', payload).then(r => r.data ?? r);
@@ -15,6 +15,7 @@ export default function ContractorsTab() {
   const [editing, setEditing] = useState(null);
   const [busy, setBusy] = useState(false);
   const [confirmingId, setConfirmingId] = useState(null);
+  const [inviteBusy, setInviteBusy] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -37,6 +38,14 @@ export default function ContractorsTab() {
       const r = await invoke({ action: 'admin_delete_contractor', contractor_id: c.id });
       if (r.error) alert(r.error); else { setConfirmingId(null); await load(); }
     } finally { setBusy(false); }
+  };
+
+  const sendInvite = async (c) => {
+    setInviteBusy(true);
+    try {
+      const r = await invoke({ action: 'send_specialist_invite', contractor_id: c.id });
+      if (r.error) alert(r.error); else { alert(`Invite email sent to ${c.email}.`); await load(); }
+    } finally { setInviteBusy(false); }
   };
 
   const save = async (data, isNew) => {
@@ -62,12 +71,12 @@ export default function ContractorsTab() {
         <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-gold/20 border-t-gold rounded-full animate-spin" /></div>
       ) : (
         <div className="glass-panel border border-vapor/10 rounded-sm overflow-hidden overflow-x-auto">
-          <table className="w-full text-sm min-w-[700px]">
+          <table className="w-full text-sm min-w-[820px]">
             <thead className="bg-asphalt/60 text-xs font-mono-tech tracking-widest text-vapor/50">
               <tr>
                 <th className="text-left p-4">NAME</th><th className="text-left p-4">CONTACT</th>
                 <th className="text-left p-4">SKILLS</th><th className="text-left p-4">STATUS</th>
-                <th className="text-left p-4">JOBS</th><th className="text-left p-4">ACTIONS</th>
+                <th className="text-left p-4">JOBS</th><th className="text-left p-4">INVITE</th><th className="text-left p-4">ACTIONS</th>
               </tr>
             </thead>
             <tbody>
@@ -90,7 +99,13 @@ export default function ContractorsTab() {
                   </td>
                   <td className="p-4 text-vapor/60 font-mono-tech">{c.metrics?.jobs_completed || 0}</td>
                   <td className="p-4">
+                    {c.account_created ? <span className="text-xs font-mono-tech text-green-300">ACTIVE</span>
+                      : c.invite_sent ? <span className="text-xs font-mono-tech text-amber-300">SENT</span>
+                      : <span className="text-xs font-mono-tech text-vapor/30">NOT SENT</span>}
+                  </td>
+                  <td className="p-4">
                     <div className="flex items-center gap-3">
+                      {!c.account_created && <button onClick={() => sendInvite(c)} disabled={inviteBusy} title="Send invite email" className="text-vapor/50 hover:text-gold"><Mail size={15} /></button>}
                       <button onClick={() => setEditing(c)} className="text-vapor/50 hover:text-gold"><Edit size={15} /></button>
                       <button onClick={() => toggleEnable(c)} disabled={busy} className="text-vapor/50 hover:text-gold">
                         <Power size={15} className={c.is_enabled === false ? 'text-red-400' : 'text-green-400'} />

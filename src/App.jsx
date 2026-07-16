@@ -26,6 +26,7 @@ import BookAppointment from './pages/BookAppointment';
 import GoldBooking from './pages/GoldBooking';
 import SpecialistLogin from './pages/SpecialistLogin';
 import SpecialistPortal from './pages/SpecialistPortal';
+import SpecialistSetup from './pages/SpecialistSetup';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 
@@ -77,6 +78,7 @@ const AuthenticatedApp = () => {
       <Route path="/gold-booking" element={<GoldBooking />} />
       <Route path="/specialist-login" element={<SpecialistLogin />} />
       <Route path="/specialist-portal" element={<SpecialistPortal />} />
+      <Route path="/specialist-setup" element={<SpecialistSetup />} />
       <Route path="/admin-login" element={<AdminLogin />} />
       <Route path="/admin" element={<AdminDashboard />} />
       <Route path="*" element={<PageNotFound />} />
