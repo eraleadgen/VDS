@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Plus, Edit, Power } from 'lucide-react';
+import { Plus, Edit, Power, Trash2 } from 'lucide-react';
 import ContractorModal from '@/components/admin/ContractorModal';
 
 const invoke = (payload) => base44.functions.invoke('scheduler', payload).then(r => r.data ?? r);
@@ -14,6 +14,7 @@ export default function ContractorsTab() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [confirmingId, setConfirmingId] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -28,6 +29,14 @@ export default function ContractorsTab() {
     setBusy(true);
     try { const r = await invoke({ action: 'admin_update_contractor', contractor_id: c.id, is_enabled: c.is_enabled === false }); if (r.error) alert(r.error); else await load(); }
     finally { setBusy(false); }
+  };
+
+  const remove = async (c) => {
+    setBusy(true);
+    try {
+      const r = await invoke({ action: 'admin_delete_contractor', contractor_id: c.id });
+      if (r.error) alert(r.error); else { setConfirmingId(null); await load(); }
+    } finally { setBusy(false); }
   };
 
   const save = async (data, isNew) => {
@@ -78,11 +87,19 @@ export default function ContractorsTab() {
                   </td>
                   <td className="p-4 text-vapor/60 font-mono-tech">{c.metrics?.jobs_completed || 0}</td>
                   <td className="p-4">
-                    <div className="flex gap-3">
+                    <div className="flex items-center gap-3">
                       <button onClick={() => setEditing(c)} className="text-vapor/50 hover:text-gold"><Edit size={15} /></button>
                       <button onClick={() => toggleEnable(c)} disabled={busy} className="text-vapor/50 hover:text-gold">
                         <Power size={15} className={c.is_enabled === false ? 'text-red-400' : 'text-green-400'} />
                       </button>
+                      {confirmingId === c.id ? (
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => setConfirmingId(null)} disabled={busy} className="text-xs font-mono-tech text-vapor/50 hover:text-vapor px-1 py-1">CANCEL</button>
+                          <button onClick={() => remove(c)} disabled={busy} className="text-xs font-mono-tech text-red-400 border border-red-400/40 bg-red-400/10 hover:bg-red-400/20 px-2 py-1 rounded-sm">CONFIRM DELETE</button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setConfirmingId(c.id)} className="text-vapor/50 hover:text-red-400"><Trash2 size={15} /></button>
+                      )}
                     </div>
                   </td>
                 </tr>

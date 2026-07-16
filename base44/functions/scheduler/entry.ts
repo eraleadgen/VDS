@@ -537,6 +537,15 @@ async function adminCreateContractor(base44, body) {
   return { success: true, contractor_id: c.id };
 }
 
+async function adminDeleteContractor(base44, body) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const { contractor_id } = body;
+  if (!contractor_id) return { error: 'contractor_id is required.' };
+  await base44.asServiceRole.entities.Contractor.delete(contractor_id);
+  return { success: true };
+}
+
 async function adminMetrics(base44) {
   const me = await base44.auth.me().catch(() => null);
   if (!requireAdmin(me)) return { error: 'Admin only.' };
@@ -587,6 +596,7 @@ Deno.serve(async (req) => {
     if (action === 'admin_appointments') return Response.json(await adminAppointments(base44, body));
     if (action === 'admin_update_contractor') return Response.json(await adminUpdateContractor(base44, body));
     if (action === 'admin_create_contractor') return Response.json(await adminCreateContractor(base44, body));
+    if (action === 'admin_delete_contractor') return Response.json(await adminDeleteContractor(base44, body));
     if (action === 'admin_metrics') return Response.json(await adminMetrics(base44));
 
     // ── Appointment-scoped actions (need an appointment) ──
