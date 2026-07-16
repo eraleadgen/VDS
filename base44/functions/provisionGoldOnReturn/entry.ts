@@ -50,15 +50,36 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fallback: use all user vehicles
+    // Determine which vehicles already have an active Gold subscription.
+    const existingActiveSubs = await base44.asServiceRole.entities.VehicleSubscription.filter({ status: 'active' });
+    const enrolledVehicleIds = new Set(existingActiveSubs.map(s => s.vehicle_id));
+
+    // If no checkout-session metadata was found, we cannot know exactly which vehicles were
+    // paid for. Never provision all vehicles unconditionally — that would let a user pay for
+    // one vehicle and receive Gold on every vehicle in their garage. Instead, cap enrollment to
+    // the total quantity actually covered by active Stripe subscriptions (minus already-enrolled).
     if (vehicleIdsToEnroll.length === 0) {
-      vehicleIdsToEnroll = vehicles.map(v => v.id);
-      console.log('No session metadata found, using all vehicles:', vehicleIdsToEnroll);
+      const paidQuantity = subscriptions.data.reduce((sum, sub) => {
+        const qty = (sub.items && sub.items.data && sub.items.data.length)
+          ? sub.items.data.reduce((s, it) => s + (it.quantity || 1), 0)
+          : (sub.quantity || 1);
+        return sum + qty;
+      }, 0);
+      const remaining = Math.max(0, paidQuantity - enrolledVehicleIds.size);
+      console.log(`No session metadata; subscription quantity=${paidQuantity}, already enrolled=${enrolledVehicleIds.size}, remaining=${remaining}`);
+      if (remaining <= 0) {
+        return Response.json({ skipped: true, reason: 'All paid vehicles already enrolled' });
+      }
+      // Enroll the oldest not-yet-enrolled vehicles up to the remaining paid capacity.
+      vehicleIdsToEnroll = vehicles
+        .filter(v => !enrolledVehicleIds.has(v.id))
+        .sort((a, b) => new Date(a.created_date || 0) - new Date(b.created_date || 0))
+        .slice(0, remaining)
+        .map(v => v.id);
+      console.log('Fallback capped to paid quantity, enrolling:', vehicleIdsToEnroll);
     }
 
     // Filter out vehicles that already have an active VehicleSubscription
-    const existingActiveSubs = await base44.asServiceRole.entities.VehicleSubscription.filter({ status: 'active' });
-    const enrolledVehicleIds = new Set(existingActiveSubs.map(s => s.vehicle_id));
     vehicleIdsToEnroll = vehicleIdsToEnroll.filter(id => !enrolledVehicleIds.has(id));
 
     console.log('Vehicles to enroll after dedup:', vehicleIdsToEnroll);
