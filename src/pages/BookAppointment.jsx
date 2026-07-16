@@ -94,26 +94,26 @@ export default function BookAppointment() {
       if (isAuth) {
         const me = await base44.auth.me();
         setUser(me);
-        if (me?.email) setForm(f => ({ ...f, email: me.email }));
-        if (me?.full_name && !me.full_name.includes('@')) {
-          const parts = me.full_name.split(' ');
-          setForm(f => ({ ...f, firstName: parts[0] || '', lastName: parts.slice(1).join(' ') || '' }));
-        }
-        if (me?.phone) setForm(f => ({ ...f, phone: me.phone || '' }));
+        // Load full profile (custom first/last name, phone, saved addresses) via service-role function
+        let acc = {};
+        try {
+          const res = await base44.functions.invoke('account', { action: 'get' });
+          acc = res?.data?.account || {};
+        } catch {}
+        setForm(f => ({
+          ...f,
+          email: acc.email || me?.email || '',
+          firstName: acc.first_name || '',
+          lastName: acc.last_name || '',
+          phone: acc.phone || '',
+        }));
+        if (acc.saved_addresses?.length) setSavedAddresses(acc.saved_addresses);
         const v = await base44.entities.MemberVehicle.list();
         setVehicles(v);
         const subsRes = await base44.functions.invoke('getMySubscriptions', {});
         const goldMap = {};
         (subsRes?.data?.subscriptions || []).forEach(sub => { goldMap[sub.vehicle_id] = true; });
         setGoldVehicles(goldMap);
-        // Load saved addresses from User entity
-        try {
-          const userEntities = await base44.entities.User.list();
-          const myEntity = userEntities.find(u => u.id === me.id);
-          if (myEntity?.saved_addresses?.length) {
-            setSavedAddresses(myEntity.saved_addresses);
-          }
-        } catch {}
       }
       setAuthChecked(true);
     };
