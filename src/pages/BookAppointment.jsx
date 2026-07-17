@@ -23,6 +23,7 @@ const ADD_ONS = [
   { id: 'ceramic_sealant', label: 'Ceramic Sealant (3 Month)', price: '$50' },
   { id: 'engine_bay', label: 'Engine Bay Detail', price: '$50' },
   { id: 'headlight_restoration', label: 'Headlight Restoration', price: '$100' },
+  { id: 'pet_hair_removal', label: 'Pet Hair Removal', price: '$50' },
 ];
 
 const PRICE_MAP = {
@@ -76,6 +77,7 @@ export default function BookAppointment() {
   const [bookedSlots, setBookedSlots] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [smsConsent, setSmsConsent] = useState(false);
+  const [quote, setQuote] = useState(null);
 
   // Guest vehicle state
   const [guestVehicle, setGuestVehicle] = useState(DEFAULT_GUEST_VEHICLE);
@@ -125,6 +127,26 @@ export default function BookAppointment() {
       setForm(f => ({ ...f, service_type: location.state.preselect_service }));
       setGuestService(location.state.preselect_service);
     }
+    // Auto-fill from a saved quote (Pricing page "Book This Quote" flow)
+    if (location.state?.quote) {
+      const q = location.state.quote;
+      setQuote(q);
+      const addOnIds = q.add_ons || [];
+      const mainService = (q.requested_services || []).find(s => !addOnIds.includes(s));
+      if (mainService) {
+        setForm(f => ({ ...f, service_type: mainService }));
+        setGuestService(mainService);
+      }
+      if (q.vehicle_classification) {
+        const vt = ['mid_size_suv', 'truck_3_row_suv'].includes(q.vehicle_classification) ? 'truck_suv' : 'sedan_coupe';
+        setGuestVehicle(v => ({ ...v, vehicle_type: vt }));
+      }
+      if (addOnIds.length) {
+        setGuestAddOns(addOnIds.filter(id => ADD_ONS.find(a => a.id === id)));
+      }
+      if (!user) setGuestConfirmed(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state]);
 
   const handleAddVehicleSave = async (vehicleForm) => {
@@ -180,6 +202,7 @@ export default function BookAppointment() {
     : guestAddOns.reduce((sum, id) => { const ao = ADD_ONS.find(a => a.id === id); return sum + (ao ? parseInt(ao.price.replace(/\D/g, '')) : 0); }, 0);
 
   const estimatedTotal = (() => {
+    if (quote) return quote.final_price;
     if (user) {
       if (selectedVehicles.length === 0) return null;
       const prices = selectedVehicles.map(label => {
@@ -306,6 +329,7 @@ export default function BookAppointment() {
         preferred_date: form.preferred_date || null,
         preferred_time: form.preferred_time || null,
         sms_consent: smsConsent,
+        quote_id: quote?.id || location.state?.quote_id || null,
       });
       // Reschedule flow: cancel the previous appointment once the new booking is submitted
       if (location.state?.reschedule_from) {
@@ -444,6 +468,26 @@ export default function BookAppointment() {
 
 
         <form onSubmit={handleSubmit} className="space-y-8">
+
+          {/* QUOTE SUMMARY (from pricing page) */}
+          {quote && (
+            <div className="border border-gold/30 bg-gold/5 rounded-sm p-5">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-mono-tech tracking-widest text-gold">YOUR CUSTOM QUOTE</p>
+                <p className="text-2xl font-grotesk font-bold text-gold">${quote.final_price}</p>
+              </div>
+              <div className="space-y-1 mb-3">
+                {(quote.requested_services || []).map(s => (
+                  <p key={s} className="text-sm text-vapor/70 font-grotesk">• {SERVICE_LABELS[s] || s.replace(/_/g, ' ')}</p>
+                ))}
+                {(quote.add_ons || []).map(a => (
+                  <p key={a} className="text-sm text-vapor/70 font-grotesk">• {ADD_ONS.find(x => x.id === a)?.label || a.replace(/_/g, ' ')}</p>
+                ))}
+              </div>
+              {quote.condition && <p className="text-xs font-mono-tech text-vapor/40">Vehicle condition: {quote.condition.replace(/_/g, ' ')}</p>}
+              <p className="text-xs font-mono-tech text-vapor/40 mt-1">Final amount confirmed by our team before service begins.</p>
+            </div>
+          )}
 
           {/* MEMBER: Vehicle + service selection */}
           {user && (

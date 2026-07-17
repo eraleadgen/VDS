@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { LayoutDashboard, Users, CalendarRange, Clock, CheckCircle2, XCircle, MessageSquare, DollarSign, Database, Route } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarRange, Clock, CheckCircle2, XCircle, MessageSquare, DollarSign, Database, Route, FileText } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import PortalShell from '@/components/portal/PortalShell';
 import ContractorsTab from '@/components/admin/ContractorsTab';
@@ -10,6 +10,7 @@ import MessagesTab from '@/components/admin/MessagesTab';
 import MigrationTab from '@/components/admin/MigrationTab';
 import InvoicesTab from '@/components/admin/InvoicesTab';
 import JourneyTab from '@/components/admin/JourneyTab';
+import QuotesTab from '@/components/admin/QuotesTab';
 
 const invoke = (payload) => base44.functions.invoke('scheduler', payload).then(r => r.data ?? r);
 
@@ -40,6 +41,7 @@ export default function AdminDashboard() {
     { key: 'overview', label: 'OVERVIEW', icon: LayoutDashboard },
     { key: 'contractors', label: 'SPECIALISTS', icon: Users },
     { key: 'appointments', label: 'JOBS', icon: CalendarRange },
+    { key: 'quotes', label: 'QUOTES', icon: FileText },
     { key: 'invoices', label: 'INVOICES', icon: DollarSign },
     { key: 'journey', label: 'JOURNEY', icon: Route },
     { key: 'messages', label: 'MESSAGES', icon: MessageSquare },
@@ -55,6 +57,7 @@ export default function AdminDashboard() {
           {tab === 'overview' && <Overview metrics={metrics} />}
           {tab === 'contractors' && <ContractorsTab />}
           {tab === 'appointments' && <AppointmentsTab />}
+          {tab === 'quotes' && <QuotesTab />}
           {tab === 'invoices' && <InvoicesTab />}
           {tab === 'journey' && <JourneyTab />}
           {tab === 'messages' && <MessagesTab />}

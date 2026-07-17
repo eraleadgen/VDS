@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
       name, phone, email, address,
       service_type, vehicle_type, vehicle_info,
       vehicle_details, notes,
-      preferred_date, preferred_time, sms_consent,
+      preferred_date, preferred_time, sms_consent, quote_id,
     } = await req.json();
 
     if (!name || !phone || !address || !service_type) {
@@ -93,6 +93,18 @@ Deno.serve(async (req) => {
     const phoneDigits = phone.replace(/\D/g, '');
     if (phoneDigits.length < 7) {
       return Response.json({ success: false, error: 'Please enter a valid phone number.' }, { status: 400 });
+    }
+
+    // ── Duplicate booking check — same customer phone + same date, non-cancelled job ──
+    if (preferred_date) {
+      try {
+        const dayJobs = await base44.asServiceRole.entities.Job.filter({ appointment_date: preferred_date });
+        const dup = (dayJobs || []).find(j => j.status !== 'cancelled' &&
+          (j.customer_phone || '').replace(/\D/g, '').slice(-10) === phoneDigits.slice(-10));
+        if (dup) {
+          return Response.json({ success: false, error: 'You already have an appointment booked for this date. To reschedule, please cancel your existing appointment first.' }, { status: 409 });
+        }
+      } catch (e) { console.error('Duplicate check error:', e.message); }
     }
 
     const firstName = name.split(' ')[0];
@@ -212,6 +224,22 @@ Deno.serve(async (req) => {
       });
     } catch (err) {
       console.error('Failed to create Job:', err.message);
+    }
+
+    // ── Link the originating Quote (if this booking came from the pricing page) ──
+    if (quote_id) {
+      try {
+        const q = await base44.asServiceRole.entities.Quote.get(quote_id).catch(() => null);
+        if (q) {
+          await base44.asServiceRole.entities.Quote.update(q.id, {
+            status: 'booked',
+            customer_name: name,
+            customer_phone: phone,
+            customer_email: email || q.customer_email,
+            job_id: job ? job.id : null,
+          });
+        }
+      } catch (e) { console.error('Quote link failed:', e.message); }
     }
 
     // ── Create Appointment (DEPRECATED mirror — linked to Job) ────────────

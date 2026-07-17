@@ -123,6 +123,29 @@
         }
       }
     },
+    "pricing_rules": {
+      "type": "object",
+      "description": "Pricing engine rules \u2014 condition multipliers applied to computed quotes based on vehicle condition. The dynamic quote factors in vehicle size (classification), condition, add-ons, and services requested.",
+      "properties": {
+        "condition_multipliers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              },
+              "multiplier": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      }
+    },
     "vehicle_classifications": {
       "type": "array",
       "description": "Operational vehicle classifications. Independent from pricing groups. Drives scheduling and specialist matching. VDS Mobile v1.0 uses 4 classifications.",
@@ -241,7 +264,7 @@
     },
     "services": {
       "type": "array",
-      "description": "Master service catalog. Service definitions contain NO pricing logic \u2014 pricing is resolved by the Pricing Engine using service key + pricing group. All pricing originates here and never in code.",
+      "description": "Master service catalog. Service definitions contain NO pricing logic \u2014 pricing is resolved by the Pricing Engine using service key + pricing group (or per-classification tiers). All pricing originates here and never in code.",
       "items": {
         "type": "object",
         "properties": {
@@ -271,13 +294,13 @@
           },
           "tiers": {
             "type": "array",
-            "description": "Pricing per pricing group. The Pricing Engine reads this; services never calculate their own price.",
+            "description": "Pricing per pricing group OR per vehicle classification. When a tier's key matches the vehicle classification it takes priority; otherwise the pricing group match is used. The Pricing Engine reads this; services never calculate their own price.",
             "items": {
               "type": "object",
               "properties": {
                 "tier": {
                   "type": "string",
-                  "description": "Pricing group key"
+                  "description": "Pricing group key or vehicle classification key"
                 },
                 "price": {
                   "type": "number",

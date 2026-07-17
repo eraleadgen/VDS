@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowRight, Check, Clock, Car, Sparkles, Loader2, ShieldCheck } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, Check, Clock, Car, Sparkles, Loader2, ShieldCheck, MessageCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
@@ -19,7 +19,12 @@ const CATEGORY_LABEL = {
   correction: 'Paint Correction',
   addon: 'Add-On Services',
 };
-const CATEGORY_ORDER = ['detail', 'correction', 'coating', 'addon'];
+
+function lookupTier(svc, classification, pricingGroup) {
+  return (svc.tiers || []).find(t => t.tier === classification)
+    || (svc.tiers || []).find(t => t.tier === pricingGroup)
+    || (svc.tiers || [])[0];
+}
 
 function formatDuration(mins) {
   if (!mins || mins <= 0) return null;
@@ -30,10 +35,15 @@ function formatDuration(mins) {
 }
 
 export default function Pricing() {
+  const navigate = useNavigate();
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
   const [classification, setClassification] = useState('sedan');
+  const [condition, setCondition] = useState('light');
   const [selected, setSelected] = useState([]);
+  const [addOns, setAddOns] = useState([]);
+  const [consultations, setConsultations] = useState([]);
+  const [booking, setBooking] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -47,69 +57,106 @@ export default function Pricing() {
 
   const mapping = config?.classification_to_pricing_group || {};
   const pricingGroup = mapping[classification] || 'sedan_coupe';
+  const conditions = config?.pricing_rules?.condition_multipliers || [];
+  const conditionEntry = conditions.find(c => c.key === condition);
+  const conditionMultiplier = conditionEntry?.multiplier ?? 1;
 
-  const services = useMemo(
-    () => (config?.services || []).filter(s => s.category !== 'membership' && s.category !== 'consultation'),
-    [config]
-  );
-
-  const grouped = useMemo(() => {
-    const g = {};
-    for (const svc of services) {
-      if (!g[svc.category]) g[svc.category] = [];
-      g[svc.category].push(svc);
-    }
-    return g;
-  }, [services]);
+  const allServices = config?.services || [];
+  const detailServices = allServices.filter(s => s.category === 'detail');
+  const addOnServices = allServices.filter(s => s.category === 'addon');
+  const coatingServices = allServices.filter(s => s.category === 'coating');
+  const correctionServices = allServices.filter(s => s.category === 'correction');
 
   const quote = useMemo(() => {
-    const items = [];
-    let total = 0;
-    let totalMins = 0;
-    let hasConsultation = false;
+    let basePrice = 0;
+    let baseMins = 0;
+    const lineItems = [];
+
     for (const key of selected) {
-      const svc = services.find(s => s.key === key);
+      const svc = allServices.find(s => s.key === key);
       if (!svc) continue;
-      const tier = (svc.tiers || []).find(t => t.tier === pricingGroup) || (svc.tiers || [])[0];
+      const tier = lookupTier(svc, classification, pricingGroup);
       if (svc.requires_consultation) {
-        hasConsultation = true;
-        items.push({ key, label: svc.label, price: tier?.price ?? null, duration: tier?.duration_minutes, consultation: true });
+        lineItems.push({ key, label: svc.label, consultation: true });
       } else {
-        const price = tier?.price ?? 0;
-        total += price;
-        totalMins += tier?.duration_minutes || 0;
-        items.push({ key, label: svc.label, price, duration: tier?.duration_minutes });
+        basePrice += tier?.price || 0;
+        baseMins += tier?.duration_minutes || 0;
+        lineItems.push({ key, label: svc.label, price: tier?.price || 0, duration: tier?.duration_minutes || 0 });
       }
     }
-    return { items, total, totalMins, hasConsultation };
-  }, [selected, services, pricingGroup]);
 
-  const toggle = (key) => setSelected(s => s.includes(key) ? s.filter(x => x !== key) : [...s, key]);
+    let addOnTotal = 0;
+    let addOnMins = 0;
+    for (const key of addOns) {
+      const svc = allServices.find(s => s.key === key);
+      if (!svc) continue;
+      const tier = lookupTier(svc, classification, pricingGroup);
+      addOnTotal += tier?.price || 0;
+      addOnMins += tier?.duration_minutes || 0;
+      lineItems.push({ key, label: svc.label, price: tier?.price || 0, duration: tier?.duration_minutes || 0, isAddOn: true });
+    }
+
+    for (const key of consultations) {
+      const svc = allServices.find(s => s.key === key);
+      if (!svc) continue;
+      lineItems.push({ key, label: svc.label, consultation: true });
+    }
+
+    const conditionedBase = Math.round(basePrice * conditionMultiplier);
+    const total = conditionedBase + addOnTotal;
+    const totalMins = baseMins + addOnMins;
+    const summary = lineItems.map(i => i.consultation ? `${i.label} — Consultation` : `${i.label} — $${i.price}`).join(' | ');
+
+    return { lineItems, basePrice, conditionedBase, addOnTotal, total, totalMins, summary };
+  }, [selected, addOns, consultations, classification, pricingGroup, conditionMultiplier, allServices]);
+
+  const toggleService = (key) => setSelected(s => s.includes(key) ? s.filter(x => x !== key) : [...s, key]);
+  const toggleAddOn = (key) => setAddOns(s => s.includes(key) ? s.filter(x => x !== key) : [...s, key]);
+  const toggleConsultation = (key) => setConsultations(s => s.includes(key) ? s.filter(x => x !== key) : [...s, key]);
 
   const classOptions = (config?.vehicle_classifications || []).filter(c => c.key in CLASSIFICATION_LABEL);
+  const hasItems = quote.lineItems.length > 0;
+
+  const handleBookQuote = async () => {
+    if (!hasItems) return;
+    setBooking(true);
+    try {
+      const res = await base44.functions.invoke('saveQuote', {
+        vehicle_classification: classification,
+        services: [...selected, ...consultations],
+        add_ons: addOns,
+        condition,
+        estimated_price: quote.total,
+        estimated_duration_minutes: quote.totalMins,
+        quote_summary: quote.summary,
+      });
+      const data = res?.data || res;
+      if (data.error) { alert(data.error); return; }
+      navigate('/book', { state: { quote: data.quote, quote_id: data.quote_id } });
+    } catch (e) {
+      alert('Failed to save quote. Please try again.');
+    } finally { setBooking(false); }
+  };
 
   return (
     <div className="bg-obsidian min-h-screen">
       <Navbar />
 
-      {/* ── HERO ─────────────────────────────────────── */}
       <section className="pt-40 pb-12 max-w-7xl mx-auto px-6 text-center">
         <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">METRO ATLANTA · MOBILE DETAILING</p>
         <h1 className="text-5xl md:text-7xl font-grotesk font-bold text-vapor leading-none mb-6">
           <GoldShimmer>PRICING</GoldShimmer>
         </h1>
         <p className="text-vapor/50 text-lg max-w-xl mx-auto leading-relaxed">
-          Get an accurate quote in under 60 seconds. All services are performed on-site at your location.
+          Build your custom quote in under 60 seconds. Pricing adjusts to your vehicle size, condition, and add-ons.
         </p>
       </section>
 
-      {/* ── DYNAMIC QUOTE CALCULATOR ────────────────── */}
       <section className="max-w-7xl mx-auto px-6 pb-24">
         {loading ? (
           <div className="flex justify-center py-24"><Loader2 size={28} className="text-gold animate-spin" /></div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-            {/* ── Left: selectors ── */}
             <div className="lg:col-span-2 space-y-10">
               {/* Step 1: Vehicle */}
               <div>
@@ -119,11 +166,8 @@ export default function Pricing() {
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {classOptions.map(c => (
-                    <button
-                      key={c.key}
-                      onClick={() => setClassification(c.key)}
-                      className={`relative p-5 rounded-sm border text-center transition-all vds-card-hover ${classification === c.key ? 'border-gold bg-gold/10' : 'border-vapor/10 bg-asphalt/40 hover:border-vapor/20'}`}
-                    >
+                    <button key={c.key} onClick={() => setClassification(c.key)}
+                      className={`relative p-5 rounded-sm border text-center transition-all vds-card-hover ${classification === c.key ? 'border-gold bg-gold/10' : 'border-vapor/10 bg-asphalt/40 hover:border-vapor/20'}`}>
                       {classification === c.key && <Check size={14} className="absolute top-2 right-2 text-gold" />}
                       <Car size={22} className={classification === c.key ? 'text-gold mx-auto mb-2' : 'text-vapor/40 mx-auto mb-2'} />
                       <span className={`text-xs font-mono-tech tracking-wide ${classification === c.key ? 'text-vapor' : 'text-vapor/60'}`}>{CLASSIFICATION_LABEL[c.key] || c.label}</span>
@@ -132,78 +176,167 @@ export default function Pricing() {
                 </div>
               </div>
 
-              {/* Step 2: Services */}
+              {/* Step 2: Condition */}
               <div>
                 <div className="flex items-center gap-3 mb-4">
                   <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gold text-obsidian text-xs font-bold font-mono-tech">2</span>
+                  <h2 className="text-sm font-mono-tech tracking-widest text-gold">VEHICLE CONDITION</h2>
+                </div>
+                <div className="grid grid-cols-3 gap-3">
+                  {conditions.map(c => (
+                    <button key={c.key} onClick={() => setCondition(c.key)}
+                      className={`relative p-4 rounded-sm border text-center transition-all ${condition === c.key ? 'border-gold bg-gold/10' : 'border-vapor/10 bg-asphalt/40 hover:border-vapor/20'}`}>
+                      {condition === c.key && <Check size={14} className="absolute top-2 right-2 text-gold" />}
+                      <span className={`block text-sm font-grotesk ${condition === c.key ? 'text-vapor' : 'text-vapor/70'}`}>{c.label}</span>
+                      <span className="text-xs font-mono-tech text-vapor/40 mt-1">{c.multiplier > 1 ? `+${Math.round((c.multiplier - 1) * 100)}%` : 'Base rate'}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Step 3: Detailing Services */}
+              <div>
+                <div className="flex items-center gap-3 mb-4">
+                  <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gold text-obsidian text-xs font-bold font-mono-tech">3</span>
                   <h2 className="text-sm font-mono-tech tracking-widest text-gold">CHOOSE YOUR SERVICES</h2>
                 </div>
-                <div className="space-y-8">
-                  {CATEGORY_ORDER.map(cat => grouped[cat] ? (
-                    <div key={cat}>
-                      <p className="text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">{CATEGORY_LABEL[cat]}</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {grouped[cat].map(svc => {
-                          const tier = (svc.tiers || []).find(t => t.tier === pricingGroup) || (svc.tiers || [])[0];
-                          const price = tier?.price ?? 0;
-                          const checked = selected.includes(svc.key);
-                          return (
-                            <button
-                              key={svc.key}
-                              onClick={() => toggle(svc.key)}
-                              className={`flex items-center justify-between gap-3 p-4 rounded-sm border text-left transition-all ${checked ? 'border-gold/50 bg-gold/[0.06]' : 'border-vapor/10 bg-asphalt/30 hover:border-vapor/20'}`}
-                            >
-                              <div className="flex items-center gap-3 min-w-0">
-                                <span className={`w-5 h-5 rounded-sm border flex items-center justify-center shrink-0 ${checked ? 'bg-gold border-gold' : 'border-vapor/30'}`}>
-                                  {checked && <Check size={13} className="text-obsidian" />}
-                                </span>
-                                <div className="min-w-0">
-                                  <span className="block text-sm text-vapor font-grotesk truncate">{svc.label}</span>
-                                  {svc.requires_consultation && <span className="text-[10px] font-mono-tech tracking-widest text-amber-300/70">CONSULTATION</span>}
-                                </div>
-                              </div>
-                              <span className="text-gold font-grotesk font-bold text-base shrink-0">
-                                {svc.requires_consultation ? `$${price}+` : `$${price}`}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ) : null)}
+                <p className="text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">{CATEGORY_LABEL.detail}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+                  {detailServices.map(svc => {
+                    const tier = lookupTier(svc, classification, pricingGroup);
+                    const price = tier?.price ?? 0;
+                    const checked = selected.includes(svc.key);
+                    return (
+                      <button key={svc.key} onClick={() => toggleService(svc.key)}
+                        className={`flex items-center justify-between gap-3 p-4 rounded-sm border text-left transition-all ${checked ? 'border-gold/50 bg-gold/[0.06]' : 'border-vapor/10 bg-asphalt/30 hover:border-vapor/20'}`}>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className={`w-5 h-5 rounded-sm border flex items-center justify-center shrink-0 ${checked ? 'bg-gold border-gold' : 'border-vapor/30'}`}>
+                            {checked && <Check size={13} className="text-obsidian" />}
+                          </span>
+                          <span className="text-sm text-vapor font-grotesk truncate">{svc.label}</span>
+                        </div>
+                        <span className="text-gold font-grotesk font-bold text-base shrink-0">${price}</span>
+                      </button>
+                    );
+                  })}
                 </div>
+
+                {/* Add-Ons */}
+                {addOnServices.length > 0 && (
+                  <>
+                    <p className="text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">{CATEGORY_LABEL.addon}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
+                      {addOnServices.map(svc => {
+                        const tier = lookupTier(svc, classification, pricingGroup);
+                        const price = tier?.price ?? 0;
+                        const checked = addOns.includes(svc.key);
+                        return (
+                          <button key={svc.key} onClick={() => toggleAddOn(svc.key)}
+                            className={`flex items-center justify-between gap-3 p-4 rounded-sm border text-left transition-all ${checked ? 'border-gold/50 bg-gold/[0.06]' : 'border-vapor/10 bg-asphalt/30 hover:border-vapor/20'}`}>
+                            <div className="flex items-center gap-3 min-w-0">
+                              <span className={`w-5 h-5 rounded-sm border flex items-center justify-center shrink-0 ${checked ? 'bg-gold border-gold' : 'border-vapor/30'}`}>
+                                {checked && <Check size={13} className="text-obsidian" />}
+                              </span>
+                              <span className="text-sm text-vapor font-grotesk truncate">{svc.label}</span>
+                            </div>
+                            <span className="text-gold font-grotesk font-bold text-base shrink-0">+${price}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+
+                {/* Ceramic Coatings — Consultation only */}
+                {coatingServices.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">{CATEGORY_LABEL.coating}</p>
+                    <button onClick={() => toggleConsultation(coatingServices[0].key)}
+                      className={`w-full flex items-center justify-between gap-3 p-5 rounded-sm border text-left transition-all ${consultations.includes(coatingServices[0].key) ? 'border-gold/50 bg-gold/[0.06]' : 'border-vapor/10 bg-asphalt/30 hover:border-vapor/20'}`}>
+                      <div className="flex items-center gap-3">
+                        <MessageCircle size={18} className={consultations.includes(coatingServices[0].key) ? 'text-gold' : 'text-vapor/40'} />
+                        <div>
+                          <span className="block text-sm text-vapor font-grotesk">Request Ceramic Coating Consultation</span>
+                          <span className="text-xs font-mono-tech text-vapor/40">Free 15-min consultation · Custom quote on-site</span>
+                        </div>
+                      </div>
+                      <span className={`text-xs font-mono-tech tracking-widest shrink-0 ${consultations.includes(coatingServices[0].key) ? 'text-gold' : 'text-vapor/50'}`}>
+                        {consultations.includes(coatingServices[0].key) ? '✓ ADDED' : 'CONSULTATION'}
+                      </span>
+                    </button>
+                  </div>
+                )}
+
+                {/* Paint Correction — Consultation only */}
+                {correctionServices.length > 0 && (
+                  <div>
+                    <p className="text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">{CATEGORY_LABEL.correction}</p>
+                    <button onClick={() => toggleConsultation(correctionServices[0].key)}
+                      className={`w-full flex items-center justify-between gap-3 p-5 rounded-sm border text-left transition-all ${consultations.includes(correctionServices[0].key) ? 'border-gold/50 bg-gold/[0.06]' : 'border-vapor/10 bg-asphalt/30 hover:border-vapor/20'}`}>
+                      <div className="flex items-center gap-3">
+                        <MessageCircle size={18} className={consultations.includes(correctionServices[0].key) ? 'text-gold' : 'text-vapor/40'} />
+                        <div>
+                          <span className="block text-sm text-vapor font-grotesk">Request Paint Correction Consultation</span>
+                          <span className="text-xs font-mono-tech text-vapor/40">Free 15-min consultation · Custom quote on-site</span>
+                        </div>
+                      </div>
+                      <span className={`text-xs font-mono-tech tracking-widest shrink-0 ${consultations.includes(correctionServices[0].key) ? 'text-gold' : 'text-vapor/50'}`}>
+                        {consultations.includes(correctionServices[0].key) ? '✓ ADDED' : 'CONSULTATION'}
+                      </span>
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
-            {/* ── Right: live quote (sticky) ── */}
+            {/* Right: live quote (sticky) */}
             <div className="lg:col-span-1">
               <div className="lg:sticky lg:top-28 glass-panel border border-gold/20 rounded-sm p-6">
                 <div className="flex items-center gap-2 mb-1">
                   <Sparkles size={14} className="text-gold" />
-                  <h3 className="text-xs font-mono-tech tracking-widest text-gold">YOUR QUOTE</h3>
+                  <h3 className="text-xs font-mono-tech tracking-widest text-gold">YOUR CUSTOM QUOTE</h3>
                 </div>
-                <p className="text-xs font-mono-tech text-vapor/40 mb-5">{CLASSIFICATION_LABEL[classification]} · {pricingGroup === 'sedan_coupe' ? 'Sedan/Coupe' : 'Truck/SUV'} pricing</p>
+                <p className="text-xs font-mono-tech text-vapor/40 mb-5">{CLASSIFICATION_LABEL[classification]} · {conditionEntry?.label || 'Standard condition'}</p>
 
-                {quote.items.length === 0 ? (
+                {!hasItems ? (
                   <div className="py-10 text-center">
                     <Car size={28} className="text-vapor/20 mx-auto mb-3" />
-                    <p className="text-vapor/40 font-mono-tech text-xs">Select services to see your instant quote.</p>
+                    <p className="text-vapor/40 font-mono-tech text-xs">Select services to see your custom quote.</p>
                   </div>
                 ) : (
                   <>
-                    <div className="space-y-3 mb-5 max-h-[280px] overflow-y-auto">
-                      {quote.items.map(it => (
+                    <div className="space-y-3 mb-5 max-h-[320px] overflow-y-auto">
+                      {quote.lineItems.map(it => (
                         <div key={it.key} className="flex items-start justify-between gap-2 pb-3 border-b border-vapor/5 last:border-0">
-                          <span className="text-sm text-vapor/80 font-grotesk">{it.label}</span>
-                          <span className="text-sm text-gold font-grotesk font-bold shrink-0">
-                            {it.consultation ? 'Consult' : `$${it.price}`}
+                          <span className={`text-sm font-grotesk ${it.consultation ? 'text-vapor/50' : 'text-vapor/80'}`}>{it.label}</span>
+                          <span className="text-sm font-grotesk font-bold shrink-0">
+                            {it.consultation ? <span className="text-vapor/40 text-xs font-mono-tech">Consultation</span> : <span className="text-gold">${it.price}</span>}
                           </span>
                         </div>
                       ))}
                     </div>
 
-                    <div className="flex items-end justify-between mb-2">
-                      <span className="text-xs font-mono-tech tracking-widest text-vapor/40">STARTING AT</span>
+                    {conditionMultiplier > 1 && quote.basePrice > 0 && (
+                      <div className="flex items-center justify-between text-xs font-mono-tech text-vapor/40 mb-2">
+                        <span>Base services</span>
+                        <span>${quote.basePrice}</span>
+                      </div>
+                    )}
+                    {conditionMultiplier > 1 && quote.basePrice > 0 && (
+                      <div className="flex items-center justify-between text-xs font-mono-tech text-vapor/40 mb-2">
+                        <span>× {conditionEntry?.label} condition</span>
+                        <span className="text-gold">${quote.conditionedBase}</span>
+                      </div>
+                    )}
+                    {quote.addOnTotal > 0 && (
+                      <div className="flex items-center justify-between text-xs font-mono-tech text-vapor/40 mb-3">
+                        <span>Add-ons</span>
+                        <span>+${quote.addOnTotal}</span>
+                      </div>
+                    )}
+
+                    <div className="flex items-end justify-between mb-2 pt-3 border-t border-vapor/10">
+                      <span className="text-xs font-mono-tech tracking-widest text-vapor/40">CUSTOM QUOTE</span>
                       <span className="text-3xl font-grotesk font-bold text-gold">${quote.total}</span>
                     </div>
                     {quote.totalMins > 0 && (
@@ -211,24 +344,17 @@ export default function Pricing() {
                         <Clock size={12} /> Est. {formatDuration(quote.totalMins)}
                       </p>
                     )}
-                    {quote.hasConsultation && (
-                      <p className="text-[11px] font-mono-tech text-amber-300/60 mb-4 leading-relaxed">
-                        Some selected services require a free consultation. Final pricing confirmed before service.
-                      </p>
-                    )}
 
-                    <Link
-                      to="/book"
-                      className="flex items-center justify-center gap-2 w-full bg-gold text-obsidian px-6 py-3.5 text-sm font-mono-tech tracking-widest rounded-sm hover:bg-gold-light transition-colors"
-                    >
-                      BOOK THIS QUOTE <ArrowRight size={14} />
-                    </Link>
+                    <button onClick={handleBookQuote} disabled={booking}
+                      className="flex items-center justify-center gap-2 w-full bg-gold text-obsidian px-6 py-3.5 text-sm font-mono-tech tracking-widest rounded-sm hover:bg-gold-light transition-colors disabled:opacity-50">
+                      {booking ? <Loader2 size={14} className="animate-spin" /> : <>BOOK THIS QUOTE <ArrowRight size={14} /></>}
+                    </button>
                   </>
                 )}
 
                 <div className="flex items-center gap-2 mt-4 pt-4 border-t border-vapor/5">
                   <ShieldCheck size={13} className="text-gold/50 shrink-0" />
-                  <p className="text-[10px] font-mono-tech text-vapor/30 leading-relaxed">No hidden fees · Final quote confirmed before service begins</p>
+                  <p className="text-[10px] font-mono-tech text-vapor/30 leading-relaxed">Custom quote based on size, condition &amp; add-ons · Final amount confirmed before service</p>
                 </div>
               </div>
             </div>
@@ -236,7 +362,7 @@ export default function Pricing() {
         )}
       </section>
 
-      {/* ── VDS GOLD BANNER ──────────────────────────── */}
+      {/* VDS Gold banner */}
       <section className="border-y border-gold/20 py-16 bg-gradient-to-r from-obsidian via-[#0D0B06] to-obsidian">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="text-center md:text-left">
@@ -254,20 +380,17 @@ export default function Pricing() {
               <p className="text-3xl font-grotesk font-bold text-gold">$300 <span className="text-base text-vapor/50">truck/suv</span></p>
               <p className="text-xs font-mono-tech text-vapor/40 tracking-widest mt-1">PER VEHICLE / MONTH</p>
             </div>
-            <Link to="/vds-gold"
-              className="vds-gold-btn px-8 py-4 text-sm font-mono-tech tracking-widest rounded-sm flex items-center gap-2">
+            <Link to="/vds-gold" className="vds-gold-btn px-8 py-4 text-sm font-mono-tech tracking-widest rounded-sm flex items-center gap-2">
               VIEW MEMBERSHIP <ArrowRight size={13} />
             </Link>
           </div>
         </div>
       </section>
 
-      {/* ── CTA ──────────────────────────────────────── */}
       <section className="py-24 text-center max-w-2xl mx-auto px-6">
         <h2 className="text-3xl font-grotesk font-bold text-vapor mb-4">READY TO BOOK?</h2>
-        <p className="text-vapor/50 mb-10 font-mono-tech text-sm">Book your appointment online. Final quote confirmed before service begins.</p>
-        <Link to="/book"
-          className="inline-flex items-center gap-3 border border-gold bg-gold text-obsidian px-10 py-4 text-sm font-mono-tech tracking-widest hover:bg-gold-light transition-colors duration-300 rounded-sm">
+        <p className="text-vapor/50 mb-10 font-mono-tech text-sm">Build your custom quote above, or book directly.</p>
+        <Link to="/book" className="inline-flex items-center gap-3 border border-gold bg-gold text-obsidian px-10 py-4 text-sm font-mono-tech tracking-widest hover:bg-gold-light transition-colors duration-300 rounded-sm">
           BOOK NOW <ArrowRight size={14} />
         </Link>
       </section>
