@@ -1,67 +1,69 @@
-// Pricing Engine — single source of truth for all VDS pricing.
-// Retell AI must NEVER calculate prices. It must always call this endpoint.
+// Pricing Engine — ERA Core Phase 4
+// POST /functions/pricingEngine
+// Single source of truth for all VDS pricing. Reads entirely from BusinessConfig —
+// nothing is hardcoded. Accepts vehicle_classification (preferred) or vehicle_type (legacy)
+// and resolves the pricing group via BusinessConfig.classification_to_pricing_group.
+// Protected by SCHEDULER_TOKEN — internal calls only (called by valerieTools, website, admin).
 
-const PRICING = {
-  // vehicle_type -> service -> { price, duration_minutes, label }
-  sedan_coupe: {
-    exterior_detail:         { price: 150, duration: 60,  label: 'Exterior Detail' },
-    interior_detail:         { price: 150, duration: 90,  label: 'Interior Detail' },
-    full_detail:             { price: 250, duration: 180, label: 'Full Interior + Exterior Detail' },
-    engine_bay:              { price: 75,  duration: 45,  label: 'Engine Bay Detail' },
-    headlight_restoration:   { price: 75,  duration: 60,  label: 'Headlight Restoration' },
-    ceramic_sealant:         { price: 75,  duration: 30,  label: 'Ceramic Sealant' },
-    ceramic_coating:         { price: 0,   duration: 0,   label: 'Ceramic Coating (Consultation Required)' },
-    paint_correction:        { price: 0,   duration: 0,   label: 'Paint Correction (Consultation Required)' },
-    vds_gold:                { price: 250, duration: 0,   label: 'VDS Gold Membership — Sedan/Coupe ($250/mo)' },
-  },
-  truck_suv: {
-    exterior_detail:         { price: 175, duration: 75,  label: 'Exterior Detail' },
-    interior_detail:         { price: 175, duration: 105, label: 'Interior Detail' },
-    full_detail:             { price: 300, duration: 210, label: 'Full Interior + Exterior Detail' },
-    engine_bay:              { price: 100, duration: 60,  label: 'Engine Bay Detail' },
-    headlight_restoration:   { price: 75,  duration: 60,  label: 'Headlight Restoration' },
-    ceramic_sealant:         { price: 100, duration: 45,  label: 'Ceramic Sealant' },
-    ceramic_coating:         { price: 0,   duration: 0,   label: 'Ceramic Coating (Consultation Required)' },
-    paint_correction:        { price: 0,   duration: 0,   label: 'Paint Correction (Consultation Required)' },
-    vds_gold:                { price: 300, duration: 0,   label: 'VDS Gold Membership — Truck/SUV ($300/mo)' },
-  },
-};
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 
-const CONSULTATION_SERVICES = ['ceramic_coating', 'paint_correction'];
-const BOOKING_URL = 'https://vdsmobile.com/book';
+async function loadConfig(base44) {
+  const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
+  return configs && configs[0] ? configs[0] : null;
+}
+
+// Resolve a pricing group from a vehicle classification or legacy vehicle_type.
+function resolvePricingGroup(cfg, classification, legacyType) {
+  const map = cfg.classification_to_pricing_group || {};
+  if (classification && map[classification]) return map[classification];
+  if (legacyType === 'truck_suv') return 'truck_suv';
+  return 'sedan_coupe';
+}
 
 Deno.serve(async (req) => {
   try {
-    const RETELL_API_KEY = Deno.env.get('RETELL_API_KEY');
-    const auth = req.headers.get('Authorization') || '';
-    const provided = auth.replace(/^Bearer\s+/i, '').trim();
-    if (!RETELL_API_KEY || !provided || provided !== RETELL_API_KEY) return Response.json({ error: 'Unauthorized.' }, { status: 401 });
+    const base44 = createClientFromRequest(req);
+    const body = await req.json().catch(() => ({}));
 
-    const { vehicle_type, services } = await req.json();
-
-    if (!vehicle_type || !services || !Array.isArray(services)) {
-      return Response.json({ error: 'vehicle_type and services[] are required.' }, { status: 400 });
+    const SCHEDULER_TOKEN = Deno.env.get('SCHEDULER_TOKEN');
+    if (!SCHEDULER_TOKEN || body.scheduler_token !== SCHEDULER_TOKEN) {
+      return Response.json({ error: 'Unauthorized.' }, { status: 401 });
     }
 
-    const tier = PRICING[vehicle_type] || PRICING['sedan_coupe'];
+    const { vehicle_classification, vehicle_type, services } = body;
+    if (!services || !Array.isArray(services)) {
+      return Response.json({ error: 'services[] is required.' }, { status: 400 });
+    }
+
+    const cfg = await loadConfig(base44);
+    if (!cfg) return Response.json({ error: 'BusinessConfig not found.' }, { status: 500 });
+
+    const pricingGroup = resolvePricingGroup(cfg, vehicle_classification, vehicle_type);
+    const bookingUrl = (cfg.website_links && cfg.website_links.booking_url) || 'https://vdsmobile.com/book';
+
     let totalPrice = 0;
     let totalDuration = 0;
     const lineItems = [];
     let requiresConsultation = false;
 
-    for (const svc of services) {
-      const entry = tier[svc];
-      if (!entry) {
-        lineItems.push({ service: svc, label: svc, price: 0, duration: 0, note: 'Unknown service' });
+    for (const svcKey of services) {
+      const svc = (cfg.services || []).find(s => s.key === svcKey);
+      if (!svc) {
+        lineItems.push({ service: svcKey, label: svcKey, price: 0, duration: 0, note: 'Unknown service' });
         continue;
       }
-      if (CONSULTATION_SERVICES.includes(svc)) {
+      const tier = (svc.tiers || []).find(t => t.tier === pricingGroup) || (svc.tiers || [])[0];
+      if (!tier) {
+        lineItems.push({ service: svcKey, label: svc.label, price: 0, duration: 0, note: 'No pricing for this vehicle group' });
+        continue;
+      }
+      if (svc.requires_consultation) {
         requiresConsultation = true;
-        lineItems.push({ service: svc, label: entry.label, price: null, duration: null, note: 'Free consultation required — we will call to discuss' });
+        lineItems.push({ service: svcKey, label: svc.label, price: null, duration: null, note: 'Free consultation required' });
       } else {
-        totalPrice += entry.price;
-        totalDuration += entry.duration;
-        lineItems.push({ service: svc, label: entry.label, price: entry.price, duration: entry.duration });
+        totalPrice += tier.price || 0;
+        totalDuration += tier.duration_minutes || 0;
+        lineItems.push({ service: svcKey, label: svc.label, price: tier.price, duration: tier.duration_minutes });
       }
     }
 
@@ -70,21 +72,18 @@ Deno.serve(async (req) => {
       : `${totalDuration} min`;
 
     const summary = lineItems.map(i =>
-      i.price != null
-        ? `${i.label} — $${i.price}`
-        : `${i.label} — ${i.note}`
+      i.price != null ? `${i.label} — $${i.price}` : `${i.label} — ${i.note}`
     ).join(' | ');
 
     return Response.json({
-      vehicle_type,
+      pricing_group: pricingGroup,
       services: lineItems,
       starting_price: totalPrice,
       estimated_duration: durationFormatted,
       quote_summary: summary,
       requires_consultation: requiresConsultation,
-      booking_url: BOOKING_URL,
+      booking_url: bookingUrl,
     });
-
   } catch (error) {
     console.error('pricingEngine error:', error.message);
     return Response.json({ error: error.message }, { status: 500 });

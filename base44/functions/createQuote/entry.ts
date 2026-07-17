@@ -1,159 +1,121 @@
-// Create Quote — called by Retell AI to generate a price quote.
-// Base44 owns ALL pricing logic. Retell never calculates prices.
+// Create Quote — ERA Core Phase 4
+// POST /functions/createQuote
+// Creates a price quote for a customer. Reads pricing from BusinessConfig (never hardcoded).
+// GoHighLevel has been fully removed. Links to the Customer entity (find-or-create).
+// Logs a quote_generated event via logEvent. SMS consent is snapshotted from the Customer.
+// Protected by SCHEDULER_TOKEN — internal calls only (valerieTools, website, admin).
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 
-const PRICING = {
-  sedan_coupe: {
-    exterior_detail:       { price: 150, duration: 60,  label: 'Exterior Detail' },
-    interior_detail:       { price: 150, duration: 90,  label: 'Interior Detail' },
-    full_detail:           { price: 250, duration: 180, label: 'Full Interior + Exterior Detail' },
-    engine_bay:            { price: 75,  duration: 45,  label: 'Engine Bay Detail' },
-    headlight_restoration: { price: 75,  duration: 60,  label: 'Headlight Restoration' },
-    ceramic_sealant:       { price: 75,  duration: 30,  label: 'Ceramic Sealant' },
-    ceramic_coating:       { price: null, duration: null, label: 'Ceramic Coating (Consultation Required)' },
-    paint_correction:      { price: null, duration: null, label: 'Paint Correction (Consultation Required)' },
-    vds_gold:              { price: 250, duration: 0,   label: 'VDS Gold Membership ($250/mo)' },
-  },
-  truck_suv: {
-    exterior_detail:       { price: 175, duration: 75,  label: 'Exterior Detail' },
-    interior_detail:       { price: 175, duration: 105, label: 'Interior Detail' },
-    full_detail:           { price: 300, duration: 210, label: 'Full Interior + Exterior Detail' },
-    engine_bay:            { price: 100, duration: 60,  label: 'Engine Bay Detail' },
-    headlight_restoration: { price: 75,  duration: 60,  label: 'Headlight Restoration' },
-    ceramic_sealant:       { price: 100, duration: 45,  label: 'Ceramic Sealant' },
-    ceramic_coating:       { price: null, duration: null, label: 'Ceramic Coating (Consultation Required)' },
-    paint_correction:      { price: null, duration: null, label: 'Paint Correction (Consultation Required)' },
-    vds_gold:              { price: 300, duration: 0,   label: 'VDS Gold Membership ($300/mo)' },
-  },
-};
+function toE164(phone) {
+  if (!phone) return '';
+  let d = phone.replace(/\D/g, '');
+  if (d.length === 10) d = '1' + d;
+  return d.length >= 10 ? '+' + d : '';
+}
 
-const BOOKING_URL = 'https://vdsmobile.com/book';
+async function loadConfig(base44) {
+  const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
+  return configs && configs[0] ? configs[0] : null;
+}
 
-const GHL_HEADERS = (key) => ({
-  'Authorization': `Bearer ${key}`,
-  'Content-Type': 'application/json',
-  'Version': '2021-07-28',
-});
+function resolvePricingGroup(cfg, classification, legacyType) {
+  const map = cfg.classification_to_pricing_group || {};
+  if (classification && map[classification]) return map[classification];
+  if (legacyType === 'truck_suv') return 'truck_suv';
+  return 'sedan_coupe';
+}
 
-async function upsertGHLContact(customer_name, customer_phone, customer_email, locationId, apiKey) {
-  const firstName = customer_name.split(' ')[0];
-  const lastName = customer_name.split(' ').slice(1).join(' ') || '';
-  let contactId = null;
-
-  if (customer_email) {
-    const res = await fetch(
-      `https://services.leadconnectorhq.com/contacts/search/duplicate?locationId=${locationId}&email=${encodeURIComponent(customer_email)}`,
-      { headers: GHL_HEADERS(apiKey) }
-    );
-    if (res.ok) { const d = await res.json(); contactId = d?.contact?.id || null; }
+// Find-or-create a Customer by phone.
+async function ensureCustomer(base44, phone, name, email) {
+  const e164 = toE164(phone);
+  let customers = await base44.asServiceRole.entities.Customer.filter({ phone: e164 }).catch(() => []);
+  if (!customers.length) {
+    const d = phone.replace(/\D/g, '');
+    if (d.length >= 10) {
+      const all = await base44.asServiceRole.entities.Customer.list().catch(() => []);
+      customers = (all || []).filter(c => (c.phone || '').replace(/\D/g, '').slice(-10) === d.slice(-10));
+    }
   }
-
-  const payload = { firstName, lastName, phone: customer_phone, email: customer_email || undefined, locationId, tags: ['ai-quote'], source: 'Retell AI — Valerie' };
-
-  if (contactId) {
-    await fetch(`https://services.leadconnectorhq.com/contacts/${contactId}`, {
-      method: 'PUT', headers: GHL_HEADERS(apiKey), body: JSON.stringify(payload),
-    });
-  } else {
-    const res = await fetch('https://services.leadconnectorhq.com/contacts/', {
-      method: 'POST', headers: GHL_HEADERS(apiKey), body: JSON.stringify(payload),
-    });
-    const d = await res.json();
-    contactId = d?.contact?.id || d?.meta?.contactId || null;
-  }
-  return contactId;
+  if (customers.length) return customers[0];
+  const firstName = (name || '').split(' ')[0] || '';
+  const lastName = (name || '').split(' ').slice(1).join(' ') || '';
+  return await base44.asServiceRole.entities.Customer.create({
+    first_name: firstName, last_name: lastName, phone: e164, email: email || '',
+    customer_since: new Date().toISOString().split('T')[0], sms_consent: true, account_status: 'active',
+  });
 }
 
 Deno.serve(async (req) => {
   try {
-    const RETELL_API_KEY = Deno.env.get('RETELL_API_KEY');
-    const auth = req.headers.get('Authorization') || '';
-    const provided = auth.replace(/^Bearer\s+/i, '').trim();
-    if (!RETELL_API_KEY || !provided || provided !== RETELL_API_KEY) return Response.json({ error: 'Unauthorized.' }, { status: 401 });
-
     const base44 = createClientFromRequest(req);
-    const body = await req.json();
-    const { customer_name, customer_phone, customer_email, vehicle_year, vehicle_make, vehicle_model, vehicle_type, services, ai_notes, call_id } = body;
+    const body = await req.json().catch(() => ({}));
+
+    const SCHEDULER_TOKEN = Deno.env.get('SCHEDULER_TOKEN');
+    if (!SCHEDULER_TOKEN || body.scheduler_token !== SCHEDULER_TOKEN) {
+      return Response.json({ error: 'Unauthorized.' }, { status: 401 });
+    }
+    delete body.scheduler_token;
+
+    const { customer_name, customer_phone, customer_email, vehicle_year, vehicle_make, vehicle_model,
+            vehicle_classification, vehicle_type, services, ai_notes } = body;
 
     if (!customer_phone || !services || !Array.isArray(services) || services.length === 0) {
       return Response.json({ error: 'customer_phone and services[] are required.' }, { status: 400 });
     }
 
-    const tier = PRICING[vehicle_type] || PRICING['sedan_coupe'];
+    const cfg = await loadConfig(base44);
+    if (!cfg) return Response.json({ error: 'BusinessConfig not found.' }, { status: 500 });
+
+    const pricingGroup = resolvePricingGroup(cfg, vehicle_classification, vehicle_type);
+    const bookingUrl = (cfg.website_links && cfg.website_links.booking_url) || 'https://vdsmobile.com/book';
+
     let totalPrice = 0;
     const lineItems = [];
-
-    for (const svc of services) {
-      const entry = tier[svc];
-      if (!entry) continue;
-      if (entry.price != null) totalPrice += entry.price;
-      lineItems.push({ service: svc, label: entry.label, price: entry.price });
+    for (const svcKey of services) {
+      const svc = (cfg.services || []).find(s => s.key === svcKey);
+      if (!svc) continue;
+      const tier = (svc.tiers || []).find(t => t.tier === pricingGroup) || (svc.tiers || [])[0];
+      if (!tier) continue;
+      if (!svc.requires_consultation && tier.price != null) totalPrice += tier.price;
+      lineItems.push({ service: svcKey, label: svc.label, price: svc.requires_consultation ? null : tier.price });
     }
 
     const vehicleDesc = [vehicle_year, vehicle_make, vehicle_model].filter(Boolean).join(' ') || 'Vehicle';
     const summaryLines = lineItems.map(i => i.price != null ? `${i.label} — $${i.price}` : `${i.label} — Consultation Required`);
     const quoteSummary = `Quote for ${vehicleDesc}:\n${summaryLines.join('\n')}\nStarting at $${totalPrice}`;
 
-    // Save to Quote entity
+    // Find-or-create customer, snapshot consent.
+    const customer = await ensureCustomer(base44, customer_phone, customer_name, customer_email);
+    const customerName = customer ? [customer.first_name, customer.last_name].filter(Boolean).join(' ') : (customer_name || 'Unknown');
+    const customerEmail = customer?.email || customer_email || '';
+    const smsConsent = customer?.sms_consent ?? true;
+
+    const expiration = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     const quote = await base44.asServiceRole.entities.Quote.create({
-      customer_name: customer_name || 'Unknown',
-      customer_phone,
-      customer_email: customer_email || '',
-      vehicle_year: vehicle_year || '',
-      vehicle_make: vehicle_make || '',
-      vehicle_model: vehicle_model || '',
-      vehicle_type: vehicle_type || 'sedan_coupe',
-      requested_services: services,
-      starting_price: totalPrice,
-      quote_summary: quoteSummary,
-      booking_url: BOOKING_URL,
+      customer_name: customerName, customer_phone: toE164(customer_phone), customer_email: customerEmail,
+      vehicle_year: vehicle_year || '', vehicle_make: vehicle_make || '', vehicle_model: vehicle_model || '',
+      vehicle_type: pricingGroup, requested_services: services,
+      starting_price: totalPrice, final_price: totalPrice,
+      quote_summary: quoteSummary, booking_url: bookingUrl,
+      expiration_date: expiration, status: 'pending', sms_consent: smsConsent,
       ai_notes: ai_notes || '',
-      status: 'pending',
     });
 
-    // Sync to GHL
-    const GHL_API_KEY = Deno.env.get('GHL_API_KEY');
-    const GHL_LOCATION_ID = Deno.env.get('GHL_LOCATION_ID');
-    let ghlContactId = null;
-    if (GHL_API_KEY && GHL_LOCATION_ID && customer_name) {
-      try {
-        ghlContactId = await upsertGHLContact(customer_name, customer_phone, customer_email, GHL_LOCATION_ID, GHL_API_KEY);
-        if (ghlContactId) {
-          await fetch(`https://services.leadconnectorhq.com/contacts/${ghlContactId}/notes`, {
-            method: 'POST', headers: GHL_HEADERS(GHL_API_KEY),
-            body: JSON.stringify({ body: `AI QUOTE — ${quoteSummary}\nBooking URL: ${BOOKING_URL}`, userId: '' }),
-          });
-        }
-      } catch (e) {
-        console.error('GHL sync error in createQuote:', e.message);
-      }
-    }
-
-    // Log AI interaction
+    // Log the quote generation event.
     try {
-      await base44.asServiceRole.entities.AILog.create({
-        call_id: call_id || '',
-        action: 'create_quote',
-        customer_phone,
-        customer_name: customer_name || '',
-        vehicle_info: vehicleDesc,
-        outcome: 'quote_created',
-        quote_id: quote.id,
-        raw_request: JSON.stringify(body),
-        raw_response: JSON.stringify({ quote_id: quote.id, starting_price: totalPrice }),
+      await base44.asServiceRole.functions.invoke('logEvent', {
+        event_type: 'quote_generated', entity_type: 'quote', entity_id: quote.id,
+        customer_id: customer?.id || null, description: `Quote generated: ${quoteSummary}`,
+        metadata: { pricing_group: pricingGroup, total: totalPrice, services },
+        scheduler_token: SCHEDULER_TOKEN,
       });
-    } catch (e) { console.error('AILog error:', e.message); }
+    } catch (e) { console.error('logEvent error:', e.message); }
 
     return Response.json({
-      success: true,
-      quote_id: quote.id,
-      starting_price: totalPrice,
-      quote_summary: quoteSummary,
-      booking_url: BOOKING_URL,
-      ghl_contact_id: ghlContactId,
+      success: true, quote_id: quote.id, customer_id: customer?.id || null,
+      starting_price: totalPrice, quote_summary: quoteSummary, booking_url: bookingUrl,
     });
-
   } catch (error) {
     console.error('createQuote error:', error.message);
     return Response.json({ error: error.message }, { status: 500 });
