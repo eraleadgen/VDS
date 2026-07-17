@@ -40,28 +40,18 @@ function apptStartMs(appt, tz) {
   catch { return null; }
 }
 
-async function sendTwilioSms(base44, to, body, customerName) {
+// Send an outbound SMS — routed through sendMessage → Communication Rules Engine.
+// Returns true when the engine has processed the message (sent or suppressed) so the
+// idempotency flag is set and we don't retry every cycle while SMS is disabled.
+async function sendTwilioSms(base44, to, body, customerName, messageType) {
   if (!to) return false;
   try {
-    await base44.asServiceRole.entities.ConversationHistory.create({
-      customer_phone: to, customer_name: customerName || '', role: 'assistant', content: body,
+    await base44.asServiceRole.functions.invoke('sendMessage', {
+      customer_phone: to, message_type: messageType || 'reminder_1h', content: body,
+      customer_name: customerName || '', scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
     });
-  } catch (e) { console.error('log sms error:', e.message); }
-  const sid = Deno.env.get('TWILIO_ACCOUNT_SID');
-  const token = Deno.env.get('TWILIO_AUTH_TOKEN');
-  const from = Deno.env.get('TWILIO_FROM_NUMBER');
-  if (!sid || !token || !from) { console.log('Twilio not configured — SMS not sent.'); return false; }
-  try {
-    const url = `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`;
-    const params = new URLSearchParams({ From: from, To: to, Body: body });
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { Authorization: 'Basic ' + btoa(`${sid}:${token}`), 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params.toString(),
-    });
-    if (!res.ok) { const d = await res.json().catch(() => ({})); console.error('Twilio send error:', d); return false; }
     return true;
-  } catch (e) { console.error('twilio send error:', e.message); return false; }
+  } catch (e) { console.error('sendMessage error:', e.message); return false; }
 }
 
 function esc(s) { return (s || '').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
@@ -163,7 +153,7 @@ Deno.serve(async (req) => {
         // SMS consent given → send via SMS
         if (appt.sms_consent !== false && appt.customer_phone) {
           const msg = `Hi ${firstName}, your VDS Mobile detailing appointment starts in about 1 hour at ${appt.preferred_time}.${appt.service_address ? ' Service address: ' + appt.service_address : ''} Please ensure your vehicle is accessible. Questions? Call/text ${BUSINESS_PHONE}. — VDS Mobile`;
-          const sent = await sendTwilioSms(base44, appt.customer_phone, msg, appt.customer_name);
+          const sent = await sendTwilioSms(base44, appt.customer_phone, msg, appt.customer_name, 'reminder_1h');
           if (sent) {
             await base44.asServiceRole.entities.Appointment.update(appt.id, { reminder_1h_sms_sent: true });
             smsSent++;

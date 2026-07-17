@@ -437,28 +437,17 @@ async function reassignAppointment(base44, data, cfg, appt) {
 const JOB_STATUSES = ['assigned', 'accepted', 'driving', 'arrived', 'in_progress', 'quality_check', 'completed', 'photos_uploaded', 'invoice_complete'];
 const COMPLETION_FIELDS = ['before_photos', 'after_photos', 'services_completed', 'products_used', 'completion_notes', 'upsell_recommendation', 'recommended_next_detail_date', 'damage_notes', 'customer_feedback'];
 
-// Send an outbound SMS via Twilio (and log it to ConversationHistory). No-op (log only) if Twilio is not configured.
-async function sendTwilioSms(base44, to, body, customerName) {
+// Send an outbound SMS — routed through sendMessage → Communication Rules Engine.
+// The engine evaluates consent + the twilio_sms_enabled feature flag before delivery,
+// logs suppressions to SystemEventLog, and handles the email fallback when SMS is off.
+async function sendTwilioSms(base44, to, body, customerName, messageType) {
   if (!to) return;
   try {
-    await base44.asServiceRole.entities.ConversationHistory.create({
-      customer_phone: to, customer_name: customerName || '', role: 'assistant', content: body,
+    await base44.asServiceRole.functions.invoke('sendMessage', {
+      customer_phone: to, message_type: messageType || 'valerie_reply', content: body,
+      customer_name: customerName || '', scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
     });
-  } catch (e) { console.error('log sms error:', e.message); }
-  const sid = Deno.env.get('TWILIO_ACCOUNT_SID');
-  const token = Deno.env.get('TWILIO_AUTH_TOKEN');
-  const from = Deno.env.get('TWILIO_FROM_NUMBER');
-  if (!sid || !token || !from) { console.log('Twilio not configured — SMS logged only.'); return; }
-  try {
-    const url = `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`;
-    const params = new URLSearchParams({ From: from, To: to, Body: body });
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { Authorization: 'Basic ' + btoa(`${sid}:${token}`), 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params.toString(),
-    });
-    if (!res.ok) { const d = await res.json().catch(() => ({})); console.error('Twilio send error:', d); }
-  } catch (e) { console.error('twilio send error:', e.message); }
+  } catch (e) { console.error('sendMessage error:', e.message); }
 }
 
 // Send a review-request SMS, unless the customer already reviewed or a request was already sent.
@@ -468,7 +457,7 @@ async function requestReview(base44, data, cfg, appt) {
   await base44.asServiceRole.entities.Appointment.update(appt.id, { review_requested: true });
   const first = (appt.customer_name || '').split(' ')[0] || 'there';
   const msg = `Hi ${first}, your VDS detail is complete! We'd love your feedback — please rate your experience by replying with a score from 1-5. Thanks for choosing VDS Mobile!`;
-  await sendTwilioSms(base44, appt.customer_phone, msg, appt.customer_name);
+  await sendTwilioSms(base44, appt.customer_phone, msg, appt.customer_name, 'review_request');
   return { success: true };
 }
 
@@ -492,8 +481,8 @@ async function updateJobStatus(base44, data, cfg, appt) {
     try {
       const first = (appt.customer_name || '').split(' ')[0] || 'there';
       const msg = `Hi ${first}, your VDS detail is complete! Your specialist has finished servicing your vehicle. We hope you love the results. — VDS Mobile`;
-      await sendTwilioSms(base44, appt.customer_phone, msg, appt.customer_name);
-    } catch (e) { console.error('completion sms error:', e.message); }
+      await sendTwilioSms(base44, appt.customer_phone, msg, appt.customer_name, 'completion');
+      } catch (e) { console.error('completion sms error:', e.message); }
   }
 
   // Increment contractor jobs_completed the first time a job reaches 'completed'.

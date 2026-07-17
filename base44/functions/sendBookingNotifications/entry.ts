@@ -10,28 +10,16 @@ const MONO = "'Space Mono','Courier New',monospace";
 const INTERNAL_EMAIL = 'valetdetailingservice@gmail.com';
 const BUSINESS_PHONE = '(470) 412-8986';
 
-async function sendTwilioSms(base44, to, body, customerName) {
+// Send an outbound SMS — routed through sendMessage → Communication Rules Engine.
+async function sendTwilioSms(base44, to, body, customerName, messageType) {
   if (!to) return false;
   try {
-    await base44.asServiceRole.entities.ConversationHistory.create({
-      customer_phone: to, customer_name: customerName || '', role: 'assistant', content: body,
+    const r = await base44.asServiceRole.functions.invoke('sendMessage', {
+      customer_phone: to, message_type: messageType || 'booking_confirmation', content: body,
+      customer_name: customerName || '', scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
     });
-  } catch (e) { console.error('log sms error:', e.message); }
-  const sid = Deno.env.get('TWILIO_ACCOUNT_SID');
-  const token = Deno.env.get('TWILIO_AUTH_TOKEN');
-  const from = Deno.env.get('TWILIO_FROM_NUMBER');
-  if (!sid || !token || !from) { console.log('Twilio not configured — SMS not sent.'); return false; }
-  try {
-    const url = `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`;
-    const params = new URLSearchParams({ From: from, To: to, Body: body });
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { Authorization: 'Basic ' + btoa(`${sid}:${token}`), 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params.toString(),
-    });
-    if (!res.ok) { const d = await res.json().catch(() => ({})); console.error('Twilio send error:', d); return false; }
-    return true;
-  } catch (e) { console.error('twilio send error:', e.message); return false; }
+    return (r && (r.data?.sent || r.sent)) === true;
+  } catch (e) { console.error('sendMessage error:', e.message); return false; }
 }
 
 function esc(s) { return (s || '').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
@@ -159,7 +147,7 @@ Deno.serve(async (req) => {
     // 1. Customer SMS confirmation (only if SMS consent given; otherwise email confirmation below suffices)
     if (appt.customer_phone && appt.sms_consent !== false) {
       const msg = `Hi ${firstName}, your VDS Mobile appointment is confirmed for ${appt.preferred_date} at ${appt.preferred_time}. Service: ${appt.service_label || 'Detailing'}. We'll come to you${appt.service_address ? ' at ' + appt.service_address : ''}. Questions? Call/text ${BUSINESS_PHONE}. — VDS Mobile`;
-      results.sms = await sendTwilioSms(base44, appt.customer_phone, msg, appt.customer_name);
+      results.sms = await sendTwilioSms(base44, appt.customer_phone, msg, appt.customer_name, 'booking_confirmation');
     }
 
     // 2. Customer email confirmation (registered users only — SendEmail limitation)

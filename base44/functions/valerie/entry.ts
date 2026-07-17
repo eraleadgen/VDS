@@ -1,15 +1,20 @@
-// Valerie — SMS Conversation Orchestrator
-// POST /functions/valerie  { phone, message, customer_name? }
+// Valerie — ERA Core SMS Concierge (Phase 3)
+// POST /functions/valerie
+// Twilio inbound SMS webhook + OpenAI LLM. SMS-only (no voice/caller ID).
+// - Conversation history stored in Base44 (ConversationHistory entity).
+// - Tool execution via internal valerieTools function (OpenAI function-calling).
+// - Outbound replies routed through sendMessage → Communication Rules Engine.
+// - Customer lookups use the Customer entity (ERA Core CRM), not the built-in User.
 //
-// Architecture:
-//  - GPT-5.5 (customer's OpenAI key) handles all conversation.
-//  - System prompt is built LIVE from BusinessConfig — nothing hardcoded, no OpenAI Prompt Manager.
-//  - Conversation history is stored in Base44 (ConversationHistory entity).
-//  - When tools are needed (quotes, scheduling, gold, CRM), Base44 executes them
-//    internally via retellExecute BEFORE the final customer-facing reply is generated.
-//  - Replies are plain text (SMS-friendly). Temperature ~0.6.
+// Auth: SCHEDULER_TOKEN (body or query param — used for internal calls AND the Twilio
+// webhook URL, which will include ?scheduler_token=xxx when wired), or an authenticated
+// base44 user (for in-app testing).
+//
+// Until A2P 10DLC is approved (twilio_sms_enabled = false), replies are stored in
+// conversation history but not delivered via SMS. The Twilio inbound webhook is wired
+// when the verified number is provisioned — that is the final step of Phase 3.
 
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 
 // ── Config / prompt builders ───────────────────────────────────────────
 async function loadConfig(base44) {
@@ -35,9 +40,10 @@ function formatHours(cfg) {
 }
 
 function formatGold(cfg) {
-  return (cfg.membership_plans || []).map(p =>
-    p.label + ' (' + (p.tier === 'truck_suv' ? 'Truck/SUV' : 'Sedan/Coupe') + '): $' + p.price_monthly + '/mo — ' + ((p.benefits || []).join(', '))
-  ).join('\n');
+  return (cfg.membership_plans || []).map(p => {
+    const prices = (p.pricing_by_group || []).map(g => (g.pricing_group === 'truck_suv' ? 'Truck/SUV' : 'Sedan/Coupe') + ': $' + g.price_monthly + '/mo').join(', ');
+    return p.label + ' (' + prices + ') — ' + ((p.benefits || []).join(', '));
+  }).join('\n');
 }
 
 function buildSystemPrompt(cfg, customerCtx) {
@@ -85,74 +91,16 @@ function buildSystemPrompt(cfg, customerCtx) {
 
 // ── Tool definitions (OpenAI function-calling) ─────────────────────────
 const TOOLS = [
-  { type: 'function', function: {
-    name: 'lookup_customer',
-    description: 'Look up an existing customer by phone. Returns name, vehicles, VDS Gold status, and visit history.',
-    parameters: { type: 'object', properties: { phone: { type: 'string' } }, required: ['phone'] }
-  }},
-  { type: 'function', function: {
-    name: 'get_services',
-    description: 'Get the full service catalog with current pricing and durations.',
-    parameters: { type: 'object', properties: {} }
-  }},
-  { type: 'function', function: {
-    name: 'create_quote',
-    description: 'Create a price quote for a service on the customer vehicle. Returns the starting price and quote ID.',
-    parameters: { type: 'object', properties: {
-      phone: { type: 'string' },
-      service: { type: 'string', description: 'service name or description (e.g. "full detail", "ceramic coating")' },
-      vehicleType: { type: 'string', enum: ['sedan_coupe', 'truck_suv'] },
-      vehicleYear: { type: 'string' }, vehicleMake: { type: 'string' }, vehicleModel: { type: 'string' },
-      vehicleCount: { type: 'number' }
-    }, required: ['service'] }
-  }},
-  { type: 'function', function: {
-    name: 'send_quote',
-    description: 'Text the most recent pending quote to the customer. Returns the SMS text to deliver.',
-    parameters: { type: 'object', properties: { phone: { type: 'string' } }, required: ['phone'] }
-  }},
-  { type: 'function', function: {
-    name: 'check_gold_status',
-    description: "Check the customer's VDS Gold membership status and remaining monthly benefits.",
-    parameters: { type: 'object', properties: { phone: { type: 'string' } }, required: ['phone'] }
-  }},
-  { type: 'function', function: {
-    name: 'check_availability',
-    description: 'Get available appointment time slots for a given date and service.',
-    parameters: { type: 'object', properties: {
-      date: { type: 'string', description: 'YYYY-MM-DD' },
-      service: { type: 'string' },
-      vehicleType: { type: 'string', enum: ['sedan_coupe', 'truck_suv'] }
-    }, required: ['date'] }
-  }},
-  { type: 'function', function: {
-    name: 'book_appointment',
-    description: 'Book an appointment at a chosen time slot. Use the startUtc returned by check_availability.',
-    parameters: { type: 'object', properties: {
-      date: { type: 'string' }, startUtc: { type: 'string' }, service: { type: 'string' },
-      vehicleType: { type: 'string', enum: ['sedan_coupe', 'truck_suv'] },
-      customerName: { type: 'string' }, phone: { type: 'string' }, email: { type: 'string' },
-      vehicleYear: { type: 'string' }, vehicleMake: { type: 'string' }, vehicleModel: { type: 'string' },
-      serviceAddress: { type: 'string' }, notes: { type: 'string' }
-    }, required: ['date', 'startUtc', 'service'] }
-  }},
-  { type: 'function', function: {
-    name: 'reschedule_appointment',
-    description: 'Reschedule an existing appointment to a new time.',
-    parameters: { type: 'object', properties: {
-      appointmentId: { type: 'string' }, newStartUtc: { type: 'string' }, newDate: { type: 'string' }, phone: { type: 'string' }
-    }, required: ['appointmentId', 'newStartUtc'] }
-  }},
-  { type: 'function', function: {
-    name: 'cancel_appointment',
-    description: 'Cancel an existing appointment.',
-    parameters: { type: 'object', properties: { appointmentId: { type: 'string' }, phone: { type: 'string' } }, required: ['appointmentId'] }
-  }},
-  { type: 'function', function: {
-    name: 'specialist_followup',
-    description: 'Flag a request for specialist follow-up (custom work, complex corrections).',
-    parameters: { type: 'object', properties: { phone: { type: 'string' }, reason: { type: 'string' }, notes: { type: 'string' } }, required: ['reason'] }
-  }},
+  { type: 'function', function: { name: 'lookup_customer', description: 'Look up an existing customer by phone. Returns name, vehicles, VDS Gold status, and visit history.', parameters: { type: 'object', properties: { phone: { type: 'string' } }, required: ['phone'] } } },
+  { type: 'function', function: { name: 'get_services', description: 'Get the full service catalog with current pricing and durations.', parameters: { type: 'object', properties: {} } } },
+  { type: 'function', function: { name: 'create_quote', description: 'Create a price quote for a service on the customer vehicle. Returns the starting price and quote ID.', parameters: { type: 'object', properties: { phone: { type: 'string' }, service: { type: 'string' }, vehicleType: { type: 'string', enum: ['sedan_coupe', 'truck_suv'] }, vehicleYear: { type: 'string' }, vehicleMake: { type: 'string' }, vehicleModel: { type: 'string' }, vehicleCount: { type: 'number' } }, required: ['service'] } } },
+  { type: 'function', function: { name: 'send_quote', description: 'Text the most recent pending quote to the customer. Returns the SMS text to deliver.', parameters: { type: 'object', properties: { phone: { type: 'string' } }, required: ['phone'] } } },
+  { type: 'function', function: { name: 'check_gold_status', description: "Check the customer's VDS Gold membership status and remaining monthly benefits.", parameters: { type: 'object', properties: { phone: { type: 'string' } }, required: ['phone'] } } },
+  { type: 'function', function: { name: 'check_availability', description: 'Get available appointment time slots for a given date and service.', parameters: { type: 'object', properties: { date: { type: 'string', description: 'YYYY-MM-DD' }, service: { type: 'string' }, vehicleType: { type: 'string', enum: ['sedan_coupe', 'truck_suv'] } }, required: ['date'] } } },
+  { type: 'function', function: { name: 'book_appointment', description: 'Book an appointment at a chosen time slot. Use the startUtc returned by check_availability.', parameters: { type: 'object', properties: { date: { type: 'string' }, startUtc: { type: 'string' }, service: { type: 'string' }, vehicleType: { type: 'string', enum: ['sedan_coupe', 'truck_suv'] }, customerName: { type: 'string' }, phone: { type: 'string' }, email: { type: 'string' }, vehicleYear: { type: 'string' }, vehicleMake: { type: 'string' }, vehicleModel: { type: 'string' }, serviceAddress: { type: 'string' }, notes: { type: 'string' } }, required: ['date', 'startUtc', 'service'] } } },
+  { type: 'function', function: { name: 'reschedule_appointment', description: 'Reschedule an existing appointment to a new time.', parameters: { type: 'object', properties: { appointmentId: { type: 'string' }, newStartUtc: { type: 'string' }, newDate: { type: 'string' }, phone: { type: 'string' } }, required: ['appointmentId', 'newStartUtc'] } } },
+  { type: 'function', function: { name: 'cancel_appointment', description: 'Cancel an existing appointment.', parameters: { type: 'object', properties: { appointmentId: { type: 'string' }, phone: { type: 'string' } }, required: ['appointmentId'] } } },
+  { type: 'function', function: { name: 'specialist_followup', description: 'Flag a request for specialist follow-up (custom work, complex corrections).', parameters: { type: 'object', properties: { phone: { type: 'string' }, reason: { type: 'string' }, notes: { type: 'string' } }, required: ['reason'] } } },
 ];
 
 // ── OpenAI call ────────────────────────────────────────────────────────
@@ -160,7 +108,7 @@ async function callOpenAI(messages) {
   const KEY = Deno.env.get('OpenAI_Valerie');
   if (!KEY) throw new Error('OpenAI_Valerie secret is not set.');
   // GPT-5.5 is a reasoning model and only supports the default temperature (1);
-  // sending 0.6 is rejected by the API. We omit temperature so it uses the supported default.
+  // sending a custom temperature is rejected by the API, so we omit it.
   const payload = { model: 'gpt-5.5', messages, tools: TOOLS, tool_choice: 'auto' };
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -175,12 +123,11 @@ async function callOpenAI(messages) {
   return data.choices && data.choices[0] ? data.choices[0].message : null;
 }
 
-// ── Tool execution (internally via retellExecute) ───────────────────────
+// ── Tool execution (internally via valerieTools) ───────────────────────
 async function executeTool(base44, name, args) {
-  const SCHEDULER_TOKEN = Deno.env.get('SCHEDULER_TOKEN');
   try {
-    const r = await base44.asServiceRole.functions.invoke('retellExecute', {
-      action: name, data: args, _internal_token: SCHEDULER_TOKEN,
+    const r = await base44.asServiceRole.functions.invoke('valerieTools', {
+      action: name, data: args, scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
     });
     return r && r.data !== undefined ? r.data : r;
   } catch (e) {
@@ -188,20 +135,31 @@ async function executeTool(base44, name, args) {
   }
 }
 
-// ── Customer context (lightweight, injected into the system prompt) ───
+// ── Customer context (Customer entity) ─────────────────────────────────
 async function getCustomerContext(base44, phone) {
   if (!phone) return null;
   try {
-    const all = await base44.asServiceRole.entities.User.list();
     const d = phone.replace(/\D/g, '');
-    const u = all.find(x => x.phone && x.phone.replace(/\D/g, '') === d);
-    if (!u) return null;
-    const vehicles = await base44.asServiceRole.entities.MemberVehicle.filter({ created_by_id: u.id }).catch(() => []);
+    if (d.length < 10) return null;
+    const e164 = d.length === 10 ? '+1' + d : '+' + d;
+    let customers = await base44.asServiceRole.entities.Customer.filter({ phone: e164 }).catch(() => []);
+    if (!customers.length) {
+      const all = await base44.asServiceRole.entities.Customer.list().catch(() => []);
+      customers = (all || []).filter(c => (c.phone || '').replace(/\D/g, '').slice(-10) === d.slice(-10));
+    }
+    const customer = customers[0];
+    if (!customer) return null;
+
+    let vehicles = await base44.asServiceRole.entities.MemberVehicle.filter({ customer_id: customer.id }).catch(() => []);
+    if (!vehicles.length && customer.linked_user_id) {
+      vehicles = await base44.asServiceRole.entities.MemberVehicle.filter({ created_by_id: customer.linked_user_id }).catch(() => []);
+    }
+    const vIds = (vehicles || []).map(v => v.id);
     const subs = await base44.asServiceRole.entities.VehicleSubscription.filter({ status: 'active' }).catch(() => []);
-    const vIds = vehicles.map(v => v.id);
-    const gold = subs.some(s => vIds.includes(s.vehicle_id));
-    const vList = vehicles.map(v => [v.year, v.make, v.model].filter(Boolean).join(' '));
-    return { name: u.full_name || 'there', gold, vehicles: vList };
+    const gold = (subs || []).some(s => vIds.includes(s.vehicle_id));
+    const vList = (vehicles || []).map(v => [v.year, v.make, v.model].filter(Boolean).join(' '));
+    const name = [customer.first_name, customer.last_name].filter(Boolean).join(' ') || 'there';
+    return { id: customer.id, name, gold, vehicles: vList };
   } catch {
     return null;
   }
@@ -211,34 +169,49 @@ async function getCustomerContext(base44, phone) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const body = await req.json().catch(() => ({}));
 
-    // Auth: external Retell (Bearer RETELL_API_KEY), internal function call (_internal_token), or authenticated base44 user.
-    const RETELL_API_KEY = Deno.env.get('RETELL_API_KEY');
+    // Parse body — JSON (internal/testing) or form-urlencoded (Twilio webhook)
+    const contentType = req.headers.get('content-type') || '';
+    let body;
+    if (contentType.includes('application/json')) {
+      body = await req.json().catch(() => ({}));
+    } else {
+      const form = await req.formData().catch(() => new FormData());
+      body = Object.fromEntries(form.entries());
+    }
+
+    // Auth: SCHEDULER_TOKEN (body or query param), or authenticated base44 user.
     const SCHEDULER_TOKEN = Deno.env.get('SCHEDULER_TOKEN');
-    const provided = (req.headers.get('Authorization') || '').replace(/^Bearer\s+/i, '').trim();
-    const externalOk = !!(RETELL_API_KEY && provided && provided === RETELL_API_KEY);
-    const internalOk = !!(SCHEDULER_TOKEN && body._internal_token && body._internal_token === SCHEDULER_TOKEN);
+    const url = new URL(req.url);
+    const queryToken = url.searchParams.get('scheduler_token') || url.searchParams.get('token');
+    const bodyToken = body.scheduler_token || body._internal_token;
+    const tokenOk = !!(SCHEDULER_TOKEN && (queryToken === SCHEDULER_TOKEN || bodyToken === SCHEDULER_TOKEN));
     let authedOk = false;
-    if (!externalOk && !internalOk) {
+    if (!tokenOk) {
       try { authedOk = await base44.auth.isAuthenticated(); } catch {}
     }
-    if (!externalOk && !internalOk && !authedOk) {
+    if (!tokenOk && !authedOk) {
       return Response.json({ error: 'Unauthorized.' }, { status: 401 });
     }
+    if (body.scheduler_token) delete body.scheduler_token;
     if (body._internal_token) delete body._internal_token;
 
-    const phone = (body.phone || body.customer_phone || '').trim();
-    const message = (body.message || body.text || '').trim();
+    // Extract phone + message — JSON or Twilio webhook format.
+    const phone = (body.phone || body.From || body.customer_phone || '').trim();
+    const message = (body.message || body.Body || body.text || '').trim();
     if (!phone) return Response.json({ error: 'phone is required.' }, { status: 400 });
     if (!message) return Response.json({ error: 'message is required.' }, { status: 400 });
 
     const cfg = await loadConfig(base44);
     if (!cfg) return Response.json({ error: 'BusinessConfig not found.' }, { status: 500 });
 
-    // Load conversation history (last 20 exchanges) and order chronologically.
+    // Normalize to E.164 for consistent conversation history keys.
+    const d = phone.replace(/\D/g, '');
+    const e164 = d.length === 10 ? '+1' + d : (d.length > 10 ? '+' + d : phone);
+
+    // Load conversation history (last 20 exchanges), order chronologically.
     const history = await base44.asServiceRole.entities.ConversationHistory.filter(
-      { customer_phone: phone }, '-created_date', 20
+      { customer_phone: e164 }, '-created_date', 20
     ).catch(() => []);
     const ordered = history.slice().reverse();
 
@@ -262,7 +235,7 @@ Deno.serve(async (req) => {
         const name = tc.function.name;
         let args = {};
         try { args = JSON.parse(tc.function.arguments || '{}'); } catch {}
-        if (!args.phone) args.phone = phone;
+        if (!args.phone) args.phone = e164;
         const result = await executeTool(base44, name, args);
         messages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) });
       }
@@ -271,15 +244,25 @@ Deno.serve(async (req) => {
 
     const finalText = (msg && msg.content) ? String(msg.content).trim() : "I'm sorry, I had trouble with that — could you rephrase?";
 
-    // Persist conversation history.
+    // Persist conversation history (always — even if SMS delivery is suppressed by the Rules Engine).
     try {
       await base44.asServiceRole.entities.ConversationHistory.bulkCreate([
-        { customer_phone: phone, customer_name: customerCtx ? customerCtx.name : '', role: 'user', content: message },
-        { customer_phone: phone, customer_name: customerCtx ? customerCtx.name : '', role: 'assistant', content: finalText },
+        { customer_phone: e164, customer_name: customerCtx ? customerCtx.name : '', role: 'user', content: message },
+        { customer_phone: e164, customer_name: customerCtx ? customerCtx.name : '', role: 'assistant', content: finalText },
       ]);
     } catch (e) { console.error('History save error:', e.message); }
 
-    return Response.json({ reply: finalText, tool_rounds: rounds });
+    // Deliver the reply through the Communication Rules Engine.
+    let delivery = { sent: false, channel: 'suppressed', reason: 'not_attempted' };
+    try {
+      const r = await base44.asServiceRole.functions.invoke('sendMessage', {
+        customer_phone: e164, message_type: 'valerie_reply', content: finalText,
+        customer_name: customerCtx ? customerCtx.name : '', scheduler_token: SCHEDULER_TOKEN,
+      });
+      delivery = r?.data || r || delivery;
+    } catch (e) { console.error('sendMessage error:', e.message); }
+
+    return Response.json({ reply: finalText, tool_rounds: rounds, delivery });
   } catch (error) {
     console.error('valerie error:', error.message);
     return Response.json(
