@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { LayoutDashboard, Users, CalendarRange, Clock, CheckCircle2, XCircle, MessageSquare } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarRange, Clock, CheckCircle2, XCircle, MessageSquare, DollarSign } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import PortalShell from '@/components/portal/PortalShell';
 import ContractorsTab from '@/components/admin/ContractorsTab';
@@ -62,6 +62,13 @@ function Overview({ metrics }) {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-grotesk font-bold text-vapor">Overview</h1>
+      <div className="glass-panel border border-gold/25 rounded-sm p-6 flex items-center gap-5 bg-gold/[0.03]">
+        <DollarSign size={28} className="text-gold shrink-0" />
+        <div>
+          <p className="text-3xl font-grotesk font-bold text-gold">${(m.total_revenue || 0).toLocaleString()}</p>
+          <p className="text-xs font-mono-tech tracking-widest text-vapor/50 mt-1">TOTAL REVENUE — {m.revenue_jobs || 0} COMPLETED DETAILS</p>
+        </div>
+      </div>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <Stat icon={Users} label="SPECIALISTS" value={m.total_contractors} />
         <Stat icon={Users} label="ACTIVE" value={m.active_contractors} />

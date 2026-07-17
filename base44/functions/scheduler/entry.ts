@@ -201,6 +201,14 @@ async function checkAvailability(base44, data, cfg) {
 async function autoAssign(base44, cfg, dateStr, serviceKey, slotStart, slotEnd) {
   const tz = cfg.timezone || 'America/New_York';
   const bufferMs = (cfg.scheduling_rules && cfg.scheduling_rules.booking_buffer_hours || 0) * 3600000;
+
+  // ── "VDS Founders" preference ──
+  // Until more specialists are hired, all new bookings auto-assign to "VDS Founders"
+  // regardless of skill/availability filters. Remove this block to restore normal scheduling.
+  const allActive = await base44.asServiceRole.entities.Contractor.filter({ status: 'active' });
+  const founders = (allActive || []).find(c => c.is_enabled !== false && /vds\s*founders/i.test(c.name || ''));
+  if (founders) return founders;
+
   const eligible = await eligibleContractors(base44, cfg, dateStr, serviceKey);
   if (!eligible.length) return null;
   const dayAppts = await dayAppointments(base44, dateStr);
@@ -768,13 +776,32 @@ async function adminDeleteContractor(base44, body) {
 async function adminMetrics(base44) {
   const me = await base44.auth.me().catch(() => null);
   if (!requireAdmin(me)) return { error: 'Admin only.' };
-  const [contractors, appts] = await Promise.all([
+  const [contractors, appts, quotes] = await Promise.all([
     base44.asServiceRole.entities.Contractor.list(),
     base44.asServiceRole.entities.Appointment.list(),
+    base44.asServiceRole.entities.Quote.list(),
   ]);
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
   const cs = contractors || [];
   const as = appts || [];
+  // Revenue: match completed appointments to their quote by customer phone, sum the final_price.
+  const normPhone = (p) => (p || '').replace(/\D/g, '').slice(-10);
+  const quoteByPhone = {};
+  for (const q of (quotes || [])) {
+    const key = normPhone(q.customer_phone);
+    if (!key) continue;
+    const existing = quoteByPhone[key];
+    if (!existing || (q.final_price || 0) >= (existing.final_price || 0)) quoteByPhone[key] = q;
+  }
+  let total_revenue = 0;
+  let revenue_jobs = 0;
+  for (const a of as) {
+    if (a.status !== 'completed') continue;
+    const key = normPhone(a.customer_phone);
+    const q = key ? quoteByPhone[key] : null;
+    const amt = q ? (q.final_price || q.starting_price || 0) : 0;
+    if (amt > 0) { total_revenue += amt; revenue_jobs++; }
+  }
   return {
     success: true,
     metrics: {
@@ -784,6 +811,8 @@ async function adminMetrics(base44) {
       upcoming_jobs: as.filter(a => a.status === 'confirmed' && a.preferred_date >= today).length,
       completed_jobs: as.filter(a => a.status === 'completed').length,
       cancelled_jobs: as.filter(a => a.status === 'cancelled').length,
+      total_revenue: Math.round(total_revenue),
+      revenue_jobs,
     },
     jobs_by_contractor: cs.map(c => ({ name: c.name, jobs: (c.metrics && c.metrics.jobs_completed) || 0 })),
   };
