@@ -5,6 +5,7 @@ import { CheckCircle, CreditCard, AlertCircle, Loader2, Gem } from 'lucide-react
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
 import GoldShimmer from '../components/vds/GoldShimmer';
+import SmsConsent from '../components/vds/SmsConsent';
 
 const PRICING = {
   sedan_coupe: 250,
@@ -22,6 +23,7 @@ export default function VdsGoldSignup() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [policyAgreed, setPolicyAgreed] = useState(false);
+  const [smsConsent, setSmsConsent] = useState(false);
 
   useEffect(() => {
     const init = async () => {
@@ -276,6 +278,11 @@ export default function VdsGoldSignup() {
           </div>
         </div>
 
+        {/* SMS Opt-In (A2P 10DLC consent) */}
+        <div className="border border-vapor/10 bg-asphalt/50 rounded-sm px-5 py-4 mb-6">
+          <SmsConsent checked={smsConsent} onChange={setSmsConsent} id="sms_consent_gold" />
+        </div>
+
         {/* Error Message */}
         {error && (
           <div className="border border-red-500/30 bg-red-500/5 rounded-sm px-5 py-4 mb-6 flex items-start gap-3">
@@ -287,7 +294,7 @@ export default function VdsGoldSignup() {
         {/* Submit Button */}
         <button
           onClick={handleUpgradeToGold}
-          disabled={processing || selectedVehicles.length === 0 || !policyAgreed}
+          disabled={processing || selectedVehicles.length === 0 || !policyAgreed || !smsConsent}
           className="w-full flex items-center justify-center gap-3 bg-gold hover:bg-gold-light text-obsidian font-mono-tech text-sm tracking-widest py-4 rounded-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {processing ? (
