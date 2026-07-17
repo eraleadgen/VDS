@@ -8,6 +8,7 @@ import ContractorsTab from '@/components/admin/ContractorsTab';
 import AppointmentsTab from '@/components/admin/AppointmentsTab';
 import MessagesTab from '@/components/admin/MessagesTab';
 import MigrationTab from '@/components/admin/MigrationTab';
+import InvoicesTab from '@/components/admin/InvoicesTab';
 
 const invoke = (payload) => base44.functions.invoke('scheduler', payload).then(r => r.data ?? r);
 
@@ -38,6 +39,7 @@ export default function AdminDashboard() {
     { key: 'overview', label: 'OVERVIEW', icon: LayoutDashboard },
     { key: 'contractors', label: 'SPECIALISTS', icon: Users },
     { key: 'appointments', label: 'APPOINTMENTS', icon: CalendarRange },
+    { key: 'invoices', label: 'INVOICES', icon: DollarSign },
     { key: 'messages', label: 'MESSAGES', icon: MessageSquare },
     { key: 'migration', label: 'MIGRATION', icon: Database },
   ];
@@ -51,6 +53,7 @@ export default function AdminDashboard() {
           {tab === 'overview' && <Overview metrics={metrics} />}
           {tab === 'contractors' && <ContractorsTab />}
           {tab === 'appointments' && <AppointmentsTab />}
+          {tab === 'invoices' && <InvoicesTab />}
           {tab === 'messages' && <MessagesTab />}
           {tab === 'migration' && <MigrationTab />}
         </>

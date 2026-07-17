@@ -351,6 +351,36 @@ async function bookAppointment(base44, data, cfg) {
     customer_email: data.customer_email || '', service_address: data.service_address || '',
   });
 
+  // ── Phase 8: Also create a Job (the operational source of truth) linked to this Appointment ──
+  let job = null;
+  try {
+    let customer = null;
+    const phoneDigits = customer_phone.replace(/\D/g, '');
+    const byPhone = await base44.asServiceRole.entities.Customer.filter({ phone: phoneDigits });
+    if (byPhone && byPhone.length) customer = byPhone[0];
+    if (!customer) {
+      const firstName = customer_name.split(' ')[0] || '';
+      const lastName = customer_name.split(' ').slice(1).join(' ') || '';
+      customer = await base44.asServiceRole.entities.Customer.create({
+        first_name: firstName, last_name: lastName, phone: phoneDigits,
+        email: data.customer_email || null, sms_consent: data.sms_consent !== false,
+        customer_since: new Date().toISOString().split('T')[0], account_status: 'active',
+      });
+    }
+    job = await base44.asServiceRole.entities.Job.create({
+      customer_id: customer.id, customer_name, customer_phone, customer_email: data.customer_email || '',
+      vehicle_info: data.vehicle_info || '', pricing_group: tier,
+      service_package: service, service_label: label,
+      appointment_date: date, appointment_time: utcToZonedTime(start.toISOString(), tz),
+      address: data.service_address || '', status: 'appointment_scheduled', job_status: 'assigned',
+      specialist_id: contractor ? contractor.id : null, specialist_name: contractor ? contractor.name : '',
+      estimated_duration_minutes: duration, estimated_price: price,
+      google_calendar_event_id: created.id, sms_consent: data.sms_consent !== false,
+      notes: data.notes || '',
+    });
+    await base44.asServiceRole.entities.Appointment.update(appt.id, { job_id: job.id });
+  } catch (e) { console.error('Job creation failed:', e.message); }
+
   // ── Booking notifications: customer SMS + email + internal email ──
   try {
     await base44.functions.invoke('sendBookingNotifications', {
@@ -360,7 +390,7 @@ async function bookAppointment(base44, data, cfg) {
   } catch (e) { console.error('Booking notifications failed:', e.message); }
 
   return {
-    success: true, appointment_id: appt.id, event_id: created.id,
+    success: true, appointment_id: appt.id, job_id: job?.id, event_id: created.id,
     date, time: utcToZonedTime(start.toISOString(), tz),
     end_time: utcToZonedTime(end.toISOString(), tz), service_label: label, starting_price: price,
     contractor: contractor ? { id: contractor.id, name: contractor.name } : null,
@@ -397,6 +427,17 @@ async function cancelAppointment(base44, data, cfg, appt) {
     catch (e) { console.error('GCal delete error:', e.message); }
   }
   await base44.asServiceRole.entities.Appointment.update(appt.id, { status: 'cancelled' });
+  // ── Phase 8: Cancel the linked Job (the operational source of truth) ──
+  if (appt.job_id) {
+    try {
+      await base44.asServiceRole.entities.Job.update(appt.job_id, { status: 'cancelled' });
+      await base44.asServiceRole.functions.invoke('logEvent', {
+        event_type: 'appointment_cancelled', entity_type: 'job', entity_id: appt.job_id,
+        customer_id: null, description: `Appointment cancelled for ${appt.customer_name || 'customer'}`,
+        metadata: { appointment_id: appt.id }, scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
+      });
+    } catch (e) { console.error('Linked Job cancellation failed:', e.message); }
+  }
   // ── Internal cancellation notification email ──
   try {
     await base44.functions.invoke('sendCancellationNotification', {
@@ -451,17 +492,50 @@ async function sendTwilioSms(base44, to, body, customerName, messageType) {
 }
 
 // Send a review-request SMS, unless the customer already reviewed or a request was already sent.
-async function requestReview(base44, data, cfg, appt) {
-  if (appt.review_submitted) return { error: 'Customer has already submitted a review for this job.' };
-  if (appt.review_requested) return { error: 'A review request was already sent for this job.' };
-  await base44.asServiceRole.entities.Appointment.update(appt.id, { review_requested: true });
-  const first = (appt.customer_name || '').split(' ')[0] || 'there';
+async function requestReview(base44, data, cfg, job) {
+  if (job.review_submitted) return { error: 'Customer has already submitted a review for this job.' };
+  if (job.review_requested) return { error: 'A review request was already sent for this job.' };
+  await base44.asServiceRole.entities.Job.update(job.id, { review_requested: true });
+  // Sync the review flag to the linked Appointment mirror (deprecated — admin portal compat).
+  try {
+    const linked = await base44.asServiceRole.entities.Appointment.filter({ job_id: job.id });
+    if (linked && linked.length) await base44.asServiceRole.entities.Appointment.update(linked[0].id, { review_requested: true });
+  } catch (e) { console.error('Appointment mirror sync error:', e.message); }
+  const first = (job.customer_name || '').split(' ')[0] || 'there';
   const msg = `Hi ${first}, your VDS detail is complete! We'd love your feedback — please rate your experience by replying with a score from 1-5. Thanks for choosing VDS Mobile!`;
-  await sendTwilioSms(base44, appt.customer_phone, msg, appt.customer_name, 'review_request');
+  await sendTwilioSms(base44, job.customer_phone, msg, job.customer_name, 'review_request');
   return { success: true };
 }
 
-async function updateJobStatus(base44, data, cfg, appt) {
+// ── Phase 6: Auto-create an Invoice when a job reaches 'invoice_complete' ──
+// Idempotent: skips if an invoice already exists for the job. Skips if no price is set
+// (the admin must set a final_price on the job first).
+async function createInvoiceForJob(base44, job) {
+  const existing = await base44.asServiceRole.entities.Invoice.filter({ job_id: job.id });
+  if (existing && existing.length) return existing[0];
+  const amount = job.final_price ?? job.estimated_price ?? 0;
+  if (!amount) return null;
+  const year = new Date().getFullYear();
+  const all = await base44.asServiceRole.entities.Invoice.list();
+  const seq = String((all || []).filter(i => (i.invoice_number || '').startsWith(`VDS-${year}-`)).length + 1).padStart(4, '0');
+  const invoiceNumber = `VDS-${year}-${seq}`;
+  const invoice = await base44.asServiceRole.entities.Invoice.create({
+    invoice_number: invoiceNumber, job_id: job.id, customer_id: job.customer_id, customer_name: job.customer_name,
+    amount, tax: 0, discounts: 0, final_amount: amount, payment_status: 'pending',
+    issued_date: new Date().toISOString().split('T')[0],
+  });
+  await base44.asServiceRole.entities.Job.update(job.id, { invoice_id: invoice.id, status: 'awaiting_payment' });
+  try {
+    await base44.asServiceRole.functions.invoke('logEvent', {
+      event_type: 'invoice_created', entity_type: 'invoice', entity_id: invoice.id, customer_id: job.customer_id,
+      description: `Invoice ${invoiceNumber} created for ${job.customer_name}`,
+      metadata: { job_id: job.id, amount }, scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
+    });
+  } catch (e) { console.error('logEvent error:', e.message); }
+  return invoice;
+}
+
+async function updateJobStatus(base44, data, cfg, job) {
   const newStatus = data.job_status;
   if (!JOB_STATUSES.includes(newStatus)) return { error: 'Invalid job_status.' };
 
@@ -472,31 +546,48 @@ async function updateJobStatus(base44, data, cfg, appt) {
   if (newStatus === 'completed' || newStatus === 'photos_uploaded' || newStatus === 'invoice_complete') {
     updates.status = 'completed';
   }
-  await base44.asServiceRole.entities.Appointment.update(appt.id, updates);
+  await base44.asServiceRole.entities.Job.update(job.id, updates);
+
+  // Sync to the linked Appointment mirror (deprecated — retained for admin portal compat).
+  try {
+    const linked = await base44.asServiceRole.entities.Appointment.filter({ job_id: job.id });
+    if (linked && linked.length) {
+      const apptUpdates = {};
+      if (['completed', 'photos_uploaded', 'invoice_complete'].includes(newStatus)) {
+        apptUpdates.status = 'completed';
+        apptUpdates.job_status = newStatus;
+      } else {
+        apptUpdates.job_status = newStatus;
+      }
+      for (const f of COMPLETION_FIELDS) {
+        if (data[f] !== undefined) apptUpdates[f] = data[f];
+      }
+      await base44.asServiceRole.entities.Appointment.update(linked[0].id, apptUpdates);
+    }
+  } catch (e) { console.error('Appointment mirror sync error:', e.message); }
 
   // Notify the customer the first time a job reaches 'completed'.
-  if (newStatus === 'completed' && appt.job_status !== 'completed') {
-    // Remove the live Google Calendar event (the Base44 record is kept as the audit log).
-    await removeGcalEvent(base44, appt.google_calendar_event_id);
+  if (newStatus === 'completed' && job.job_status !== 'completed') {
+    await removeGcalEvent(base44, job.google_calendar_event_id);
     try {
-      const first = (appt.customer_name || '').split(' ')[0] || 'there';
+      const first = (job.customer_name || '').split(' ')[0] || 'there';
       const msg = `Hi ${first}, your VDS detail is complete! Your specialist has finished servicing your vehicle. We hope you love the results. — VDS Mobile`;
-      await sendTwilioSms(base44, appt.customer_phone, msg, appt.customer_name, 'completion');
-      } catch (e) { console.error('completion sms error:', e.message); }
+      await sendTwilioSms(base44, job.customer_phone, msg, job.customer_name, 'completion');
+    } catch (e) { console.error('completion sms error:', e.message); }
   }
 
   // Increment contractor jobs_completed the first time a job reaches 'completed'.
-  if (newStatus === 'completed' && appt.job_status !== 'completed' && appt.contractor_id) {
+  if (newStatus === 'completed' && job.job_status !== 'completed' && job.specialist_id) {
     try {
-      const c = await base44.asServiceRole.entities.Contractor.get(appt.contractor_id);
+      const c = await base44.asServiceRole.entities.Contractor.get(job.specialist_id);
       if (c) {
         const prevJobs = (c.metrics && c.metrics.jobs_completed) || 0;
         const prevAvg = (c.metrics && c.metrics.avg_job_duration_minutes) || 0;
         const newJobs = prevJobs + 1;
         const metrics = { ...(c.metrics || {}) };
         metrics.jobs_completed = newJobs;
-        if (appt.estimated_duration_minutes) {
-          metrics.avg_job_duration_minutes = Math.round((prevAvg * prevJobs + appt.estimated_duration_minutes) / newJobs);
+        if (job.estimated_duration_minutes) {
+          metrics.avg_job_duration_minutes = Math.round((prevAvg * prevJobs + job.estimated_duration_minutes) / newJobs);
         }
         if (data.upsell_recommendation) metrics.upsells_sold = (metrics.upsells_sold || 0) + 1;
         await base44.asServiceRole.entities.Contractor.update(c.id, { metrics });
@@ -504,7 +595,13 @@ async function updateJobStatus(base44, data, cfg, appt) {
     } catch (e) { console.error('Contractor metrics update error:', e.message); }
   }
 
-  return { success: true, appointment_id: appt.id, job_status: newStatus };
+  // Phase 6: Auto-create an invoice when the specialist marks the job invoice_complete.
+  if (newStatus === 'invoice_complete' && job.job_status !== 'invoice_complete') {
+    try { await createInvoiceForJob(base44, job); }
+    catch (e) { console.error('Invoice creation error:', e.message); }
+  }
+
+  return { success: true, job_id: job.id, job_status: newStatus };
 }
 
 // ── Contractor self-service (auth required) ────────────────────────────
@@ -529,10 +626,12 @@ async function myJobs(base44) {
   const all = await base44.asServiceRole.entities.Contractor.list();
   const c = findMyContractor(all, me.id);
   if (!c) return { error: 'No contractor profile is linked to your account.' };
-  const appts = await base44.asServiceRole.entities.Appointment.filter({ contractor_id: c.id });
-  const jobs = (appts || []).filter(a => a.status !== 'cancelled')
-    .sort((a, b) => new Date((a.preferred_date || '') + 'T00:00:00Z') - new Date((b.preferred_date || '') + 'T00:00:00Z'));
-  return { success: true, contractor_id: c.id, jobs };
+  // Phase 7: Specialist portal now reads from the Job entity (source of truth),
+  // not the deprecated Appointment mirror.
+  const jobs = await base44.asServiceRole.entities.Job.filter({ specialist_id: c.id });
+  const active = (jobs || []).filter(j => j.status !== 'cancelled')
+    .sort((a, b) => new Date((a.appointment_date || '') + 'T00:00:00Z') - new Date((b.appointment_date || '') + 'T00:00:00Z'));
+  return { success: true, contractor_id: c.id, jobs: active };
 }
 
 async function updateMyProfile(base44, data) {
@@ -807,6 +906,51 @@ async function adminMetrics(base44) {
   };
 }
 
+// ── Admin: Invoice management (Phase 6) ───────────────────────────────
+async function adminInvoices(base44, body) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!requireAdmin(me)) return { error: 'Admin only.' };
+  let invoices;
+  if (body.payment_status) invoices = await base44.asServiceRole.entities.Invoice.filter({ payment_status: body.payment_status });
+  else invoices = await base44.asServiceRole.entities.Invoice.list('-issued_date', 200);
+  return { success: true, invoices: invoices || [] };
+}
+
+async function adminUpdateInvoice(base44, body) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const { invoice_id, payment_status, payment_method } = body;
+  if (!invoice_id) return { error: 'invoice_id is required.' };
+  const updates = {};
+  if (payment_status) updates.payment_status = payment_status;
+  if (payment_method) updates.payment_method = payment_method;
+  if (payment_status === 'paid') updates.paid_date = new Date().toISOString().split('T')[0];
+  await base44.asServiceRole.entities.Invoice.update(invoice_id, updates);
+
+  // Update customer lifetime revenue + log event when an invoice is marked paid.
+  if (payment_status === 'paid') {
+    try {
+      const invoice = await base44.asServiceRole.entities.Invoice.get(invoice_id);
+      if (invoice && invoice.customer_id) {
+        const customer = await base44.asServiceRole.entities.Customer.get(invoice.customer_id).catch(() => null);
+        if (customer) {
+          await base44.asServiceRole.entities.Customer.update(customer.id, {
+            lifetime_revenue: (customer.lifetime_revenue || 0) + (invoice.final_amount || invoice.amount || 0),
+            total_jobs: (customer.total_jobs || 0) + 1,
+          });
+        }
+      }
+      await base44.asServiceRole.functions.invoke('logEvent', {
+        event_type: 'invoice_paid', entity_type: 'invoice', entity_id: invoice_id,
+        customer_id: invoice?.customer_id, description: `Invoice ${invoice?.invoice_number} marked as paid`,
+        metadata: { amount: invoice?.final_amount, payment_method },
+        scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
+      });
+    } catch (e) { console.error('Invoice payment update error:', e.message); }
+  }
+  return { success: true };
+}
+
 // ── Main Handler ────────────────────────────────────────────────────────
 Deno.serve(async (req) => {
   try {
@@ -852,9 +996,32 @@ Deno.serve(async (req) => {
     if (action === 'validate_specialist_token') return Response.json(await validateSpecialistToken(base44, body));
     if (action === 'finalize_specialist_setup') return Response.json(await finalizeSpecialistSetup(base44, body));
     if (action === 'admin_metrics') return Response.json(await adminMetrics(base44));
+    if (action === 'admin_invoices') return Response.json(await adminInvoices(base44, body));
+    if (action === 'admin_update_invoice') return Response.json(await adminUpdateInvoice(base44, body));
+
+    // ── Job-scoped actions (Phase 7+8: specialist portal operates on the Job entity) ──
+    if (['update_job_status', 'request_review'].includes(action)) {
+      const job = body.job_id ? await base44.asServiceRole.entities.Job.get(body.job_id) : null;
+      if (!job) return Response.json({ error: 'Job not found.' }, { status: 404 });
+
+      let me = null;
+      try { me = await base44.auth.me(); } catch {}
+      const isAdmin = !!(me && me.role === 'admin');
+      if (!isAdmin) {
+        if (!job.specialist_id) return Response.json({ error: 'No specialist assigned.' }, { status: 403 });
+        const c = await base44.asServiceRole.entities.Contractor.get(job.specialist_id).catch(() => null);
+        const owns = c && me && (c.user_id === me.id || (c.linked_user_ids || []).includes(me.id));
+        if (!owns) return Response.json({ error: 'Only the assigned specialist may perform this action.' }, { status: 403 });
+      }
+
+      let result;
+      if (action === 'request_review') result = await requestReview(base44, body, cfg, job);
+      else result = await updateJobStatus(base44, body, cfg, job);
+      return Response.json(result);
+    }
 
     // ── Appointment-scoped actions (need an appointment) ──
-    if (['reschedule', 'cancel', 'reassign', 'update_job_status', 'request_review'].includes(action)) {
+    if (['reschedule', 'cancel', 'reassign'].includes(action)) {
       const appt = body.appointment_id ? await base44.asServiceRole.entities.Appointment.get(body.appointment_id) : null;
       if (!appt) return Response.json({ error: 'Appointment not found.' }, { status: 404 });
 
@@ -876,13 +1043,6 @@ Deno.serve(async (req) => {
       // Admin-only actions / scoping
       const isAdmin = !!(me && me.role === 'admin');
       if (action === 'reassign' && !isAdmin) return Response.json({ error: 'Admin only.' }, { status: 403 });
-
-      if ((action === 'update_job_status' || action === 'request_review') && !isAdmin) {
-        // Only the assigned contractor may update job status or request reviews.
-        if (!appt.contractor_id) return Response.json({ error: 'No contractor assigned.' }, { status: 403 });
-        const c = await base44.asServiceRole.entities.Contractor.get(appt.contractor_id).catch(() => null);
-        if (!c || !me || c.user_id !== me.id) return Response.json({ error: 'Only the assigned contractor may perform this action.' }, { status: 403 });
-      }
 
       if (action === 'reschedule' || action === 'cancel') {
         // Non-admins may only touch their own appointments.
@@ -906,9 +1066,7 @@ Deno.serve(async (req) => {
       let result;
       if (action === 'reschedule') result = await rescheduleAppointment(base44, body, cfg, appt);
       else if (action === 'cancel') result = await cancelAppointment(base44, body, cfg, appt);
-      else if (action === 'reassign') result = await reassignAppointment(base44, body, cfg, appt);
-      else if (action === 'request_review') result = await requestReview(base44, body, cfg, appt);
-      else result = await updateJobStatus(base44, body, cfg, appt);
+      else result = await reassignAppointment(base44, body, cfg, appt);
       return Response.json(result);
     }
 

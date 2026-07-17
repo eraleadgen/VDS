@@ -36,7 +36,7 @@ export default function CompletionModal({ job, onClose, onSubmit, saving }) {
     onSubmit({
       before_photos: before,
       after_photos: after,
-      services_completed: [job.service_type].filter(Boolean),
+      services_completed: [job.service_package].filter(Boolean),
       products_used: products,
       completion_notes: notes,
       upsell_recommendation: upsell,

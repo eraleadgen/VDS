@@ -50,29 +50,29 @@ export default function SpecialistPortal() {
   if (error && !profile) return <div className="min-h-screen bg-obsidian flex items-center justify-center p-6 text-center"><div><p className="text-red-400 text-sm font-mono-tech mb-4">{error}</p><a href="/specialist-login" className="text-gold text-xs font-mono-tech tracking-widest">← BACK TO LOGIN</a></div></div>;
 
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
-  const todaysJobs = jobs.filter(j => j.preferred_date === today && j.status !== 'completed');
-  const upcoming = jobs.filter(j => j.preferred_date > today && j.status !== 'completed');
+  const todaysJobs = jobs.filter(j => j.appointment_date === today && j.status !== 'completed');
+  const upcoming = jobs.filter(j => j.appointment_date > today && j.status !== 'completed');
   const completed = jobs.filter(j => j.status === 'completed');
   const metrics = profile?.metrics || {};
 
-  const startJob = async (appt) => {
+  const startJob = async (job) => {
     setSaving(true);
-    try { const r = await invoke({ action: 'update_job_status', appointment_id: appt.id, job_status: 'in_progress' }); if (r.error) alert(r.error); else await load(); }
+    try { const r = await invoke({ action: 'update_job_status', job_id: job.id, job_status: 'in_progress' }); if (r.error) alert(r.error); else await load(); }
     finally { setSaving(false); }
   };
-  const completeJob = async (appt) => {
+  const completeJob = async (job) => {
     setSaving(true);
-    try { const r = await invoke({ action: 'update_job_status', appointment_id: appt.id, job_status: 'completed' }); if (r.error) alert(r.error); else await load(); }
+    try { const r = await invoke({ action: 'update_job_status', job_id: job.id, job_status: 'completed' }); if (r.error) alert(r.error); else await load(); }
     finally { setSaving(false); }
   };
   const submitPhotos = async (payload) => {
     setSaving(true);
-    try { const r = await invoke({ action: 'update_job_status', appointment_id: photoJob.id, job_status: 'photos_uploaded', ...payload }); if (r.error) { alert(r.error); return false; } setPhotoJob(null); await load(); return true; }
+    try { const r = await invoke({ action: 'update_job_status', job_id: photoJob.id, job_status: 'photos_uploaded', ...payload }); if (r.error) { alert(r.error); return false; } setPhotoJob(null); await load(); return true; }
     finally { setSaving(false); }
   };
-  const requestReview = async (appt) => {
+  const requestReview = async (job) => {
     setSaving(true);
-    try { const r = await invoke({ action: 'request_review', appointment_id: appt.id }); if (r.error) alert(r.error); else await load(); }
+    try { const r = await invoke({ action: 'request_review', job_id: job.id }); if (r.error) alert(r.error); else await load(); }
     finally { setSaving(false); }
   };
   const saveAvailability = async (patch) => {
