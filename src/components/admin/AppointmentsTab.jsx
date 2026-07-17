@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Filter, Plus, Trash2 } from 'lucide-react';
 import AppointmentFormModal from '@/components/admin/AppointmentFormModal';
+import DistanceGauge from '@/components/admin/DistanceGauge';
 
 const Checkbox = ({ checked, onChange, disabled }) => (
   <input
@@ -143,12 +144,12 @@ export default function AppointmentsTab() {
         <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-gold/20 border-t-gold rounded-full animate-spin" /></div>
       ) : (
         <div className="glass-panel border border-vapor/10 rounded-sm overflow-hidden overflow-x-auto">
-          <table className="w-full text-sm min-w-[920px]">
+          <table className="w-full text-sm min-w-[1040px]">
             <thead className="bg-asphalt/60 text-xs font-mono-tech tracking-widest text-vapor/50">
               <tr>
                 <th className="text-left p-4 w-10"><Checkbox checked={allSelected} onChange={toggleAll} /></th>
                 <th className="text-left p-4">DATE / TIME</th><th className="text-left p-4">CUSTOMER</th>
-                <th className="text-left p-4">SERVICE</th><th className="text-left p-4">STATUS</th>
+                <th className="text-left p-4">SERVICE</th><th className="text-left p-4">DISTANCE</th><th className="text-left p-4">STATUS</th>
                 <th className="text-left p-4">ASSIGN TO</th><th className="text-left p-4">ACTIONS</th>
               </tr>
             </thead>
@@ -164,6 +165,14 @@ export default function AppointmentsTab() {
                   <td className="p-4 text-vapor/70">
                     <div className="text-sm">{a.service_label || a.service_type}</div>
                     <div className="text-xs text-vapor/40 font-mono-tech">{a.vehicle_info || ''}</div>
+                  </td>
+                  <td className="p-4">
+                    <DistanceGauge address={a.service_address} />
+                    {a.service_address && (
+                      <div className="text-xs text-vapor/30 font-mono-tech mt-1 max-w-[160px] truncate" title={a.service_address}>
+                        {a.service_address}
+                      </div>
+                    )}
                   </td>
                   <td className="p-4">
                     <select
