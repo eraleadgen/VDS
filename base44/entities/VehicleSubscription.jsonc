@@ -1,10 +1,15 @@
 {
   "name": "VehicleSubscription",
   "type": "object",
+  "description": "Active recurring VDS Gold membership for a vehicle. References the single Stripe product with per-pricing-group pricing. Pricing group is resolved from the vehicle's classification via BusinessConfig mapping. Only one active VDS Gold membership may exist per vehicle.",
   "properties": {
     "vehicle_id": {
       "type": "string",
       "description": "ID of the MemberVehicle"
+    },
+    "customer_id": {
+      "type": "string",
+      "description": "Customer entity ID that owns this subscription"
     },
     "stripe_subscription_id": {
       "type": "string",
@@ -14,13 +19,25 @@
       "type": "string",
       "description": "Stripe customer ID"
     },
+    "stripe_price_id": {
+      "type": "string",
+      "description": "Stripe Price ID for this subscription's pricing group (references the single VDS Gold Membership product)"
+    },
+    "pricing_group": {
+      "type": "string",
+      "enum": [
+        "sedan_coupe",
+        "truck_suv"
+      ],
+      "description": "Pricing group for this subscription. Determined from the vehicle's classification via BusinessConfig mapping."
+    },
     "tier": {
       "type": "string",
       "enum": [
         "sedan_coupe",
         "truck_suv"
       ],
-      "description": "Subscription tier"
+      "description": "Legacy field. Retained for backward compatibility; new code should use pricing_group."
     },
     "status": {
       "type": "string",
@@ -30,18 +47,15 @@
         "past_due",
         "trialing"
       ],
-      "default": "active",
-      "description": "Subscription status"
+      "default": "active"
     },
     "started_date": {
       "type": "string",
-      "format": "date",
-      "description": "Subscription start date"
+      "format": "date"
     },
     "current_period_end": {
       "type": "string",
-      "format": "date",
-      "description": "Current billing period end date"
+      "format": "date"
     },
     "description": {
       "type": "string",
@@ -52,7 +66,7 @@
   "required": [
     "vehicle_id",
     "stripe_subscription_id",
-    "tier",
+    "pricing_group",
     "status"
   ],
   "rls": {
@@ -62,9 +76,19 @@
       }
     },
     "read": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.customer_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
     },
     "update": {
       "user_condition": {
