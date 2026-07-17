@@ -12,7 +12,8 @@ export default function SmsConsent({ checked, onChange, id = 'sms_consent', requ
         className="mt-0.5 accent-gold w-4 h-4 shrink-0 cursor-pointer"
       />
       <span className="text-xs text-vapor/40 font-mono-tech leading-relaxed group-hover:text-vapor/60 transition-colors">
-        I agree to receive SMS messages from VDS Mobile regarding my quote, appointment, and customer support. Message frequency varies. Message &amp; data rates may apply. Reply STOP to opt out.
+        I agree to receive SMS messages from Valet Detailing Service LLC (VDS Mobile) regarding quotes, appointment confirmations, reminders, service updates, and customer support.<br /><br />
+        Message frequency varies. Message and data rates may apply. Reply STOP to unsubscribe or HELP for assistance. Consent is not a condition of purchase.
       </span>
     </label>
   );
