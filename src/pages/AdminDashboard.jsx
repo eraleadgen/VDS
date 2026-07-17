@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { LayoutDashboard, Users, CalendarRange, Clock, CheckCircle2, XCircle, MessageSquare, DollarSign } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarRange, Clock, CheckCircle2, XCircle, MessageSquare, DollarSign, Database } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import PortalShell from '@/components/portal/PortalShell';
 import ContractorsTab from '@/components/admin/ContractorsTab';
 import AppointmentsTab from '@/components/admin/AppointmentsTab';
 import MessagesTab from '@/components/admin/MessagesTab';
+import MigrationTab from '@/components/admin/MigrationTab';
 
 const invoke = (payload) => base44.functions.invoke('scheduler', payload).then(r => r.data ?? r);
 
@@ -38,6 +39,7 @@ export default function AdminDashboard() {
     { key: 'contractors', label: 'SPECIALISTS', icon: Users },
     { key: 'appointments', label: 'APPOINTMENTS', icon: CalendarRange },
     { key: 'messages', label: 'MESSAGES', icon: MessageSquare },
+    { key: 'migration', label: 'MIGRATION', icon: Database },
   ];
 
   return (
@@ -50,6 +52,7 @@ export default function AdminDashboard() {
           {tab === 'contractors' && <ContractorsTab />}
           {tab === 'appointments' && <AppointmentsTab />}
           {tab === 'messages' && <MessagesTab />}
+          {tab === 'migration' && <MigrationTab />}
         </>
       )}
     </PortalShell>
