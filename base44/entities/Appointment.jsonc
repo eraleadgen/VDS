@@ -111,6 +111,16 @@
       "default": false,
       "description": "True once the customer has submitted a review for this job"
     },
+    "reminder_24h_email_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the 24-hour email reminder has been sent to the customer."
+    },
+    "reminder_1h_sms_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the 1-hour SMS reminder has been sent to the customer."
+    },
     "google_calendar_event_id": {
       "type": "string",
       "description": "Google Calendar event ID (event mirror source of truth)"

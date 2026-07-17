@@ -343,6 +343,14 @@ async function bookAppointment(base44, data, cfg) {
     customer_email: data.customer_email || '', service_address: data.service_address || '',
   });
 
+  // ── Booking notifications: customer SMS + email + internal email ──
+  try {
+    await base44.functions.invoke('sendBookingNotifications', {
+      appointment_id: appt.id,
+      scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
+    });
+  } catch (e) { console.error('Booking notifications failed:', e.message); }
+
   return {
     success: true, appointment_id: appt.id, event_id: created.id,
     date, time: utcToZonedTime(start.toISOString(), tz),
@@ -381,6 +389,13 @@ async function cancelAppointment(base44, data, cfg, appt) {
     catch (e) { console.error('GCal delete error:', e.message); }
   }
   await base44.asServiceRole.entities.Appointment.update(appt.id, { status: 'cancelled' });
+  // ── Internal cancellation notification email ──
+  try {
+    await base44.functions.invoke('sendCancellationNotification', {
+      appointment_id: appt.id,
+      scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
+    });
+  } catch (e) { console.error('Cancellation notification failed:', e.message); }
   return { success: true, appointment_id: appt.id };
 }
 
@@ -582,6 +597,15 @@ async function adminChangeStatus(base44, body) {
   // Completed/cancelled jobs are removed from the live calendar; the Base44 record is retained.
   if (status === 'cancelled' || status === 'completed') {
     await removeGcalEvent(base44, appt.google_calendar_event_id);
+  }
+  // ── Internal cancellation notification email ──
+  if (status === 'cancelled') {
+    try {
+      await base44.functions.invoke('sendCancellationNotification', {
+        appointment_id,
+        scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
+      });
+    } catch (e) { console.error('Cancellation notification failed:', e.message); }
   }
   return { success: true, status };
 }

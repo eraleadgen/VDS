@@ -117,6 +117,14 @@ Deno.serve(async (req) => {
     // ── Update local status to cancelled via service role ─────────────────
     await base44.asServiceRole.entities.Appointment.update(appointment_id, { status: 'cancelled' });
 
+    // ── Internal cancellation notification email ──────────────────────────
+    try {
+      await base44.functions.invoke('sendCancellationNotification', {
+        appointment_id,
+        scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
+      });
+    } catch (e) { console.error('Cancellation notification failed:', e.message); }
+
     return Response.json({ success: true });
 
   } catch (error) {
