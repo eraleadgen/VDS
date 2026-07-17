@@ -118,8 +118,11 @@ export default function BookAppointment() {
         setGoldVehicles(goldMap);
       }
       setAuthChecked(true);
+      // Auto-continue as guest when arriving from a saved quote and not authenticated
+      if (!user && location.state?.quote) setGuestConfirmed(true);
     };
     init();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -144,7 +147,6 @@ export default function BookAppointment() {
       if (addOnIds.length) {
         setGuestAddOns(addOnIds.filter(id => ADD_ONS.find(a => a.id === id)));
       }
-      if (!user) setGuestConfirmed(true);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state]);
