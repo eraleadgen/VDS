@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized.' }, { status: 401 });
     }
 
-    const { vehicle_classification, vehicle_type, services } = body;
+    const { vehicle_classification, vehicle_type, services, condition, add_ons } = body;
     if (!services || !Array.isArray(services)) {
       return Response.json({ error: 'services[] is required.' }, { status: 400 });
     }
@@ -41,8 +41,14 @@ Deno.serve(async (req) => {
     const pricingGroup = resolvePricingGroup(cfg, vehicle_classification, vehicle_type);
     const bookingUrl = (cfg.website_links && cfg.website_links.booking_url) || 'https://vdsmobile.com/book';
 
-    let totalPrice = 0;
+    // Resolve condition multiplier from BusinessConfig pricing_rules.
+    const conditionMultipliers = (cfg.pricing_rules && cfg.pricing_rules.condition_multipliers) || [];
+    const conditionEntry = condition ? conditionMultipliers.find(c => c.key === condition) : null;
+    const conditionMultiplier = conditionEntry ? conditionEntry.multiplier : 1;
+
+    let basePrice = 0;
     let totalDuration = 0;
+    let addOnTotal = 0;
     const lineItems = [];
     let requiresConsultation = false;
 
@@ -52,7 +58,8 @@ Deno.serve(async (req) => {
         lineItems.push({ service: svcKey, label: svcKey, price: 0, duration: 0, note: 'Unknown service' });
         continue;
       }
-      const tier = (svc.tiers || []).find(t => t.tier === pricingGroup) || (svc.tiers || [])[0];
+      // Tier lookup: classification key first (per-classification pricing), then pricing group, then first.
+      const tier = (svc.tiers || []).find(t => t.tier === vehicle_classification) || (svc.tiers || []).find(t => t.tier === pricingGroup) || (svc.tiers || [])[0];
       if (!tier) {
         lineItems.push({ service: svcKey, label: svc.label, price: 0, duration: 0, note: 'No pricing for this vehicle group' });
         continue;
@@ -61,11 +68,26 @@ Deno.serve(async (req) => {
         requiresConsultation = true;
         lineItems.push({ service: svcKey, label: svc.label, price: null, duration: null, note: 'Free consultation required' });
       } else {
-        totalPrice += tier.price || 0;
+        basePrice += tier.price || 0;
         totalDuration += tier.duration_minutes || 0;
         lineItems.push({ service: svcKey, label: svc.label, price: tier.price, duration: tier.duration_minutes });
       }
     }
+
+    // Add-ons are priced at face value (not multiplied by condition).
+    for (const addOnKey of (add_ons || [])) {
+      const svc = (cfg.services || []).find(s => s.key === addOnKey);
+      if (!svc) continue;
+      const tier = (svc.tiers || []).find(t => t.tier === pricingGroup) || (svc.tiers || [])[0];
+      if (!tier) continue;
+      addOnTotal += tier.price || 0;
+      totalDuration += tier.duration_minutes || 0;
+      lineItems.push({ service: addOnKey, label: svc.label, price: tier.price, duration: tier.duration_minutes, is_add_on: true });
+    }
+
+    // Custom quote = base services × condition multiplier + add-ons.
+    const conditionedBase = Math.round(basePrice * conditionMultiplier);
+    const totalPrice = conditionedBase + addOnTotal;
 
     const durationFormatted = totalDuration >= 60
       ? `${Math.floor(totalDuration / 60)}–${Math.ceil(totalDuration / 60 + 0.5)} hrs`
@@ -77,9 +99,16 @@ Deno.serve(async (req) => {
 
     return Response.json({
       pricing_group: pricingGroup,
+      vehicle_classification: vehicle_classification || null,
+      condition: condition || null,
+      condition_label: conditionEntry ? conditionEntry.label : null,
       services: lineItems,
+      base_price: basePrice,
+      condition_multiplier: conditionMultiplier,
+      add_on_total: addOnTotal,
       starting_price: totalPrice,
       estimated_duration: durationFormatted,
+      estimated_duration_minutes: totalDuration,
       quote_summary: summary,
       requires_consultation: requiresConsultation,
       booking_url: bookingUrl,
