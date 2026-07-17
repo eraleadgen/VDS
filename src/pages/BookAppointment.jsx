@@ -295,7 +295,7 @@ export default function BookAppointment() {
         submitVehicleType = isConsult ? 'standard' : guestVehicle.vehicle_type;
       }
 
-      await base44.functions.invoke('submitBookingToGHL', {
+      await base44.functions.invoke('submitBooking', {
         ...form,
         name: `${form.firstName.trim()} ${form.lastName.trim()}`.trim(),
         service_type: firstService,
