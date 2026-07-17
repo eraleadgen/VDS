@@ -156,8 +156,8 @@ Deno.serve(async (req) => {
     const firstName = (appt.customer_name || '').split(' ')[0] || 'there';
     const results = { sms: false, email: false, internal: false };
 
-    // 1. Customer SMS confirmation
-    if (appt.customer_phone) {
+    // 1. Customer SMS confirmation (only if SMS consent given; otherwise email confirmation below suffices)
+    if (appt.customer_phone && appt.sms_consent !== false) {
       const msg = `Hi ${firstName}, your VDS Mobile appointment is confirmed for ${appt.preferred_date} at ${appt.preferred_time}. Service: ${appt.service_label || 'Detailing'}. We'll come to you${appt.service_address ? ' at ' + appt.service_address : ''}. Questions? Call/text ${BUSINESS_PHONE}. — VDS Mobile`;
       results.sms = await sendTwilioSms(base44, appt.customer_phone, msg, appt.customer_name);
     }

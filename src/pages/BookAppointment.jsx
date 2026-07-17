@@ -258,8 +258,8 @@ export default function BookAppointment() {
     : CONSULTATION_IDS.includes(guestService);
 
   const canSubmit = user
-    ? !loading && smsConsent && form.firstName && form.phone && form.address && form.preferred_date && form.preferred_time && selectedVehicles.length > 0 && selectedVehicles.every(v => getVehicleService(v))
-    : !loading && smsConsent && form.firstName && form.phone && form.address && form.preferred_date && form.preferred_time && guestVehicle.year && guestVehicle.make && guestVehicle.model && guestVehicle.vehicle_type && guestService;
+    ? !loading && form.firstName && form.phone && form.address && form.preferred_date && form.preferred_time && selectedVehicles.length > 0 && selectedVehicles.every(v => getVehicleService(v))
+    : !loading && form.firstName && form.phone && form.address && form.preferred_date && form.preferred_time && guestVehicle.year && guestVehicle.make && guestVehicle.model && guestVehicle.vehicle_type && guestService;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -305,6 +305,7 @@ export default function BookAppointment() {
         notes: [quoteNote, form.notes].filter(Boolean).join(' | '),
         preferred_date: form.preferred_date || null,
         preferred_time: form.preferred_time || null,
+        sms_consent: smsConsent,
       });
       // Reschedule flow: cancel the previous appointment once the new booking is submitted
       if (location.state?.reschedule_from) {

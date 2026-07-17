@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
       name, phone, email, address,
       service_type, vehicle_type, vehicle_info,
       vehicle_details, notes,
-      preferred_date, preferred_time,
+      preferred_date, preferred_time, sms_consent,
     } = await req.json();
 
     if (!name || !phone || !address || !service_type) {
@@ -292,6 +292,7 @@ Deno.serve(async (req) => {
         customer_phone: phone,
         customer_email: email || '',
         service_address: address,
+        sms_consent: sms_consent !== false,
       });
     } catch (err) {
       console.error('Failed to create Appointment entity:', err.message);

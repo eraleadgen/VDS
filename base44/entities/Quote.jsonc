@@ -76,6 +76,11 @@
       "type": "string",
       "description": "Notes from the Valerie interaction"
     },
+    "sms_consent": {
+      "type": "boolean",
+      "default": true,
+      "description": "True if the customer consented to receive SMS messages. When false, the quote is delivered via email instead of SMS."
+    },
     "status": {
       "type": "string",
       "enum": [

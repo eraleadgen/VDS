@@ -22,6 +22,58 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Quote not found.' }, { status: 404 });
     }
 
+    // No SMS consent → deliver quote via email instead of SMS
+    if (quote.sms_consent === false) {
+      if (!quote.customer_email) {
+        return Response.json({ success: false, error: 'Customer did not consent to SMS and has no email on file — cannot deliver quote.' }, { status: 400 });
+      }
+      try {
+        const FONT = "'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+        const MONO = "'Space Mono','Courier New',monospace";
+        const firstName = (quote.customer_name || '').split(' ')[0] || 'there';
+        const html = `<!DOCTYPE html><html lang="en" style="margin:0;padding:0;"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background-color:#0A0B0D;font-family:${FONT};color:#E2E8F0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0A0B0D;">
+<tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#14161A;border-radius:14px;overflow:hidden;border:1px solid rgba(212,175,55,0.15);box-shadow:0 8px 30px rgba(0,0,0,0.5);">
+  <tr><td style="background-color:#0A0B0D;padding:22px 28px;border-bottom:2px solid #D4AF37;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+    <td style="font-size:18px;font-weight:700;letter-spacing:3px;color:#FFFFFF;">VDS&nbsp;MOBILE</td>
+    <td align="right" style="font-family:${MONO};font-size:11px;letter-spacing:2px;color:#D4AF37;font-weight:700;text-transform:uppercase;">Your Quote</td>
+  </tr></table></td></tr>
+  <tr><td style="padding:28px 28px 6px 28px;">
+    <p style="margin:0 0 6px 0;font-family:${MONO};font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#D4AF37;font-weight:700;">Quote from VDS Mobile</p>
+    <h1 style="margin:0;font-size:24px;line-height:32px;color:#E2E8F0;font-weight:700;">Hi ${firstName},</h1>
+  </td></tr>
+  <tr><td style="padding:14px 28px 0 28px;">
+    <p style="margin:0 0 16px 0;font-size:15px;line-height:25px;color:#CBD5E1;">Here's your detailing quote from VDS Mobile:</p>
+  </td></tr>
+  <tr><td style="padding:16px 28px 8px 28px;background-color:#0F1115;">
+    <p style="margin:0 0 12px 0;padding-top:14px;font-family:${MONO};font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#D4AF37;">Quote Summary</p>
+    <p style="margin:0;font-size:15px;line-height:25px;color:#E2E8F0;white-space:pre-wrap;">${(quote.quote_summary || '').replace(/</g, '&lt;')}</p>
+  </td></tr>
+  <tr><td style="padding:20px 28px 8px 28px;">
+    <p style="margin:0 0 8px 0;font-size:15px;line-height:25px;color:#CBD5E1;">Ready to book? Visit <a href="${quote.booking_url || '#'}" style="color:#D4AF37;text-decoration:none;">our booking page</a> or call/text us at <strong style="color:#D4AF37;">(470) 412-8986</strong>.</p>
+  </td></tr>
+  <tr><td style="background-color:#0A0B0D;padding:22px 28px;border-top:2px solid #D4AF37;">
+    <p style="margin:0 0 6px 0;font-size:15px;color:#E2E8F0;font-weight:600;">&mdash; The VDS Mobile Team</p>
+    <p style="margin:0 0 4px 0;font-family:${MONO};font-size:13px;line-height:22px;color:#94A3B8;"><a href="mailto:support@vdsmobile.com" style="color:#D4AF37;text-decoration:none;">support@vdsmobile.com</a></p>
+    <p style="margin:0;font-family:${MONO};font-size:11px;color:#64748B;letter-spacing:0.5px;">&copy; ${new Date().getUTCFullYear()} VALET DETAILING SERVICE LLC. ALL RIGHTS RESERVED.</p>
+  </td></tr>
+</table></td></tr></table></body></html>`;
+        await base44.asServiceRole.integrations.Core.SendEmail({
+          to: quote.customer_email,
+          subject: 'Your VDS Mobile Detailing Quote',
+          body: html,
+          from_name: 'VDS Mobile',
+        });
+        await base44.asServiceRole.entities.Quote.update(quote_id, { status: 'sent', sms_sent: false });
+        return Response.json({ success: true, sms_sent: false, email: true });
+      } catch (e) {
+        console.error('Quote email failed:', e.message);
+        return Response.json({ success: false, error: e.message }, { status: 500 });
+      }
+    }
+
     const GHL_API_KEY = Deno.env.get('GHL_API_KEY');
     const GHL_LOCATION_ID = Deno.env.get('GHL_LOCATION_ID');
 

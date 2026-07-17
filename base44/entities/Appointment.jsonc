@@ -119,7 +119,12 @@
     "reminder_1h_sms_sent": {
       "type": "boolean",
       "default": false,
-      "description": "True once the 1-hour SMS reminder has been sent to the customer."
+      "description": "True once the 1-hour reminder (SMS or email fallback) has been sent to the customer."
+    },
+    "sms_consent": {
+      "type": "boolean",
+      "default": true,
+      "description": "True if the customer consented to receive SMS messages. When false, all customer-facing notifications (confirmations, reminders, quotes) are sent via email instead of SMS."
     },
     "google_calendar_event_id": {
       "type": "string",

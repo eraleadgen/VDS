@@ -157,17 +157,31 @@ Deno.serve(async (req) => {
         }
       }
 
-      // 1h SMS reminder: send if within 1h and not yet sent
+      // 1h reminder: send if within 1h and not yet sent (SMS if consented, email otherwise)
       if (msUntilStart > 0 && msUntilStart <= WINDOW_1H && !appt.reminder_1h_sms_sent) {
-        if (appt.customer_phone) {
-          const firstName = (appt.customer_name || '').split(' ')[0] || 'there';
-          const service = appt.service_label || 'Detailing';
+        const firstName = (appt.customer_name || '').split(' ')[0] || 'there';
+        // SMS consent given → send via SMS
+        if (appt.sms_consent !== false && appt.customer_phone) {
           const msg = `Hi ${firstName}, your VDS Mobile detailing appointment starts in about 1 hour at ${appt.preferred_time}.${appt.service_address ? ' Service address: ' + appt.service_address : ''} Please ensure your vehicle is accessible. Questions? Call/text ${BUSINESS_PHONE}. — VDS Mobile`;
           const sent = await sendTwilioSms(base44, appt.customer_phone, msg, appt.customer_name);
           if (sent) {
             await base44.asServiceRole.entities.Appointment.update(appt.id, { reminder_1h_sms_sent: true });
             smsSent++;
           }
+        }
+        // No SMS consent → send 1h reminder via email instead
+        else if (appt.sms_consent === false && appt.customer_email) {
+          try {
+            const html = buildReminderEmail(firstName, appt);
+            await base44.asServiceRole.integrations.Core.SendEmail({
+              to: appt.customer_email,
+              subject: `Reminder: Your VDS Mobile appointment starts soon — ${appt.preferred_date} at ${appt.preferred_time}`,
+              body: html,
+              from_name: 'VDS Mobile',
+            });
+            await base44.asServiceRole.entities.Appointment.update(appt.id, { reminder_1h_sms_sent: true });
+            emailSent++;
+          } catch (e) { console.error('1h reminder email failed (may not be registered):', e.message); }
         }
       }
     }
