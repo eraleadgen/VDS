@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { LayoutDashboard, Users, CalendarRange, Clock, CheckCircle2, XCircle, MessageSquare, DollarSign, Database } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarRange, Clock, CheckCircle2, XCircle, MessageSquare, DollarSign, Database, Route } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import PortalShell from '@/components/portal/PortalShell';
 import ContractorsTab from '@/components/admin/ContractorsTab';
@@ -9,6 +9,7 @@ import AppointmentsTab from '@/components/admin/AppointmentsTab';
 import MessagesTab from '@/components/admin/MessagesTab';
 import MigrationTab from '@/components/admin/MigrationTab';
 import InvoicesTab from '@/components/admin/InvoicesTab';
+import JourneyTab from '@/components/admin/JourneyTab';
 
 const invoke = (payload) => base44.functions.invoke('scheduler', payload).then(r => r.data ?? r);
 
@@ -38,8 +39,9 @@ export default function AdminDashboard() {
   const navItems = [
     { key: 'overview', label: 'OVERVIEW', icon: LayoutDashboard },
     { key: 'contractors', label: 'SPECIALISTS', icon: Users },
-    { key: 'appointments', label: 'APPOINTMENTS', icon: CalendarRange },
+    { key: 'appointments', label: 'JOBS', icon: CalendarRange },
     { key: 'invoices', label: 'INVOICES', icon: DollarSign },
+    { key: 'journey', label: 'JOURNEY', icon: Route },
     { key: 'messages', label: 'MESSAGES', icon: MessageSquare },
     { key: 'migration', label: 'MIGRATION', icon: Database },
   ];
@@ -54,6 +56,7 @@ export default function AdminDashboard() {
           {tab === 'contractors' && <ContractorsTab />}
           {tab === 'appointments' && <AppointmentsTab />}
           {tab === 'invoices' && <InvoicesTab />}
+          {tab === 'journey' && <JourneyTab />}
           {tab === 'messages' && <MessagesTab />}
           {tab === 'migration' && <MigrationTab />}
         </>

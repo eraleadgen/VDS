@@ -951,6 +951,111 @@ async function adminUpdateInvoice(base44, body) {
   return { success: true };
 }
 
+// ── Admin: Job management (Phase 8: admin portal operates on the Job entity) ──
+// The Job is the operational source of truth; the Appointment mirror is synced where it exists.
+async function adminJobs(base44, body) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!requireAdmin(me)) return { error: 'Admin only.' };
+  let jobs;
+  if (body.date) jobs = await base44.asServiceRole.entities.Job.filter({ appointment_date: body.date });
+  else if (body.status) jobs = await base44.asServiceRole.entities.Job.filter({ status: body.status });
+  else jobs = await base44.asServiceRole.entities.Job.list('-updated_date', 500);
+  return { success: true, jobs: jobs || [] };
+}
+
+async function adminReassignJob(base44, body) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const { job_id, specialist_id } = body;
+  if (!job_id || !specialist_id) return { error: 'job_id and specialist_id are required.' };
+  const job = await base44.asServiceRole.entities.Job.get(job_id).catch(() => null);
+  if (!job) return { error: 'Job not found.' };
+  const contractor = await base44.asServiceRole.entities.Contractor.get(specialist_id).catch(() => null);
+  if (!contractor) return { error: 'Specialist not found.' };
+  await base44.asServiceRole.entities.Job.update(job_id, { specialist_id, specialist_name: contractor.name });
+  try {
+    const linked = await base44.asServiceRole.entities.Appointment.filter({ job_id });
+    if (linked && linked.length) await base44.asServiceRole.entities.Appointment.update(linked[0].id, { contractor_id: specialist_id, contractor_name: contractor.name });
+  } catch (e) { console.error('Appointment mirror sync error:', e.message); }
+  if (job.google_calendar_event_id) {
+    try {
+      const { accessToken } = await base44.asServiceRole.connectors.getConnection('googlecalendar');
+      await gcal(accessToken, 'PATCH', `/calendars/primary/events/${job.google_calendar_event_id}`, {
+        summary: `VDS — ${job.service_label || 'Appointment'} — ${job.customer_name} — ${contractor.name}`,
+      });
+    } catch (e) { console.error('GCal reassign patch error:', e.message); }
+  }
+  return { success: true };
+}
+
+const JOB_LIFECYCLE_STATUSES = ['quote_requested','quote_generated','awaiting_approval','appointment_scheduled','specialist_assigned','appointment_confirmed','technician_en_route','in_progress','awaiting_payment','completed','review_requested','membership_recommended','cancelled'];
+
+async function adminChangeJobStatus(base44, body) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const { job_id, status } = body;
+  if (!JOB_LIFECYCLE_STATUSES.includes(status)) return { error: 'Invalid status.' };
+  const job = await base44.asServiceRole.entities.Job.get(job_id).catch(() => null);
+  if (!job) return { error: 'Job not found.' };
+  await base44.asServiceRole.entities.Job.update(job_id, { status });
+  try {
+    const linked = await base44.asServiceRole.entities.Appointment.filter({ job_id });
+    if (linked && linked.length) {
+      const apptStatus = status === 'cancelled' ? 'cancelled' : (['completed','awaiting_payment','review_requested'].includes(status) ? 'completed' : 'confirmed');
+      await base44.asServiceRole.entities.Appointment.update(linked[0].id, { status: apptStatus });
+    }
+  } catch (e) { console.error('Appointment mirror sync error:', e.message); }
+  if (['cancelled','completed','awaiting_payment','review_requested'].includes(status)) {
+    await removeGcalEvent(base44, job.google_calendar_event_id);
+  }
+  if (status === 'cancelled') {
+    try {
+      await base44.asServiceRole.functions.invoke('logEvent', {
+        event_type: 'appointment_cancelled', entity_type: 'job', entity_id: job_id,
+        customer_id: job.customer_id, description: `Job cancelled for ${job.customer_name || 'customer'}`,
+        metadata: { job_id }, scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
+      });
+    } catch (e) { console.error('logEvent error:', e.message); }
+  }
+  return { success: true, status };
+}
+
+async function adminDeleteJob(base44, body) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const { job_id } = body;
+  if (!job_id) return { error: 'job_id is required.' };
+  const job = await base44.asServiceRole.entities.Job.get(job_id).catch(() => null);
+  if (!job) return { error: 'Job not found.' };
+  await removeGcalEvent(base44, job.google_calendar_event_id);
+  try {
+    const linked = await base44.asServiceRole.entities.Appointment.filter({ job_id });
+    if (linked && linked.length) await base44.asServiceRole.entities.Appointment.delete(linked[0].id);
+  } catch (e) { console.error('Appointment mirror delete error:', e.message); }
+  await base44.asServiceRole.entities.Job.delete(job_id);
+  return { success: true };
+}
+
+async function adminBulkDeleteJobs(base44, body) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const ids = Array.isArray(body.job_ids) ? body.job_ids.filter(Boolean) : [];
+  if (!ids.length) return { error: 'job_ids is required.' };
+  let deleted = 0;
+  for (const id of ids) {
+    const job = await base44.asServiceRole.entities.Job.get(id).catch(() => null);
+    if (!job) continue;
+    await removeGcalEvent(base44, job.google_calendar_event_id);
+    try {
+      const linked = await base44.asServiceRole.entities.Appointment.filter({ job_id: id });
+      if (linked && linked.length) await base44.asServiceRole.entities.Appointment.delete(linked[0].id);
+    } catch (e) { console.error('Appointment mirror delete error:', e.message); }
+    try { await base44.asServiceRole.entities.Job.delete(id); deleted++; }
+    catch (e) { console.error('delete error:', id, e.message); }
+  }
+  return { success: true, deleted };
+}
+
 // ── Main Handler ────────────────────────────────────────────────────────
 Deno.serve(async (req) => {
   try {
@@ -998,6 +1103,11 @@ Deno.serve(async (req) => {
     if (action === 'admin_metrics') return Response.json(await adminMetrics(base44));
     if (action === 'admin_invoices') return Response.json(await adminInvoices(base44, body));
     if (action === 'admin_update_invoice') return Response.json(await adminUpdateInvoice(base44, body));
+    if (action === 'admin_jobs') return Response.json(await adminJobs(base44, body));
+    if (action === 'admin_reassign_job') return Response.json(await adminReassignJob(base44, body));
+    if (action === 'admin_change_job_status') return Response.json(await adminChangeJobStatus(base44, body));
+    if (action === 'admin_delete_job') return Response.json(await adminDeleteJob(base44, body));
+    if (action === 'admin_bulk_delete_jobs') return Response.json(await adminBulkDeleteJobs(base44, body));
 
     // ── Job-scoped actions (Phase 7+8: specialist portal operates on the Job entity) ──
     if (['update_job_status', 'request_review'].includes(action)) {

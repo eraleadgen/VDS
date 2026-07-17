@@ -15,16 +15,27 @@ const Checkbox = ({ checked, onChange, disabled }) => (
 );
 
 const invoke = (payload) => base44.functions.invoke('scheduler', payload).then(r => r.data ?? r);
+
 const STATUS_BADGE = {
-  pending: 'text-amber-300 bg-amber-300/5 border-amber-300/20',
-  confirmed: 'text-blue-300 bg-blue-300/5 border-blue-300/20',
+  quote_requested: 'text-slate-300 bg-slate-300/5 border-slate-300/20',
+  quote_generated: 'text-slate-300 bg-slate-300/5 border-slate-300/20',
+  awaiting_approval: 'text-amber-300 bg-amber-300/5 border-amber-300/20',
+  appointment_scheduled: 'text-blue-300 bg-blue-300/5 border-blue-300/20',
+  specialist_assigned: 'text-blue-300 bg-blue-300/5 border-blue-300/20',
+  appointment_confirmed: 'text-blue-300 bg-blue-300/5 border-blue-300/20',
+  technician_en_route: 'text-cyan-300 bg-cyan-300/5 border-cyan-300/20',
+  in_progress: 'text-cyan-300 bg-cyan-300/5 border-cyan-300/20',
+  awaiting_payment: 'text-amber-300 bg-amber-300/5 border-amber-300/20',
   completed: 'text-green-300 bg-green-300/5 border-green-300/20',
+  review_requested: 'text-purple-300 bg-purple-300/5 border-purple-300/20',
+  membership_recommended: 'text-gold bg-gold/5 border-gold/20',
   cancelled: 'text-red-400 bg-red-400/5 border-red-400/20',
 };
-const STATUSES = ['pending', 'confirmed', 'completed', 'cancelled'];
+const STATUSES = ['appointment_scheduled', 'specialist_assigned', 'appointment_confirmed', 'in_progress', 'awaiting_payment', 'completed', 'cancelled'];
+const STATUS_LABEL = (s) => s ? s.replace(/_/g, ' ') : '';
 
 export default function AppointmentsTab() {
-  const [appts, setAppts] = useState([]);
+  const [jobs, setJobs] = useState([]);
   const [contractors, setContractors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('');
@@ -43,33 +54,33 @@ export default function AppointmentsTab() {
       const q = {};
       if (statusFilter) q.status = statusFilter;
       if (dateFilter) q.date = dateFilter;
-      const [a, c] = await Promise.all([
-        invoke({ action: 'admin_appointments', ...q }),
+      const [j, c] = await Promise.all([
+        invoke({ action: 'admin_jobs', ...q }),
         invoke({ action: 'list_contractors' }),
       ]);
-      setAppts(a.appointments || []);
+      setJobs(j.jobs || []);
       setContractors(c.contractors || []);
     } finally { setLoading(false); }
   };
   useEffect(() => { load(); }, [statusFilter, dateFilter]);
 
-  const reassign = async (apptId, contractorId) => {
-    if (!contractorId) return;
-    setBusy(b => ({ ...b, [apptId]: true }));
-    try { const r = await invoke({ action: 'reassign', appointment_id: apptId, contractor_id: contractorId }); if (r.error) alert(r.error); else await load(); }
-    finally { setBusy(b => ({ ...b, [apptId]: false })); }
+  const reassign = async (jobId, specialistId) => {
+    if (!specialistId) return;
+    setBusy(b => ({ ...b, [jobId]: true }));
+    try { const r = await invoke({ action: 'admin_reassign_job', job_id: jobId, specialist_id: specialistId }); if (r.error) alert(r.error); else await load(); }
+    finally { setBusy(b => ({ ...b, [jobId]: false })); }
   };
 
-  const changeStatus = async (apptId, status) => {
-    setBusy(b => ({ ...b, [apptId]: true }));
-    try { const r = await invoke({ action: 'admin_change_status', appointment_id: apptId, status }); if (r.error) alert(r.error); else await load(); }
-    finally { setBusy(b => ({ ...b, [apptId]: false })); }
+  const changeStatus = async (jobId, status) => {
+    setBusy(b => ({ ...b, [jobId]: true }));
+    try { const r = await invoke({ action: 'admin_change_job_status', job_id: jobId, status }); if (r.error) alert(r.error); else await load(); }
+    finally { setBusy(b => ({ ...b, [jobId]: false })); }
   };
 
-  const remove = async (apptId) => {
-    setBusy(b => ({ ...b, [apptId]: true }));
-    try { const r = await invoke({ action: 'admin_delete_appointment', appointment_id: apptId }); if (r.error) alert(r.error); else { setConfirmId(null); await load(); } }
-    finally { setBusy(b => ({ ...b, [apptId]: false })); }
+  const remove = async (jobId) => {
+    setBusy(b => ({ ...b, [jobId]: true }));
+    try { const r = await invoke({ action: 'admin_delete_job', job_id: jobId }); if (r.error) alert(r.error); else { setConfirmId(null); await load(); } }
+    finally { setBusy(b => ({ ...b, [jobId]: false })); }
   };
 
   const createAppt = async (form) => {
@@ -86,7 +97,7 @@ export default function AppointmentsTab() {
     } finally { setAddingBusy(false); }
   };
 
-  const sorted = [...appts].sort((a, b) => new Date((a.preferred_date || '') + 'T' + (a.preferred_time || '00:00')) - new Date((b.preferred_date || '') + 'T' + (b.preferred_time || '00:00')));
+  const sorted = [...jobs].sort((a, b) => new Date((a.appointment_date || '') + 'T' + (a.appointment_time || '00:00')) - new Date((b.appointment_date || '') + 'T' + (b.appointment_time || '00:00')));
 
   const toggle = (id) => setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
   const allSelected = sorted.length > 0 && sorted.every(a => selected.includes(a.id));
@@ -96,7 +107,7 @@ export default function AppointmentsTab() {
   const bulkDelete = async () => {
     setBulkBusy(true);
     try {
-      const r = await invoke({ action: 'admin_bulk_delete_appointments', appointment_ids: selected });
+      const r = await invoke({ action: 'admin_bulk_delete_jobs', job_ids: selected });
       if (r.error) { alert(r.error); return; }
       setConfirmBulk(false); setSelected([]); await load();
     } finally { setBulkBusy(false); }
@@ -105,16 +116,16 @@ export default function AppointmentsTab() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-grotesk font-bold text-vapor">Appointments</h1>
+        <h1 className="text-2xl font-grotesk font-bold text-vapor">Jobs</h1>
         <button onClick={() => setAdding(true)} className="flex items-center gap-2 bg-gold/10 border border-gold/30 text-gold px-4 py-2 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold/20">
-          <Plus size={14} /> NEW APPOINTMENT
+          <Plus size={14} /> NEW JOB
         </button>
       </div>
       <div className="flex flex-wrap items-center gap-3">
         <Filter size={14} className="text-gold/60" />
         <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="bg-asphalt border border-vapor/10 text-vapor text-xs font-mono-tech px-3 py-2 rounded-sm">
           <option value="">All statuses</option>
-          {STATUSES.map(s => <option key={s} value={s}>{s[0].toUpperCase() + s.slice(1)}</option>)}
+          {STATUSES.map(s => <option key={s} value={s}>{STATUS_LABEL(s)}</option>)}
         </select>
         <input type="date" value={dateFilter} onChange={e => setDateFilter(e.target.value)} className="bg-asphalt border border-vapor/10 text-vapor text-xs font-mono-tech px-3 py-2 rounded-sm" />
         {(statusFilter || dateFilter) && <button onClick={() => { setStatusFilter(''); setDateFilter(''); }} className="text-xs font-mono-tech text-vapor/50 hover:text-gold">CLEAR</button>}
@@ -127,7 +138,7 @@ export default function AppointmentsTab() {
             <button onClick={() => setSelected([])} disabled={bulkBusy} className="text-xs font-mono-tech text-vapor/50 hover:text-vapor px-2 py-1">CLEAR</button>
             {confirmBulk ? (
               <>
-                <span className="text-xs font-mono-tech text-red-400">Delete {selected.length} appointment{selected.length > 1 ? 's' : ''}?</span>
+                <span className="text-xs font-mono-tech text-red-400">Delete {selected.length} job{selected.length > 1 ? 's' : ''}?</span>
                 <button onClick={() => setConfirmBulk(false)} disabled={bulkBusy} className="text-xs font-mono-tech text-vapor/50 hover:text-vapor px-2 py-1">CANCEL</button>
                 <button onClick={bulkDelete} disabled={bulkBusy} className="text-xs font-mono-tech text-red-400 border border-red-400/40 bg-red-400/10 hover:bg-red-400/20 px-3 py-1.5 rounded-sm">CONFIRM DELETE</button>
               </>
@@ -157,20 +168,20 @@ export default function AppointmentsTab() {
               {sorted.map(a => (
                 <tr key={a.id} className={`border-t border-vapor/10 ${selected.includes(a.id) ? 'bg-gold/5' : ''}`}>
                   <td className="p-4"><Checkbox checked={selected.includes(a.id)} onChange={() => toggle(a.id)} disabled={busy[a.id]} /></td>
-                  <td className="p-4 text-vapor/70 font-mono-tech text-xs">{a.preferred_date}<br />{a.preferred_time}</td>
+                  <td className="p-4 text-vapor/70 font-mono-tech text-xs">{a.appointment_date}<br />{a.appointment_time}</td>
                   <td className="p-4 text-vapor">
                     <div className="text-sm">{a.customer_name}</div>
                     <div className="text-xs text-vapor/50 font-mono-tech">{a.customer_phone}</div>
                   </td>
                   <td className="p-4 text-vapor/70">
-                    <div className="text-sm">{a.service_label || a.service_type}</div>
+                    <div className="text-sm">{a.service_label || a.service_package}</div>
                     <div className="text-xs text-vapor/40 font-mono-tech">{a.vehicle_info || ''}</div>
                   </td>
                   <td className="p-4">
-                    <DistanceGauge address={a.service_address} />
-                    {a.service_address && (
-                      <div className="text-xs text-vapor/30 font-mono-tech mt-1 max-w-[160px] truncate" title={a.service_address}>
-                        {a.service_address}
+                    <DistanceGauge address={a.address} />
+                    {a.address && (
+                      <div className="text-xs text-vapor/30 font-mono-tech mt-1 max-w-[160px] truncate" title={a.address}>
+                        {a.address}
                       </div>
                     )}
                   </td>
@@ -179,21 +190,21 @@ export default function AppointmentsTab() {
                       value={a.status}
                       disabled={busy[a.id]}
                       onChange={e => changeStatus(a.id, e.target.value)}
-                      className={`text-xs font-mono-tech px-2 py-1 rounded-sm border bg-transparent cursor-pointer ${STATUS_BADGE[a.status] || STATUS_BADGE.pending}`}
+                      className={`text-xs font-mono-tech px-2 py-1 rounded-sm border bg-transparent cursor-pointer ${STATUS_BADGE[a.status] || 'text-vapor/50 border-vapor/10'}`}
                     >
-                      {STATUSES.map(s => <option key={s} value={s} className="bg-asphalt text-vapor">{s}</option>)}
+                      {STATUSES.map(s => <option key={s} value={s} className="bg-asphalt text-vapor">{STATUS_LABEL(s)}</option>)}
                     </select>
-                    {a.job_status && a.job_status !== a.status && <div className="text-xs text-vapor/40 font-mono-tech mt-1">{a.job_status.replace(/_/g, ' ')}</div>}
+                    {a.job_status && <div className="text-xs text-vapor/40 font-mono-tech mt-1">{a.job_status.replace(/_/g, ' ')}</div>}
                   </td>
                   <td className="p-4">
                     <select
-                      value={a.contractor_id || ''}
+                      value={a.specialist_id || ''}
                       disabled={busy[a.id]}
                       onChange={e => reassign(a.id, e.target.value)}
                       className="bg-asphalt border border-vapor/10 text-vapor text-xs font-mono-tech px-2 py-2 rounded-sm min-w-[160px]"
                     >
                       <option value="">— Unassigned —</option>
-                      {contractors.map(c => <option key={c.id} value={c.id}>{c.name}{a.contractor_id === c.id ? ' ✓' : ''}</option>)}
+                      {contractors.map(c => <option key={c.id} value={c.id}>{c.name}{a.specialist_id === c.id ? ' ✓' : ''}</option>)}
                     </select>
                   </td>
                   <td className="p-4">
@@ -210,7 +221,7 @@ export default function AppointmentsTab() {
               ))}
             </tbody>
           </table>
-          {sorted.length === 0 && <p className="p-8 text-center text-vapor/40 font-mono-tech text-sm">No appointments match these filters.</p>}
+          {sorted.length === 0 && <p className="p-8 text-center text-vapor/40 font-mono-tech text-sm">No jobs match these filters.</p>}
         </div>
       )}
       {adding && <AppointmentFormModal onClose={() => setAdding(false)} onSaved={createAppt} busy={addingBusy} />}
