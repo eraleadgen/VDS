@@ -106,6 +106,8 @@ function buildReminderEmail(firstName, appt) {
   </td></tr>
   <tr><td style="background-color:#0A0B0D;padding:22px 28px;border-top:2px solid #D4AF37;">
     <p style="margin:0 0 6px 0;font-size:15px;color:#E2E8F0;font-weight:600;">&mdash; The VDS Mobile Team</p>
+    <p style="margin:0 0 4px 0;font-family:${MONO};font-size:13px;line-height:22px;color:#94A3B8;"><a href="mailto:support@vdsmobile.com" style="color:#D4AF37;text-decoration:none;">support@vdsmobile.com</a></p>
+    <p style="margin:0 0 12px 0;font-family:${MONO};font-size:13px;line-height:22px;color:#94A3B8;"><a href="https://vdsmobile.com" style="color:#D4AF37;text-decoration:none;">https://vdsmobile.com</a></p>
     <p style="margin:0;font-family:${MONO};font-size:11px;color:#64748B;letter-spacing:0.5px;">&copy; ${new Date().getUTCFullYear()} VALET DETAILING SERVICE LLC. ALL RIGHTS RESERVED.</p>
   </td></tr>
 </table>
@@ -160,7 +162,7 @@ Deno.serve(async (req) => {
         if (appt.customer_phone) {
           const firstName = (appt.customer_name || '').split(' ')[0] || 'there';
           const service = appt.service_label || 'Detailing';
-          const msg = `Hi ${firstName}, your VDS specialist is arriving soon for your ${service} appointment at ${appt.preferred_time}. Please ensure vehicle access.${appt.service_address ? ' Address: ' + appt.service_address : ''} Questions? ${BUSINESS_PHONE}. — VDS Mobile`;
+          const msg = `Hi ${firstName}, your VDS Mobile detailing appointment starts in about 1 hour at ${appt.preferred_time}.${appt.service_address ? ' Service address: ' + appt.service_address : ''} Please ensure your vehicle is accessible. Questions? Call/text ${BUSINESS_PHONE}. — VDS Mobile`;
           const sent = await sendTwilioSms(base44, appt.customer_phone, msg, appt.customer_name);
           if (sent) {
             await base44.asServiceRole.entities.Appointment.update(appt.id, { reminder_1h_sms_sent: true });
