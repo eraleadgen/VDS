@@ -1,0 +1,74 @@
+{
+  "name": "CustomerJourney",
+  "type": "object",
+  "description": "Immutable, auto-generated chronological record of every meaningful customer interaction. Generated from platform events \u2014 never written manually. Provides administrators a complete relationship history. Tells the story of the customer's experience with the business rather than functioning as a simple activity log.",
+  "properties": {
+    "customer_id": {
+      "type": "string",
+      "description": "Customer entity ID this journey entry belongs to"
+    },
+    "entry_type": {
+      "type": "string",
+      "description": "Type of journey entry. Examples: account_created, vehicle_added, quote_requested, quote_approved, appointment_scheduled, appointment_rescheduled, appointment_cancelled, specialist_assigned, service_started, service_completed, invoice_paid, thank_you_sent, review_requested, review_submitted, membership_started, membership_renewed, membership_cancelled, anniversary, milestone_reached, internal_note, ai_summary_generated."
+    },
+    "title": {
+      "type": "string",
+      "description": "Short title for this journey entry"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of the interaction"
+    },
+    "related_entity_type": {
+      "type": "string",
+      "description": "Type of related entity (job, quote, membership, vehicle, etc.)"
+    },
+    "related_entity_id": {
+      "type": "string",
+      "description": "ID of the related entity"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional structured context"
+    },
+    "is_milestone": {
+      "type": "boolean",
+      "default": false,
+      "description": "True if this entry represents a recognized customer milestone (anniversary, service count, spending threshold, etc.)"
+    }
+  },
+  "required": [
+    "customer_id",
+    "entry_type",
+    "title"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "data.customer_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,7 +1,7 @@
 {
   "name": "BusinessConfig",
   "type": "object",
-  "description": "Single source of truth for all business configuration \u2014 services, pricing, memberships, hours, scheduling rules, technicians, branding, and links. Designed multi-tenant (business_id) for the ERA Systems future.",
+  "description": "Single source of truth for all business configuration \u2014 vehicle classifications, pricing groups, services, pricing rules, memberships, hours, scheduling rules, feature flags, and branding. Designed multi-tenant (business_id) for the ERA Systems future. Business behavior is configurable here, not hardcoded. VDS Mobile is a configuration layer over ERA Core.",
   "properties": {
     "business_id": {
       "type": "string",
@@ -123,8 +123,87 @@
         }
       }
     },
+    "vehicle_classifications": {
+      "type": "array",
+      "description": "Operational vehicle classifications. Independent from pricing groups. Drives scheduling and specialist matching. VDS Mobile v1.0 uses 4 classifications.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "enum": [
+              "coupe",
+              "sedan",
+              "mid_size_suv",
+              "truck_3_row_suv"
+            ]
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "pricing_groups": {
+      "type": "array",
+      "description": "Pricing groups. Independently configurable from vehicle classifications. Drives all service pricing and Stripe membership pricing. VDS Mobile v1.0 uses 2 pricing groups.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string",
+            "enum": [
+              "sedan_coupe",
+              "truck_suv"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "stripe_price_id": {
+            "type": "string",
+            "description": "Stripe Price ID for VDS Gold membership at this pricing group"
+          }
+        }
+      }
+    },
+    "classification_to_pricing_group": {
+      "type": "object",
+      "description": "Mapping from vehicle classification to pricing group. Configurable through the Administration Module \u2014 not hardcoded.",
+      "properties": {
+        "coupe": {
+          "type": "string",
+          "enum": [
+            "sedan_coupe",
+            "truck_suv"
+          ]
+        },
+        "sedan": {
+          "type": "string",
+          "enum": [
+            "sedan_coupe",
+            "truck_suv"
+          ]
+        },
+        "mid_size_suv": {
+          "type": "string",
+          "enum": [
+            "sedan_coupe",
+            "truck_suv"
+          ]
+        },
+        "truck_3_row_suv": {
+          "type": "string",
+          "enum": [
+            "sedan_coupe",
+            "truck_suv"
+          ]
+        }
+      }
+    },
     "vehicle_types": {
       "type": "array",
+      "description": "Legacy vehicle type list. Retained for backward compatibility during migration. New code should use vehicle_classifications + pricing_groups.",
       "items": {
         "type": "object",
         "properties": {
@@ -137,9 +216,32 @@
         }
       }
     },
+    "feature_flags": {
+      "type": "object",
+      "description": "Platform feature flags \u2014 toggle integrations and capabilities without code changes.",
+      "properties": {
+        "twilio_sms_enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Master switch for Twilio SMS delivery. Must be false until A2P registration is approved. When false, all SMS are suppressed and routed to email fallback (or logged as suppressed)."
+        },
+        "gold_checkout_enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "instant_quote_enabled": {
+          "type": "boolean",
+          "default": true
+        },
+        "review_requests_enabled": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
     "services": {
       "type": "array",
-      "description": "Master service catalog. All pricing originates here \u2014 never hardcode prices in Retell or frontend.",
+      "description": "Master service catalog. Service definitions contain NO pricing logic \u2014 pricing is resolved by the Pricing Engine using service key + pricing group. All pricing originates here and never in code.",
       "items": {
         "type": "object",
         "properties": {
@@ -159,7 +261,8 @@
               "coating",
               "correction",
               "addon",
-              "membership"
+              "membership",
+              "consultation"
             ]
           },
           "requires_consultation": {
@@ -168,12 +271,13 @@
           },
           "tiers": {
             "type": "array",
+            "description": "Pricing per pricing group. The Pricing Engine reads this; services never calculate their own price.",
             "items": {
               "type": "object",
               "properties": {
                 "tier": {
                   "type": "string",
-                  "description": "Vehicle type key"
+                  "description": "Pricing group key"
                 },
                 "price": {
                   "type": "number",
@@ -190,6 +294,7 @@
     },
     "membership_plans": {
       "type": "array",
+      "description": "Recurring membership plans. VDS Gold is the initial implementation. Each plan references ONE Stripe product with per-pricing-group pricing. Vehicle classifications map to pricing groups via classification_to_pricing_group \u2014 never hardcoded.",
       "items": {
         "type": "object",
         "properties": {
@@ -199,14 +304,31 @@
           "label": {
             "type": "string"
           },
-          "tier": {
-            "type": "string"
-          },
-          "price_monthly": {
-            "type": "number"
-          },
           "stripe_product_id": {
-            "type": "string"
+            "type": "string",
+            "description": "Single Stripe product ID for this membership plan"
+          },
+          "pricing_by_group": {
+            "type": "array",
+            "description": "Monthly price per pricing group, each with its own Stripe Price ID.",
+            "items": {
+              "type": "object",
+              "properties": {
+                "pricing_group": {
+                  "type": "string",
+                  "enum": [
+                    "sedan_coupe",
+                    "truck_suv"
+                  ]
+                },
+                "price_monthly": {
+                  "type": "number"
+                },
+                "stripe_price_id": {
+                  "type": "string"
+                }
+              }
+            }
           },
           "benefits": {
             "type": "array",

@@ -1,0 +1,122 @@
+{
+  "name": "Invoice",
+  "type": "object",
+  "description": "Represents payment for completed services. In Version 1.0, one-time detailing services are paid outside Stripe (cash, card, check, etc.) \u2014 invoices track payment status and receipts. Stripe is used exclusively for recurring VDS Gold subscriptions.",
+  "properties": {
+    "invoice_number": {
+      "type": "string",
+      "description": "Human-readable invoice number (e.g. VDS-2026-0001)"
+    },
+    "job_id": {
+      "type": "string",
+      "description": "Job entity ID this invoice belongs to"
+    },
+    "customer_id": {
+      "type": "string",
+      "description": "Customer entity ID"
+    },
+    "customer_name": {
+      "type": "string",
+      "description": "Denormalized for display"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Total invoice amount (before tax/discounts applied)"
+    },
+    "tax": {
+      "type": "number",
+      "default": 0
+    },
+    "discounts": {
+      "type": "number",
+      "default": 0,
+      "description": "Total discount amount applied"
+    },
+    "discount_reason": {
+      "type": "string"
+    },
+    "final_amount": {
+      "type": "number",
+      "description": "amount + tax - discounts"
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "paid",
+        "partial",
+        "refunded",
+        "failed",
+        "waived"
+      ],
+      "default": "pending"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "cash",
+        "card",
+        "check",
+        "other",
+        "stripe"
+      ],
+      "description": "How payment was collected. 'stripe' reserved for future non-subscription payments."
+    },
+    "stripe_payment_reference": {
+      "type": "string",
+      "description": "Stripe payment intent/charge ID (if paid via Stripe). Empty for non-Stripe payments in v1.0."
+    },
+    "receipt_url": {
+      "type": "string"
+    },
+    "issued_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "paid_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "job_id",
+    "customer_id",
+    "amount",
+    "payment_status"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.customer_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

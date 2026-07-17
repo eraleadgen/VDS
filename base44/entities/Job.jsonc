@@ -1,0 +1,264 @@
+{
+  "name": "Job",
+  "type": "object",
+  "description": "Central operational entity of ERA Core. Every service performed by the business creates a Job. Jobs connect Customers, Vehicles, Specialists, Scheduling, Invoices, Photos, Customer Journey, and future AI summaries. Quotes convert into Jobs after approval. The Job is the operational hub \u2014 all business activity relates to a Job.",
+  "properties": {
+    "customer_id": {
+      "type": "string",
+      "description": "Customer entity ID (system of record for customer data)"
+    },
+    "customer_name": {
+      "type": "string",
+      "description": "Denormalized customer full name for display"
+    },
+    "customer_phone": {
+      "type": "string",
+      "description": "Denormalized for notification routing"
+    },
+    "customer_email": {
+      "type": "string",
+      "description": "Denormalized for notification routing"
+    },
+    "vehicle_id": {
+      "type": "string",
+      "description": "MemberVehicle entity ID"
+    },
+    "vehicle_info": {
+      "type": "string",
+      "description": "Denormalized: year make model (+ color)"
+    },
+    "vehicle_classification": {
+      "type": "string",
+      "enum": [
+        "coupe",
+        "sedan",
+        "mid_size_suv",
+        "truck_3_row_suv"
+      ],
+      "description": "Operational vehicle classification (independent of pricing group)"
+    },
+    "pricing_group": {
+      "type": "string",
+      "enum": [
+        "sedan_coupe",
+        "truck_suv"
+      ],
+      "description": "Pricing group resolved from vehicle classification via BusinessConfig mapping. Drives pricing lookups."
+    },
+    "service_package": {
+      "type": "string",
+      "description": "Service key from BusinessConfig catalog"
+    },
+    "service_label": {
+      "type": "string",
+      "description": "Human-readable service name"
+    },
+    "add_ons": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Add-on service keys"
+    },
+    "specialist_id": {
+      "type": "string",
+      "description": "Assigned Contractor (Specialist) entity ID"
+    },
+    "specialist_name": {
+      "type": "string",
+      "description": "Denormalized specialist name"
+    },
+    "appointment_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Scheduled service date"
+    },
+    "appointment_time": {
+      "type": "string",
+      "description": "Scheduled time slot (zoned HH:MM or 12h format)"
+    },
+    "address": {
+      "type": "string",
+      "description": "Service address for this job"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "quote_requested",
+        "quote_generated",
+        "awaiting_approval",
+        "appointment_scheduled",
+        "specialist_assigned",
+        "appointment_confirmed",
+        "technician_en_route",
+        "in_progress",
+        "awaiting_payment",
+        "completed",
+        "review_requested",
+        "membership_recommended",
+        "cancelled"
+      ],
+      "default": "quote_requested",
+      "description": "Standardized Job lifecycle status. Every status change generates a system event."
+    },
+    "job_status": {
+      "type": "string",
+      "enum": [
+        "assigned",
+        "accepted",
+        "driving",
+        "arrived",
+        "in_progress",
+        "quality_check",
+        "completed",
+        "photos_uploaded",
+        "invoice_complete"
+      ],
+      "default": "assigned",
+      "description": "Specialist field workflow status (drives the specialist portal job board)"
+    },
+    "estimated_duration_minutes": {
+      "type": "number"
+    },
+    "final_duration_minutes": {
+      "type": "number"
+    },
+    "estimated_price": {
+      "type": "number",
+      "description": "Calculated by the Pricing Engine at quote time"
+    },
+    "final_price": {
+      "type": "number",
+      "description": "Final price after completion (may include add-ons, discounts)"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "before_photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Before photos (URLs)"
+    },
+    "after_photos": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "After photos (URLs)"
+    },
+    "services_completed": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "products_used": {
+      "type": "string"
+    },
+    "completion_notes": {
+      "type": "string"
+    },
+    "upsell_recommendation": {
+      "type": "string"
+    },
+    "recommended_next_detail_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "damage_notes": {
+      "type": "string"
+    },
+    "customer_feedback": {
+      "type": "string"
+    },
+    "quote_id": {
+      "type": "string",
+      "description": "Originating Quote entity ID (if this job originated from a quote)"
+    },
+    "invoice_id": {
+      "type": "string",
+      "description": "Invoice entity ID (created when job reaches awaiting_payment)"
+    },
+    "google_calendar_event_id": {
+      "type": "string",
+      "description": "Google Calendar event ID (event mirror)"
+    },
+    "sms_consent": {
+      "type": "boolean",
+      "default": true,
+      "description": "Snapshot of customer SMS consent at job creation. Used by the Communication Rules Engine."
+    },
+    "reminder_24h_email_sent": {
+      "type": "boolean",
+      "default": false
+    },
+    "reminder_1h_sent": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the 1-hour reminder (SMS or email fallback) has been sent."
+    },
+    "review_requested": {
+      "type": "boolean",
+      "default": false
+    },
+    "review_submitted": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "customer_id",
+    "service_package"
+  ],
+  "rls": {
+    "create": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        }
+      ]
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.customer_email": "{{user.email}}"
+        },
+        {
+          "data.customer_phone": "{{user.data.phone}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

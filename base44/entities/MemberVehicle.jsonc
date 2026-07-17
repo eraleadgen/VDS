@@ -1,7 +1,16 @@
 {
   "name": "MemberVehicle",
   "type": "object",
+  "description": "Vehicle Module. Operational record for a customer's vehicle. Vehicle classification is independent from pricing group \u2014 classification is operational data (4 types), pricing group is resolved via BusinessConfig mapping and drives pricing. A vehicle belongs to exactly one Customer and may have one active VDS Gold membership.",
   "properties": {
+    "customer_id": {
+      "type": "string",
+      "description": "Customer entity ID that owns this vehicle"
+    },
+    "nickname": {
+      "type": "string",
+      "description": "Customer-assigned vehicle nickname (e.g. 'The Beast')"
+    },
     "year": {
       "type": "string",
       "description": "Vehicle year"
@@ -26,21 +35,74 @@
       "type": "string",
       "description": "Interior color"
     },
+    "vehicle_classification": {
+      "type": "string",
+      "enum": [
+        "coupe",
+        "sedan",
+        "mid_size_suv",
+        "truck_3_row_suv"
+      ],
+      "description": "Operational vehicle classification. Independent from pricing group. Drives scheduling and specialist matching."
+    },
     "vehicle_type": {
       "type": "string",
       "enum": [
         "sedan_coupe",
         "truck_suv"
       ],
-      "description": "Auto-classified vehicle class"
+      "description": "Legacy pricing group field. Retained for backward compatibility during migration. New code should use pricing_group derived from vehicle_classification via BusinessConfig mapping."
+    },
+    "pricing_group": {
+      "type": "string",
+      "enum": [
+        "sedan_coupe",
+        "truck_suv"
+      ],
+      "description": "Pricing group resolved from vehicle_classification via BusinessConfig classification_to_pricing_group mapping. Drives pricing lookups."
     },
     "license_plate": {
-      "type": "string",
-      "description": "License plate number"
+      "type": "string"
     },
     "vin": {
       "type": "string",
       "description": "VIN (optional)"
+    },
+    "mileage": {
+      "type": "number",
+      "description": "Current mileage (optional)"
+    },
+    "paint_protection_type": {
+      "type": "string",
+      "enum": [
+        "none",
+        "ceramic_coating",
+        "ppf",
+        "vinyl_wrap",
+        "unknown"
+      ],
+      "default": "none",
+      "description": "Existing paint protection on the vehicle"
+    },
+    "paint_protection_install_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "paint_type": {
+      "type": "string",
+      "description": "Paint type if known (e.g. metallic, pearl, matte)"
+    },
+    "garage_kept": {
+      "type": "boolean",
+      "default": false
+    },
+    "primary_daily_driver": {
+      "type": "boolean",
+      "default": false
+    },
+    "current_condition": {
+      "type": "string",
+      "description": "Free-text current condition notes"
     },
     "notes": {
       "type": "string",
