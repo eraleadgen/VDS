@@ -371,7 +371,7 @@ export default function BookAppointment() {
     return (
       <div className="min-h-screen bg-obsidian flex flex-col">
         <Navbar />
-        <main className="flex-1 flex items-center justify-center px-6 py-32">
+        <main className="flex-1 flex items-center justify-center px-5 sm:px-6 py-24 md:py-32">
           <div className="max-w-md w-full text-center">
             <div className="w-8 h-px bg-gold mx-auto mb-6" />
             <p className="text-xs font-mono-tech tracking-[0.4em] text-gold mb-4">SCHEDULE SERVICE</p>
@@ -417,7 +417,7 @@ export default function BookAppointment() {
     return (
       <div className="min-h-screen bg-obsidian flex flex-col">
         <Navbar />
-        <main className="flex-1 flex items-center justify-center px-6 py-32">
+        <main className="flex-1 flex items-center justify-center px-5 sm:px-6 py-24 md:py-32">
           <div className="text-center max-w-md">
             <CheckCircle size={48} className="text-gold mx-auto mb-6" />
             <h2 className="text-3xl font-grotesk font-bold text-vapor mb-3">Appointment Requested!</h2>
@@ -452,14 +452,14 @@ export default function BookAppointment() {
     <div className="min-h-screen bg-obsidian flex flex-col">
       <Navbar />
 
-      <main className="flex-1 max-w-3xl mx-auto w-full px-6 pt-32 pb-20">
+      <main className="flex-1 max-w-3xl mx-auto w-full px-5 sm:px-6 pt-24 md:pt-32 pb-16 md:pb-20">
         {/* Header */}
-        <div className="mb-10">
+        <div className="mb-8 md:mb-10">
           <div className="flex items-center gap-3 mb-4 justify-center md:justify-start">
             <div className="w-8 h-px bg-gold" />
             <p className="text-xs font-mono-tech tracking-[0.4em] text-gold">SCHEDULE SERVICE</p>
           </div>
-          <h1 className="text-4xl md:text-5xl font-grotesk font-bold text-vapor text-center md:text-left">
+          <h1 className="text-3xl md:text-5xl font-grotesk font-bold text-vapor text-center md:text-left">
             BOOK AN <GoldShimmer>APPOINTMENT</GoldShimmer>
           </h1>
           <p className="text-vapor/40 font-mono-tech text-sm mt-3 text-center md:text-left">
@@ -469,7 +469,7 @@ export default function BookAppointment() {
 
 
 
-        <form onSubmit={handleSubmit} className="space-y-8">
+        <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
 
           {/* QUOTE SUMMARY (from pricing page) */}
           {quote && (
@@ -719,7 +719,7 @@ export default function BookAppointment() {
                     const isSelected = selectedDay && isSameDay(day, selectedDay);
                     return (
                       <button key={day.toString()} type="button" disabled={isPast} onClick={() => handleDayClick(day)}
-                        className={`mx-auto w-8 h-8 flex items-center justify-center rounded-sm font-mono-tech text-xs transition-colors ${
+                        className={`mx-auto w-9 h-9 flex items-center justify-center rounded-sm font-mono-tech text-xs transition-colors ${
                           isSelected ? 'bg-gold text-obsidian font-bold'
                           : isPast ? 'text-vapor/15 cursor-not-allowed'
                           : 'text-vapor/60 hover:text-vapor hover:bg-vapor/5'

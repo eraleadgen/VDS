@@ -180,10 +180,10 @@ export default function MemberDashboard() {
     <div className="bg-obsidian min-h-screen flex flex-col">
       <Navbar />
 
-      <main className="flex-1 max-w-5xl mx-auto w-full px-6 pt-32 pb-20">
+      <main className="flex-1 max-w-5xl mx-auto w-full px-5 sm:px-6 pt-24 md:pt-32 pb-16 md:pb-20">
         {/* Refund Success Banner */}
         {showRefundSuccess && (
-          <div className="mb-8 border border-emerald-500/30 bg-emerald-950/30 rounded-sm p-5 flex items-center gap-4">
+          <div className="mb-6 border border-emerald-500/30 bg-emerald-950/30 rounded-sm p-5 flex items-center gap-4">
             <RotateCcw size={24} className="text-emerald-400 shrink-0" />
             <div>
               <p className="text-emerald-400 font-grotesk font-semibold">Refund Issued</p>
@@ -197,7 +197,7 @@ export default function MemberDashboard() {
 
         {/* Gold Success Banner */}
         {showGoldSuccess && (
-          <div className="mb-8 border border-gold/30 bg-gold/10 rounded-sm p-5 flex items-center gap-4">
+          <div className="mb-6 border border-gold/30 bg-gold/10 rounded-sm p-5 flex items-center gap-4">
             <CheckCircle size={24} className="text-gold shrink-0" />
             <div>
               <p className="text-gold font-grotesk font-semibold">Welcome to VDS Gold!</p>
@@ -210,10 +210,10 @@ export default function MemberDashboard() {
         )}
 
         {/* Header */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-12">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8 md:mb-12">
           <div>
             <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-2">{subscriptions.length > 0 ? 'VDS GOLD MEMBER PORTAL' : 'MEMBER PORTAL'}</p>
-            <h1 className="text-4xl font-grotesk font-bold text-vapor">
+            <h1 className="text-3xl md:text-4xl font-grotesk font-bold text-vapor">
               WELCOME, <GoldShimmer>{(user?.first_name || (user?.full_name?.includes('@') ? '' : user?.full_name?.split(' ')[0]) || 'MEMBER').toUpperCase()}</GoldShimmer>
             </h1>
             <p className="text-vapor/40 text-xs font-mono-tech mt-2 tracking-widest">{user?.email}</p>
@@ -229,7 +229,7 @@ export default function MemberDashboard() {
 
 
         {/* Upcoming Appointments */}
-        <div className="mb-8">
+        <div className="mb-6 md:mb-8">
           <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40 mb-4">UPCOMING APPOINTMENTS</p>
           {appointments.filter(a => {
             if (a.status === 'cancelled' || a.status === 'completed') return false;
@@ -347,7 +347,7 @@ export default function MemberDashboard() {
 
         {/* Completed Appointments */}
         {appointments.filter(a => a.status === 'completed').length > 0 && (
-          <div className="mb-12">
+          <div className="mb-8 md:mb-12">
             <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40 mb-4">COMPLETED APPOINTMENTS</p>
             <div className="space-y-3">
               {appointments
@@ -360,7 +360,7 @@ export default function MemberDashboard() {
         )}
 
         {/* Account Details */}
-        <div className="mb-12">
+        <div className="mb-8 md:mb-12">
           <div className="flex items-center justify-between mb-4">
             <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40">ACCOUNT DETAILS</p>
             {!showEditAccount && (
