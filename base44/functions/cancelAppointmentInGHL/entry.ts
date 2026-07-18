@@ -28,12 +28,20 @@ Deno.serve(async (req) => {
     const appointment = await base44.asServiceRole.entities.Appointment.get(appointment_id);
     if (!appointment) return Response.json({ success: false, error: 'Appointment not found' }, { status: 404 });
 
-    // Ownership check — verify ONLY against the immutable, verified identity (user.id vs created_by_id).
-    // Email is a mutable/enumerable contact field and must not serve as an authorization key.
-    // Guest appointments (created_by_id null/undefined, e.g. public guest bookings) have no
-    // verifiable owner identity, so the ownership check must be strictly false for them —
-    // only admins may cancel guest appointments. This prevents a null === null privilege escalation.
-    const owns = !!(user.id && appointment.created_by_id && appointment.created_by_id === user.id);
+    // Ownership check — authorize via the verified user id → the member's Customer record →
+    // the appointment's stored customer phone. Never trust the caller's email as a sole
+    // authorization boundary (CWE-639): emails are enumerable, and a user could register with
+    // a victim's email to hijack guest bookings. Guest appointments (no verifiable owner) and
+    // appointments whose stored phone does not match the caller's verified Customer may only be
+    // cancelled by an admin.
+    let owns = !!(user.id && appointment.created_by_id && appointment.created_by_id === user.id);
+    if (!owns && user.id) {
+      const myCustomers = await base44.asServiceRole.entities.Customer.filter({ linked_user_id: user.id }).catch(() => []);
+      const c = myCustomers && myCustomers[0];
+      if (c && c.phone && appointment.customer_phone) {
+        owns = appointment.customer_phone.replace(/\D/g, '').slice(-10) === c.phone.replace(/\D/g, '').slice(-10);
+      }
+    }
     if (!owns && user.role !== 'admin') {
       return Response.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }

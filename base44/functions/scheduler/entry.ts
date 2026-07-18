@@ -1255,10 +1255,18 @@ Deno.serve(async (req) => {
       if (action === 'reschedule' || action === 'cancel') {
         // Non-admin, non-service callers may only touch their own appointments.
         if (!isAdmin && !tokenCaller) {
-          // Verify via immutable, verified identity only (user id or verified auth email).
-          // Phone is a mutable/enumerable contact field and must not serve as an authorization key.
-          const owns = !!(appt.created_by_id && appt.created_by_id === me.id) ||
-            (appt.customer_email && me.email && appt.customer_email.toLowerCase() === me.email.toLowerCase());
+          // Authorize via the verified user id → the member's Customer record → the
+          // appointment's stored customer phone. Never trust the caller's email directly:
+          // emails are enumerable, and a user could register with a victim's email to
+          // hijack their appointments (CWE-639).
+          let owns = !!(appt.created_by_id && appt.created_by_id === me.id);
+          if (!owns) {
+            const myCustomers = await base44.asServiceRole.entities.Customer.filter({ linked_user_id: me.id }).catch(() => []);
+            const c = myCustomers && myCustomers[0];
+            if (c && c.phone && appt.customer_phone) {
+              owns = appt.customer_phone.replace(/\D/g, '').slice(-10) === c.phone.replace(/\D/g, '').slice(-10);
+            }
+          }
           if (!owns) return Response.json({ error: 'Unauthorized to modify this appointment.' }, { status: 403 });
         }
       }

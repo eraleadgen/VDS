@@ -32,6 +32,33 @@ Deno.serve(async (req) => {
       return Response.json({ skipped: true, reason: 'No active subscriptions' });
     }
 
+    // Validate that each subscription is a genuine VDS Gold membership by matching its
+    // product/price against BusinessConfig. This prevents provisioning Gold from a cheap
+    // or unrelated subscription on the caller's Stripe account (e.g. a free trial on a
+    // different product) — only real Gold subscriptions count toward enrollment.
+    const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
+    const cfg = configs && configs[0];
+    const allowedProductIds = new Set();
+    const allowedPriceIds = new Set();
+    for (const plan of ((cfg && cfg.membership_plans) || [])) {
+      if (plan.stripe_product_id) allowedProductIds.add(plan.stripe_product_id);
+      for (const pg of (plan.pricing_by_group || [])) {
+        if (pg.stripe_price_id) allowedPriceIds.add(pg.stripe_price_id);
+      }
+    }
+    const goldSubscriptions = subscriptions.data.filter(sub => {
+      const items = (sub.items && sub.items.data) || [];
+      return items.some(it => {
+        const priceId = it.price && it.price.id;
+        const productId = it.price && it.price.product;
+        return (priceId && allowedPriceIds.has(priceId)) || (productId && allowedProductIds.has(productId));
+      });
+    });
+    if (goldSubscriptions.length === 0) {
+      console.log('No active VDS Gold subscriptions for customer', customer.id);
+      return Response.json({ skipped: true, reason: 'No active VDS Gold subscriptions' });
+    }
+
     // Get all vehicles owned by this user
     const vehicles = await base44.entities.MemberVehicle.list();
     if (!vehicles || vehicles.length === 0) {
@@ -59,7 +86,7 @@ Deno.serve(async (req) => {
     // one vehicle and receive Gold on every vehicle in their garage. Instead, cap enrollment to
     // the total quantity actually covered by active Stripe subscriptions (minus already-enrolled).
     if (vehicleIdsToEnroll.length === 0) {
-      const paidQuantity = subscriptions.data.reduce((sum, sub) => {
+      const paidQuantity = goldSubscriptions.reduce((sum, sub) => {
         const qty = (sub.items && sub.items.data && sub.items.data.length)
           ? sub.items.data.reduce((s, it) => s + (it.quantity || 1), 0)
           : (sub.quantity || 1);
@@ -88,7 +115,7 @@ Deno.serve(async (req) => {
       return Response.json({ skipped: true, reason: 'All vehicles already enrolled' });
     }
 
-    const subscription = subscriptions.data[0];
+    const subscription = goldSubscriptions[0];
     let created = 0;
 
     for (const vehicleId of vehicleIdsToEnroll) {

@@ -14,12 +14,23 @@ export default function CompletionModal({ job, onClose, onSubmit, saving }) {
   const [upsell, setUpsell] = useState(job.upsell_recommendation || '');
   const [nextDate, setNextDate] = useState(job.recommended_next_detail_date || '');
 
+  const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/heic', 'image/heif'];
+
   const upload = async (files, setter) => {
     if (!files.length) return;
+    // Strict client-side MIME allowlist — only safe image types may be uploaded. The
+    // HTML accept attribute is a hint only; this prevents HTML/document payloads (stored
+    // XSS) or other dangerous file types from being uploaded and linked to jobs (CWE-434).
+    const valid = files.filter(f => ALLOWED_IMAGE_TYPES.includes(f.type));
+    const rejected = files.length - valid.length;
+    if (rejected > 0) {
+      alert(`${rejected} file(s) skipped — only JPEG, PNG, WebP, and GIF images are allowed.`);
+    }
+    if (!valid.length) return;
     setUploading(true);
     try {
       const urls = [];
-      for (const f of files) {
+      for (const f of valid) {
         const { file_url } = await base44.integrations.Core.UploadFile({ file: f });
         if (file_url) urls.push(file_url);
       }
