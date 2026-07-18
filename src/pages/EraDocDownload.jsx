@@ -1,28 +1,38 @@
 import { useState } from 'react';
-import { Download, FileText, Loader2 } from 'lucide-react';
+import { Download, FileText } from 'lucide-react';
+import { buildGuideHtml, GUIDE_FILENAME } from '@/lib/eraOnboardingGuide';
 
 export default function EraDocDownload() {
   const [status, setStatus] = useState('');
 
-  async function handleDownload() {
+  function triggerDownload(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+
+  function handleDownload() {
     setStatus('Preparing…');
     try {
-      const res = await fetch('/ERA-Core-Onboarding-Guide.html');
-      if (!res.ok) throw new Error('File not found');
-      const text = await res.text();
-      const blob = new Blob([text], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'ERA-Core-Onboarding-Guide.html';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      const html = buildGuideHtml();
+      triggerDownload(new Blob([html], { type: 'text/html' }), GUIDE_FILENAME);
       setStatus('Download started ✓');
     } catch (e) {
       setStatus('Error: ' + e.message);
     }
+  }
+
+  function handleView() {
+    const html = buildGuideHtml();
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
   }
 
   return (
@@ -34,29 +44,20 @@ export default function EraDocDownload() {
         </div>
         <h1 className="text-xl font-semibold text-vapor mb-2">ERA Core Onboarding Guide</h1>
         <p className="text-sm text-vapor/50 leading-relaxed mb-7">
-          System overview &amp; vertical onboarding document for prospective ERA Core partners.
+          Full system overview — ERA Core architecture and how VDS Mobile connects to it — ready for future vertical onboarding.
         </p>
         <button
           onClick={handleDownload}
           className="w-full inline-flex items-center justify-center gap-2 bg-gold text-obsidian font-bold tracking-wider text-sm py-3.5 rounded-md hover:bg-gold-light transition-colors"
         >
-          <Download size={16} /> Download .md
+          <Download size={16} /> Download Guide (.html)
         </button>
-        <a
-          href="/ERA-Core-Onboarding-Guide.html"
-          download="ERA-Core-Onboarding-Guide.html"
-          className="block mt-3 text-xs text-vapor/40 hover:text-gold transition-colors font-mono-tech"
+        <button
+          onClick={handleView}
+          className="w-full mt-3 text-xs text-vapor/50 hover:text-gold transition-colors font-mono-tech py-2"
         >
-          or download directly
-        </a>
-        <a
-          href="/ERA-Core-Onboarding-Guide.html"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block mt-2 text-xs text-vapor/40 hover:text-gold transition-colors font-mono-tech"
-        >
-          view the formatted guide
-        </a>
+          preview the formatted guide in a new tab
+        </button>
         {status && (
           <p className="mt-5 text-xs text-vapor/50 font-mono-tech min-h-[18px]">{status}</p>
         )}
