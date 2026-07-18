@@ -10,6 +10,22 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 
 const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 
+// ── Per-IP rate limiter (per-isolate) — protects public booking from spam / resource exhaustion ──
+const _rlHits = new Map();
+function rateLimit(key, max, windowMs) {
+  const now = Date.now();
+  const hits = (_rlHits.get(key) || []).filter(ts => now - ts < windowMs);
+  if (hits.length >= max) return false;
+  hits.push(now);
+  _rlHits.set(key, hits);
+  return true;
+}
+function clientIp(req) {
+  const fwd = req.headers.get('x-forwarded-for');
+  if (fwd) return fwd.split(',')[0].trim();
+  return req.headers.get('x-real-ip') || 'unknown';
+}
+
 // ── Timezone helpers (Deno runtime is UTC, so we convert wall times explicitly) ──
 function getTzOffsetMs(date, tz) {
   const tzDate = new Date(date.toLocaleString('en-US', { timeZone: tz }));
@@ -1130,7 +1146,13 @@ Deno.serve(async (req) => {
 
     // ── Public actions ──
     if (action === 'check_availability') return Response.json(await checkAvailability(base44, body, cfg));
-    if (action === 'book') return Response.json(await bookAppointment(base44, body, cfg));
+    if (action === 'book') {
+      const ip = clientIp(req);
+      if (!rateLimit('book:' + ip, 8, 15 * 60 * 1000)) {
+        return Response.json({ error: 'Too many booking attempts. Please try again later.' }, { status: 429 });
+      }
+      return Response.json(await bookAppointment(base44, body, cfg));
+    }
     if (action === 'list_contractors') {
       const all = await base44.asServiceRole.entities.Contractor.filter({ status: 'active' });
       return Response.json({ contractors: all.map(c => ({ id: c.id, name: c.name, skills: c.skills || [], status: c.status, is_enabled: c.is_enabled !== false })) });

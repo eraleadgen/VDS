@@ -3,6 +3,22 @@
 // Falls back to Nominatim (OpenStreetMap) geocoding + Haversine straight-line distance.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 
+// ── Per-IP rate limiter (per-isolate) — prevents Google Maps API cost abuse ──
+const _rlHits = new Map();
+function rateLimit(key, max, windowMs) {
+  const now = Date.now();
+  const hits = (_rlHits.get(key) || []).filter(ts => now - ts < windowMs);
+  if (hits.length >= max) return false;
+  hits.push(now);
+  _rlHits.set(key, hits);
+  return true;
+}
+function clientIp(req) {
+  const fwd = req.headers.get('x-forwarded-for');
+  if (fwd) return fwd.split(',')[0].trim();
+  return req.headers.get('x-real-ip') || 'unknown';
+}
+
 const BASE_ADDR = 'Alpharetta, GA';
 const BASE_LAT = 34.0754;
 const BASE_LON = -84.2941;
@@ -41,6 +57,12 @@ async function geocode(address: string): Promise<{ lat: number; lon: number } | 
 
 Deno.serve(async (req) => {
   try {
+    // Per-IP rate limit — this public utility hits the Google Maps API on every call.
+    const ip = clientIp(req);
+    if (!rateLimit('distance:' + ip, 20, 10 * 60 * 1000)) {
+      return Response.json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
+    }
+
     const base44 = createClientFromRequest(req);
     const body = await req.json();
     const { address } = body;

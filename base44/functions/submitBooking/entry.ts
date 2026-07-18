@@ -1,5 +1,21 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 
+// ── Per-IP rate limiter (per-isolate) — protects public booking from spam / resource exhaustion ──
+const _rlHits = new Map();
+function rateLimit(key, max, windowMs) {
+  const now = Date.now();
+  const hits = (_rlHits.get(key) || []).filter(ts => now - ts < windowMs);
+  if (hits.length >= max) return false;
+  hits.push(now);
+  _rlHits.set(key, hits);
+  return true;
+}
+function clientIp(req) {
+  const fwd = req.headers.get('x-forwarded-for');
+  if (fwd) return fwd.split(',')[0].trim();
+  return req.headers.get('x-real-ip') || 'unknown';
+}
+
 // ERA Core booking submission.
 // Base44 (Customer + Job entities) is the single source of truth.
 // GoHighLevel has been eliminated — ERA Core is now the sole CRM and messaging system.
@@ -71,6 +87,12 @@ Deno.serve(async (req) => {
       || originHost.endsWith('.base44.com');
     if (!allowed) {
       return Response.json({ success: false, error: 'Forbidden — invalid origin.' }, { status: 403 });
+    }
+
+    // Per-IP rate limit — the origin allowlist is client-controlled; this is the real anti-spam control.
+    const ip = clientIp(req);
+    if (!rateLimit('submitBooking:' + ip, 8, 15 * 60 * 1000)) {
+      return Response.json({ success: false, error: 'Too many booking attempts. Please try again later.' }, { status: 429 });
     }
 
     const base44 = createClientFromRequest(req);
