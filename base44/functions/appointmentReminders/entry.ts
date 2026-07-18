@@ -120,13 +120,19 @@ Deno.serve(async (req) => {
     // further bounded by the per-job idempotency flags (one 24h email + one 1h SMS max).
     const expectedToken = Deno.env.get('SCHEDULER_TOKEN');
     let providedToken = null;
+    let parsedBody = null;
     try {
-      const body = await req.clone().json();
-      providedToken = body?.scheduler_token || null;
+      parsedBody = await req.clone().json();
+      providedToken = parsedBody?.scheduler_token || null;
     } catch { /* non-JSON body */ }
-    const tokenOk = !!(expectedToken && providedToken === expectedToken);
-    const hasExternalOrigin = !!(req.headers.get('Origin') || req.headers.get('Referer'));
-    if (!tokenOk && hasExternalOrigin) {
+    const tokenOk = !!(expectedToken && providedToken && providedToken === expectedToken);
+    // Identify the platform's internal scheduled-automation invocation via the documented
+    // function_args source tag (the automation runner passes function_args under body.args).
+    // External HTTP callers cannot originate a scheduled trigger and must instead present a
+    // valid SCHEDULER_TOKEN. Never rely on client-controlled Origin/Referer headers, which an
+    // attacker can simply omit to bypass the check (CWE-285).
+    const isScheduledAutomation = !!(parsedBody && parsedBody.args && parsedBody.args.source === 'scheduled_automation');
+    if (!tokenOk && !isScheduledAutomation) {
       return Response.json({ error: 'Unauthorized.' }, { status: 401 });
     }
 
