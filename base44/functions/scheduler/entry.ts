@@ -946,6 +946,30 @@ async function adminUpdateInvoice(base44, body) {
         metadata: { amount: invoice?.final_amount, payment_method },
         scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
       });
+
+      // ── Auto-archive the linked quote when the invoice is paid ──
+      // The quote's details are preserved in the SystemEventLog + CustomerJourney
+      // (service history), then the Quote record is deleted so it no longer
+      // clutters the admin Quotes tab. Status auto-updates: booked → finalized → archived.
+      if (invoice?.job_id) {
+        try {
+          const job = await base44.asServiceRole.entities.Job.get(invoice.job_id).catch(() => null);
+          if (job && job.quote_id) {
+            const quote = await base44.asServiceRole.entities.Quote.get(job.quote_id).catch(() => null);
+            if (quote) {
+              await base44.asServiceRole.entities.Quote.update(job.quote_id, { status: 'finalized', final_price: invoice.final_amount || invoice.amount || quote.final_price || 0 });
+              await base44.asServiceRole.functions.invoke('logEvent', {
+                event_type: 'quote_finalized', entity_type: 'quote', entity_id: job.quote_id,
+                customer_id: job.customer_id || invoice.customer_id,
+                description: `Quote finalized (invoice paid): ${job.service_label || (quote.requested_services || []).join(', ')} — $${invoice.final_amount || invoice.amount || 0}`,
+                metadata: { quote_id: job.quote_id, job_id: job.id, invoice_id: invoice.id, amount: invoice.final_amount || invoice.amount },
+                scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
+              });
+              await base44.asServiceRole.entities.Quote.delete(job.quote_id);
+            }
+          }
+        } catch (e) { console.error('Quote auto-archive on payment failed:', e.message); }
+      }
     } catch (e) { console.error('Invoice payment update error:', e.message); }
   }
   return { success: true };
@@ -1056,6 +1080,43 @@ async function adminBulkDeleteJobs(base44, body) {
   return { success: true, deleted };
 }
 
+// ── Admin: Archive a finalized quote (log to history, then delete the record) ──
+// Finalized quotes are removed from the Quotes tab but preserved in the
+// SystemEventLog + CustomerJourney as the "service history" record.
+async function adminArchiveQuote(base44, body) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const { quote_id, final_price } = body;
+  if (!quote_id) return { error: 'quote_id is required.' };
+  const quote = await base44.asServiceRole.entities.Quote.get(quote_id).catch(() => null);
+  if (!quote) return { error: 'Quote not found.' };
+  const updates = { status: 'finalized' };
+  if (final_price != null) updates.final_price = Number(final_price) || 0;
+  await base44.asServiceRole.entities.Quote.update(quote_id, updates);
+
+  // Resolve the customer for the journey entry
+  let customerId = quote.customer_id || null;
+  if (!customerId && quote.customer_phone) {
+    try {
+      const byPhone = await base44.asServiceRole.entities.Customer.filter({ phone: quote.customer_phone.replace(/\D/g, '') });
+      if (byPhone && byPhone[0]) customerId = byPhone[0].id;
+    } catch {}
+  }
+  const amount = updates.final_price != null ? updates.final_price : (quote.final_price ?? quote.starting_price ?? 0);
+  try {
+    await base44.asServiceRole.functions.invoke('logEvent', {
+      event_type: 'quote_finalized', entity_type: 'quote', entity_id: quote_id, customer_id: customerId,
+      description: `Quote finalized: ${quote.quote_summary || (quote.requested_services || []).join(', ')} — $${amount}`,
+      metadata: { quote_id, final_price: amount, vehicle_classification: quote.vehicle_classification, job_id: quote.job_id },
+      scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
+    });
+  } catch (e) { console.error('logEvent error:', e.message); }
+
+  // Delete the quote — details are now preserved in the history log
+  await base44.asServiceRole.entities.Quote.delete(quote_id);
+  return { success: true, archived: true };
+}
+
 // ── Main Handler ────────────────────────────────────────────────────────
 Deno.serve(async (req) => {
   try {
@@ -1108,6 +1169,7 @@ Deno.serve(async (req) => {
     if (action === 'admin_change_job_status') return Response.json(await adminChangeJobStatus(base44, body));
     if (action === 'admin_delete_job') return Response.json(await adminDeleteJob(base44, body));
     if (action === 'admin_bulk_delete_jobs') return Response.json(await adminBulkDeleteJobs(base44, body));
+    if (action === 'admin_archive_quote') return Response.json(await adminArchiveQuote(base44, body));
 
     // ── Job-scoped actions (Phase 7+8: specialist portal operates on the Job entity) ──
     if (['update_job_status', 'request_review'].includes(action)) {

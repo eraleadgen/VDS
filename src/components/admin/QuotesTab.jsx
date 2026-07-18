@@ -17,6 +17,8 @@ const CLASSIFICATION_LABEL = {
   coupe: 'Coupe', sedan: 'Sedan', mid_size_suv: 'Mid Size SUV', truck_3_row_suv: 'Truck / 3-Row SUV',
 };
 
+const invoke = (payload) => base44.functions.invoke('scheduler', payload).then(r => r.data ?? r);
+
 export default function QuotesTab() {
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,10 +44,16 @@ export default function QuotesTab() {
     if (!editing) return;
     setBusy(true);
     try {
-      await base44.entities.Quote.update(editing.id, {
-        final_price: Number(editing.final_price) || 0,
-        status: editing.status,
-      });
+      if (editing.status === 'finalized') {
+        // Finalized quotes are auto-archived (logged to service history, then deleted)
+        const r = await invoke({ action: 'admin_archive_quote', quote_id: editing.id, final_price: Number(editing.final_price) || 0 });
+        if (r.error) { alert(r.error); return; }
+      } else {
+        await base44.entities.Quote.update(editing.id, {
+          final_price: Number(editing.final_price) || 0,
+          status: editing.status,
+        });
+      }
       setEditing(null);
       await load();
     } catch (e) { alert(e.message); }
