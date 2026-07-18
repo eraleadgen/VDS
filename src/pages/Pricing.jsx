@@ -21,6 +21,12 @@ const CATEGORY_LABEL = {
   addon: 'Add-On Services',
 };
 
+const CONDITION_IMAGES = {
+  light: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/f172c1c53_generated_image.png',
+  moderate: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/e7a8c6431_generated_image.png',
+  heavy: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/fe0627e41_generated_image.png',
+};
+
 function lookupTier(svc, classification, pricingGroup) {
   return (svc.tiers || []).find(t => t.tier === classification)
     || (svc.tiers || []).find(t => t.tier === pricingGroup)
@@ -184,13 +190,25 @@ export default function Pricing() {
                   <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gold text-obsidian text-xs font-bold font-mono-tech">2</span>
                   <h2 className="text-sm font-mono-tech tracking-widest text-gold">VEHICLE CONDITION</h2>
                 </div>
+                <p className="text-xs font-mono-tech text-vapor/40 mb-3">Not sure? Match your vehicle to the reference photos below.</p>
                 <div className="grid grid-cols-3 gap-3">
                   {conditions.map(c => (
                     <button key={c.key} onClick={() => setCondition(c.key)}
-                      className={`relative p-4 rounded-sm border text-center transition-all ${condition === c.key ? 'border-gold bg-gold/10' : 'border-vapor/10 bg-asphalt/40 hover:border-vapor/20'}`}>
-                      {condition === c.key && <Check size={14} className="absolute top-2 right-2 text-gold" />}
-                      <span className={`block text-sm font-grotesk ${condition === c.key ? 'text-vapor' : 'text-vapor/70'}`}>{c.label}</span>
-                      <span className="text-xs font-mono-tech text-vapor/40 mt-1">{c.multiplier > 1 ? `+${Math.round((c.multiplier - 1) * 100)}%` : 'Base rate'}</span>
+                      className={`relative rounded-sm border overflow-hidden text-left transition-all vds-card-hover ${condition === c.key ? 'border-gold ring-1 ring-gold' : 'border-vapor/10 bg-asphalt/40 hover:border-vapor/30'}`}>
+                      {condition === c.key && (
+                        <span className="absolute top-2 right-2 z-10 w-6 h-6 rounded-full bg-gold flex items-center justify-center">
+                          <Check size={13} className="text-obsidian" />
+                        </span>
+                      )}
+                      {CONDITION_IMAGES[c.key] && (
+                        <div className="aspect-square w-full overflow-hidden bg-asphalt">
+                          <img src={CONDITION_IMAGES[c.key]} alt={`${c.label} condition reference`} className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                      <div className="p-3">
+                        <span className={`block text-sm font-grotesk ${condition === c.key ? 'text-vapor' : 'text-vapor/80'}`}>{c.label}</span>
+                        <span className="text-xs font-mono-tech text-vapor/40 mt-0.5 block">{c.multiplier > 1 ? `+${Math.round((c.multiplier - 1) * 100)}%` : 'Base rate'}</span>
+                      </div>
                     </button>
                   ))}
                 </div>

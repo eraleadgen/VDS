@@ -19,7 +19,7 @@ export default function GoldPromoCard({ className = '' }) {
             'radial-gradient(ellipse 55% 90% at 12% 50%, rgba(212,175,55,0.09) 0%, transparent 65%)',
         }}
       />
-      <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-6 p-8 md:p-12">
+      <div className="relative flex flex-col md:flex-row items-center md:items-center justify-between gap-6 p-8 md:p-12">
         <div className="max-w-xl text-center md:text-left">
           <p className="text-xs font-mono-tech tracking-[0.3em] text-gold mb-4">
             NEW — MONTHLY MEMBERSHIP

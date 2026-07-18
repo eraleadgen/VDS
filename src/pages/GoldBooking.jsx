@@ -13,7 +13,7 @@ const GOLD_SERVICES = [
   { id: 'vds_gold_full', label: 'Full Interior + Exterior Detail', sub: '1× Per Month · Ceramic sealant included', duration: '2–3 hrs' },
 ];
 
-const TIME_SLOTS = ['7:00 AM', '8:00 AM', '9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
+const TIME_SLOTS = ['9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
 
 // Gold pricing per vehicle type
 const GOLD_PRICING = {
@@ -293,7 +293,8 @@ export default function GoldBooking() {
                 <div className="grid grid-cols-7 gap-y-1">
                   {Array.from({ length: startPad }).map((_, i) => <div key={`pad-${i}`} />)}
                   {days.map(day => {
-                    const isPast = isBefore(day, today) && !isToday(day);
+                    const isWeekend = getDay(day) === 0 || getDay(day) === 6;
+                    const isPast = (isBefore(day, today) && !isToday(day)) || isWeekend;
                     const isSelected = selectedDay && isSameDay(day, selectedDay);
                     return (
                       <button
