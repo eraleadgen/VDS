@@ -3,7 +3,8 @@
 // Phase 8: now reads from the Job entity (operational source of truth) instead of
 // the deprecated Appointment mirror. Idempotent: tracks sent state via
 // reminder_24h_email_sent / reminder_1h_sent flags on the Job entity.
-// No user auth context (scheduled) — uses asServiceRole throughout.
+// No user auth context (scheduled) — authenticates via SCHEDULER_TOKEN (passed in the
+// automation's function_args) and uses asServiceRole throughout.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 
@@ -113,26 +114,20 @@ function buildReminderEmail(firstName, job) {
 Deno.serve(async (req) => {
   try {
     // Authorization: this scheduled function triggers outbound SMS/email to customers.
-    // The scheduled automation runs server-side with no user context and no browser origin,
-    // so it cannot present the SCHEDULER_TOKEN. Allow the platform's internal scheduled
-    // trigger (no Origin/Referer); any external/browser caller must present the shared
-    // SCHEDULER_TOKEN to prevent spamming customers and depleting credits. Abuse is
-    // further bounded by the per-job idempotency flags (one 24h email + one 1h SMS max).
+    // Every caller — including the platform's internal scheduled automation — MUST present
+    // the shared SCHEDULER_TOKEN. The scheduled automation passes it via its function_args
+    // (which arrive under body.args); external callers pass it in body.scheduler_token.
+    // Client-supplied body markers (e.g. args.source) are NOT trusted as auth evidence —
+    // an external attacker can send them too (CWE-290). Only the shared secret authenticates.
     const expectedToken = Deno.env.get('SCHEDULER_TOKEN');
     let providedToken = null;
     let parsedBody = null;
     try {
       parsedBody = await req.clone().json();
-      providedToken = parsedBody?.scheduler_token || null;
+      providedToken = parsedBody?.scheduler_token || parsedBody?.args?.scheduler_token || null;
     } catch { /* non-JSON body */ }
     const tokenOk = !!(expectedToken && providedToken && providedToken === expectedToken);
-    // Identify the platform's internal scheduled-automation invocation via the documented
-    // function_args source tag (the automation runner passes function_args under body.args).
-    // External HTTP callers cannot originate a scheduled trigger and must instead present a
-    // valid SCHEDULER_TOKEN. Never rely on client-controlled Origin/Referer headers, which an
-    // attacker can simply omit to bypass the check (CWE-285).
-    const isScheduledAutomation = !!(parsedBody && parsedBody.args && parsedBody.args.source === 'scheduled_automation');
-    if (!tokenOk && !isScheduledAutomation) {
+    if (!tokenOk) {
       return Response.json({ error: 'Unauthorized.' }, { status: 401 });
     }
 
