@@ -22,9 +22,9 @@ const CATEGORY_LABEL = {
 };
 
 const CONDITION_IMAGES = {
-  light: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/8a354a95d_generated_image.png',
-  moderate: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/dd600dda4_generated_image.png',
-  heavy: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/3329e859f_generated_image.png',
+  light: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/8f156a44a_generated_image.png',
+  moderate: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/3e0d6c61e_generated_image.png',
+  heavy: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/8be897528_generated_image.png',
 };
 
 function lookupTier(svc, classification, pricingGroup) {
