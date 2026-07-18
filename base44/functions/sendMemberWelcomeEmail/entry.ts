@@ -13,6 +13,15 @@ const FONT = "'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 const MONO = "'Space Mono','Courier New',monospace";
 const GOLD_URL = 'https://vdsmobile.com/vds-gold';
 
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function bullet(items) {
   return items.map(t =>
     `<tr><td style="padding:0 0 8px 0;font-size:15px;line-height:24px;color:#CBD5E1;">
@@ -130,7 +139,10 @@ Deno.serve(async (req) => {
     const email = me.email;
     if (!email) return Response.json({ error: 'No email on account.' }, { status: 400 });
 
-    const firstName = (body.firstName || (me.full_name || '').split(' ')[0] || 'there').trim() || 'there';
+    const rawFirstName = (body.firstName || (me.full_name || '').split(' ')[0] || 'there').trim() || 'there';
+    // Escape user-supplied input before interpolating into the HTML email template
+    // to prevent HTML injection / email content spoofing (CWE-79).
+    const firstName = escapeHtml(rawFirstName);
 
     // Check if the member already has an active VDS Gold subscription.
     let hasGold = false;
