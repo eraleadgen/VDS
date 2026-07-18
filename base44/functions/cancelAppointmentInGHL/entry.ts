@@ -28,10 +28,9 @@ Deno.serve(async (req) => {
     const appointment = await base44.asServiceRole.entities.Appointment.get(appointment_id);
     if (!appointment) return Response.json({ success: false, error: 'Appointment not found' }, { status: 404 });
 
-    // Ownership check — verify against immutable, verified identity only (user id or verified auth email).
-    const owns =
-      appointment.created_by_id === user.id ||
-      (appointment.customer_email && user.email && appointment.customer_email.toLowerCase() === user.email.toLowerCase());
+    // Ownership check — verify ONLY against the immutable, verified identity (user.id vs created_by_id).
+    // Email is a mutable/enumerable contact field and must not serve as an authorization key.
+    const owns = appointment.created_by_id === user.id;
     if (!owns && user.role !== 'admin') {
       return Response.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }

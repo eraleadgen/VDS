@@ -22,14 +22,19 @@ Deno.serve(async (req) => {
     let userId = customer_id;
 
     if (!userId) {
-      const all = await base44.asServiceRole.entities.User.list();
       let match = null;
       if (phone) {
         const digits = phone.replace(/\D/g, '');
-        match = all.find(u => u.phone && u.phone.replace(/\D/g, '') === digits);
+        // Resolve phone via the Customer entity (indexed phone field + linked_user_id).
+        // Never loads the full User directory into memory.
+        const customers = await base44.asServiceRole.entities.Customer.filter({ phone: digits });
+        const c = (customers || []).find(c => c.linked_user_id);
+        if (c) match = { id: c.linked_user_id };
       }
       if (!match && email) {
-        match = all.find(u => u.email && u.email.toLowerCase() === email.toLowerCase());
+        // Indexed query on the built-in User.email field — no full-table scan.
+        const users = await base44.asServiceRole.entities.User.filter({ email });
+        if (users && users[0]) match = users[0];
       }
       if (!match) return Response.json({ found: false, is_gold_member: false, subscriptions: [] });
       userId = match.id;
