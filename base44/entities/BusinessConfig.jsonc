@@ -408,6 +408,10 @@
         },
         "gallery_url": {
           "type": "string"
+        },
+        "google_review_url": {
+          "type": "string",
+          "description": "Google Business review link included in review-request messages to customers after a completed job."
         }
       }
     },

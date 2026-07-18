@@ -518,7 +518,10 @@ async function requestReview(base44, data, cfg, job) {
     if (linked && linked.length) await base44.asServiceRole.entities.Appointment.update(linked[0].id, { review_requested: true });
   } catch (e) { console.error('Appointment mirror sync error:', e.message); }
   const first = (job.customer_name || '').split(' ')[0] || 'there';
-  const msg = `Hi ${first}, your VDS detail is complete! We'd love your feedback — please rate your experience by replying with a score from 1-5. Thanks for choosing VDS Mobile!`;
+  const reviewUrl = (cfg && cfg.website_links && cfg.website_links.google_review_url) || '';
+  const msg = reviewUrl
+    ? `Hi ${first}, your VDS detail is complete! We'd love your feedback — please take a moment to leave us a review: ${reviewUrl} Thanks for choosing VDS Mobile!`
+    : `Hi ${first}, your VDS detail is complete! We'd love your feedback — please rate your experience by replying with a score from 1-5. Thanks for choosing VDS Mobile!`;
   await sendTwilioSms(base44, job.customer_phone, msg, job.customer_name, 'review_request');
   return { success: true };
 }
