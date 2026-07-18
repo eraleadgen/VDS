@@ -54,6 +54,33 @@ Deno.serve(async (req) => {
     const pricingGroup = cfg ? resolvePricingGroup(cfg, vehicle_classification) : 'sedan_coupe';
     const bookingUrl = (cfg && cfg.website_links && cfg.website_links.booking_url) || 'https://vdsmobile.com/book';
 
+    // Compute the quote price server-side from BusinessConfig — never trust the client-supplied
+    // estimate (prevents forged $0 / $1 quotes from being booked at an arbitrary price).
+    let computedPrice = 0;
+    let computedDuration = 0;
+    if (cfg) {
+      const conditionMultipliers = (cfg.pricing_rules && cfg.pricing_rules.condition_multipliers) || [];
+      const conditionEntry = condition ? conditionMultipliers.find(c => c.key === condition) : null;
+      const conditionMultiplier = conditionEntry ? conditionEntry.multiplier : 1;
+      let basePrice = 0;
+      let addOnTotal = 0;
+      for (const svcKey of services) {
+        const svc = (cfg.services || []).find(s => s.key === svcKey);
+        if (!svc || svc.requires_consultation) continue;
+        const tier = (svc.tiers || []).find(t => t.tier === vehicle_classification)
+          || (svc.tiers || []).find(t => t.tier === pricingGroup)
+          || (svc.tiers || [])[0];
+        if (tier) { basePrice += tier.price || 0; computedDuration += tier.duration_minutes || 0; }
+      }
+      for (const addOnKey of (add_ons || [])) {
+        const svc = (cfg.services || []).find(s => s.key === addOnKey);
+        if (!svc) continue;
+        const tier = (svc.tiers || []).find(t => t.tier === pricingGroup) || (svc.tiers || [])[0];
+        if (tier) { addOnTotal += tier.price || 0; computedDuration += tier.duration_minutes || 0; }
+      }
+      computedPrice = Math.round(basePrice * conditionMultiplier) + addOnTotal;
+    }
+
     const expiration = new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString().split('T')[0];
 
     const quote = await base44.asServiceRole.entities.Quote.create({
@@ -65,9 +92,9 @@ Deno.serve(async (req) => {
       requested_services: services,
       add_ons: add_ons || [],
       condition: condition || '',
-      starting_price: estimated_price || 0,
-      final_price: estimated_price || 0,
-      estimated_duration_minutes: estimated_duration_minutes || 0,
+      starting_price: computedPrice,
+      final_price: computedPrice,
+      estimated_duration_minutes: estimated_duration_minutes || computedDuration || 0,
       quote_summary: quote_summary || '',
       booking_url: bookingUrl,
       expiration_date: expiration,

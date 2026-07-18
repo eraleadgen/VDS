@@ -74,6 +74,29 @@ async function logEvent(base44, event) {
   }
 }
 
+// Compute a job's estimated price server-side from BusinessConfig — never trust client input.
+// When a quote_id is supplied, use the quote's final_price (quotes are priced server-side by
+// saveQuote, so the value is trusted). Otherwise compute the starting price for the service +
+// pricing group from the active BusinessConfig catalog.
+async function computeJobPrice(base44, serviceType, pricingGroup, quoteId) {
+  try {
+    if (quoteId) {
+      const q = await base44.asServiceRole.entities.Quote.get(quoteId).catch(() => null);
+      if (q && q.final_price != null) return q.final_price;
+    }
+    const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
+    const cfg = configs && configs[0];
+    if (!cfg) return null;
+    const svc = (cfg.services || []).find(s => s.key === serviceType);
+    if (!svc) return null;
+    const tier = (svc.tiers || []).find(t => t.tier === pricingGroup) || (svc.tiers || [])[0];
+    return tier ? (tier.price || 0) : null;
+  } catch (e) {
+    console.error('computeJobPrice failed:', e.message);
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   try {
     // Public endpoint (guests book without login) — strict origin allowlist.
@@ -208,6 +231,10 @@ Deno.serve(async (req) => {
           }).join('\n')
         : notes || '';
 
+      // Compute the estimated price server-side from BusinessConfig (or the linked quote) —
+      // never trust client-supplied pricing (prevents $0 / forged-price bookings).
+      const estimatedPrice = await computeJobPrice(base44, service_type, pricingGroup, quote_id);
+
       job = await base44.asServiceRole.entities.Job.create({
         customer_id: customer ? customer.id : null,
         customer_name: name,
@@ -225,6 +252,7 @@ Deno.serve(async (req) => {
         notes: servicesNotes,
         sms_consent: sms_consent !== false,
         estimated_duration_minutes: vehicleEntries.length > 0 ? Math.min(vehicleEntries.length, 4) * 120 : 120,
+        estimated_price: estimatedPrice,
       });
 
       await logEvent(base44, {

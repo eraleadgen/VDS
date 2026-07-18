@@ -1208,11 +1208,14 @@ Deno.serve(async (req) => {
 
       let me = null;
       try { me = await base44.auth.me(); } catch {}
-      const isAdmin = !!(me && me.role === 'admin');
+      // Require explicit authentication before any ownership logic — an anonymous request
+      // (me null) must never reach the specialist-ownership branch (CWE-639).
+      if (!me) return Response.json({ error: 'Unauthorized.' }, { status: 403 });
+      const isAdmin = !!(me.role === 'admin');
       if (!isAdmin) {
         if (!job.specialist_id) return Response.json({ error: 'No specialist assigned.' }, { status: 403 });
         const c = await base44.asServiceRole.entities.Contractor.get(job.specialist_id).catch(() => null);
-        const owns = c && me && (c.user_id === me.id || (c.linked_user_ids || []).includes(me.id));
+        const owns = c && (c.user_id === me.id || (c.linked_user_ids || []).includes(me.id));
         if (!owns) return Response.json({ error: 'Only the assigned specialist may perform this action.' }, { status: 403 });
       }
 
