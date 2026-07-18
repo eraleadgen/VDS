@@ -140,6 +140,10 @@
               },
               "multiplier": {
                 "type": "number"
+              },
+              "duration_add_minutes": {
+                "type": "number",
+                "description": "Extra estimated minutes added to base service duration for this vehicle condition."
               }
             }
           }
