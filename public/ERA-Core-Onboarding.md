@@ -231,4 +231,4 @@ ERA Core is the engine. VDS Mobile is proof it works for one vertical. Your busi
 
 ---
 
-*Prepared by the ERA Core team. For a tailored onboarding walkthrough for your vertical, contact your ERA partner.*
+*Prepared by the ERA Systems LLC team. For a tailored onboarding walkthrough for your vertical, contact your ERA partner.*
