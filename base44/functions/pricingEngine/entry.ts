@@ -86,6 +86,7 @@ Deno.serve(async (req) => {
     }
 
     // Custom quote = base services × condition multiplier + add-ons.
+    if (basePrice > 0) totalDuration += (conditionEntry && conditionEntry.duration_add_minutes) || 0;
     const conditionedBase = Math.round(basePrice * conditionMultiplier);
     const totalPrice = conditionedBase + addOnTotal;
 

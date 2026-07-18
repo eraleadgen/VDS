@@ -61,6 +61,7 @@ export default function Pricing() {
   const conditions = config?.pricing_rules?.condition_multipliers || [];
   const conditionEntry = conditions.find(c => c.key === condition);
   const conditionMultiplier = conditionEntry?.multiplier ?? 1;
+  const conditionDurationAdd = conditionEntry?.duration_add_minutes ?? 0;
 
   const allServices = config?.services || [];
   const detailServices = allServices.filter(s => s.category === 'detail');
@@ -105,11 +106,11 @@ export default function Pricing() {
 
     const conditionedBase = Math.round(basePrice * conditionMultiplier);
     const total = conditionedBase + addOnTotal;
-    const totalMins = baseMins + addOnMins;
+    const totalMins = baseMins + addOnMins + (basePrice > 0 ? conditionDurationAdd : 0);
     const summary = lineItems.map(i => i.consultation ? `${i.label} — Consultation` : `${i.label} — $${i.price}`).join(' | ');
 
     return { lineItems, basePrice, conditionedBase, addOnTotal, total, totalMins, summary };
-  }, [selected, addOns, consultations, classification, pricingGroup, conditionMultiplier, allServices]);
+  }, [selected, addOns, consultations, classification, pricingGroup, conditionMultiplier, conditionDurationAdd, allServices]);
 
   const toggleService = (key) => setSelected(s => s.includes(key) ? s.filter(x => x !== key) : [...s, key]);
   const toggleAddOn = (key) => setAddOns(s => s.includes(key) ? s.filter(x => x !== key) : [...s, key]);

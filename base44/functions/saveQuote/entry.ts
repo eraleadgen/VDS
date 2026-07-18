@@ -78,6 +78,7 @@ Deno.serve(async (req) => {
         const tier = (svc.tiers || []).find(t => t.tier === pricingGroup) || (svc.tiers || [])[0];
         if (tier) { addOnTotal += tier.price || 0; computedDuration += tier.duration_minutes || 0; }
       }
+      if (basePrice > 0) computedDuration += (conditionEntry && conditionEntry.duration_add_minutes) || 0;
       computedPrice = Math.round(basePrice * conditionMultiplier) + addOnTotal;
     }
 
