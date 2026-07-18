@@ -112,6 +112,19 @@ function buildReminderEmail(firstName, job) {
 
 Deno.serve(async (req) => {
   try {
+    // Authorization: this scheduled function triggers outbound SMS/email to customers.
+    // Require the shared SCHEDULER_TOKEN to prevent unauthorized callers from spamming
+    // customers and depleting Twilio / SendEmail credits.
+    const expectedToken = Deno.env.get('SCHEDULER_TOKEN');
+    let providedToken = null;
+    try {
+      const body = await req.clone().json();
+      providedToken = body?.scheduler_token || null;
+    } catch { /* non-JSON body */ }
+    if (!expectedToken || providedToken !== expectedToken) {
+      return Response.json({ error: 'Unauthorized.' }, { status: 401 });
+    }
+
     const base44 = createClientFromRequest(req);
 
     // Load business config for timezone
