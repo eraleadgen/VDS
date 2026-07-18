@@ -7,14 +7,14 @@ export default function EraDocDownload() {
   async function handleDownload() {
     setStatus('Preparing…');
     try {
-      const res = await fetch('/ERA-Core-Onboarding.md');
+      const res = await fetch('/ERA-Core-Onboarding-Guide.html');
       if (!res.ok) throw new Error('File not found');
       const text = await res.text();
-      const blob = new Blob([text], { type: 'text/markdown' });
+      const blob = new Blob([text], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'ERA-Core-Onboarding.md';
+      a.download = 'ERA-Core-Onboarding-Guide.html';
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -43,11 +43,19 @@ export default function EraDocDownload() {
           <Download size={16} /> Download .md
         </button>
         <a
-          href="/ERA-Core-Onboarding.md"
-          download="ERA-Core-Onboarding.md"
+          href="/ERA-Core-Onboarding-Guide.html"
+          download="ERA-Core-Onboarding-Guide.html"
           className="block mt-3 text-xs text-vapor/40 hover:text-gold transition-colors font-mono-tech"
         >
           or download directly
+        </a>
+        <a
+          href="/ERA-Core-Onboarding-Guide.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block mt-2 text-xs text-vapor/40 hover:text-gold transition-colors font-mono-tech"
+        >
+          view the formatted guide
         </a>
         {status && (
           <p className="mt-5 text-xs text-vapor/50 font-mono-tech min-h-[18px]">{status}</p>
