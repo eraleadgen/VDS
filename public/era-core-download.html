@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Download — ERA Core Onboarding Guide</title>
+<style>
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background:#0A0B0D; color:#E2E8F0; font-family:'Space Grotesk',system-ui,sans-serif; }
+  .card { text-align:center; padding:48px 40px; border:1px solid rgba(212,175,55,0.25);
+    border-radius:14px; max-width:480px; background:#14161A; box-shadow:0 8px 40px rgba(0,0,0,0.5); }
+  .logo { font-size:20px; font-weight:700; letter-spacing:3px; color:#D4AF37; margin-bottom:8px; }
+  h1 { font-size:20px; margin:0 0 6px; color:#E2E8F0; font-weight:600; }
+  p { font-size:14px; line-height:1.6; color:#94A3B8; margin:0 0 28px; }
+  button { background:#D4AF37; color:#0A0B0D; border:none; padding:14px 28px;
+    font-size:14px; font-weight:700; letter-spacing:1px; border-radius:6px; cursor:pointer;
+    transition:opacity .2s; }
+  button:hover { opacity:0.9; }
+  button:disabled { opacity:0.5; cursor:default; }
+  .status { margin-top:18px; font-size:13px; color:#94A3B8; min-height:18px; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">ERA SYSTEMS LLC</div>
+    <h1>ERA Core Onboarding Guide</h1>
+    <p>Click below to download the system overview &amp; vertical onboarding document.</p>
+    <button id="dl">Download .md</button>
+    <div class="status" id="status"></div>
+  </div>
+<script>
+  const btn = document.getElementById('dl');
+  const status = document.getElementById('status');
+  async function download() {
+    btn.disabled = true;
+    status.textContent = 'Preparing…';
+    try {
+      const res = await fetch('/ERA-Core-Onboarding.md');
+      if (!res.ok) throw new Error('File not found');
+      const text = await res.text();
+      const blob = new Blob([text], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ERA-Core-Onboarding.md';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      status.textContent = 'Download started ✓';
+    } catch (e) {
+      status.textContent = 'Error: ' + e.message;
+      btn.disabled = false;
+    }
+  }
+  btn.addEventListener('click', download);
+</script>
+</body>
+</html>
