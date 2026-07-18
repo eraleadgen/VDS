@@ -302,19 +302,44 @@ Deno.serve(async (req) => {
         });
         result = r?.data ?? r; outcome = result && result.success ? 'appointment_booked' : 'error'; break;
       }
-      case 'reschedule_appointment': {
-        const r = await base44.asServiceRole.functions.invoke('scheduler', {
-          action: 'reschedule', appointment_id: data.appointmentId, new_startUtc: data.newStartUtc, new_date: data.newDate,
-          scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
-        });
-        result = r?.data ?? r; outcome = result && result.success ? 'appointment_booked' : 'error'; break;
-      }
+      case 'reschedule_appointment':
       case 'cancel_appointment': {
-        const r = await base44.asServiceRole.functions.invoke('scheduler', {
-          action: 'cancel', appointment_id: data.appointmentId,
-          scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
-        });
-        result = r?.data ?? r; outcome = 'other'; break;
+        // Verify the requested appointment actually belongs to the customer whose phone
+        // initiated this SMS conversation (data.phone). Without this check, the trusted
+        // SCHEDULER_TOKEN would let an anonymous SMS caller cancel/reschedule any
+        // customer's appointment by guessing the ID (IDOR / CWE-639).
+        if (!data.appointmentId) {
+          result = { error: 'No appointment specified.' }; outcome = 'error'; break;
+        }
+        if (!data.phone) {
+          result = { error: 'Caller phone is required to modify an appointment.' }; outcome = 'error'; break;
+        }
+        let appt = null;
+        try {
+          appt = await base44.asServiceRole.entities.Appointment.get(data.appointmentId).catch(() => null);
+        } catch (e) { /* not found below */ }
+        if (!appt) {
+          result = { error: 'Appointment not found.' }; outcome = 'error'; break;
+        }
+        const callerDigits = normalizePhone(data.phone).replace(/\D/g, '').slice(-10);
+        const ownerDigits = (appt.customer_phone || '').replace(/\D/g, '').slice(-10);
+        if (!callerDigits || callerDigits !== ownerDigits) {
+          result = { error: 'You can only modify appointments booked from your own phone number.' }; outcome = 'error'; break;
+        }
+        if (action === 'cancel_appointment') {
+          const r = await base44.asServiceRole.functions.invoke('scheduler', {
+            action: 'cancel', appointment_id: data.appointmentId,
+            scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
+          });
+          result = r?.data ?? r; outcome = 'other';
+        } else {
+          const r = await base44.asServiceRole.functions.invoke('scheduler', {
+            action: 'reschedule', appointment_id: data.appointmentId, new_startUtc: data.newStartUtc, new_date: data.newDate,
+            scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
+          });
+          result = r?.data ?? r; outcome = result && result.success ? 'appointment_booked' : 'error';
+        }
+        break;
       }
       default:
         result = { error: `Unknown action: ${action}` }; outcome = 'error';
