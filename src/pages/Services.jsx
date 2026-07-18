@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, Check } from 'lucide-react';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
-import GoldShimmer from '../components/vds/GoldShimmer';
+import GoldPromoCard from '../components/vds/GoldPromoCard';
 
 const SERVICES = [
   {
@@ -86,26 +86,7 @@ export default function Services() {
 
       {/* ── VDS GOLD CALLOUT ─────────────────────────── */}
       <div className="max-w-7xl mx-auto px-6 mb-20">
-        <div className="relative border border-gold/20 rounded-sm overflow-hidden p-8 md:p-12"
-          style={{ background: 'linear-gradient(135deg, rgba(212,175,55,0.05) 0%, rgba(10,11,13,0) 100%)' }}>
-          <div className="absolute top-0 right-0 w-64 h-64"
-            style={{ background: 'radial-gradient(ellipse at top right, rgba(212,175,55,0.08) 0%, transparent 70%)' }} />
-          <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-            <div className="text-center md:text-left">
-              <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-3">NEW MONTHLY MEMBERSHIP</p>
-              <h2 className="text-3xl font-grotesk font-bold text-vapor mb-2">
-                <GoldShimmer>VDS GOLD</GoldShimmer> — All of this, every month.
-              </h2>
-              <p className="text-vapor/50 text-sm max-w-lg">
-                Unlimited exterior details + 1 interior deep clean per month. Ceramic sealant, steam clean, door jambs — everything. From $250/mo per vehicle.
-              </p>
-            </div>
-            <Link to="/vds-gold"
-              className="shrink-0 vds-gold-btn px-7 py-4 text-sm font-mono-tech tracking-widest rounded-sm flex items-center gap-2">
-              LEARN MORE <ArrowRight size={13} />
-            </Link>
-          </div>
-        </div>
+        <GoldPromoCard />
       </div>
 
       {/* ── SERVICE MODULES ──────────────────────────── */}

@@ -5,6 +5,7 @@ import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
 import GoldShimmer from '../components/vds/GoldShimmer';
 import GoldParticles from '../components/vds/GoldParticles';
+import GoldPromoCard from '../components/vds/GoldPromoCard';
 
 const STATS = [
   { value: '500+', label: 'VEHICLES DETAILED' },
@@ -122,29 +123,9 @@ export default function Home() {
       </section>
 
       {/* ── VDS GOLD BANNER ──────────────────────────── */}
-      <section className="relative py-16 md:py-20 overflow-hidden">
-        <div className="relative max-w-7xl mx-auto px-6">
-          <div className="relative glass-panel rounded-sm overflow-hidden">
-            {/* Subtle gold sheen overlay */}
-            <div className="absolute inset-0 bg-gradient-to-br from-gold/[0.06] via-transparent to-gold/[0.03] pointer-events-none" />
-
-            <div className="relative flex flex-col items-center text-center gap-6 px-6 py-10 md:flex-row md:items-center md:justify-between md:text-left md:px-10 md:py-12">
-              <div className="max-w-xl">
-                <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/80 mb-4">NEW — MONTHLY MEMBERSHIP</p>
-                <h2 className="text-4xl md:text-5xl font-grotesk font-bold text-vapor mb-4">
-                  <GoldShimmer>VDS GOLD</GoldShimmer>
-                </h2>
-                <p className="text-vapor/50 font-mono-tech text-sm leading-relaxed">
-                  Unlimited exterior details + 1 deep interior clean per month. Your vehicle, perpetually immaculate.
-                </p>
-              </div>
-              <Link to="/vds-gold"
-                className="group flex items-center gap-3 bg-gold/90 hover:bg-gold text-obsidian px-8 py-4 text-sm font-mono-tech tracking-widest rounded-sm whitespace-nowrap transition-all duration-300 hover:shadow-[0_0_30px_rgba(212,175,55,0.3)]">
-                VIEW MEMBERSHIP
-                <ArrowRight size={14} className="transition-transform duration-300 group-hover:translate-x-1" />
-              </Link>
-            </div>
-          </div>
+      <section className="py-16 md:py-20">
+        <div className="max-w-7xl mx-auto px-6">
+          <GoldPromoCard />
         </div>
       </section>
 
@@ -303,14 +284,14 @@ export default function Home() {
       </section>
 
       {/* ── FINAL CTA ────────────────────────────────── */}
-      <section className="relative py-24 md:py-32 overflow-hidden">
-        <img
-          src="https://media.base44.com/images/public/6a191df337222815cd0b1f5e/b6ee3461b_ExteriorDetail5.jpg"
-          alt="Luxury car"
-          className="absolute inset-0 w-full h-full object-cover object-center"
-          style={{ imageRendering: '-webkit-optimize-contrast' }}
-        />
-        <div className="absolute inset-0 bg-obsidian/85" />
+      <section className="relative py-24 md:py-32 overflow-hidden bg-obsidian">
+        <div className="absolute inset-0" style={{
+          background: 'radial-gradient(ellipse 80% 60% at 50% 0%, rgba(212,175,55,0.10) 0%, transparent 60%), radial-gradient(ellipse 60% 80% at 80% 50%, rgba(180,140,20,0.06) 0%, transparent 55%), linear-gradient(180deg, #08090a 0%, #0a0b0d 40%, #0d0a05 100%)'
+        }} />
+        <div className="absolute inset-0 pointer-events-none" style={{
+          background: 'radial-gradient(ellipse 50% 40% at 50% 30%, rgba(212,175,55,0.07) 0%, transparent 70%)',
+          animation: 'goldPulse 6s ease-in-out infinite'
+        }} />
         <div className="relative max-w-7xl mx-auto px-6 text-center">
           <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-6">METRO ATLANTA · ON-SITE SERVICE</p>
           <h2 className="text-5xl md:text-6xl font-grotesk font-bold text-vapor mb-8">

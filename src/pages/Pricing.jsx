@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
 import GoldShimmer from '../components/vds/GoldShimmer';
+import GoldPromoCard from '../components/vds/GoldPromoCard';
 
 const CLASSIFICATION_LABEL = {
   coupe: 'Coupe',
@@ -363,27 +364,9 @@ export default function Pricing() {
       </section>
 
       {/* VDS Gold banner */}
-      <section className="border-y border-gold/20 py-16 bg-gradient-to-r from-obsidian via-[#0D0B06] to-obsidian">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="text-center md:text-left">
-            <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-3">BEST VALUE</p>
-            <h2 className="text-4xl font-grotesk font-bold text-vapor mb-2">
-              <GoldShimmer>VDS GOLD</GoldShimmer> MEMBERSHIP
-            </h2>
-            <p className="text-vapor/50 font-mono-tech text-sm max-w-lg">
-              Unlimited exterior details + 1 interior deep clean per month. Ceramic sealant included every visit.
-            </p>
-          </div>
-          <div className="flex flex-col items-center md:items-end gap-4 shrink-0">
-            <div className="text-right">
-              <p className="text-3xl font-grotesk font-bold text-gold">$250 <span className="text-base text-vapor/50">sedan/coupe</span></p>
-              <p className="text-3xl font-grotesk font-bold text-gold">$300 <span className="text-base text-vapor/50">truck/suv</span></p>
-              <p className="text-xs font-mono-tech text-vapor/40 tracking-widest mt-1">PER VEHICLE / MONTH</p>
-            </div>
-            <Link to="/vds-gold" className="vds-gold-btn px-8 py-4 text-sm font-mono-tech tracking-widest rounded-sm flex items-center gap-2">
-              VIEW MEMBERSHIP <ArrowRight size={13} />
-            </Link>
-          </div>
+      <section className="py-16">
+        <div className="max-w-7xl mx-auto px-6">
+          <GoldPromoCard />
         </div>
       </section>
 
