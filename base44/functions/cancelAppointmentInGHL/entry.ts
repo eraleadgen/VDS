@@ -30,7 +30,10 @@ Deno.serve(async (req) => {
 
     // Ownership check — verify ONLY against the immutable, verified identity (user.id vs created_by_id).
     // Email is a mutable/enumerable contact field and must not serve as an authorization key.
-    const owns = appointment.created_by_id === user.id;
+    // Guest appointments (created_by_id null/undefined, e.g. public guest bookings) have no
+    // verifiable owner identity, so the ownership check must be strictly false for them —
+    // only admins may cancel guest appointments. This prevents a null === null privilege escalation.
+    const owns = !!(user.id && appointment.created_by_id && appointment.created_by_id === user.id);
     if (!owns && user.role !== 'admin') {
       return Response.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }

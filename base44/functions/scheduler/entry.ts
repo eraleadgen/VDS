@@ -1141,6 +1141,14 @@ Deno.serve(async (req) => {
     const action = body.action;
     if (!action) return Response.json({ error: 'action is required.' }, { status: 400 });
 
+    // Centralized admin guard: every admin_ action requires an authenticated admin.
+    // (Individual admin handlers also enforce this; this gate guarantees it for all current
+    // and future admin_ actions — defense-in-depth behind the client-side route gate.)
+    if (typeof action === 'string' && action.startsWith('admin_')) {
+      const adminMe = await base44.auth.me().catch(() => null);
+      if (!adminMe || adminMe.role !== 'admin') return Response.json({ error: 'Admin only.' }, { status: 403 });
+    }
+
     const cfg = await loadConfig(base44);
     if (!cfg) return Response.json({ error: 'Business configuration not found.' }, { status: 500 });
 
@@ -1219,41 +1227,33 @@ Deno.serve(async (req) => {
       const appt = body.appointment_id ? await base44.asServiceRole.entities.Appointment.get(body.appointment_id) : null;
       if (!appt) return Response.json({ error: 'Appointment not found.' }, { status: 404 });
 
-      // Resolve auth: Retell key, base44 user, or phone match.
-      let authorized = false;
-      let me = null;
-      const auth = req.headers.get('Authorization') || '';
-      const retellKey = Deno.env.get('RETELL_API_KEY');
-      if (retellKey && auth.replace(/^Bearer\s+/i, '').trim() === retellKey) authorized = true;
-      if (!authorized) {
-        try { me = await base44.auth.me(); } catch {}
-        if (me) authorized = true; // any logged-in user; admin/owner checks below enforce scoping
-      }
-      // Anonymous callers (no Retell key, no authenticated session) are NOT authorized to
-      // modify appointments — a phone-number match alone is too weak (enumerable/harvestable)
-      // for destructive actions. Guests must go through the Retell concierge or log in.
-      if (!authorized) return Response.json({ error: 'Unauthorized to modify this appointment.' }, { status: 403 });
+      // Authorization for appointment modifications:
+      //  (a) Trusted internal service callers (e.g. valerieTools) presenting SCHEDULER_TOKEN —
+      //      a high-entropy server-side secret. These have already verified the customer through
+      //      their own flow; the appointment_id is the scoping key.
+      //  (b) Authenticated base44 users — scoped to their own appointments (admins do anything).
+      // The previous Retell-API-key + caller-supplied-phone-match path was removed: a phone
+      // number is enumerable/harvestable and must not authorize destructive actions (CWE-639).
+      const schedulerToken = Deno.env.get('SCHEDULER_TOKEN');
+      const tokenCaller = !!(schedulerToken && body.scheduler_token && body.scheduler_token === schedulerToken);
 
-      // Admin-only actions / scoping
+      let me = null;
+      if (!tokenCaller) {
+        try { me = await base44.auth.me(); } catch {}
+        if (!me) return Response.json({ error: 'Unauthorized to modify this appointment.' }, { status: 403 });
+      }
+
       const isAdmin = !!(me && me.role === 'admin');
       if (action === 'reassign' && !isAdmin) return Response.json({ error: 'Admin only.' }, { status: 403 });
 
       if (action === 'reschedule' || action === 'cancel') {
-        // Non-admins may only touch their own appointments.
-        if (!isAdmin) {
-          if (me) {
-            // Authenticated user: verify via immutable, verified identity only (user id or verified auth email).
-            // Phone is a mutable/enumerable contact field and must not serve as an authorization key.
-            const owns = appt.created_by_id === me.id ||
-              (appt.customer_email && me.email && appt.customer_email.toLowerCase() === me.email.toLowerCase());
-            if (!owns) return Response.json({ error: 'Unauthorized to modify this appointment.' }, { status: 403 });
-          } else {
-            // Service caller (Retell concierge) already authorized via API key: verify it is acting on the
-            // customer whose phone matches the appointment of record.
-            const owns = body.customer_phone && appt.customer_phone &&
-              body.customer_phone.replace(/\D/g, '') === appt.customer_phone.replace(/\D/g, '');
-            if (!owns) return Response.json({ error: 'Unauthorized to modify this appointment.' }, { status: 403 });
-          }
+        // Non-admin, non-service callers may only touch their own appointments.
+        if (!isAdmin && !tokenCaller) {
+          // Verify via immutable, verified identity only (user id or verified auth email).
+          // Phone is a mutable/enumerable contact field and must not serve as an authorization key.
+          const owns = !!(appt.created_by_id && appt.created_by_id === me.id) ||
+            (appt.customer_email && me.email && appt.customer_email.toLowerCase() === me.email.toLowerCase());
+          if (!owns) return Response.json({ error: 'Unauthorized to modify this appointment.' }, { status: 403 });
         }
       }
 

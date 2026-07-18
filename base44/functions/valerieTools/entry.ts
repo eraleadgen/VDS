@@ -304,13 +304,15 @@ Deno.serve(async (req) => {
       }
       case 'reschedule_appointment': {
         const r = await base44.asServiceRole.functions.invoke('scheduler', {
-          action: 'reschedule', appointment_id: data.appointmentId, new_startUtc: data.newStartUtc, new_date: data.newDate, customer_phone: data.phone,
+          action: 'reschedule', appointment_id: data.appointmentId, new_startUtc: data.newStartUtc, new_date: data.newDate,
+          scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
         });
         result = r?.data ?? r; outcome = result && result.success ? 'appointment_booked' : 'error'; break;
       }
       case 'cancel_appointment': {
         const r = await base44.asServiceRole.functions.invoke('scheduler', {
-          action: 'cancel', appointment_id: data.appointmentId, customer_phone: data.phone,
+          action: 'cancel', appointment_id: data.appointmentId,
+          scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
         });
         result = r?.data ?? r; outcome = 'other'; break;
       }
