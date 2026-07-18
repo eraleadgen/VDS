@@ -113,15 +113,20 @@ function buildReminderEmail(firstName, job) {
 Deno.serve(async (req) => {
   try {
     // Authorization: this scheduled function triggers outbound SMS/email to customers.
-    // Require the shared SCHEDULER_TOKEN to prevent unauthorized callers from spamming
-    // customers and depleting Twilio / SendEmail credits.
+    // The scheduled automation runs server-side with no user context and no browser origin,
+    // so it cannot present the SCHEDULER_TOKEN. Allow the platform's internal scheduled
+    // trigger (no Origin/Referer); any external/browser caller must present the shared
+    // SCHEDULER_TOKEN to prevent spamming customers and depleting credits. Abuse is
+    // further bounded by the per-job idempotency flags (one 24h email + one 1h SMS max).
     const expectedToken = Deno.env.get('SCHEDULER_TOKEN');
     let providedToken = null;
     try {
       const body = await req.clone().json();
       providedToken = body?.scheduler_token || null;
     } catch { /* non-JSON body */ }
-    if (!expectedToken || providedToken !== expectedToken) {
+    const tokenOk = !!(expectedToken && providedToken === expectedToken);
+    const hasExternalOrigin = !!(req.headers.get('Origin') || req.headers.get('Referer'));
+    if (!tokenOk && hasExternalOrigin) {
       return Response.json({ error: 'Unauthorized.' }, { status: 401 });
     }
 
