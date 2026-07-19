@@ -107,8 +107,12 @@ export default function Navbar() {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`text-sm font-mono-tech tracking-widest ${
-                  link.gold ? 'text-gold' : location.pathname === link.path ? 'text-gold' : 'text-vapor/70'
+                className={`text-sm font-mono-tech tracking-widest transition-colors duration-200 ${
+                  link.gold
+                    ? 'text-gold hover:text-gold-light'
+                    : location.pathname === link.path
+                      ? 'text-gold'
+                      : 'text-vapor/70 hover:text-vapor'
                 }`}
               >
                 {link.label}
