@@ -11,7 +11,6 @@ const navLinks = [
   { label: 'QUOTE & BOOK', path: '/book' },
   { label: 'GALLERY', path: '/gallery' },
   { label: 'FAQ', path: '/faq' },
-  { label: 'BOOK NOW', path: '/book' },
 ];
 
 export default function Navbar() {
