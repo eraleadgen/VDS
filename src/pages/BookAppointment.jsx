@@ -1,121 +1,99 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { ChevronLeft, ChevronRight, ArrowRight, CheckCircle, ChevronDown, X, Plus, Loader2, Trash2 } from 'lucide-react';
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isBefore, isToday, isSameDay } from 'date-fns';
+import { CheckCircle, Loader2 } from 'lucide-react';
+import { format } from 'date-fns';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
 import GoldShimmer from '../components/vds/GoldShimmer';
-import AddVehicleForm from '../components/member/AddVehicleForm';
 import VehicleSelector from '../components/vds/VehicleSelector';
 import SmsConsent from '../components/vds/SmsConsent';
-
-const SERVICES = [
-  { id: 'exterior_detail', label: 'Exterior Detail', duration: '1–2 hrs' },
-  { id: 'interior_detail', label: 'Interior Detail', duration: '2–3 hrs' },
-  { id: 'full_detail', label: 'Full Interior + Exterior Detail', duration: '3–5 hrs' },
-  { id: 'vds_gold_exterior', label: '◆ VDS Gold — Exterior Detail', duration: '1 hr', gold: true },
-  { id: 'vds_gold_full', label: '◆ VDS Gold — Full Detail', duration: '2–3 hrs', gold: true },
-  { id: 'ceramic_coating', label: 'Ceramic Coating', duration: 'Custom', quoteOnly: true },
-  { id: 'paint_correction', label: 'Paint Correction', duration: 'Custom', quoteOnly: true },
-];
-
-const ADD_ONS = [
-  { id: 'ceramic_sealant', label: 'Ceramic Sealant (3 Month)', price: '$50' },
-  { id: 'engine_bay', label: 'Engine Bay Detail', price: '$50' },
-  { id: 'headlight_restoration', label: 'Headlight Restoration', price: '$100' },
-  { id: 'pet_hair_removal', label: 'Pet Hair Removal', price: '$50' },
-];
-
-const PRICE_MAP = {
-  exterior_detail:  { sedan_coupe: '$100+', truck_suv: '$115+' },
-  interior_detail:  { sedan_coupe: '$120+', truck_suv: '$150+' },
-  full_detail:      { sedan_coupe: '$175+', truck_suv: '$250+' },
-};
-
-function getAutoQuote(serviceId, vehicleType) {
-  if (!serviceId || !vehicleType || !PRICE_MAP[serviceId]) return null;
-  return PRICE_MAP[serviceId][vehicleType] || null;
-}
-
-const TIME_SLOTS = ['9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
-const CONSULTATION_IDS = ['ceramic_coating', 'paint_correction'];
-
-const SERVICE_LABELS = {
-  exterior_detail: 'Exterior Detail',
-  interior_detail: 'Interior Detail',
-  full_detail: 'Full Interior + Exterior Detail',
-  vds_gold_exterior: 'VDS Gold — Exterior Detail',
-  vds_gold_full: 'VDS Gold — Full Detail',
-  ceramic_coating: 'Ceramic Coating',
-  paint_correction: 'Paint Correction',
-};
+import ConditionSelector from '../components/booking/ConditionSelector';
+import ServicePicker from '../components/booking/ServicePicker';
+import QuoteSummary from '../components/booking/QuoteSummary';
+import BookingCalendar from '../components/booking/BookingCalendar';
+import SavedVehiclePicker from '../components/booking/SavedVehiclePicker';
+import { computeQuote, deriveClassification, classificationToPricingGroup, CLASSIFICATION_LABEL } from '@/lib/quoteCalc';
 
 const DEFAULT_FORM = {
-  firstName: '', lastName: '', phone: '', email: '', address: '',
-  service_type: '', vehicle_type: '', vehicle_info: '', notes: '',
+  firstName: '', lastName: '', phone: '', email: '', address: '', notes: '',
   preferred_date: '', preferred_time: '',
 };
-
-// Guest vehicle entry (for non-members)
-const DEFAULT_GUEST_VEHICLE = { year: '', make: '', model: '', color: '', classification: null, vehicle_type: '' };
-
-// Map a 4-type vehicle classification (from VehicleSelector / quote) to the 2-type pricing group
-function classificationToVehicleType(cls) {
-  return ['mid_size_suv', 'truck_3_row_suv'].includes(cls) ? 'truck_suv' : 'sedan_coupe';
-}
+const DEFAULT_GUEST_VEHICLE = { year: '', make: '', model: '', color: '', classification: null };
 
 export default function BookAppointment() {
   const location = useLocation();
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [config, setConfig] = useState(null);
   const [vehicles, setVehicles] = useState([]);
   const [goldVehicles, setGoldVehicles] = useState({});
-  const [form, setForm] = useState(DEFAULT_FORM);
-  const [selectedVehicles, setSelectedVehicles] = useState([]);
-  const [vehicleServices, setVehicleServices] = useState({});
-  const [calendarDate, setCalendarDate] = useState(new Date());
-  const [selectedDay, setSelectedDay] = useState(null);
-  const [addOns, setAddOns] = useState({});
-  const [showAddVehicle, setShowAddVehicle] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [bookedSlots, setBookedSlots] = useState([]);
-  const [loadingSlots, setLoadingSlots] = useState(false);
-  const [smsConsent, setSmsConsent] = useState(false);
-  const [quote, setQuote] = useState(null);
+  const [savedAddresses, setSavedAddresses] = useState([]);
 
-  // Guest vehicle state — pre-fill from a saved quote (Pricing page "Book This Quote")
+  const [selectedVehicleId, setSelectedVehicleId] = useState(null);
+  const [showAddVehicle, setShowAddVehicle] = useState(false);
   const [guestVehicle, setGuestVehicle] = useState(() => {
     const q = location.state?.quote;
     if (q && q.vehicle_classification) {
       return {
-        year: q.vehicle_year || '',
-        make: q.vehicle_make || '',
-        model: q.vehicle_model || '',
-        color: '',
-        classification: q.vehicle_classification,
-        vehicle_type: classificationToVehicleType(q.vehicle_classification),
+        year: q.vehicle_year || '', make: q.vehicle_make || '', model: q.vehicle_model || '',
+        color: '', classification: q.vehicle_classification,
       };
     }
     return DEFAULT_GUEST_VEHICLE;
   });
-  const [guestService, setGuestService] = useState('');
-  const [guestAddOns, setGuestAddOns] = useState([]);
+
+  const [condition, setCondition] = useState(() => location.state?.quote?.condition || 'light');
+  const [selected, setSelected] = useState([]);
+  const [addOns, setAddOns] = useState([]);
+  const [consultations, setConsultations] = useState([]);
+
+  const [form, setForm] = useState(DEFAULT_FORM);
+  const [calendarDate, setCalendarDate] = useState(new Date());
+  const [selectedDay, setSelectedDay] = useState(null);
+  const [bookedSlots, setBookedSlots] = useState([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [smsConsent, setSmsConsent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [guestConfirmed, setGuestConfirmed] = useState(false);
+  const [existingQuoteId, setExistingQuoteId] = useState(null);
 
   const today = new Date();
-  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const mapping = config?.classification_to_pricing_group || {};
 
-  const [savedAddresses, setSavedAddresses] = useState([]);
+  // Resolve the active vehicle + classification
+  const activeVehicle = useMemo(() => {
+    if (user) {
+      const v = vehicles.find(veh => veh.id === selectedVehicleId);
+      return v || null;
+    }
+    if (guestVehicle.year && guestVehicle.make && guestVehicle.model && guestVehicle.classification) {
+      return { ...guestVehicle, vehicle_classification: guestVehicle.classification };
+    }
+    return null;
+  }, [user, vehicles, selectedVehicleId, guestVehicle]);
 
+  const classification = activeVehicle ? deriveClassification(activeVehicle) : null;
+  const pricingGroup = classification ? classificationToPricingGroup(mapping, classification) : null;
+
+  const vehicleLabel = activeVehicle
+    ? `${activeVehicle.year || ''} ${activeVehicle.make || ''} ${activeVehicle.model || ''}${activeVehicle.color ? ', ' + activeVehicle.color : ''}`.trim()
+    : null;
+
+  // Init: auth, config, member data, quote prefill
   useEffect(() => {
-    const init = async () => {
+    (async () => {
+      try {
+        const list = await base44.entities.BusinessConfig.filter({ is_active: true });
+        if (list && list[0]) setConfig(list[0]);
+      } catch (e) { console.error('Config load error:', e); }
+
       const isAuth = await base44.auth.isAuthenticated();
       if (isAuth) {
         const me = await base44.auth.me();
         setUser(me);
-        // Load full profile (custom first/last name, phone, saved addresses) via service-role function
         let acc = {};
         try {
           const res = await base44.functions.invoke('account', { action: 'get' });
@@ -129,197 +107,112 @@ export default function BookAppointment() {
           phone: acc.phone || '',
         }));
         if (acc.saved_addresses?.length) setSavedAddresses(acc.saved_addresses);
-        const v = await base44.entities.MemberVehicle.list();
-        setVehicles(v);
-        const subsRes = await base44.functions.invoke('getMySubscriptions', {});
-        const goldMap = {};
-        (subsRes?.data?.subscriptions || []).forEach(sub => { goldMap[sub.vehicle_id] = true; });
-        setGoldVehicles(goldMap);
+        try {
+          const v = await base44.entities.MemberVehicle.list();
+          setVehicles(v);
+          const subsRes = await base44.functions.invoke('getMySubscriptions', {});
+          const goldMap = {};
+          (subsRes?.data?.subscriptions || []).forEach(sub => { goldMap[sub.vehicle_id] = true; });
+          setGoldVehicles(goldMap);
+        } catch (e) { console.error('Vehicle load error:', e); }
       }
       setAuthChecked(true);
-      // Auto-continue as guest when arriving from a saved quote and not authenticated
-      if (!user && location.state?.quote) setGuestConfirmed(true);
-    };
-    init();
+      if (!isAuth && location.state?.quote) setGuestConfirmed(true);
+    })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Prefill from a saved quote (Pricing page flow)
   useEffect(() => {
-    if (location.state?.preselect_service) {
-      setForm(f => ({ ...f, service_type: location.state.preselect_service }));
-      setGuestService(location.state.preselect_service);
-    }
-    // Auto-fill from a saved quote (Pricing page "Book This Quote" flow)
-    if (location.state?.quote) {
-      const q = location.state.quote;
-      setQuote(q);
-      const addOnIds = q.add_ons || [];
-      const mainService = (q.requested_services || []).find(s => !addOnIds.includes(s));
-      if (mainService) {
-        setForm(f => ({ ...f, service_type: mainService }));
-        setGuestService(mainService);
-      }
-      if (addOnIds.length) {
-        setGuestAddOns(addOnIds.filter(id => ADD_ONS.find(a => a.id === id)));
-      }
-    }
+    const q = location.state?.quote;
+    if (!q) return;
+    setExistingQuoteId(location.state?.quote_id || q.id || null);
+    if (q.condition) setCondition(q.condition);
+    const addOnIds = q.add_ons || [];
+    const requested = q.requested_services || [];
+    const allServices = config?.services || [];
+    const detailKeys = new Set(allServices.filter(s => s.category === 'detail').map(s => s.key));
+    const addOnKeys = new Set(allServices.filter(s => s.category === 'addon').map(s => s.key));
+    const consultKeys = new Set(allServices.filter(s => s.requires_consultation).map(s => s.key));
+    setSelected(requested.filter(k => detailKeys.has(k)));
+    setAddOns(addOnIds.filter(k => addOnKeys.has(k)));
+    setConsultations(requested.filter(k => consultKeys.has(k)));
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.state]);
+  }, [location.state, config]);
 
   const handleAddVehicleSave = async (vehicleForm) => {
     const saved = await base44.entities.MemberVehicle.create(vehicleForm);
     setVehicles(v => [...v, saved]);
     setShowAddVehicle(false);
+    setSelectedVehicleId(saved.id);
   };
 
   const handleDeleteVehicle = async (vehicle) => {
-    const label = `${vehicle.year} ${vehicle.make} ${vehicle.model}${vehicle.color ? ', ' + vehicle.color : ''}`;
     await base44.entities.MemberVehicle.delete(vehicle.id);
     setVehicles(v => v.filter(veh => veh.id !== vehicle.id));
-    setSelectedVehicles(prev => prev.filter(l => l !== label));
-    setAddOns(prev => { const next = { ...prev }; delete next[label]; return next; });
-    setVehicleServices(prev => { const next = { ...prev }; delete next[label]; return next; });
+    if (selectedVehicleId === vehicle.id) setSelectedVehicleId(null);
   };
 
-  // VehicleSelector callback for guest flow — receives {year, make, model, classification} or null
   const handleGuestVehicleSelect = useCallback((sel) => {
-    if (!sel) {
-      setGuestVehicle(v => ({ ...v, classification: null, vehicle_type: '' }));
-      return;
-    }
-    setGuestVehicle(v => ({
-      ...v,
-      year: sel.year,
-      make: sel.make,
-      model: sel.model,
-      classification: sel.classification,
-      vehicle_type: classificationToVehicleType(sel.classification),
-    }));
+    if (!sel) { setGuestVehicle(DEFAULT_GUEST_VEHICLE); return; }
+    setGuestVehicle(v => ({ ...v, year: sel.year, make: sel.make, model: sel.model, classification: sel.classification }));
   }, []);
 
   const guestVehicleSelected = guestVehicle.year
     ? { year: guestVehicle.year, make: guestVehicle.make, model: guestVehicle.model, classification: guestVehicle.classification }
     : null;
 
-  const getVehicleAddOns = (label) => addOns[label] || [];
-  const toggleAddOn = (vehicleLabel, id) => {
-    setAddOns(prev => {
-      const current = prev[vehicleLabel] || [];
-      const updated = current.includes(id) ? current.filter(a => a !== id) : [...current, id];
-      return { ...prev, [vehicleLabel]: updated };
-    });
-  };
-  const setVehicleService = (vehicleLabel, serviceId) => {
-    setVehicleServices(prev => ({ ...prev, [vehicleLabel]: serviceId }));
-  };
-  const getVehicleService = (label) => vehicleServices[label] || form.service_type;
-  const addOnCostForVehicle = (label) =>
-    getVehicleAddOns(label).reduce((sum, id) => {
-      const ao = ADD_ONS.find(a => a.id === id);
-      return sum + (ao ? parseInt(ao.price.replace(/\D/g, '')) : 0);
-    }, 0);
+  const toggleService = (key) => setSelected(s => s.includes(key) ? s.filter(x => x !== key) : [...s, key]);
+  const toggleAddOn = (key) => setAddOns(s => s.includes(key) ? s.filter(x => x !== key) : [...s, key]);
+  const toggleConsultation = (key) => setConsultations(s => s.includes(key) ? s.filter(x => x !== key) : [...s, key]);
 
-  const derivedVehicleType = (() => {
-    if (user && selectedVehicles.length > 0) {
-      const v = vehicles.find(veh => `${veh.year} ${veh.make} ${veh.model}${veh.color ? ', ' + veh.color : ''}` === selectedVehicles[0]);
-      return v?.vehicle_type || null;
-    }
-    if (!user) return guestVehicle.vehicle_type || null;
-    return form.vehicle_type || null;
-  })();
+  const quote = useMemo(() => computeQuote({
+    config, classification, condition, selected, addOns, consultations,
+  }), [config, classification, condition, selected, addOns, consultations]);
 
-  const hasGoldSubscription = selectedVehicles.some(label => {
-    const v = vehicles.find(veh => `${veh.year} ${veh.make} ${veh.model}${veh.color ? ', ' + veh.color : ''}` === label);
-    return v && goldVehicles[v.id];
-  });
+  const hasItems = quote.lineItems.length > 0 && !!classification;
+  const conditionEntry = config?.pricing_rules?.condition_multipliers?.find(c => c.key === condition);
 
-  const activeVehicleKeys = user ? (selectedVehicles.length > 0 ? selectedVehicles : ['__global']) : ['__guest'];
-  const addOnTotal = user
-    ? activeVehicleKeys.reduce((sum, key) => sum + addOnCostForVehicle(key), 0)
-    : guestAddOns.reduce((sum, id) => { const ao = ADD_ONS.find(a => a.id === id); return sum + (ao ? parseInt(ao.price.replace(/\D/g, '')) : 0); }, 0);
+  const primaryService = useMemo(() => {
+    const all = config?.services || [];
+    const firstDetail = selected.find(k => all.find(s => s.key === k && s.category === 'detail'));
+    if (firstDetail) return firstDetail;
+    return consultations[0] || selected[0] || null;
+  }, [selected, consultations, config]);
 
-  const estimatedTotal = (() => {
-    if (quote) return quote.final_price;
-    if (user) {
-      if (selectedVehicles.length === 0) return null;
-      const prices = selectedVehicles.map(label => {
-        const v = vehicles.find(veh => `${veh.year} ${veh.make} ${veh.model}${veh.color ? ', ' + veh.color : ''}` === label);
-        const serviceId = getVehicleService(label);
-        if (!serviceId || !v?.vehicle_type) return null;
-        const base = PRICE_MAP[serviceId]?.[v.vehicle_type];
-        if (!base) return null;
-        return parseInt(base.replace(/\D/g, '')) + addOnCostForVehicle(label);
-      });
-      if (prices.some(p => p === null)) return null;
-      return prices.reduce((a, b) => a + b, 0);
-    } else {
-      if (!guestService || !guestVehicle.vehicle_type) return null;
-      const base = PRICE_MAP[guestService]?.[guestVehicle.vehicle_type];
-      if (!base) return null;
-      return parseInt(base.replace(/\D/g, '')) + addOnTotal;
-    }
-  })();
+  const isConsultation = useMemo(() => {
+    if (!primaryService) return false;
+    const svc = config?.services?.find(s => s.key === primaryService);
+    return !!svc?.requires_consultation;
+  }, [primaryService, config]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    if (name === 'service_type') {
-      setSelectedDay(null);
-      setForm(f => ({ ...f, service_type: value, preferred_date: '', preferred_time: '' }));
-    } else {
-      setForm(f => ({ ...f, [name]: value }));
-    }
-  };
-
-  const currentServiceForCalendar = user
-    ? (selectedVehicles.length > 0 ? getVehicleService(selectedVehicles[0]) : null)
-    : guestService;
+  const canShowCalendar = !!classification && (selected.length > 0 || consultations.length > 0);
+  const canSubmit = !loading && !!classification && (selected.length > 0 || consultations.length > 0)
+    && !!form.preferred_date && !!form.preferred_time && !!form.firstName && !!form.phone && !!form.address && smsConsent;
 
   const handleDayClick = async (day) => {
     setSelectedDay(day);
     setForm(f => ({ ...f, preferred_date: format(day, 'yyyy-MM-dd'), preferred_time: '' }));
     setBookedSlots([]);
-    if (currentServiceForCalendar) {
-      const isConsultation = CONSULTATION_IDS.includes(currentServiceForCalendar);
-      const vtForAvailability = isConsultation
-        ? (hasGoldSubscription ? 'gold' : 'standard')
-        : derivedVehicleType;
-      if (vtForAvailability) {
+    if (primaryService) {
+      const vt = isConsultation ? 'standard' : pricingGroup;
+      if (vt) {
         setLoadingSlots(true);
         try {
           const res = await base44.functions.invoke('getCalendarAvailability', {
-            service_type: currentServiceForCalendar,
-            vehicle_type: vtForAvailability,
-            date: format(day, 'yyyy-MM-dd'),
-            vehicle_count: user ? selectedVehicles.length || 1 : 1,
+            service_type: primaryService, vehicle_type: vt, date: format(day, 'yyyy-MM-dd'), vehicle_count: 1,
           });
           setBookedSlots(res.data?.bookedSlots || []);
-        } catch (err) {
-          console.error('Availability fetch error:', err);
-        } finally {
-          setLoadingSlots(false);
-        }
+        } catch (err) { console.error('Availability fetch error:', err); }
+        finally { setLoadingSlots(false); }
       }
     }
   };
 
-  const toggleVehicle = (label) => {
-    setSelectedVehicles(prev =>
-      prev.includes(label) ? prev.filter(v => v !== label) : [...prev, label]
-    );
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm(f => ({ ...f, [name]: value }));
   };
-
-  // Validation for showing calendar
-  const canShowCalendar = user
-    ? selectedVehicles.length > 0 && selectedVehicles.some(label => getVehicleService(label))
-    : guestVehicle.year && guestVehicle.make && guestVehicle.model && guestVehicle.vehicle_type && guestService;
-
-  const isConsultation = user
-    ? (selectedVehicles.length > 0 && CONSULTATION_IDS.includes(getVehicleService(selectedVehicles[0])))
-    : CONSULTATION_IDS.includes(guestService);
-
-  const canSubmit = user
-    ? !loading && form.firstName && form.phone && form.address && form.preferred_date && form.preferred_time && selectedVehicles.length > 0 && selectedVehicles.every(v => getVehicleService(v))
-    : !loading && form.firstName && form.phone && form.address && form.preferred_date && form.preferred_time && guestVehicle.year && guestVehicle.make && guestVehicle.model && guestVehicle.vehicle_type && guestService;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -328,53 +221,48 @@ export default function BookAppointment() {
     if (phoneDigits.length < 7) return;
     setLoading(true);
     try {
-      let vehicleSummary, vehicleDetails, firstService, submitVehicleType, quoteNote;
-      if (user) {
-        vehicleSummary = selectedVehicles.join(', ');
-        const vehicleDetailsArr = selectedVehicles.map(label => {
-          const v = vehicles.find(veh => `${veh.year} ${veh.make} ${veh.model}${veh.color ? ', ' + veh.color : ''}` === label);
-          const service = getVehicleService(label);
-          const addonsArr = getVehicleAddOns(label).map(id => ADD_ONS.find(a => a.id === id)?.label).filter(Boolean);
-          const vehicleTypeLabel = v?.vehicle_type === 'truck_suv' ? 'Truck/SUV' : 'Sedan/Coupe';
-          return `${label} (${vehicleTypeLabel}) — ${SERVICE_LABELS[service] || service}${addonsArr.length ? ` + ${addonsArr.join(', ')}` : ''}`;
+      // Persist the quote server-side (source of truth) if not already saved
+      let quoteId = existingQuoteId;
+      if (!quoteId) {
+        const saveRes = await base44.functions.invoke('saveQuote', {
+          vehicle_classification: classification,
+          vehicle_year: activeVehicle.year || '',
+          vehicle_make: activeVehicle.make || '',
+          vehicle_model: activeVehicle.model || '',
+          services: [...selected, ...consultations],
+          add_ons: addOns,
+          condition,
+          estimated_price: quote.total,
+          estimated_duration_minutes: quote.totalMins,
+          quote_summary: quote.summary,
         });
-        vehicleDetails = vehicleDetailsArr.join(' | ');
-        quoteNote = estimatedTotal != null ? `Estimated Total: $${estimatedTotal}+` : '';
-        firstService = getVehicleService(selectedVehicles[0]);
-        const isConsult = CONSULTATION_IDS.includes(firstService);
-        submitVehicleType = isConsult ? (hasGoldSubscription ? 'gold' : 'standard') : (derivedVehicleType || form.vehicle_type);
-      } else {
-        const guestLabel = `${guestVehicle.year} ${guestVehicle.make} ${guestVehicle.model}${guestVehicle.color ? ', ' + guestVehicle.color : ''}`;
-        const vehicleTypeLabel = guestVehicle.vehicle_type === 'truck_suv' ? 'Truck/SUV' : 'Sedan/Coupe';
-        const addonsArr = guestAddOns.map(id => ADD_ONS.find(a => a.id === id)?.label).filter(Boolean);
-        vehicleSummary = guestLabel;
-        vehicleDetails = `${guestLabel} (${vehicleTypeLabel}) — ${SERVICE_LABELS[guestService] || guestService}${addonsArr.length ? ` + ${addonsArr.join(', ')}` : ''}`;
-        quoteNote = estimatedTotal != null ? `Estimated Total: $${estimatedTotal}+` : '';
-        firstService = guestService;
-        const isConsult = CONSULTATION_IDS.includes(firstService);
-        submitVehicleType = isConsult ? 'standard' : guestVehicle.vehicle_type;
+        const sd = saveRes?.data || saveRes;
+        quoteId = sd?.quote_id || sd?.quote?.id || null;
       }
+
+      const vt = isConsultation ? 'standard' : pricingGroup;
+      const addonsArr = addOns.map(k => config.services.find(s => s.key === k)?.label).filter(Boolean);
+      const serviceLabel = config.services.find(s => s.key === primaryService)?.label || primaryService;
+      const vehicleDetails = `${vehicleLabel} (${CLASSIFICATION_LABEL[classification] || classification}) — ${serviceLabel}${addonsArr.length ? ` + ${addonsArr.join(', ')}` : ''}`;
+      const quoteNote = `Estimated Total: $${quote.total}`;
 
       await base44.functions.invoke('submitBooking', {
         ...form,
         name: `${form.firstName.trim()} ${form.lastName.trim()}`.trim(),
-        service_type: firstService,
-        vehicle_type: submitVehicleType,
-        vehicle_info: vehicleSummary,
+        service_type: primaryService,
+        vehicle_type: vt,
+        vehicle_info: vehicleLabel,
         vehicle_details: vehicleDetails,
         notes: [quoteNote, form.notes].filter(Boolean).join(' | '),
         preferred_date: form.preferred_date || null,
         preferred_time: form.preferred_time || null,
         sms_consent: smsConsent,
-        quote_id: quote?.id || location.state?.quote_id || null,
+        quote_id: quoteId,
       });
-      // Reschedule flow: cancel the previous appointment once the new booking is submitted
+
       if (location.state?.reschedule_from) {
-        try {
-          await base44.functions.invoke('cancelAppointmentInGHL', { appointment_id: location.state.reschedule_from });
-        } catch (e) {
-          console.error('Reschedule: cancelling previous appointment failed:', e);
-        }
+        try { await base44.functions.invoke('cancelAppointmentInGHL', { appointment_id: location.state.reschedule_from }); }
+        catch (e) { console.error('Reschedule cancel failed:', e); }
       }
       setSubmitted(true);
     } catch (err) {
@@ -384,13 +272,6 @@ export default function BookAppointment() {
     }
   };
 
-  // Calendar helpers
-  const monthStart = startOfMonth(calendarDate);
-  const monthEnd = endOfMonth(calendarDate);
-  const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
-  const startPad = getDay(monthStart);
-
-  const selectClass = "w-full bg-asphalt border border-vapor/10 focus:border-gold/40 text-vapor px-4 py-3 text-sm font-mono-tech rounded-sm outline-none transition-colors appearance-none cursor-pointer";
   const inputClass = "w-full bg-asphalt border border-vapor/10 focus:border-gold/40 text-vapor placeholder:text-vapor/20 px-4 py-3 text-sm font-mono-tech rounded-sm outline-none transition-colors";
 
   if (!authChecked) {
@@ -401,7 +282,7 @@ export default function BookAppointment() {
     );
   }
 
-  // Gate: unauthenticated users must choose sign in or continue as guest
+  // Guest gate
   if (!user && !guestConfirmed) {
     return (
       <div className="min-h-screen bg-obsidian flex flex-col">
@@ -409,37 +290,27 @@ export default function BookAppointment() {
         <main className="flex-1 flex items-center justify-center px-5 sm:px-6 py-24 md:py-32">
           <div className="max-w-md w-full text-center">
             <div className="w-8 h-px bg-gold mx-auto mb-6" />
-            <p className="text-xs font-mono-tech tracking-[0.4em] text-gold mb-4">SCHEDULE SERVICE</p>
-            <h1 className="text-4xl font-grotesk font-bold text-vapor mb-3">BOOK AN APPOINTMENT</h1>
-            <p className="text-vapor/40 font-mono-tech text-sm mb-10">Metro Atlanta, GA · We come to you</p>
-
+            <p className="text-xs font-mono-tech tracking-[0.4em] text-gold mb-4">BOOK YOUR DETAIL</p>
+            <h1 className="text-4xl font-grotesk font-bold text-vapor mb-3">GET AN INSTANT QUOTE</h1>
+            <p className="text-vapor/40 font-mono-tech text-sm mb-10">Build a custom quote & schedule in one flow. Metro Atlanta, GA · We come to you.</p>
             <div className="space-y-4">
               <div className="border border-gold/20 bg-gold/5 rounded-sm p-6">
                 <p className="text-xs font-mono-tech tracking-widest text-gold mb-2">MEMBER ACCOUNT</p>
-                <p className="text-vapor/50 font-mono-tech text-xs mb-5">Sign in to auto-fill your details, manage vehicles, and track service history.</p>
+                <p className="text-vapor/50 font-mono-tech text-xs mb-5">Sign in to use saved vehicles, auto-fill details, and track service history.</p>
                 <div className="flex gap-3">
-                  <a href="/member-login" className="flex-1 text-center border border-gold bg-gold text-obsidian px-4 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold-light transition-colors">
-                    SIGN IN
-                  </a>
-                  <a href="/gold-signup" className="flex-1 text-center border border-gold/40 text-gold px-4 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold/10 transition-colors">
-                    CREATE ACCOUNT
-                  </a>
+                  <a href="/member-login" className="flex-1 text-center border border-gold bg-gold text-obsidian px-4 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold-light transition-colors">SIGN IN</a>
+                  <a href="/gold-signup" className="flex-1 text-center border border-gold/40 text-gold px-4 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold/10 transition-colors">CREATE ACCOUNT</a>
                 </div>
               </div>
-
               <div className="relative flex items-center gap-4">
                 <div className="flex-1 h-px bg-vapor/10" />
                 <span className="text-vapor/30 font-mono-tech text-xs">OR</span>
                 <div className="flex-1 h-px bg-vapor/10" />
               </div>
-
-              <button
-                onClick={() => setGuestConfirmed(true)}
-                className="w-full border border-vapor/20 text-vapor/60 px-6 py-4 text-sm font-mono-tech tracking-widest rounded-sm hover:border-vapor/40 hover:text-vapor transition-colors"
-              >
+              <button onClick={() => setGuestConfirmed(true)} className="w-full border border-vapor/20 text-vapor/60 px-6 py-4 text-sm font-mono-tech tracking-widest rounded-sm hover:border-vapor/40 hover:text-vapor transition-colors">
                 CONTINUE AS GUEST →
               </button>
-              <p className="text-vapor/25 font-mono-tech text-xs">One-time booking · No account required</p>
+              <p className="text-vapor/25 font-mono-tech text-xs">Build a quote & book · No account required</p>
             </div>
           </div>
         </main>
@@ -461,20 +332,12 @@ export default function BookAppointment() {
             </p>
             <div className="flex flex-col gap-3">
               {user ? (
-                <a href="/member-dashboard" className="border border-gold bg-gold text-obsidian px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold-light transition-colors text-center">
-                  VIEW APPOINTMENT →
-                </a>
+                <a href="/member-dashboard" className="border border-gold bg-gold text-obsidian px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold-light transition-colors text-center">VIEW APPOINTMENT →</a>
               ) : (
-                <a href="/member-login" className="border border-gold/40 text-gold px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold/10 transition-colors text-center">
-                  CREATE ACCOUNT TO TRACK →
-                </a>
+                <a href="/member-login" className="border border-gold/40 text-gold px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold/10 transition-colors text-center">CREATE ACCOUNT TO TRACK →</a>
               )}
-              <button
-                onClick={() => { setSubmitted(false); setForm(DEFAULT_FORM); setSelectedDay(null); setGuestVehicle(DEFAULT_GUEST_VEHICLE); setGuestService(''); setGuestAddOns([]); setSmsConsent(false); }}
-                className="border border-vapor/20 text-vapor/60 px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:border-vapor/50 hover:text-vapor transition-colors"
-              >
-                BOOK ANOTHER
-              </button>
+              <button onClick={() => { setSubmitted(false); setForm(DEFAULT_FORM); setSelectedDay(null); setGuestVehicle(DEFAULT_GUEST_VEHICLE); setSelected([]); setAddOns([]); setConsultations([]); setCondition('light'); setSmsConsent(false); setExistingQuoteId(null); navigate('/book', { replace: true }); }}
+                className="border border-vapor/20 text-vapor/60 px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:border-vapor/50 hover:text-vapor transition-colors">BOOK ANOTHER</button>
             </div>
           </div>
         </main>
@@ -484,380 +347,161 @@ export default function BookAppointment() {
   }
 
   return (
-    <div className="min-h-screen bg-obsidian flex flex-col">
+    <div className="bg-obsidian min-h-screen">
       <Navbar />
 
-      <main className="flex-1 max-w-3xl mx-auto w-full px-5 sm:px-6 pt-24 md:pt-32 pb-16 md:pb-20">
-        {/* Header */}
-        <div className="mb-8 md:mb-10">
-          <div className="flex items-center gap-3 mb-4 justify-center md:justify-start">
-            <div className="w-8 h-px bg-gold" />
-            <p className="text-xs font-mono-tech tracking-[0.4em] text-gold">SCHEDULE SERVICE</p>
-          </div>
-          <h1 className="text-3xl md:text-5xl font-grotesk font-bold text-vapor text-center md:text-left">
-            BOOK AN <GoldShimmer>APPOINTMENT</GoldShimmer>
-          </h1>
-          <p className="text-vapor/40 font-mono-tech text-sm mt-3 text-center md:text-left">
-            Metro Atlanta, GA · We come to you
-          </p>
-        </div>
+      <section className="pt-40 pb-12 max-w-7xl mx-auto px-6 text-center">
+        <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">METRO ATLANTA · MOBILE DETAILING</p>
+        <h1 className="text-5xl md:text-7xl font-grotesk font-bold text-vapor leading-none mb-6">
+          <GoldShimmer>QUOTE & BOOK</GoldShimmer>
+        </h1>
+        <p className="text-vapor/50 text-lg max-w-xl mx-auto leading-relaxed">
+          Build your custom quote and schedule in one place. Pricing adjusts to your vehicle size, condition, and add-ons.
+        </p>
+      </section>
 
-
-
-        <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
-
-          {/* QUOTE SUMMARY (from pricing page) */}
-          {quote && (
-            <div className="border border-gold/30 bg-gold/5 rounded-sm p-5">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-xs font-mono-tech tracking-widest text-gold">YOUR CUSTOM QUOTE</p>
-                <p className="text-2xl font-grotesk font-bold text-gold">${quote.final_price}</p>
-              </div>
-              <div className="space-y-1 mb-3">
-                {(quote.requested_services || []).map(s => (
-                  <p key={s} className="text-sm text-vapor/70 font-grotesk">• {SERVICE_LABELS[s] || s.replace(/_/g, ' ')}</p>
-                ))}
-                {(quote.add_ons || []).map(a => (
-                  <p key={a} className="text-sm text-vapor/70 font-grotesk">• {ADD_ONS.find(x => x.id === a)?.label || a.replace(/_/g, ' ')}</p>
-                ))}
-              </div>
-              {quote.condition && <p className="text-xs font-mono-tech text-vapor/40">Vehicle condition: {quote.condition.replace(/_/g, ' ')}</p>}
-              <p className="text-xs font-mono-tech text-vapor/40 mt-1">Final amount confirmed by our team before service begins.</p>
-            </div>
-          )}
-
-          {/* MEMBER: Vehicle + service selection */}
-          {user && (
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <label className="text-xs font-mono-tech tracking-widest text-vapor/40">SELECT VEHICLE(S) <span className="text-gold">*</span></label>
-                {!showAddVehicle && (
-                  <button type="button" onClick={() => setShowAddVehicle(true)} className="flex items-center gap-1 text-xs font-mono-tech tracking-widest text-gold hover:text-gold-light transition-colors">
-                    <Plus size={12} /> ADD VEHICLE
-                  </button>
-                )}
-              </div>
-              {showAddVehicle && (
-                <div className="mb-4">
-                  <AddVehicleForm onAdd={handleAddVehicleSave} onCancel={() => setShowAddVehicle(false)} />
-                </div>
-              )}
-              {vehicles.length > 0 && (
-                <div className="space-y-3">
-                  {vehicles.map(v => {
-                    const label = `${v.year} ${v.make} ${v.model}${v.color ? ', ' + v.color : ''}`;
-                    const checked = selectedVehicles.includes(label);
-                    const vehicleService = getVehicleService(label);
-                    const isVehicleConsultation = CONSULTATION_IDS.includes(vehicleService);
-                    return (
-                      <div key={v.id} className={`border rounded-sm transition-colors ${checked ? 'border-gold bg-gold/5' : 'border-vapor/10'}`}>
-                        <div className="flex items-center gap-3 p-4">
-                          <button type="button" onClick={() => toggleVehicle(label)}
-                            className={`w-5 h-5 border rounded-sm flex items-center justify-center transition-colors ${checked ? 'border-gold bg-gold text-obsidian' : 'border-vapor/30 hover:border-vapor/50'}`}>
-                            {checked && <X size={12} />}
-                          </button>
-                          <div className="flex-1">
-                            <p className="font-mono-tech text-sm text-vapor">{label}</p>
-                            {v.vehicle_type && (
-                              <p className="text-xs font-mono-tech text-vapor/30 mt-0.5">
-                                {v.vehicle_type === 'sedan_coupe' ? 'Sedan/Coupe' : 'Truck/SUV'}
-                              </p>
-                            )}
-                          </div>
-                          <button type="button" onClick={() => handleDeleteVehicle(v)} className="p-2 text-vapor/20 hover:text-red-400 transition-colors">
-                            <Trash2 size={13} />
-                          </button>
-                        </div>
-                        {checked && (
-                          <div className="px-4 pb-4">
-                            <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">SERVICE FOR THIS VEHICLE</label>
-                            <div className="relative">
-                              <select value={vehicleService} onChange={(e) => setVehicleService(label, e.target.value)} className={selectClass}>
-                                <option value="" disabled>Choose a service...</option>
-                                {SERVICES.filter(s => {
-                                  if (s.gold) {
-                                    const vehicleObj = vehicles.find(veh => `${veh.year} ${veh.make} ${veh.model}${veh.color ? ', ' + veh.color : ''}` === label);
-                                    return vehicleObj && goldVehicles[vehicleObj.id];
-                                  }
-                                  return true;
-                                }).map(s => (
-                                  <option key={s.id} value={s.id}>
-                                    {s.label}{s.quoteOnly ? ' — Quote Only' : s.gold ? ' — Gold Member' : ''}
-                                  </option>
-                                ))}
-                              </select>
-                              <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-vapor/40 pointer-events-none" />
-                            </div>
-                            {isVehicleConsultation && (
-                              <p className="text-xs font-mono-tech text-gold/60 mt-2">Free 15-min consultation · Custom quote provided on-site</p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-              {vehicles.length === 0 && !showAddVehicle && (
-                <p className="text-vapor/30 font-mono-tech text-xs">No saved vehicles — add one above to continue.</p>
-              )}
-              {vehicles.length > 0 && selectedVehicles.length === 0 && (
-                <p className="text-gold/60 font-mono-tech text-xs mt-2">Please select at least one vehicle to continue.</p>
-              )}
-            </div>
-          )}
-
-          {/* GUEST: Vehicle entry */}
-          {!user && (
-            <div>
-              <VehicleSelector onSelect={handleGuestVehicleSelect} selected={guestVehicleSelected} />
-              <div className="mt-4">
-                <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">COLOR (OPTIONAL)</label>
-                <input
-                  value={guestVehicle.color}
-                  onChange={e => setGuestVehicle(v => ({ ...v, color: e.target.value }))}
-                  placeholder="Color (e.g. Guards Red)"
-                  className={inputClass}
-                />
-              </div>
-              <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest mt-4">SELECT SERVICE <span className="text-gold">*</span></label>
-              <div className="relative">
-                <select value={guestService} onChange={e => { setGuestService(e.target.value); setSelectedDay(null); setForm(f => ({ ...f, preferred_date: '', preferred_time: '' })); }} className={selectClass}>
-                  <option value="" disabled>Choose a service...</option>
-                  {SERVICES.filter(s => !s.gold).map(s => (
-                    <option key={s.id} value={s.id}>
-                      {s.label}{s.quoteOnly ? ' — Quote Only' : ''}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-vapor/40 pointer-events-none" />
-              </div>
-            </div>
-          )}
-
-          {/* Estimated total */}
-          {estimatedTotal != null && (
-            <div className="flex items-center justify-between border border-gold/20 bg-gold/5 rounded-sm px-5 py-4">
+      {!config ? (
+        <div className="flex justify-center py-24"><Loader2 size={28} className="text-gold animate-spin" /></div>
+      ) : (
+        <section className="max-w-7xl mx-auto px-6 pb-24">
+          <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+            <div className="lg:col-span-2 space-y-10">
+              {/* Step 1: Vehicle */}
               <div>
-                <p className="text-xs font-mono-tech tracking-widest text-gold mb-1">ESTIMATED TOTAL</p>
-                <p className="text-vapor/50 font-mono-tech text-xs">
-                  {user && selectedVehicles.length > 1
-                    ? `${selectedVehicles.length} vehicles${addOnTotal > 0 ? ` + $${addOnTotal} add-ons` : ''}. Final quote confirmed before service.`
-                    : `Based on service + vehicle type${addOnTotal > 0 ? ` + $${addOnTotal} add-ons` : ''}. Final quote confirmed before service.`}
-                </p>
-              </div>
-              <p className="text-2xl font-grotesk font-bold text-gold shrink-0 ml-4">${estimatedTotal}+</p>
-            </div>
-          )}
-
-          {/* Add-Ons — Member */}
-          {user && selectedVehicles.length > 0 && selectedVehicles.some(label => getVehicleService(label)) && (
-            <div>
-              <label className="block text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">ADD-ON SERVICES <span className="text-vapor/25">(OPTIONAL)</span></label>
-              {selectedVehicles.map(vehicleKey => {
-                const vehicleService = getVehicleService(vehicleKey);
-                const isInteriorOnly = vehicleService === 'interior_detail';
-                if (!vehicleService || CONSULTATION_IDS.includes(vehicleService)) return null;
-                return (
-                  <div key={vehicleKey} className="mb-4">
-                    {selectedVehicles.length > 1 && <p className="text-xs font-mono-tech text-vapor/30 tracking-widest mb-2">{vehicleKey}</p>}
-                    <div className="space-y-2">
-                      {ADD_ONS.map(ao => {
-                        const active = getVehicleAddOns(vehicleKey).includes(ao.id);
-                        const isDisabled = ao.id === 'ceramic_sealant' && isInteriorOnly;
-                        return (
-                          <button key={ao.id} type="button" disabled={isDisabled} onClick={() => !isDisabled && toggleAddOn(vehicleKey, ao.id)}
-                            className={`w-full flex items-center justify-between px-5 py-3 border rounded-sm transition-colors text-left ${isDisabled ? 'border-vapor/5 text-vapor/20 cursor-not-allowed opacity-40' : active ? 'border-gold bg-gold/10' : 'border-vapor/10 hover:border-vapor/30'}`}>
-                            <div>
-                              <span className={`font-mono-tech text-sm ${isDisabled ? 'text-vapor/30' : 'text-vapor'}`}>{ao.label}</span>
-                              {isDisabled && <span className="block text-xs font-mono-tech text-vapor/25 mt-0.5">Exterior services only</span>}
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className={`font-mono-tech text-sm font-bold ${active && !isDisabled ? 'text-gold' : 'text-vapor/40'}`}>{ao.price}</span>
-                              {active && !isDisabled && <X size={13} className="text-gold shrink-0" />}
-                            </div>
-                          </button>
-                        );
-                      })}
+                {user && (
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gold text-obsidian text-xs font-bold font-mono-tech">1</span>
+                    <h2 className="text-sm font-mono-tech tracking-widest text-gold">YOUR VEHICLE</h2>
+                  </div>
+                )}
+                {user ? (
+                  <SavedVehiclePicker
+                    vehicles={vehicles} goldVehicles={goldVehicles}
+                    selectedId={selectedVehicleId} onSelect={setSelectedVehicleId}
+                    showAddForm={showAddVehicle} onAddNew={() => setShowAddVehicle(true)}
+                    onAddSave={handleAddVehicleSave} onCancelAdd={() => setShowAddVehicle(false)}
+                    onDelete={handleDeleteVehicle}
+                  />
+                ) : (
+                  <div>
+                    <VehicleSelector onSelect={handleGuestVehicleSelect} selected={guestVehicleSelected} />
+                    <div className="mt-4">
+                      <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">COLOR (OPTIONAL)</label>
+                      <input value={guestVehicle.color} onChange={e => setGuestVehicle(v => ({ ...v, color: e.target.value }))} placeholder="Color (e.g. Guards Red)" className={inputClass} />
                     </div>
                   </div>
-                );
-              })}
-              {addOnTotal > 0 && <p className="text-right text-xs font-mono-tech text-gold/60 mt-1 tracking-widest border-t border-gold/10 pt-2">TOTAL ADD-ONS: +${addOnTotal}</p>}
-            </div>
-          )}
-
-          {/* Add-Ons — Guest */}
-          {!user && guestService && !CONSULTATION_IDS.includes(guestService) && (
-            <div>
-              <label className="block text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">ADD-ON SERVICES <span className="text-vapor/25">(OPTIONAL)</span></label>
-              <div className="space-y-2">
-                {ADD_ONS.map(ao => {
-                  const active = guestAddOns.includes(ao.id);
-                  const isDisabled = ao.id === 'ceramic_sealant' && guestService === 'interior_detail';
-                  return (
-                    <button key={ao.id} type="button" disabled={isDisabled} onClick={() => !isDisabled && setGuestAddOns(prev => prev.includes(ao.id) ? prev.filter(a => a !== ao.id) : [...prev, ao.id])}
-                      className={`w-full flex items-center justify-between px-5 py-3 border rounded-sm transition-colors text-left ${isDisabled ? 'border-vapor/5 text-vapor/20 cursor-not-allowed opacity-40' : active ? 'border-gold bg-gold/10' : 'border-vapor/10 hover:border-vapor/30'}`}>
-                      <span className={`font-mono-tech text-sm ${isDisabled ? 'text-vapor/30' : 'text-vapor'}`}>{ao.label}</span>
-                      <div className="flex items-center gap-3">
-                        <span className={`font-mono-tech text-sm font-bold ${active ? 'text-gold' : 'text-vapor/40'}`}>{ao.price}</span>
-                        {active && <X size={13} className="text-gold shrink-0" />}
-                      </div>
-                    </button>
-                  );
-                })}
+                )}
               </div>
-            </div>
-          )}
 
-          {/* Calendar */}
-          {canShowCalendar && (
-            <div>
-              <p className="text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">SELECT DATE <span className="text-gold">*</span></p>
-              <div className="glass-panel border border-vapor/10 rounded-sm p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <button type="button"
-                    onClick={() => setCalendarDate(d => subMonths(d, 1))}
-                    disabled={calendarDate.getFullYear() === today.getFullYear() && calendarDate.getMonth() === today.getMonth()}
-                    className="text-vapor/40 hover:text-vapor transition-colors p-1 disabled:opacity-20 disabled:cursor-not-allowed">
-                    <ChevronLeft size={16} />
-                  </button>
-                  <p className="text-vapor font-mono-tech text-sm tracking-widest">{format(calendarDate, 'MMMM yyyy').toUpperCase()}</p>
-                  <button type="button" onClick={() => setCalendarDate(d => addMonths(d, 1))} className="text-vapor/40 hover:text-vapor transition-colors p-1">
-                    <ChevronRight size={16} />
-                  </button>
+              {/* Step 2: Condition */}
+              {classification && (
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gold text-obsidian text-xs font-bold font-mono-tech">2</span>
+                    <h2 className="text-sm font-mono-tech tracking-widest text-gold">VEHICLE CONDITION</h2>
+                  </div>
+                  <ConditionSelector conditions={config.pricing_rules?.condition_multipliers || []} value={condition} onChange={setCondition} />
                 </div>
-                <div className="grid grid-cols-7 mb-2">
-                  {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => (
-                    <p key={d} className="text-center text-vapor/25 font-mono-tech text-xs py-1">{d}</p>
-                  ))}
-                </div>
-                <div className="grid grid-cols-7 gap-y-1">
-                  {Array.from({ length: startPad }).map((_, i) => <div key={`pad-${i}`} />)}
-                  {days.map(day => {
-                    const isWeekend = getDay(day) === 0 || getDay(day) === 6;
-                    const isPast = isBefore(day, todayStart) || isToday(day) || isWeekend;
-                    const isSelected = selectedDay && isSameDay(day, selectedDay);
-                    return (
-                      <button key={day.toString()} type="button" disabled={isPast} onClick={() => handleDayClick(day)}
-                        className={`mx-auto w-9 h-9 flex items-center justify-center rounded-sm font-mono-tech text-xs transition-colors ${
-                          isSelected ? 'bg-gold text-obsidian font-bold'
-                          : isPast ? 'text-vapor/15 cursor-not-allowed'
-                          : 'text-vapor/60 hover:text-vapor hover:bg-vapor/5'
-                        }`}>
-                        {format(day, 'd')}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
+              )}
 
-          {/* Time Slots */}
-          {selectedDay && (
-            <div>
-              <p className="text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">
-                {isConsultation ? 'SELECT CONSULTATION TIME' : 'SELECT TIME'} — {format(selectedDay, 'EEEE, MMMM d').toUpperCase()} <span className="text-gold">*</span>
-              </p>
-              {loadingSlots ? (
-                <div className="flex items-center gap-2 text-vapor/40 font-mono-tech text-xs py-4">
-                  <Loader2 size={13} className="animate-spin" /> CHECKING AVAILABILITY...
+              {/* Step 3: Services */}
+              {classification && (
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gold text-obsidian text-xs font-bold font-mono-tech">3</span>
+                    <h2 className="text-sm font-mono-tech tracking-widest text-gold">CHOOSE YOUR SERVICES</h2>
+                  </div>
+                  <ServicePicker
+                    config={config} classification={classification} pricingGroup={pricingGroup}
+                    selected={selected} addOns={addOns} consultations={consultations}
+                    onToggleService={toggleService} onToggleAddOn={toggleAddOn} onToggleConsultation={toggleConsultation}
+                  />
                 </div>
-              ) : (
-                <div className="grid grid-cols-3 gap-2">
-                  {TIME_SLOTS.map(slot => {
-                    const isBooked = bookedSlots.some(b => b.toLowerCase().replace(/\s/g, '') === slot.toLowerCase().replace(/\s/g, ''));
-                    return (
-                      <button key={slot} type="button" disabled={isBooked}
-                        onClick={() => !isBooked && setForm(f => ({ ...f, preferred_time: slot }))}
-                        className={`py-3 border rounded-sm font-mono-tech text-xs tracking-widest transition-colors ${
-                          isBooked ? 'border-vapor/5 text-vapor/20 cursor-not-allowed line-through'
-                          : form.preferred_time === slot ? 'border-gold bg-gold/10 text-gold'
-                          : 'border-vapor/10 text-vapor/50 hover:border-vapor/30 hover:text-vapor'
-                        }`}>
-                        {slot}
-                      </button>
-                    );
-                  })}
+              )}
+
+              {/* Step 4: Schedule */}
+              {canShowCalendar && (
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gold text-obsidian text-xs font-bold font-mono-tech">4</span>
+                    <h2 className="text-sm font-mono-tech tracking-widest text-gold">SCHEDULE</h2>
+                  </div>
+                  <BookingCalendar
+                    calendarDate={calendarDate} setCalendarDate={setCalendarDate}
+                    selectedDay={selectedDay} onDayClick={handleDayClick}
+                    bookedSlots={bookedSlots} loadingSlots={loadingSlots}
+                    selectedTime={form.preferred_time} onSelectTime={(t) => setForm(f => ({ ...f, preferred_time: t }))}
+                    today={today} isConsultation={isConsultation}
+                  />
+                </div>
+              )}
+
+              {/* Step 5: Contact */}
+              {canShowCalendar && (
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gold text-obsidian text-xs font-bold font-mono-tech">5</span>
+                    <h2 className="text-sm font-mono-tech tracking-widest text-gold">YOUR DETAILS</h2>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">FIRST NAME <span className="text-gold">*</span></label>
+                      <input name="firstName" value={form.firstName} onChange={handleChange} placeholder="John" required className={inputClass} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">LAST NAME</label>
+                      <input name="lastName" value={form.lastName} onChange={handleChange} placeholder="Smith" className={inputClass} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">PHONE / TEXT <span className="text-gold">*</span></label>
+                      <input name="phone" value={form.phone} onChange={handleChange} placeholder="(404) 555-0000" required className={inputClass} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">EMAIL</label>
+                      <input name="email" value={form.email} onChange={handleChange} placeholder="you@email.com" className={inputClass} />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">SERVICE ADDRESS <span className="text-gold">*</span></label>
+                      {user && savedAddresses.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-2">
+                          {savedAddresses.map((addr, i) => (
+                            <button key={i} type="button" onClick={() => setForm(f => ({ ...f, address: addr }))}
+                              className={`text-xs font-mono-tech px-3 py-1.5 rounded-sm border transition-colors ${form.address === addr ? 'border-gold bg-gold/10 text-gold' : 'border-vapor/20 text-vapor/50 hover:border-vapor/40 hover:text-vapor'}`}>
+                              {addr}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      <input name="address" value={form.address} onChange={handleChange} placeholder="123 Main St, Atlanta GA" required className={inputClass} />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">NOTES</label>
+                      <input name="notes" value={form.notes} onChange={handleChange} placeholder="Any special requests..." className={inputClass} />
+                    </div>
+                  </div>
+                  <div className="border border-vapor/10 bg-asphalt/50 rounded-sm px-5 py-4 mt-4">
+                    <SmsConsent checked={smsConsent} onChange={setSmsConsent} />
+                  </div>
                 </div>
               )}
             </div>
-          )}
 
-          {/* Contact Info */}
-          <div>
-            <p className="text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">YOUR DETAILS</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">FIRST NAME <span className="text-gold">*</span></label>
-                <input name="firstName" value={form.firstName} onChange={handleChange} placeholder="John" required className={inputClass} />
-              </div>
-              <div>
-                <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">LAST NAME</label>
-                <input name="lastName" value={form.lastName} onChange={handleChange} placeholder="Smith" className={inputClass} />
-              </div>
-              <div>
-                <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">PHONE / TEXT <span className="text-gold">*</span></label>
-                <input name="phone" value={form.phone} onChange={handleChange} placeholder="(404) 555-0000" required className={inputClass} />
-              </div>
-              <div>
-                <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">EMAIL</label>
-                <input name="email" value={form.email} onChange={handleChange} placeholder="you@email.com" className={inputClass} />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">SERVICE ADDRESS <span className="text-gold">*</span></label>
-                {user && savedAddresses.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    {savedAddresses.map((addr, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => setForm(f => ({ ...f, address: addr }))}
-                        className={`text-xs font-mono-tech px-3 py-1.5 rounded-sm border transition-colors ${
-                          form.address === addr
-                            ? 'border-gold bg-gold/10 text-gold'
-                            : 'border-vapor/20 text-vapor/50 hover:border-vapor/40 hover:text-vapor'
-                        }`}
-                      >
-                        {addr}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <input name="address" value={form.address} onChange={handleChange} placeholder="123 Main St, Atlanta GA" required className={inputClass} />
-              </div>
+            {/* Right: sticky quote */}
+            <div className="lg:col-span-1">
+              <QuoteSummary
+                vehicleLabel={vehicleLabel}
+                conditionLabel={conditionEntry?.label}
+                quote={quote}
+                hasItems={hasItems}
+                classification={classification}
+                canSubmit={canSubmit}
+                submitting={loading}
+              />
             </div>
-          </div>
+          </form>
 
-          {/* Notes */}
-          <div>
-            <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">NOTES</label>
-            <input name="notes" value={form.notes} onChange={handleChange} placeholder="Any special requests..." className={inputClass} />
-          </div>
-
-          {/* SMS Opt-In (A2P 10DLC consent) */}
-          <div className="border border-vapor/10 bg-asphalt/50 rounded-sm px-5 py-4">
-            <SmsConsent checked={smsConsent} onChange={setSmsConsent} />
-          </div>
-
-          {/* Submit */}
-          <div className="pt-2 space-y-4">
-            <button
-              type="submit"
-              disabled={!canSubmit}
-              className="w-full flex items-center justify-center gap-3 bg-gold hover:bg-gold-light text-obsidian font-mono-tech text-sm tracking-widest py-4 rounded-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-            >
-              {loading
-                ? <><div className="w-4 h-4 border-2 border-obsidian/30 border-t-obsidian rounded-full animate-spin" /><span>SUBMITTING...</span></>
-                : <><span>CONFIRM BOOKING</span><ArrowRight size={14} /></>
-              }
-            </button>
-            <p className="text-center text-vapor/25 text-xs font-mono-tech">We'll confirm shortly · Metro Atlanta, GA</p>
-          </div>
-
-        </form>
-      </main>
+        </section>
+      )}
 
       <Footer />
     </div>

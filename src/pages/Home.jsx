@@ -90,9 +90,9 @@ export default function Home() {
             </p>
 
             <div className="flex flex-wrap gap-3 sm:gap-4 justify-center md:justify-start">
-              <Link to="/pricing"
+              <Link to="/book"
                 className="flex items-center gap-3 border border-vapor/40 text-vapor px-6 sm:px-7 py-3.5 sm:py-4 text-xs sm:text-sm font-mono-tech tracking-widest hover:border-vapor hover:bg-vapor/5 transition-all duration-300 rounded-sm">
-                PRICING <ArrowRight size={14} />
+                GET A QUOTE <ArrowRight size={14} />
               </Link>
               <Link to="/book"
                 className="flex items-center gap-3 border border-vapor/40 text-vapor px-6 sm:px-7 py-3.5 sm:py-4 text-xs sm:text-sm font-mono-tech tracking-widest hover:border-vapor hover:bg-vapor/5 transition-all duration-300 rounded-sm">
