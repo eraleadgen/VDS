@@ -60,7 +60,17 @@ async function sendTwilioSms(base44, to, body, customerName, messageType) {
   } catch (e) { console.error('sendMessage error:', e.message); return false; }
 }
 
-function esc(s) { return (s || '').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+// Robust HTML entity escaping — neutralizes &, <, >, ", ', and / to prevent HTML/CSS/script
+// injection in email templates (OWASP XSS prevention; CWE-79).
+function esc(s) {
+  return (s || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
+    .replace(/\//g, '&#x2F;');
+}
 
 function fieldRow(label, value) {
   return value ? `<tr><td style="padding:4px 0;"><span style="font-family:${MONO};font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#94A3B8;">${label}</span><br><span style="font-size:15px;color:#E2E8F0;font-weight:500;">${esc(value)}</span></td></tr>` : '';

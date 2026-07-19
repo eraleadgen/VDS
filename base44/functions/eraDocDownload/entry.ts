@@ -1,10 +1,16 @@
-// Self-contained, fully-styled onboarding document for ERA Systems LLC.
-// Rendered to a Blob entirely in-app — no external file fetch required.
-// Covers ERA Core architecture + how VDS Mobile connects, for future vertical onboarding.
+// ERA Core Onboarding Guide — admin-gated download.
+// The guide HTML is generated server-side and returned only to authenticated
+// admin users. This prevents the restricted architectural documentation from
+// being shipped in the public client bundle (CWE-200 / OWASP A01).
+//
+// POST /functions/eraDocDownload
+// Auth: requires an authenticated admin session (base44.auth.me().role === 'admin').
+
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 
 export const GUIDE_FILENAME = 'ERA-Core-Onboarding-Guide.html';
 
-export function buildGuideHtml() {
+function buildGuideHtml() {
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -299,3 +305,30 @@ export function buildGuideHtml() {
 </body>
 </html>`;
 }
+
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+
+    // Server-side admin verification — the only trust boundary for this document.
+    // Client-side role checks are not relied upon (CWE-601 / OWASP A01).
+    let me;
+    try {
+      me = await base44.auth.me();
+    } catch {
+      me = null;
+    }
+    if (!me || me.role !== 'admin') {
+      return Response.json({ error: 'Admin access required.' }, { status: 403 });
+    }
+
+    return Response.json({
+      success: true,
+      html: buildGuideHtml(),
+      filename: GUIDE_FILENAME,
+    });
+  } catch (error) {
+    console.error('eraDocDownload error:', error.message);
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+});

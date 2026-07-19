@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Download, FileText, Lock, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-import { buildGuideHtml, GUIDE_FILENAME } from '@/lib/eraOnboardingGuide';
+
+const GUIDE_FILENAME = 'ERA-Core-Onboarding-Guide.html';
 
 export default function EraDocDownload() {
   const [status, setStatus] = useState('');
+  const [error, setError] = useState('');
   const [authState, setAuthState] = useState('loading'); // loading | admin | denied
 
   useEffect(() => {
@@ -30,23 +32,40 @@ export default function EraDocDownload() {
     setTimeout(() => URL.revokeObjectURL(url), 2000);
   }
 
-  function handleDownload() {
+  // Fetch the guide HTML from the admin-gated backend function. The document
+  // is never shipped in the public client bundle — the server verifies the
+  // admin role before returning the content.
+  async function fetchGuideHtml() {
+    const res = await base44.functions.invoke('eraDocDownload', {});
+    const html = res?.data?.html;
+    if (!html) throw new Error('Guide content unavailable.');
+    return html;
+  }
+
+  async function handleDownload() {
     setStatus('Preparing…');
+    setError('');
     try {
-      const html = buildGuideHtml();
+      const html = await fetchGuideHtml();
       triggerDownload(new Blob([html], { type: 'text/html' }), GUIDE_FILENAME);
       setStatus('Download started ✓');
     } catch (e) {
-      setStatus('Error: ' + e.message);
+      setStatus('');
+      setError('Error: ' + (e?.message || 'Unable to download the guide.'));
     }
   }
 
-  function handleView() {
-    const html = buildGuideHtml();
-    const blob = new Blob([html], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
-    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  async function handleView() {
+    setError('');
+    try {
+      const html = await fetchGuideHtml();
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (e) {
+      setError('Error: ' + (e?.message || 'Unable to preview the guide.'));
+    }
   }
 
   if (authState === 'loading') {
@@ -104,6 +123,9 @@ export default function EraDocDownload() {
         </button>
         {status && (
           <p className="mt-5 text-xs text-vapor/50 font-mono-tech min-h-[18px]">{status}</p>
+        )}
+        {error && (
+          <p className="mt-3 text-xs text-red-400/80 font-mono-tech min-h-[18px]">{error}</p>
         )}
       </div>
     </div>
