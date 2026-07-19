@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { ChevronLeft, ChevronRight, ArrowRight, CheckCircle, ChevronDown, X, Plus, Loader2, Trash2 } from 'lucide-react';
@@ -7,6 +7,7 @@ import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
 import GoldShimmer from '../components/vds/GoldShimmer';
 import AddVehicleForm from '../components/member/AddVehicleForm';
+import VehicleSelector from '../components/vds/VehicleSelector';
 import SmsConsent from '../components/vds/SmsConsent';
 
 const SERVICES = [
@@ -57,7 +58,12 @@ const DEFAULT_FORM = {
 };
 
 // Guest vehicle entry (for non-members)
-const DEFAULT_GUEST_VEHICLE = { year: '', make: '', model: '', color: '', vehicle_type: '' };
+const DEFAULT_GUEST_VEHICLE = { year: '', make: '', model: '', color: '', classification: null, vehicle_type: '' };
+
+// Map a 4-type vehicle classification (from VehicleSelector / quote) to the 2-type pricing group
+function classificationToVehicleType(cls) {
+  return ['mid_size_suv', 'truck_3_row_suv'].includes(cls) ? 'truck_suv' : 'sedan_coupe';
+}
 
 export default function BookAppointment() {
   const location = useLocation();
@@ -79,8 +85,21 @@ export default function BookAppointment() {
   const [smsConsent, setSmsConsent] = useState(false);
   const [quote, setQuote] = useState(null);
 
-  // Guest vehicle state
-  const [guestVehicle, setGuestVehicle] = useState(DEFAULT_GUEST_VEHICLE);
+  // Guest vehicle state — pre-fill from a saved quote (Pricing page "Book This Quote")
+  const [guestVehicle, setGuestVehicle] = useState(() => {
+    const q = location.state?.quote;
+    if (q && q.vehicle_classification) {
+      return {
+        year: q.vehicle_year || '',
+        make: q.vehicle_make || '',
+        model: q.vehicle_model || '',
+        color: '',
+        classification: q.vehicle_classification,
+        vehicle_type: classificationToVehicleType(q.vehicle_classification),
+      };
+    }
+    return DEFAULT_GUEST_VEHICLE;
+  });
   const [guestService, setGuestService] = useState('');
   const [guestAddOns, setGuestAddOns] = useState([]);
   const [guestConfirmed, setGuestConfirmed] = useState(false);
@@ -140,10 +159,6 @@ export default function BookAppointment() {
         setForm(f => ({ ...f, service_type: mainService }));
         setGuestService(mainService);
       }
-      if (q.vehicle_classification) {
-        const vt = ['mid_size_suv', 'truck_3_row_suv'].includes(q.vehicle_classification) ? 'truck_suv' : 'sedan_coupe';
-        setGuestVehicle(v => ({ ...v, vehicle_type: vt }));
-      }
       if (addOnIds.length) {
         setGuestAddOns(addOnIds.filter(id => ADD_ONS.find(a => a.id === id)));
       }
@@ -165,6 +180,26 @@ export default function BookAppointment() {
     setAddOns(prev => { const next = { ...prev }; delete next[label]; return next; });
     setVehicleServices(prev => { const next = { ...prev }; delete next[label]; return next; });
   };
+
+  // VehicleSelector callback for guest flow — receives {year, make, model, classification} or null
+  const handleGuestVehicleSelect = useCallback((sel) => {
+    if (!sel) {
+      setGuestVehicle(v => ({ ...v, classification: null, vehicle_type: '' }));
+      return;
+    }
+    setGuestVehicle(v => ({
+      ...v,
+      year: sel.year,
+      make: sel.make,
+      model: sel.model,
+      classification: sel.classification,
+      vehicle_type: classificationToVehicleType(sel.classification),
+    }));
+  }, []);
+
+  const guestVehicleSelected = guestVehicle.year
+    ? { year: guestVehicle.year, make: guestVehicle.make, model: guestVehicle.model, classification: guestVehicle.classification }
+    : null;
 
   const getVehicleAddOns = (label) => addOns[label] || [];
   const toggleAddOn = (vehicleLabel, id) => {
@@ -575,30 +610,15 @@ export default function BookAppointment() {
           {/* GUEST: Vehicle entry */}
           {!user && (
             <div>
-              <p className="text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">YOUR VEHICLE <span className="text-gold">*</span></p>
-              <div className="grid grid-cols-2 gap-3 mb-3">
-                {[
-                  { key: 'year', placeholder: 'Year (e.g. 2020)' },
-                  { key: 'make', placeholder: 'Make (e.g. Toyota)' },
-                  { key: 'model', placeholder: 'Model (e.g. Camry)' },
-                  { key: 'color', placeholder: 'Color (optional)' },
-                ].map(f => (
-                  <input
-                    key={f.key}
-                    value={guestVehicle[f.key]}
-                    onChange={e => setGuestVehicle(v => ({ ...v, [f.key]: e.target.value }))}
-                    placeholder={f.placeholder}
-                    className={inputClass}
-                  />
-                ))}
-              </div>
-              <div className="relative mb-3">
-                <select value={guestVehicle.vehicle_type} onChange={e => setGuestVehicle(v => ({ ...v, vehicle_type: e.target.value }))} className={selectClass}>
-                  <option value="" disabled>Vehicle type...</option>
-                  <option value="sedan_coupe">Sedan / Coupe</option>
-                  <option value="truck_suv">Truck / SUV</option>
-                </select>
-                <ChevronDown size={14} className="absolute right-4 top-1/2 -translate-y-1/2 text-vapor/40 pointer-events-none" />
+              <VehicleSelector onSelect={handleGuestVehicleSelect} selected={guestVehicleSelected} />
+              <div className="mt-4">
+                <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest">COLOR (OPTIONAL)</label>
+                <input
+                  value={guestVehicle.color}
+                  onChange={e => setGuestVehicle(v => ({ ...v, color: e.target.value }))}
+                  placeholder="Color (e.g. Guards Red)"
+                  className={inputClass}
+                />
               </div>
               <label className="block text-xs font-mono-tech text-vapor/40 mb-2 tracking-widest mt-4">SELECT SERVICE <span className="text-gold">*</span></label>
               <div className="relative">

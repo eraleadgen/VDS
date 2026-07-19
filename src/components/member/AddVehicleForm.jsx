@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Plus, Save, X, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import VehicleYearMakeModel from '../vds/VehicleYearMakeModel';
 
 async function classifyVehicle(year, make, model) {
   if (!year || !make || !model) return null;
@@ -22,6 +23,9 @@ Respond with ONLY one of these exact strings: sedan_coupe or truck_suv`,
   return result?.vehicle_type || null;
 }
 
+const inputClass = 'w-full bg-asphalt border border-vapor/10 focus:border-gold/50 outline-none text-vapor px-4 py-3 text-sm font-mono-tech rounded-sm transition-colors duration-200';
+const labelClass = 'block text-xs font-mono-tech tracking-widest text-vapor/50 mb-2';
+
 export default function AddVehicleForm({ onAdd, onCancel, initialData = null }) {
   const [form, setForm] = useState(
     initialData
@@ -30,19 +34,34 @@ export default function AddVehicleForm({ onAdd, onCancel, initialData = null }) 
   );
   const [loading, setLoading] = useState(false);
   const [classifying, setClassifying] = useState(false);
-
+  const initialised = useRef(false);
 
   const isEdit = !!initialData;
 
-  const handleClassify = async () => {
-    if (!form.year || !form.make || !form.model) return;
+  // Debounced auto-classification
+  useEffect(() => {
+    if (!form.year || !form.make || !form.model || form.model.trim().length < 2) return;
+    // Skip re-classification on mount if editing an already-classified vehicle
+    if (!initialised.current && form.vehicle_type && initialData?.model && initialData.model.trim() === form.model.trim()) {
+      initialised.current = true;
+      return;
+    }
+    initialised.current = true;
     setClassifying(true);
-    const vt = await classifyVehicle(form.year, form.make, form.model);
-    if (vt) setForm(f => ({ ...f, vehicle_type: vt }));
-    setClassifying(false);
-  };
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      const vt = await classifyVehicle(form.year, form.make, form.model.trim());
+      if (cancelled) return;
+      if (vt) setForm(f => ({ ...f, vehicle_type: vt }));
+      setClassifying(false);
+    }, 600);
+    return () => { cancelled = true; clearTimeout(timer); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.model, form.year, form.make]);
 
-  const handleModelBlur = () => handleClassify();
+  const handleYmmChange = (next) => {
+    setForm(f => ({ ...f, ...next, vehicle_type: '' }));
+  };
 
   const handleSubmit = async () => {
     if (!form.year || !form.make || !form.model) return;
@@ -50,21 +69,6 @@ export default function AddVehicleForm({ onAdd, onCancel, initialData = null }) 
     await onAdd(form);
     setLoading(false);
   };
-
-  const field = (key, label, placeholder, required = false, onBlur) => (
-    <div>
-      <label className="block text-xs font-mono-tech tracking-widest text-vapor/50 mb-2">{label}</label>
-      <input
-        type="text"
-        value={form[key]}
-        onChange={e => setForm({ ...form, [key]: e.target.value })}
-        onBlur={onBlur}
-        required={required}
-        placeholder={placeholder}
-        className="w-full bg-asphalt border border-vapor/10 focus:border-gold/50 outline-none text-vapor px-4 py-3 text-sm font-mono-tech rounded-sm transition-colors duration-200"
-      />
-    </div>
-  );
 
   const vehicleTypeLabel = form.vehicle_type === 'sedan_coupe' ? 'Sedan / Coupe' : form.vehicle_type === 'truck_suv' ? 'Truck / SUV' : null;
 
@@ -76,11 +80,8 @@ export default function AddVehicleForm({ onAdd, onCancel, initialData = null }) 
           <X size={16} />
         </button>
       </div>
-      <div className="grid grid-cols-3 gap-4">
-        {field('year', 'YEAR', '2022', true)}
-        {field('make', 'MAKE', 'Porsche', true)}
-        {field('model', 'MODEL', '911', true, handleModelBlur)}
-      </div>
+
+      <VehicleYearMakeModel value={{ year: form.year, make: form.make, model: form.model }} onChange={handleYmmChange} />
 
       {/* Vehicle type classification indicator */}
       <div className="flex items-center gap-2 h-6">
@@ -98,12 +99,20 @@ export default function AddVehicleForm({ onAdd, onCancel, initialData = null }) 
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        {field('color', 'COLOR', 'Guards Red')}
-        {field('license_plate', 'LICENSE PLATE', 'ABC-1234')}
+        <div>
+          <label className={labelClass}>COLOR</label>
+          <input type="text" value={form.color} onChange={e => setForm({ ...form, color: e.target.value })} placeholder="Guards Red" className={inputClass} />
+        </div>
+        <div>
+          <label className={labelClass}>LICENSE PLATE</label>
+          <input type="text" value={form.license_plate} onChange={e => setForm({ ...form, license_plate: e.target.value })} placeholder="ABC-1234" className={inputClass} />
+        </div>
       </div>
-      {field('notes', 'NOTES (OPTIONAL)', 'e.g. ceramic coated, park in garage')}
-      
-      
+      <div>
+        <label className={labelClass}>NOTES (OPTIONAL)</label>
+        <input type="text" value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="e.g. ceramic coated, park in garage" className={inputClass} />
+      </div>
+
       <div className="flex gap-3 pt-2">
         <button
           type="button"

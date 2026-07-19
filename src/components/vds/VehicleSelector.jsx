@@ -1,19 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { Check, Loader2, Car, ChevronDown, RefreshCw } from 'lucide-react';
+import { Check, Loader2, Car, RefreshCw } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
-
-const MAKES = [
-  'Acura', 'Alfa Romeo', 'Aston Martin', 'Audi', 'Bentley', 'BMW', 'Buick',
-  'Cadillac', 'Chevrolet', 'Chrysler', 'Dodge', 'Ferrari', 'Fiat', 'Ford',
-  'Genesis', 'GMC', 'Honda', 'Hyundai', 'Infiniti', 'Jaguar', 'Jeep', 'Kia',
-  'Lamborghini', 'Land Rover', 'Lexus', 'Lincoln', 'Lotus', 'Lucid',
-  'Maserati', 'Mazda', 'McLaren', 'Mercedes-Benz', 'Mini', 'Mitsubishi',
-  'Nissan', 'Polestar', 'Porsche', 'Ram', 'Rivian', 'Rolls-Royce',
-  'Subaru', 'Tesla', 'Toyota', 'Volkswagen', 'Volvo',
-];
-
-const CURRENT_YEAR = new Date().getFullYear() + 1;
-const YEARS = Array.from({ length: CURRENT_YEAR - 1995 + 1 }, (_, i) => String(CURRENT_YEAR - i));
+import VehicleYearMakeModel from './VehicleYearMakeModel';
 
 const CLASSIFICATION_LABEL = {
   coupe: 'Coupe',
@@ -51,81 +39,49 @@ Respond with ONLY the category key.`,
 }
 
 export default function VehicleSelector({ onSelect, selected = null }) {
-  const [year, setYear] = useState(selected?.year || '');
-  const [make, setMake] = useState(selected?.make || '');
-  const [model, setModel] = useState(selected?.model || '');
-  const [models, setModels] = useState([]);
-  const [loadingModels, setLoadingModels] = useState(false);
+  const [ymm, setYmm] = useState({
+    year: selected?.year || '',
+    make: selected?.make || '',
+    model: selected?.model || '',
+  });
   const [classifying, setClassifying] = useState(false);
   const [classification, setClassification] = useState(selected?.classification || null);
   const initialised = useRef(false);
 
-  // Fetch models when year + make are set (skip initial mount if pre-selected)
-  useEffect(() => {
-    if (!year || !make) { setModels([]); return; }
-    let cancelled = false;
-    setLoadingModels(true);
-    base44.functions.invoke('vehicleDatabase', { action: 'models', year, make })
-      .then(res => {
-        if (cancelled) return;
-        const d = res?.data || res;
-        setModels(d.models || []);
-      })
-      .catch(() => { if (!cancelled) setModels([]); })
-      .finally(() => { if (!cancelled) setLoadingModels(false); });
-    return () => { cancelled = true; };
-  }, [year, make]);
-
   // Debounced auto-classification
   useEffect(() => {
-    if (!year || !make || !model || model.trim().length < 2) return;
+    if (!ymm.year || !ymm.make || !ymm.model || ymm.model.trim().length < 2) return;
+    // Skip re-classification on mount if a pre-selected vehicle already has a classification
+    if (!initialised.current && classification && selected?.model && selected.model.trim() === ymm.model.trim()) {
+      initialised.current = true;
+      return;
+    }
+    initialised.current = true;
     setClassifying(true);
     let cancelled = false;
     const timer = setTimeout(async () => {
-      const cls = await classifyVehicle4(year, make, model.trim());
+      const cls = await classifyVehicle4(ymm.year, ymm.make, ymm.model.trim());
       if (cancelled) return;
       setClassification(cls);
       setClassifying(false);
       if (cls) {
-        onSelect({ year, make, model: model.trim(), classification: cls });
+        onSelect({ year: ymm.year, make: ymm.make, model: ymm.model.trim(), classification: cls });
       }
     }, 600);
     return () => { cancelled = true; clearTimeout(timer); };
-  }, [model, year, make, onSelect]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ymm.model, ymm.year, ymm.make]);
 
-  const handleYearChange = (val) => {
-    setYear(val);
-    setModel('');
-    setClassification(null);
-    onSelect(null);
-  };
-
-  const handleMakeChange = (val) => {
-    setMake(val);
-    setModel('');
-    setClassification(null);
-    onSelect(null);
-  };
-
-  const handleModelInput = (val) => {
-    setModel(val);
+  const handleYmmChange = (next) => {
+    setYmm(next);
     if (classification) { setClassification(null); onSelect(null); }
   };
 
   const handleReset = () => {
-    setYear(''); setMake(''); setModel('');
-    setModels([]); setClassification(null);
+    setYmm({ year: '', make: '', model: '' });
+    setClassification(null);
     onSelect(null);
   };
-
-  const selectClass =
-    'w-full bg-asphalt border border-vapor/10 focus:border-gold/50 outline-none text-vapor px-4 py-3 text-sm font-grotesk rounded-sm transition-colors duration-200 appearance-none cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed';
-  const chevron = (disabled) => (
-    <ChevronDown
-      size={14}
-      className={`absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none ${disabled ? 'text-vapor/20' : 'text-vapor/40'}`}
-    />
-  );
 
   return (
     <div>
@@ -150,7 +106,7 @@ export default function VehicleSelector({ onSelect, selected = null }) {
             <Car size={22} className="text-gold" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-base font-grotesk font-bold text-vapor truncate">{year} {make} {model}</p>
+            <p className="text-base font-grotesk font-bold text-vapor truncate">{ymm.year} {ymm.make} {ymm.model}</p>
             <div className="flex items-center gap-1.5 mt-1">
               <Check size={11} className="text-gold" />
               <span className="text-xs font-mono-tech tracking-widest text-gold">AUTO-CLASSIFIED: {CLASSIFICATION_LABEL[classification]?.toUpperCase()}</span>
@@ -161,40 +117,7 @@ export default function VehicleSelector({ onSelect, selected = null }) {
         /* Dropdowns */
         <>
           <p className="text-xs font-mono-tech text-vapor/40 mb-3">Add your vehicle to get started — select year, make, and model.</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-            {/* Year */}
-            <div className="relative">
-              <select value={year} onChange={e => handleYearChange(e.target.value)} className={selectClass}>
-                <option value="">Year</option>
-                {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
-              </select>
-              {chevron(false)}
-            </div>
-            {/* Make */}
-            <div className="relative">
-              <select value={make} onChange={e => handleMakeChange(e.target.value)} disabled={!year} className={selectClass}>
-                <option value="">Make</option>
-                {MAKES.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
-              {chevron(!year)}
-            </div>
-            {/* Model (datalist combobox — selectable + free-typable) */}
-            <div className="relative">
-              <input
-                list="vs-model-list"
-                value={model}
-                onChange={e => handleModelInput(e.target.value)}
-                disabled={!make || loadingModels}
-                placeholder={loadingModels ? 'Loading models...' : (make ? 'Select or type model' : 'Model')}
-                className="w-full bg-asphalt border border-vapor/10 focus:border-gold/50 outline-none text-vapor px-4 py-3 text-sm font-grotesk rounded-sm transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed placeholder:text-vapor/30"
-              />
-              <datalist id="vs-model-list">
-                {models.map(m => <option key={m} value={m} />)}
-              </datalist>
-              {loadingModels && <Loader2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gold animate-spin pointer-events-none" />}
-              {!loadingModels && chevron(!make)}
-            </div>
-          </div>
+          <VehicleYearMakeModel value={ymm} onChange={handleYmmChange} />
 
           {/* Classifying indicator */}
           <div className="flex items-center gap-2 h-6 mt-3">
