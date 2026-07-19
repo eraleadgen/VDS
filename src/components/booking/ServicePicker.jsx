@@ -8,6 +8,12 @@ export default function ServicePicker({ config, classification, pricingGroup, se
   const coatingServices = allServices.filter(s => s.category === 'coating');
   const correctionServices = allServices.filter(s => s.category === 'correction');
 
+  // Show a single Ceramic Coating and single Paint Correction option regardless of
+  // coating term (e.g. 2yr/5yr) or correction stage (Stage 1/2). The specific tier is
+  // determined on-site during the consultation, so only one option is offered here.
+  const coatingSvc = coatingServices[0];
+  const correctionSvc = correctionServices[0];
+
   const ServiceButton = ({ svc, checked, onClick, prefix }) => (
     <button type="button" onClick={onClick}
       className={`flex items-center justify-between gap-3 p-4 rounded-sm border text-left transition-all ${checked ? 'border-gold/50 bg-gold/[0.06]' : 'border-vapor/10 bg-asphalt/30 hover:border-vapor/20'}`}>
@@ -18,6 +24,22 @@ export default function ServicePicker({ config, classification, pricingGroup, se
         <span className="text-sm text-vapor font-grotesk truncate">{svc.label}</span>
       </div>
       <span className="text-gold font-grotesk font-bold text-base shrink-0">{prefix}{lookupTier(svc, classification, pricingGroup)?.price ?? 0}</span>
+    </button>
+  );
+
+  const ConsultationButton = ({ title, checked, onClick }) => (
+    <button type="button" onClick={onClick}
+      className={`w-full flex items-center justify-between gap-3 p-5 rounded-sm border text-left transition-all ${checked ? 'border-gold/50 bg-gold/[0.06]' : 'border-vapor/10 bg-asphalt/30 hover:border-vapor/20'}`}>
+      <div className="flex items-center gap-3">
+        <MessageCircle size={18} className={checked ? 'text-gold' : 'text-vapor/40'} />
+        <div>
+          <span className="block text-sm text-vapor font-grotesk">{title} Consultation</span>
+          <span className="text-xs font-mono-tech text-vapor/40">Free 15-min consultation · Custom quote on-site</span>
+        </div>
+      </div>
+      <span className={`text-xs font-mono-tech tracking-widest shrink-0 ${checked ? 'text-gold' : 'text-vapor/50'}`}>
+        {checked ? '✓ ADDED' : 'CONSULTATION'}
+      </span>
     </button>
   );
 
@@ -43,54 +65,28 @@ export default function ServicePicker({ config, classification, pricingGroup, se
         </div>
       )}
 
-      {coatingServices.length > 0 && (
+      {coatingSvc && (
         <div>
           <p className="text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">{CATEGORY_LABEL.coating}</p>
           <div className="space-y-2">
-            {coatingServices.map(svc => {
-              const checked = consultations.includes(svc.key);
-              return (
-                <button key={svc.key} type="button" onClick={() => onToggleConsultation(svc.key)}
-                  className={`w-full flex items-center justify-between gap-3 p-5 rounded-sm border text-left transition-all ${checked ? 'border-gold/50 bg-gold/[0.06]' : 'border-vapor/10 bg-asphalt/30 hover:border-vapor/20'}`}>
-                  <div className="flex items-center gap-3">
-                    <MessageCircle size={18} className={checked ? 'text-gold' : 'text-vapor/40'} />
-                    <div>
-                      <span className="block text-sm text-vapor font-grotesk">{svc.label} Consultation</span>
-                      <span className="text-xs font-mono-tech text-vapor/40">Free 15-min consultation · Custom quote on-site</span>
-                    </div>
-                  </div>
-                  <span className={`text-xs font-mono-tech tracking-widest shrink-0 ${checked ? 'text-gold' : 'text-vapor/50'}`}>
-                    {checked ? '✓ ADDED' : 'CONSULTATION'}
-                  </span>
-                </button>
-              );
-            })}
+            <ConsultationButton
+              title="Ceramic Coating"
+              checked={consultations.includes(coatingSvc.key)}
+              onClick={() => onToggleConsultation(coatingSvc.key)}
+            />
           </div>
         </div>
       )}
 
-      {correctionServices.length > 0 && (
+      {correctionSvc && (
         <div>
           <p className="text-xs font-mono-tech tracking-widest text-vapor/40 mb-3">{CATEGORY_LABEL.correction}</p>
           <div className="space-y-2">
-            {correctionServices.map(svc => {
-              const checked = consultations.includes(svc.key);
-              return (
-                <button key={svc.key} type="button" onClick={() => onToggleConsultation(svc.key)}
-                  className={`w-full flex items-center justify-between gap-3 p-5 rounded-sm border text-left transition-all ${checked ? 'border-gold/50 bg-gold/[0.06]' : 'border-vapor/10 bg-asphalt/30 hover:border-vapor/20'}`}>
-                  <div className="flex items-center gap-3">
-                    <MessageCircle size={18} className={checked ? 'text-gold' : 'text-vapor/40'} />
-                    <div>
-                      <span className="block text-sm text-vapor font-grotesk">{svc.label} Consultation</span>
-                      <span className="text-xs font-mono-tech text-vapor/40">Free 15-min consultation · Custom quote on-site</span>
-                    </div>
-                  </div>
-                  <span className={`text-xs font-mono-tech tracking-widest shrink-0 ${checked ? 'text-gold' : 'text-vapor/50'}`}>
-                    {checked ? '✓ ADDED' : 'CONSULTATION'}
-                  </span>
-                </button>
-              );
-            })}
+            <ConsultationButton
+              title="Paint Correction"
+              checked={consultations.includes(correctionSvc.key)}
+              onClick={() => onToggleConsultation(correctionSvc.key)}
+            />
           </div>
         </div>
       )}

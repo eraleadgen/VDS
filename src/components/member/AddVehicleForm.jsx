@@ -1,27 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Plus, Save, X, Loader2 } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
 import VehicleYearMakeModel from '../vds/VehicleYearMakeModel';
-
-async function classifyVehicle(year, make, model) {
-  if (!year || !make || !model) return null;
-  const result = await base44.integrations.Core.InvokeLLM({
-    prompt: `Classify this vehicle as either "sedan_coupe" or "truck_suv".
-
-Rules:
-- sedan_coupe: 2-door cars, coupes, convertibles, small/mid-size sedans (e.g. Honda Civic, BMW 3 Series, Ford Mustang, Porsche 911, Toyota Camry, Chevrolet Malibu)
-- truck_suv: pickup trucks, full-size SUVs, compact SUVs, crossovers, minivans, wagons (e.g. Ford F-150, Toyota RAV4, Honda CR-V, Chevrolet Tahoe, Toyota Highlander, Subaru Outback, Honda Odyssey, Jeep Wrangler)
-
-Vehicle: ${year} ${make} ${model}
-
-Respond with ONLY one of these exact strings: sedan_coupe or truck_suv`,
-    response_json_schema: {
-      type: 'object',
-      properties: { vehicle_type: { type: 'string', enum: ['sedan_coupe', 'truck_suv'] } }
-    }
-  });
-  return result?.vehicle_type || null;
-}
+import { classifyVehicle4, CLASSIFICATION_LABEL, defaultPricingGroupFor } from '@/lib/vehicleClassification';
 
 const inputClass = 'w-full bg-asphalt border border-vapor/10 focus:border-gold/50 outline-none text-vapor px-4 py-3 text-sm font-mono-tech rounded-sm transition-colors duration-200';
 const labelClass = 'block text-xs font-mono-tech tracking-widest text-vapor/50 mb-2';
@@ -29,8 +9,8 @@ const labelClass = 'block text-xs font-mono-tech tracking-widest text-vapor/50 m
 export default function AddVehicleForm({ onAdd, onCancel, initialData = null }) {
   const [form, setForm] = useState(
     initialData
-      ? { year: initialData.year || '', make: initialData.make || '', model: initialData.model || '', color: initialData.color || '', license_plate: initialData.license_plate || '', notes: initialData.notes || '', vehicle_type: initialData.vehicle_type || '', is_gold_registered: initialData.is_gold_registered || false, vehicle_image: initialData.vehicle_image || '' }
-      : { year: '', make: '', model: '', color: '', license_plate: '', notes: '', vehicle_type: '', is_gold_registered: false, vehicle_image: '' }
+      ? { year: initialData.year || '', make: initialData.make || '', model: initialData.model || '', color: initialData.color || '', license_plate: initialData.license_plate || '', notes: initialData.notes || '', vehicle_classification: initialData.vehicle_classification || '', vehicle_type: initialData.vehicle_type || '', is_gold_registered: initialData.is_gold_registered || false, vehicle_image: initialData.vehicle_image || '' }
+      : { year: '', make: '', model: '', color: '', license_plate: '', notes: '', vehicle_classification: '', vehicle_type: '', is_gold_registered: false, vehicle_image: '' }
   );
   const [loading, setLoading] = useState(false);
   const [classifying, setClassifying] = useState(false);
@@ -38,11 +18,11 @@ export default function AddVehicleForm({ onAdd, onCancel, initialData = null }) 
 
   const isEdit = !!initialData;
 
-  // Debounced auto-classification
+  // Debounced auto-classification into the 4 operational classifications
   useEffect(() => {
     if (!form.year || !form.make || !form.model || form.model.trim().length < 2) return;
     // Skip re-classification on mount if editing an already-classified vehicle
-    if (!initialised.current && form.vehicle_type && initialData?.model && initialData.model.trim() === form.model.trim()) {
+    if (!initialised.current && form.vehicle_classification && initialData?.model && initialData.model.trim() === form.model.trim()) {
       initialised.current = true;
       return;
     }
@@ -50,9 +30,11 @@ export default function AddVehicleForm({ onAdd, onCancel, initialData = null }) 
     setClassifying(true);
     let cancelled = false;
     const timer = setTimeout(async () => {
-      const vt = await classifyVehicle(form.year, form.make, form.model.trim());
+      const cls = await classifyVehicle4(form.year, form.make, form.model.trim());
       if (cancelled) return;
-      if (vt) setForm(f => ({ ...f, vehicle_type: vt }));
+      if (cls) {
+        setForm(f => ({ ...f, vehicle_classification: cls, vehicle_type: defaultPricingGroupFor(cls) || '' }));
+      }
       setClassifying(false);
     }, 600);
     return () => { cancelled = true; clearTimeout(timer); };
@@ -60,7 +42,7 @@ export default function AddVehicleForm({ onAdd, onCancel, initialData = null }) 
   }, [form.model, form.year, form.make]);
 
   const handleYmmChange = (next) => {
-    setForm(f => ({ ...f, ...next, vehicle_type: '' }));
+    setForm(f => ({ ...f, ...next, vehicle_classification: '', vehicle_type: '' }));
   };
 
   const handleSubmit = async () => {
@@ -70,7 +52,7 @@ export default function AddVehicleForm({ onAdd, onCancel, initialData = null }) 
     setLoading(false);
   };
 
-  const vehicleTypeLabel = form.vehicle_type === 'sedan_coupe' ? 'Sedan / Coupe' : form.vehicle_type === 'truck_suv' ? 'Truck / SUV' : null;
+  const classificationLabel = form.vehicle_classification ? CLASSIFICATION_LABEL[form.vehicle_classification] : null;
 
   return (
     <div className="glass-panel border border-gold/20 p-6 rounded-sm space-y-4">
@@ -83,17 +65,17 @@ export default function AddVehicleForm({ onAdd, onCancel, initialData = null }) 
 
       <VehicleYearMakeModel value={{ year: form.year, make: form.make, model: form.model }} onChange={handleYmmChange} />
 
-      {/* Vehicle type classification indicator */}
+      {/* Vehicle classification indicator */}
       <div className="flex items-center gap-2 h-6">
         {classifying ? (
           <>
             <Loader2 size={12} className="text-gold animate-spin" />
             <span className="text-xs font-mono-tech text-vapor/40">Classifying vehicle...</span>
           </>
-        ) : vehicleTypeLabel ? (
+        ) : classificationLabel ? (
           <>
             <div className="w-1.5 h-1.5 rounded-full bg-gold" />
-            <span className="text-xs font-mono-tech text-gold tracking-widest">AUTO-CLASSIFIED: {vehicleTypeLabel.toUpperCase()}</span>
+            <span className="text-xs font-mono-tech text-gold tracking-widest">AUTO-CLASSIFIED: {classificationLabel.toUpperCase()}</span>
           </>
         ) : null}
       </div>
