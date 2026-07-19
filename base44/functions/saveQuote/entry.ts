@@ -37,7 +37,8 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
 
     const {
-      vehicle_classification, services, condition, add_ons,
+      vehicle_classification, vehicle_year, vehicle_make, vehicle_model,
+      services, condition, add_ons,
       estimated_price, estimated_duration_minutes, quote_summary,
       customer_name, customer_phone, customer_email,
     } = body;
@@ -89,6 +90,9 @@ Deno.serve(async (req) => {
       customer_phone: customer_phone || '',
       customer_email: customer_email || (user ? (user.email || '') : ''),
       vehicle_classification: vehicle_classification || '',
+      vehicle_year: vehicle_year || '',
+      vehicle_make: vehicle_make || '',
+      vehicle_model: vehicle_model || '',
       vehicle_type: pricingGroup,
       requested_services: services,
       add_ons: add_ons || [],

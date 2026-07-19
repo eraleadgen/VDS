@@ -6,6 +6,7 @@ import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
 import GoldShimmer from '../components/vds/GoldShimmer';
 import GoldPromoCard from '../components/vds/GoldPromoCard';
+import VehicleSelector from '../components/vds/VehicleSelector';
 
 const CLASSIFICATION_LABEL = {
   coupe: 'Coupe',
@@ -45,7 +46,7 @@ export default function Pricing() {
   const navigate = useNavigate();
   const [config, setConfig] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [classification, setClassification] = useState('sedan');
+  const [vehicle, setVehicle] = useState(null);
   const [condition, setCondition] = useState('light');
   const [selected, setSelected] = useState([]);
   const [addOns, setAddOns] = useState([]);
@@ -63,7 +64,8 @@ export default function Pricing() {
   }, []);
 
   const mapping = config?.classification_to_pricing_group || {};
-  const pricingGroup = mapping[classification] || 'sedan_coupe';
+  const classification = vehicle?.classification || null;
+  const pricingGroup = classification ? (mapping[classification] || 'sedan_coupe') : null;
   const conditions = config?.pricing_rules?.condition_multipliers || [];
   const conditionEntry = conditions.find(c => c.key === condition);
   const conditionMultiplier = conditionEntry?.multiplier ?? 1;
@@ -122,8 +124,7 @@ export default function Pricing() {
   const toggleAddOn = (key) => setAddOns(s => s.includes(key) ? s.filter(x => x !== key) : [...s, key]);
   const toggleConsultation = (key) => setConsultations(s => s.includes(key) ? s.filter(x => x !== key) : [...s, key]);
 
-  const classOptions = (config?.vehicle_classifications || []).filter(c => c.key in CLASSIFICATION_LABEL);
-  const hasItems = quote.lineItems.length > 0;
+  const hasItems = quote.lineItems.length > 0 && !!classification;
 
   const handleBookQuote = async () => {
     if (!hasItems) return;
@@ -131,6 +132,9 @@ export default function Pricing() {
     try {
       const res = await base44.functions.invoke('saveQuote', {
         vehicle_classification: classification,
+        vehicle_year: vehicle?.year,
+        vehicle_make: vehicle?.make,
+        vehicle_model: vehicle?.model,
         services: [...selected, ...consultations],
         add_ons: addOns,
         condition,
@@ -167,22 +171,7 @@ export default function Pricing() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
             <div className="lg:col-span-2 space-y-10">
               {/* Step 1: Vehicle */}
-              <div>
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="flex items-center justify-center w-7 h-7 rounded-full bg-gold text-obsidian text-xs font-bold font-mono-tech">1</span>
-                  <h2 className="text-sm font-mono-tech tracking-widest text-gold">SELECT YOUR VEHICLE</h2>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {classOptions.map(c => (
-                    <button key={c.key} onClick={() => setClassification(c.key)}
-                      className={`relative p-5 rounded-sm border text-center transition-all vds-card-hover ${classification === c.key ? 'border-gold bg-gold/10' : 'border-vapor/10 bg-asphalt/40 hover:border-vapor/20'}`}>
-                      {classification === c.key && <Check size={14} className="absolute top-2 right-2 text-gold" />}
-                      <Car size={22} className={classification === c.key ? 'text-gold mx-auto mb-2' : 'text-vapor/40 mx-auto mb-2'} />
-                      <span className={`text-xs font-mono-tech tracking-wide ${classification === c.key ? 'text-vapor' : 'text-vapor/60'}`}>{CLASSIFICATION_LABEL[c.key] || c.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <VehicleSelector onSelect={setVehicle} selected={vehicle} />
 
               {/* Step 2: Condition */}
               <div>
@@ -316,9 +305,14 @@ export default function Pricing() {
                   <Sparkles size={14} className="text-gold" />
                   <h3 className="text-xs font-mono-tech tracking-widest text-gold">YOUR CUSTOM QUOTE</h3>
                 </div>
-                <p className="text-xs font-mono-tech text-vapor/40 mb-5">{CLASSIFICATION_LABEL[classification]} · {conditionEntry?.label || 'Standard condition'}</p>
+                <p className="text-xs font-mono-tech text-vapor/40 mb-5">{vehicle ? `${vehicle.year} ${vehicle.make} ${vehicle.model}` : 'No vehicle'} · {conditionEntry?.label || 'Standard condition'}</p>
 
-                {!hasItems ? (
+                {!classification ? (
+                  <div className="py-10 text-center">
+                    <Car size={28} className="text-vapor/20 mx-auto mb-3" />
+                    <p className="text-vapor/40 font-mono-tech text-xs">Add your vehicle above to see pricing.</p>
+                  </div>
+                ) : !hasItems ? (
                   <div className="py-10 text-center">
                     <Car size={28} className="text-vapor/20 mx-auto mb-3" />
                     <p className="text-vapor/40 font-mono-tech text-xs">Select services to see your custom quote.</p>
