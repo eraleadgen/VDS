@@ -11,6 +11,7 @@ const navLinks = [
   { label: 'QUOTE & BOOK', path: '/book' },
   { label: 'GALLERY', path: '/gallery' },
   { label: 'FAQ', path: '/faq' },
+  { label: 'VDS GOLD', path: '/vds-gold', gold: true },
 ];
 
 export default function Navbar() {
@@ -50,9 +51,11 @@ export default function Navbar() {
               key={link.path}
               to={link.path}
               className={`text-xs font-mono-tech tracking-widest transition-colors duration-200 ${
-                location.pathname === link.path
-                  ? 'text-gold'
-                  : 'text-vapor/60 hover:text-vapor'
+                link.gold
+                  ? 'text-gold hover:text-gold-light'
+                  : location.pathname === link.path
+                    ? 'text-gold'
+                    : 'text-vapor/60 hover:text-vapor'
               }`}
             >
               {link.label}
@@ -80,12 +83,6 @@ export default function Navbar() {
             </Link>
           )}
           <Link
-            to="/vds-gold"
-            className="vds-gold-btn px-4 py-2 text-xs font-mono-tech tracking-widest rounded-sm"
-          >
-            ◆ VDS GOLD
-          </Link>
-          <Link
             to="/specialist-login"
             className="text-xs font-mono-tech tracking-widest text-vapor/50 hover:text-gold transition-colors duration-200"
           >
@@ -111,7 +108,7 @@ export default function Navbar() {
                 key={link.path}
                 to={link.path}
                 className={`text-sm font-mono-tech tracking-widest ${
-                  location.pathname === link.path ? 'text-gold' : 'text-vapor/70'
+                  link.gold ? 'text-gold' : location.pathname === link.path ? 'text-gold' : 'text-vapor/70'
                 }`}
               >
                 {link.label}
@@ -132,12 +129,6 @@ export default function Navbar() {
                 MEMBER LOGIN
               </Link>
             )}
-            <Link
-              to="/vds-gold"
-              className="vds-gold-btn px-4 py-3 text-sm font-mono-tech tracking-widest text-center rounded-sm"
-            >
-              ◆ VDS GOLD — FROM $250/MO
-            </Link>
             <Link
               to="/specialist-login"
               className="text-sm font-mono-tech tracking-widest text-vapor/50 border border-vapor/20 px-4 py-3 text-center rounded-sm hover:text-gold hover:border-gold/40 transition-colors"
