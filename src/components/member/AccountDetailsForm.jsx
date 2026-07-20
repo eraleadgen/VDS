@@ -19,6 +19,14 @@ export default function AccountDetailsForm({ user, subscriptions = [], onSaved, 
 
   const hasActiveSubscriptions = subscriptions.length > 0;
 
+  const formatPhone = (raw) => {
+    const d = raw.replace(/\D/g, '').slice(0, 10);
+    if (d.length === 0) return '';
+    if (d.length < 4) return `(${d}`;
+    if (d.length < 7) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
+    return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+  };
+
   const addAddress = () => {
     const trimmed = newAddress.trim();
     if (trimmed && !addresses.includes(trimmed)) {
@@ -82,7 +90,7 @@ export default function AccountDetailsForm({ user, subscriptions = [], onSaved, 
           </div>
           <div>
             <label className="block text-xs font-mono-tech tracking-widest text-vapor/40 mb-2">PHONE NUMBER</label>
-            <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className={inputClass} placeholder="(404) 555-0000" />
+            <input type="tel" value={phone} onChange={e => setPhone(formatPhone(e.target.value))} className={inputClass} placeholder="(404) 555-0000" />
           </div>
           <div>
             <label className="block text-xs font-mono-tech tracking-widest text-vapor/40 mb-2">EMAIL</label>
