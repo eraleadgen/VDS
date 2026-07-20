@@ -49,24 +49,38 @@ export default function GoldSignup() {
       return;
     }
     setLoading(true);
-    await base44.auth.register({ email, password, full_name: `${firstName.trim()} ${lastName.trim()}` });
-    setStep('otp');
-    setLoading(false);
+    try {
+      await base44.auth.register({ email, password, full_name: `${firstName.trim()} ${lastName.trim()}` });
+      setStep('otp');
+    } catch (err) {
+      setError(err.message || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    const res = await base44.auth.verifyOtp({ email, otpCode: otp });
-    base44.auth.setToken(res.access_token);
-    // Persist first/last name + phone (the built-in full_name is immutable after signup)
-    await base44.auth.updateMe({
-      first_name: firstName.trim(),
-      last_name: lastName.trim(),
-      phone: phone.trim(),
-    });
-    window.location.href = '/member-dashboard';
+    try {
+      const res = await base44.auth.verifyOtp({ email, otpCode: otp });
+      base44.auth.setToken(res.access_token);
+      // Persist first/last name + phone (the built-in full_name is immutable after signup)
+      await base44.auth.updateMe({
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+        phone: phone.trim(),
+      });
+      // Send themed member welcome email (non-blocking; failure shouldn't block login)
+      try {
+        await base44.functions.invoke('sendMemberWelcomeEmail', { firstName: firstName.trim() });
+      } catch (_) {}
+      window.location.href = '/member-dashboard';
+    } catch (err) {
+      setError(err.message || 'Invalid verification code. Please try again.');
+      setLoading(false);
+    }
   };
 
   const handleResendOtp = async () => {

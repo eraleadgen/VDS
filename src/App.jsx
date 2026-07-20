@@ -74,7 +74,7 @@ const AuthenticatedApp = () => {
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/member-login" element={<MemberLogin />} />
       <Route path="/member-dashboard" element={<MemberDashboard />} />
-      <Route path="/gold-signup" element={<GoldSignup />} />
+      <Route path="/member-signup" element={<GoldSignup />} />
       <Route path="/vds-gold-signup" element={<VdsGoldSignup />} />
       <Route path="/gallery" element={<Gallery />} />
       <Route path="/book" element={<BookAppointment />} />
