@@ -16,7 +16,7 @@ const WINDOW_24H = 24 * 3600000;
 const WINDOW_1H = 1 * 3600000;
 
 // Job lifecycle statuses that represent a confirmed upcoming appointment.
-const UPCOMING_STATUSES = new Set(['appointment_scheduled', 'specialist_assigned', 'appointment_confirmed']);
+const UPCOMING_STATUSES = new Set(['appointment_scheduled', 'specialist_assigned', 'appointment_confirmed', 'rescheduled']);
 
 // Send an outbound SMS — routed through sendMessage → Communication Rules Engine.
 // Returns true when the engine has processed the message (sent or suppressed) so the

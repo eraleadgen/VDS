@@ -50,8 +50,8 @@ export default function SpecialistPortal() {
   if (error && !profile) return <div className="min-h-screen bg-obsidian flex items-center justify-center p-6 text-center"><div><p className="text-red-400 text-sm font-mono-tech mb-4">{error}</p><a href="/specialist-login" className="text-gold text-xs font-mono-tech tracking-widest">← BACK TO LOGIN</a></div></div>;
 
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
-  const todaysJobs = jobs.filter(j => j.appointment_date === today && j.status !== 'completed');
-  const upcoming = jobs.filter(j => j.appointment_date > today && j.status !== 'completed');
+  const todaysJobs = jobs.filter(j => j.appointment_date === today && j.status !== 'completed' && j.status !== 'cancelled');
+  const upcoming = jobs.filter(j => j.appointment_date > today && j.status !== 'completed' && j.status !== 'cancelled');
   const completed = jobs.filter(j => j.status === 'completed');
   const metrics = profile?.metrics || {};
 

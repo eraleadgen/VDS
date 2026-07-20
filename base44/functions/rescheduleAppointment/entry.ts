@@ -90,8 +90,7 @@ Deno.serve(async (req) => {
     if (appt.job_id) {
       try {
         job = await base44.asServiceRole.entities.Job.get(appt.job_id);
-        const jobUpdates = { appointment_date: new_date, appointment_time: new_time };
-        if (job && job.status === 'cancelled') jobUpdates.status = 'appointment_scheduled';
+        const jobUpdates = { appointment_date: new_date, appointment_time: new_time, status: 'rescheduled' };
         await base44.asServiceRole.entities.Job.update(appt.job_id, jobUpdates);
 
         if (job && job.specialist_id) {

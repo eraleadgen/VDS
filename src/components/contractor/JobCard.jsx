@@ -7,6 +7,8 @@ export default function JobCard({ job, onStart, onComplete, onPhotos, onReview, 
   const status = job.job_status || 'assigned';
   const isStarted = IN_PROGRESS_LIKE.includes(status);
   const isDone = DONE_LIKE.includes(status);
+  const isCancelled = job.status === 'cancelled';
+  const isRescheduled = job.status === 'rescheduled';
   const reviewSent = job.review_requested || job.review_submitted;
   const reviewLabel = job.review_submitted ? 'REVIEW SUBMITTED' : 'REVIEW SENT';
 
@@ -18,8 +20,8 @@ export default function JobCard({ job, onStart, onComplete, onPhotos, onReview, 
           <h3 className="text-base font-grotesk font-bold text-vapor">{job.service_label || job.service_package}</h3>
           <p className="text-sm text-vapor/60 mt-1 truncate">{job.customer_name} · {job.vehicle_info || 'Vehicle N/A'}</p>
         </div>
-        <span className={`text-xs font-mono-tech tracking-widest px-3 py-1 rounded-sm border whitespace-nowrap ${isDone ? 'text-green-300 bg-green-300/5 border-green-300/20' : isStarted ? 'text-gold bg-gold/10 border-gold/30' : 'text-blue-300 bg-blue-300/5 border-blue-300/20'}`}>
-          {isDone ? 'COMPLETED' : isStarted ? 'IN PROGRESS' : 'APPOINTMENT SCHEDULED'}
+        <span className={`text-xs font-mono-tech tracking-widest px-3 py-1 rounded-sm border whitespace-nowrap ${isCancelled ? 'text-red-400 bg-red-400/5 border-red-400/20' : isRescheduled ? 'text-amber-300 bg-amber-300/5 border-amber-300/20' : isDone ? 'text-green-300 bg-green-300/5 border-green-300/20' : isStarted ? 'text-gold bg-gold/10 border-gold/30' : 'text-blue-300 bg-blue-300/5 border-blue-300/20'}`}>
+          {isCancelled ? 'CANCELLED' : isRescheduled ? 'RESCHEDULED' : isDone ? 'COMPLETED' : isStarted ? 'IN PROGRESS' : 'APPOINTMENT SCHEDULED'}
         </span>
       </div>
       <div className="space-y-1 text-xs font-mono-tech text-vapor/50 mb-4">
@@ -35,19 +37,22 @@ export default function JobCard({ job, onStart, onComplete, onPhotos, onReview, 
         ) : null}
       </div>
       <div className="flex flex-wrap gap-2">
-        {!isStarted && !isDone && (
+        {isCancelled && (
+          <p className="flex-1 text-center text-xs font-mono-tech tracking-widest text-red-400/70 py-3">This appointment has been cancelled.</p>
+        )}
+        {!isCancelled && !isStarted && !isDone && (
           <button onClick={() => onStart(job)} disabled={disabled}
             className="flex-1 flex items-center justify-center gap-2 bg-gold/10 hover:bg-gold border border-gold/40 text-gold hover:text-obsidian text-xs font-mono-tech tracking-widest py-3 rounded-sm transition-colors disabled:opacity-50">
             <Play size={14} /> START
           </button>
         )}
-        {isStarted && !isDone && (
+        {!isCancelled && isStarted && !isDone && (
           <button onClick={() => onComplete(job)} disabled={disabled}
             className="flex-1 flex items-center justify-center gap-2 bg-gold/10 hover:bg-gold border border-gold/40 text-gold hover:text-obsidian text-xs font-mono-tech tracking-widest py-3 rounded-sm transition-colors disabled:opacity-50">
             <CheckCircle2 size={14} /> JOB COMPLETED
           </button>
         )}
-        {isDone && (
+        {!isCancelled && isDone && (
           <>
             <button onClick={() => onPhotos(job)} disabled={disabled}
               className="flex-1 flex items-center justify-center gap-2 bg-vapor/5 hover:bg-gold/10 border border-vapor/15 hover:border-gold/40 text-vapor/70 hover:text-gold text-xs font-mono-tech tracking-widest py-3 rounded-sm transition-colors disabled:opacity-50">

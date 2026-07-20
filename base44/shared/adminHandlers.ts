@@ -353,7 +353,7 @@ export async function adminReassignJob(base44, body) {
   return { success: true };
 }
 
-const JOB_LIFECYCLE_STATUSES = ['quote_requested','quote_generated','awaiting_approval','appointment_scheduled','specialist_assigned','appointment_confirmed','technician_en_route','in_progress','awaiting_payment','completed','review_requested','membership_recommended','cancelled'];
+const JOB_LIFECYCLE_STATUSES = ['quote_requested','quote_generated','awaiting_approval','appointment_scheduled','specialist_assigned','appointment_confirmed','rescheduled','technician_en_route','in_progress','awaiting_payment','completed','review_requested','membership_recommended','cancelled'];
 
 export async function adminChangeJobStatus(base44, body) {
   const me = await base44.auth.me().catch(() => null);

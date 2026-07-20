@@ -29,9 +29,10 @@ const STATUS_BADGE = {
   completed: 'text-green-300 bg-green-300/5 border-green-300/20',
   review_requested: 'text-purple-300 bg-purple-300/5 border-purple-300/20',
   membership_recommended: 'text-gold bg-gold/5 border-gold/20',
+  rescheduled: 'text-amber-300 bg-amber-300/5 border-amber-300/20',
   cancelled: 'text-red-400 bg-red-400/5 border-red-400/20',
 };
-const STATUSES = ['appointment_scheduled', 'in_progress', 'completed'];
+const STATUSES = ['appointment_scheduled', 'rescheduled', 'in_progress', 'completed', 'cancelled'];
 const STATUS_LABEL = (s) => s ? s.replace(/_/g, ' ') : '';
 
 export default function AppointmentsTab() {

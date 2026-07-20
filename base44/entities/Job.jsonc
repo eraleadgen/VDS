@@ -90,6 +90,7 @@
         "appointment_scheduled",
         "specialist_assigned",
         "appointment_confirmed",
+        "rescheduled",
         "technician_en_route",
         "in_progress",
         "awaiting_payment",

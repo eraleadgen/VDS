@@ -627,7 +627,7 @@ async function myJobs(base44) {
   // Phase 7: Specialist portal now reads from the Job entity (source of truth),
   // not the deprecated Appointment mirror.
   const jobs = await base44.asServiceRole.entities.Job.filter({ specialist_id: c.id });
-  const active = (jobs || []).filter(j => j.status !== 'cancelled')
+  const active = (jobs || [])
     .sort((a, b) => new Date((a.appointment_date || '') + 'T00:00:00Z') - new Date((b.appointment_date || '') + 'T00:00:00Z'));
   return { success: true, contractor_id: c.id, jobs: active };
 }
