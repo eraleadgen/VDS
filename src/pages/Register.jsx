@@ -51,16 +51,6 @@ export default function Register() {
       try {
         await base44.auth.updateMe({ first_name: firstName.trim(), last_name: lastName.trim() });
       } catch (_) {}
-      // Sync new account to GHL CRM
-      try {
-        await base44.functions.invoke('syncContactToGHL', {
-          firstName: firstName.trim(),
-          lastName: lastName.trim(),
-          email,
-          source: 'VDS Website Account Registration',
-          tags: ['website-signup'],
-        });
-      } catch (_) {}
       // Send themed member welcome email (Gold upsell included if no active membership)
       try {
         await base44.functions.invoke('sendMemberWelcomeEmail', { firstName: firstName.trim() });
