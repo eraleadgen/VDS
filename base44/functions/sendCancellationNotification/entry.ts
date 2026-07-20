@@ -15,6 +15,18 @@ function fieldRow(label, value) {
   return value ? `<tr><td style="padding:4px 0;"><span style="font-family:${MONO};font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#94A3B8;">${label}</span><br><span style="font-size:15px;color:#E2E8F0;font-weight:500;">${esc(value)}</span></td></tr>` : '';
 }
 
+// Send an outbound SMS — routed through sendMessage → Communication Rules Engine.
+async function sendTwilioSms(base44, to, body, customerName, messageType) {
+  if (!to) return false;
+  try {
+    await base44.asServiceRole.functions.invoke('sendMessage', {
+      customer_phone: to, message_type: messageType || 'cancellation_confirmation', content: body,
+      customer_name: customerName || '', scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
+    });
+    return true;
+  } catch (e) { console.error('sendMessage error:', e.message); return false; }
+}
+
 function buildCustomerCancellationEmail(appt) {
   const firstName = (appt.customer_name || '').split(' ')[0] || 'there';
   return `<!DOCTYPE html>
@@ -145,7 +157,14 @@ Deno.serve(async (req) => {
         } catch (e) { console.error('Customer cancellation email failed:', e.message); }
       }
 
-      return Response.json({ success: true, internal: true, customer: customerSent });
+      let customerSmsSent = false;
+      if (appt.customer_phone && appt.sms_consent !== false) {
+        const firstName = (appt.customer_name || '').split(' ')[0] || 'there';
+        const msg = `Hi ${firstName}, your VDS Mobile appointment for ${appt.preferred_date} at ${appt.preferred_time} has been cancelled. We're sorry we won't be servicing your vehicle as scheduled. To reschedule, call/text (470) 412-8986 or visit vdsmobile.com. — VDS Mobile`;
+        customerSmsSent = await sendTwilioSms(base44, appt.customer_phone, msg, appt.customer_name, 'cancellation_confirmation');
+      }
+
+      return Response.json({ success: true, internal: true, customer: customerSent, customer_sms: customerSmsSent });
     } catch (e) {
       console.error('Cancellation notification email failed:', e.message);
       return Response.json({ success: false, error: e.message }, { status: 500 });

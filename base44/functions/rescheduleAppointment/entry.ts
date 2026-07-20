@@ -181,6 +181,69 @@ Deno.serve(async (req) => {
       } catch (e) { console.error('Specialist notify failed:', e.message); }
     }
 
+    // ── Customer confirmation (SMS + email) that the reschedule went through ─
+    try {
+      const firstName = (appt.customer_name || '').split(' ')[0] || 'there';
+      if (appt.customer_phone && appt.sms_consent !== false) {
+        const msg = `Hi ${firstName}, your VDS Mobile appointment has been rescheduled to ${new_date} at ${new_time}. Service: ${appt.service_label || 'Detailing'}.${appt.service_address ? ' Address: ' + appt.service_address : ''} Questions? Call/text (470) 412-8986. — VDS Mobile`;
+        await base44.asServiceRole.functions.invoke('sendMessage', {
+          customer_phone: appt.customer_phone, message_type: 'reschedule_confirmation', content: msg,
+          customer_name: appt.customer_name || '', scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
+        });
+      }
+    } catch (e) { console.error('Customer reschedule SMS failed:', e.message); }
+
+    if (appt.customer_email) {
+      try {
+        const firstName = (appt.customer_name || '').split(' ')[0] || 'there';
+        const custHtml = `<!DOCTYPE html><html lang="en" style="margin:0;padding:0;">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background-color:#0A0B0D;font-family:${FONT};color:#E2E8F0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0A0B0D;"><tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#14161A;border-radius:14px;overflow:hidden;border:1px solid rgba(212,175,55,0.15);box-shadow:0 8px 30px rgba(0,0,0,0.5);">
+  <tr><td style="background-color:#0A0B0D;padding:22px 28px;border-bottom:2px solid #D4AF37;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td style="font-size:18px;font-weight:700;letter-spacing:3px;color:#FFFFFF;">VDS&nbsp;MOBILE</td>
+      <td align="right" style="font-family:${MONO};font-size:11px;letter-spacing:2px;color:#D4AF37;font-weight:700;text-transform:uppercase;">Rescheduled</td>
+    </tr></table>
+  </td></tr>
+  <tr><td style="padding:28px 28px 6px 28px;">
+    <p style="margin:0 0 6px 0;font-family:${MONO};font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#D4AF37;font-weight:700;">Appointment Rescheduled</p>
+    <h1 style="margin:0;font-size:24px;line-height:32px;color:#E2E8F0;font-weight:700;">Hi ${escapeHtml(firstName)},</h1>
+  </td></tr>
+  <tr><td style="padding:14px 28px 0 28px;">
+    <p style="margin:0 0 16px 0;font-size:15px;line-height:25px;color:#CBD5E1;">Your VDS Mobile detailing appointment has been rescheduled. We'll see you at the new time below.</p>
+  </td></tr>
+  <tr><td style="padding:16px 28px 8px 28px;background-color:#0F1115;">
+    <p style="margin:0 0 12px 0;padding-top:14px;font-family:${MONO};font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#D4AF37;">New Appointment Details</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr><td style="padding:4px 0;font-family:${MONO};font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#94A3B8;">Date</td></tr>
+      <tr><td style="font-size:15px;color:#E2E8F0;font-weight:500;padding-bottom:8px;">${escapeHtml(new_date)}</td></tr>
+      <tr><td style="padding:4px 0;font-family:${MONO};font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#94A3B8;">Time</td></tr>
+      <tr><td style="font-size:15px;color:#E2E8F0;font-weight:500;padding-bottom:8px;">${escapeHtml(new_time)}</td></tr>
+      <tr><td style="padding:4px 0;font-family:${MONO};font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#94A3B8;">Service</td></tr>
+      <tr><td style="font-size:15px;color:#E2E8F0;font-weight:500;padding-bottom:8px;">${escapeHtml(appt.service_label || appt.service_type || 'Detailing')}</td></tr>
+      ${appt.service_address ? `<tr><td style="padding:4px 0;font-family:${MONO};font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#94A3B8;">Service Address</td></tr><tr><td style="font-size:15px;color:#E2E8F0;font-weight:500;padding-bottom:8px;">${escapeHtml(appt.service_address)}</td></tr>` : ''}
+    </table>
+  </td></tr>
+  <tr><td style="padding:20px 28px 8px 28px;">
+    <p style="margin:0;font-size:15px;line-height:25px;color:#CBD5E1;">Need to make changes? Call or text us at <strong style="color:#D4AF37;">(470) 412-8986</strong>.</p>
+  </td></tr>
+  <tr><td style="background-color:#0A0B0D;padding:22px 28px;border-top:2px solid #D4AF37;">
+    <p style="margin:0 0 6px 0;font-size:15px;color:#E2E8F0;font-weight:600;">&mdash; The VDS Mobile Team</p>
+    <p style="margin:0;font-family:${MONO};font-size:11px;color:#64748B;letter-spacing:0.5px;">&copy; ${new Date().getUTCFullYear()} VALET DETAILING SERVICE LLC. ALL RIGHTS RESERVED.</p>
+  </td></tr>
+</table>
+</td></tr></table></body></html>`;
+        await base44.asServiceRole.integrations.Core.SendEmail({
+          to: appt.customer_email,
+          subject: `Your VDS Mobile Appointment Has Been Rescheduled — ${new_date} at ${new_time}`,
+          body: custHtml,
+          from_name: 'VDS Mobile',
+        });
+      } catch (e) { console.error('Customer reschedule email failed:', e.message); }
+    }
+
     // ── Internal notification email to the business ────────────────────────
     try {
       const iCust = escapeHtml(appt.customer_name || 'N/A');
