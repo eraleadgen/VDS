@@ -293,7 +293,7 @@ Deno.serve(async (req) => {
 </table>
 </td></tr></table></body></html>`;
       await base44.asServiceRole.integrations.Core.SendEmail({
-        to: 'valetdetailingservice@gmail.com',
+        to: 'support@eraleadgen.com',
         subject: `Appointment Rescheduled — ${appt.customer_name || 'Client'} — ${new_date} ${new_time}`,
         body: internalHtml,
         from_name: 'VDS Mobile',

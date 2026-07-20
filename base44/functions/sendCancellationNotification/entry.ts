@@ -7,7 +7,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 
 const FONT = "'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 const MONO = "'Space Mono','Courier New',monospace";
-const INTERNAL_EMAIL = 'valetdetailingservice@gmail.com';
+const INTERNAL_EMAIL = 'support@eraleadgen.com';
 
 function esc(s) { return (s || '').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 

@@ -7,7 +7,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 
 const FONT = "'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 const MONO = "'Space Mono','Courier New',monospace";
-const INTERNAL_EMAIL = 'valetdetailingservice@gmail.com';
+const INTERNAL_EMAIL = 'support@eraleadgen.com';
 const BUSINESS_PHONE = '(470) 412-8986';
 
 // Send an outbound SMS — routed through sendMessage → Communication Rules Engine.
