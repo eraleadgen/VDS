@@ -181,7 +181,63 @@ Deno.serve(async (req) => {
       } catch (e) { console.error('Specialist notify failed:', e.message); }
     }
 
-    return Response.json({ success: true, specialist_notified: !!(specialist && specialist.email) });
+    // ── Internal notification email to the business ────────────────────────
+    try {
+      const iCust = escapeHtml(appt.customer_name || 'N/A');
+      const iPhone = escapeHtml(appt.customer_phone || 'N/A');
+      const iEmail = escapeHtml(appt.customer_email || 'N/A');
+      const iAddr = escapeHtml(appt.service_address || 'N/A');
+      const iSvc = escapeHtml(appt.service_label || appt.service_type || 'Detailing');
+      const iSpec = escapeHtml(specialist?.name || 'Unassigned');
+      const iVeh = escapeHtml(appt.vehicle_info || 'N/A');
+      const internalHtml = `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background-color:#0A0B0D;font-family:${FONT};color:#E2E8F0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0A0B0D;"><tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#14161A;border-radius:14px;overflow:hidden;border:1px solid rgba(212,175,55,0.15);box-shadow:0 8px 30px rgba(0,0,0,0.5);">
+  <tr><td style="background-color:#0A0B0D;padding:22px 28px;border-bottom:2px solid #D4AF37;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td style="font-size:18px;font-weight:700;letter-spacing:3px;color:#FFFFFF;">VDS&nbsp;MOBILE</td>
+      <td align="right" style="font-family:${MONO};font-size:11px;letter-spacing:2px;color:#D4AF37;font-weight:700;text-transform:uppercase;">Rescheduled</td>
+    </tr></table>
+  </td></tr>
+  <tr><td style="padding:28px 28px 6px 28px;">
+    <p style="margin:0 0 6px 0;font-family:${MONO};font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#D4AF37;font-weight:700;">Appointment Rescheduled</p>
+    <h1 style="margin:0;font-size:24px;line-height:32px;color:#E2E8F0;font-weight:700;">${iCust}</h1>
+    <p style="margin:4px 0 0 0;font-family:${MONO};font-size:13px;color:#94A3B8;">Old: ${escapeHtml(oldDate)} at ${escapeHtml(oldTime)} &rarr; New: ${escapeHtml(new_date)} at ${escapeHtml(new_time)}</p>
+  </td></tr>
+  <tr><td style="padding:16px 28px 8px 28px;background-color:#0F1115;">
+    <p style="margin:0 0 12px 0;padding-top:14px;font-family:${MONO};font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#D4AF37;">Updated Details</p>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr><td style="padding:4px 0;font-family:${MONO};font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#94A3B8;">Client</td></tr>
+      <tr><td style="font-size:15px;color:#E2E8F0;font-weight:500;padding-bottom:8px;">${iCust}</td></tr>
+      <tr><td style="padding:4px 0;font-family:${MONO};font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#94A3B8;">Phone</td></tr>
+      <tr><td style="font-size:15px;color:#E2E8F0;font-weight:500;padding-bottom:8px;">${iPhone}</td></tr>
+      <tr><td style="padding:4px 0;font-family:${MONO};font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#94A3B8;">Email</td></tr>
+      <tr><td style="font-size:15px;color:#E2E8F0;font-weight:500;padding-bottom:8px;">${iEmail}</td></tr>
+      <tr><td style="padding:4px 0;font-family:${MONO};font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#94A3B8;">Service Address</td></tr>
+      <tr><td style="font-size:15px;color:#E2E8F0;font-weight:500;padding-bottom:8px;">${iAddr}</td></tr>
+      <tr><td style="padding:4px 0;font-family:${MONO};font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#94A3B8;">Service</td></tr>
+      <tr><td style="font-size:15px;color:#E2E8F0;font-weight:500;padding-bottom:8px;">${iSvc}</td></tr>
+      <tr><td style="padding:4px 0;font-family:${MONO};font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#94A3B8;">Vehicle</td></tr>
+      <tr><td style="font-size:15px;color:#E2E8F0;font-weight:500;padding-bottom:8px;">${iVeh}</td></tr>
+      <tr><td style="padding:4px 0;font-family:${MONO};font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#94A3B8;">Assigned Specialist</td></tr>
+      <tr><td style="font-size:15px;color:#E2E8F0;font-weight:500;padding-bottom:8px;">${iSpec}</td></tr>
+    </table>
+  </td></tr>
+  <tr><td style="background-color:#0A0B0D;padding:22px 28px;border-top:2px solid #D4AF37;">
+    <p style="margin:0;font-family:${MONO};font-size:11px;color:#64748B;letter-spacing:0.5px;">&copy; ${new Date().getUTCFullYear()} VALET DETAILING SERVICE LLC. ALL RIGHTS RESERVED.</p>
+  </td></tr>
+</table>
+</td></tr></table></body></html>`;
+      await base44.asServiceRole.integrations.Core.SendEmail({
+        to: 'valetdetailingservice@gmail.com',
+        subject: `Appointment Rescheduled — ${appt.customer_name || 'Client'} — ${new_date} ${new_time}`,
+        body: internalHtml,
+        from_name: 'VDS Mobile',
+      });
+    } catch (e) { console.error('Internal reschedule notification email failed:', e.message); }
+
+    return Response.json({ success: true, specialist_notified: !!(specialist && specialist.email), internal_notified: true });
 
   } catch (error) {
     console.error('rescheduleAppointment error:', error.message);
