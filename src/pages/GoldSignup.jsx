@@ -21,6 +21,14 @@ export default function GoldSignup() {
   const [loading, setLoading] = useState(false);
   const [smsConsent, setSmsConsent] = useState(false);
 
+  const formatPhone = (raw) => {
+    const d = raw.replace(/\D/g, '').slice(0, 10);
+    if (d.length === 0) return '';
+    if (d.length < 4) return `(${d}`;
+    if (d.length < 7) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
+    return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+  };
+
   const handleRegister = async (e) => {
     e.preventDefault();
     setError('');
@@ -57,15 +65,6 @@ export default function GoldSignup() {
       first_name: firstName.trim(),
       last_name: lastName.trim(),
       phone: phone.trim(),
-    });
-    // Sync new member to GHL CRM
-    await base44.functions.invoke('syncContactToGHL', {
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      email,
-      phone,
-      source: 'VDS Website Member Portal Signup',
-      tags: ['website-signup', 'member-portal'],
     });
     window.location.href = '/member-dashboard';
   };
@@ -122,7 +121,7 @@ export default function GoldSignup() {
                   <input
                     type="tel"
                     value={phone}
-                    onChange={e => setPhone(e.target.value)}
+                    onChange={e => setPhone(formatPhone(e.target.value))}
                     required
                     className="w-full bg-asphalt border border-vapor/10 focus:border-gold/50 outline-none text-vapor px-4 py-3 text-sm font-mono-tech rounded-sm transition-colors duration-200"
                     placeholder="(404) 555-0000"
