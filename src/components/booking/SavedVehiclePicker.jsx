@@ -1,8 +1,19 @@
+import { useState } from 'react';
 import { Plus, Trash2, Check } from 'lucide-react';
 import AddVehicleForm from '@/components/member/AddVehicleForm';
 import { CLASSIFICATION_LABEL } from '@/lib/quoteCalc';
 
 export default function SavedVehiclePicker({ vehicles, goldVehicles, selectedId, onSelect, showAddForm, onAddNew, onAddSave, onCancelAdd, onDelete }) {
+  const [goldWarningId, setGoldWarningId] = useState(null);
+
+  const handleDeleteClick = (v) => {
+    if (goldVehicles[v.id]) {
+      setGoldWarningId(v.id);
+      return;
+    }
+    onDelete(v);
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
@@ -39,10 +50,18 @@ export default function SavedVehiclePicker({ vehicles, goldVehicles, selectedId,
                       {CLASSIFICATION_LABEL[cls] || cls}{isGold ? ' · ◆ Gold' : ''}
                     </p>
                   </div>
-                  <button type="button" onClick={() => onDelete(v)} className="p-2 text-vapor/20 hover:text-red-400 transition-colors">
+                  <button type="button" onClick={() => handleDeleteClick(v)} className="p-2 text-vapor/20 hover:text-red-400 transition-colors">
                     <Trash2 size={13} />
                   </button>
                 </div>
+                {goldWarningId === v.id && (
+                  <div className="mx-4 mb-3 p-3 border border-red-400/30 bg-red-400/5 rounded-sm flex items-start justify-between gap-3">
+                    <p className="text-xs font-mono-tech text-red-400/80 leading-relaxed">
+                      ⚠ This vehicle has an active VDS Gold membership. Please cancel the Gold subscription before removing it.
+                    </p>
+                    <button type="button" onClick={() => setGoldWarningId(null)} className="text-vapor/30 hover:text-vapor/60 text-xs font-mono-tech shrink-0">✕</button>
+                  </div>
+                )}
               </div>
             );
           })}

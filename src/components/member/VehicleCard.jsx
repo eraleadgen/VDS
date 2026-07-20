@@ -7,10 +7,19 @@ const SILVER_BADGE = "https://media.base44.com/images/public/6a191df337222815cd0
 
 export default function VehicleCard({ vehicle, onDelete, onEdit, onEnrollClick, onCancelClick, subscriptions = [] }) {
   const [editing, setEditing] = useState(false);
+  const [showGoldWarning, setShowGoldWarning] = useState(false);
 
   const handleEdit = async (formData) => {
     await onEdit(vehicle.id, formData);
     setEditing(false);
+  };
+
+  const handleDeleteClick = () => {
+    if (isGold) {
+      setShowGoldWarning(true);
+      return;
+    }
+    onDelete(vehicle.id);
   };
 
   if (editing) {
@@ -73,7 +82,7 @@ export default function VehicleCard({ vehicle, onDelete, onEdit, onEnrollClick, 
             <Pencil size={14} />
           </button>
           <button
-            onClick={() => onDelete(vehicle.id)}
+            onClick={handleDeleteClick}
             className={`transition-colors duration-200 ${
               isGold ? 'text-gold/30 hover:text-red-400' : 'text-vapor/20 hover:text-red-400'
             }`}
@@ -82,6 +91,15 @@ export default function VehicleCard({ vehicle, onDelete, onEdit, onEnrollClick, 
           </button>
         </div>
       </div>
+
+      {showGoldWarning && (
+        <div className="mx-5 mb-4 p-3 border border-red-400/30 bg-red-400/5 rounded-sm flex items-start justify-between gap-3">
+          <p className="text-xs font-mono-tech text-red-400/80 leading-relaxed">
+            ⚠ This vehicle has an active VDS Gold membership. Please cancel the Gold subscription before removing it from your garage.
+          </p>
+          <button onClick={() => setShowGoldWarning(false)} className="text-vapor/30 hover:text-vapor/60 text-xs font-mono-tech shrink-0">✕</button>
+        </div>
+      )}
       
       {/* Subscription action buttons - modal rendered at dashboard level */}
       <div className={`border-t px-5 py-4 ${
