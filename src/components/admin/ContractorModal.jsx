@@ -44,6 +44,20 @@ export default function ContractorModal({ contractor, onClose, onSave, busy }) {
   const toggleDay = (day) => setAvail(p => ({ ...p, [day]: { ...p[day], available: !p[day].available } }));
   const setDayField = (day, field, val) => setAvail(p => ({ ...p, [day]: { ...p[day], [field]: val } }));
 
+  // 12h time options (value = "HH:MM" 24h, label = "h:MM AM/PM")
+  const TIME_OPTIONS = (() => {
+    const opts = [];
+    for (let h = 0; h < 24; h++) {
+      for (const m of [0, 30]) {
+        const val = `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        const period = h < 12 ? 'AM' : 'PM';
+        const dispH = h % 12 === 0 ? 12 : h % 12;
+        opts.push({ val, label: `${dispH}:${String(m).padStart(2, '0')} ${period}` });
+      }
+    }
+    return opts;
+  })();
+
   const toMin = (t) => { const [h, m] = (t || '').split(':').map(Number); return Number.isFinite(h) && Number.isFinite(m) ? h * 60 + m : null; };
   const weeklyHours = DAYS.reduce((sum, d) => {
     const a = avail[d.key];
@@ -138,10 +152,15 @@ export default function ContractorModal({ contractor, onClose, onSave, busy }) {
                     {a.available ? (
                       <div className="flex items-center gap-2 text-xs font-mono-tech text-vapor/50">
                         <span>FROM</span>
-                        <input type="time" value={a.start} onChange={e => setDayField(d.key, 'start', e.target.value)} className={TIME_INPUT} />
+                        <select value={a.start} onChange={e => setDayField(d.key, 'start', e.target.value)} className={TIME_INPUT}>
+                          <option value="">All day</option>
+                          {TIME_OPTIONS.map(o => <option key={o.val} value={o.val}>{o.label}</option>)}
+                        </select>
                         <span>TO</span>
-                        <input type="time" value={a.end} onChange={e => setDayField(d.key, 'end', e.target.value)} className={TIME_INPUT} />
-                        {(!a.start || !a.end) && <span className="text-gold/50">(blank = all day)</span>}
+                        <select value={a.end} onChange={e => setDayField(d.key, 'end', e.target.value)} className={TIME_INPUT}>
+                          <option value="">All day</option>
+                          {TIME_OPTIONS.map(o => <option key={o.val} value={o.val}>{o.label}</option>)}
+                        </select>
                       </div>
                     ) : (
                       <span className="text-xs font-mono-tech text-vapor/30">Unavailable</span>
