@@ -6,6 +6,11 @@ const SKILL_LABELS = {
   interior_detail: 'Interior', exterior_detail: 'Exterior', full_detail: 'Full Detail',
   paint_correction: 'Paint Correction', ceramic_coating: 'Ceramic Coating', engine_bay: 'Engine Bay', headlight_restoration: 'Headlight Restoration',
 };
+const DAYS = [
+  { key: 'mon', label: 'MON' }, { key: 'tue', label: 'TUE' }, { key: 'wed', label: 'WED' },
+  { key: 'thu', label: 'THU' }, { key: 'fri', label: 'FRI' }, { key: 'sat', label: 'SAT' }, { key: 'sun', label: 'SUN' },
+];
+const TIME_INPUT = 'bg-asphalt border border-vapor/10 focus:border-gold/50 outline-none text-vapor px-2 py-2 text-xs font-mono-tech rounded-sm w-24';
 const INPUT = 'w-full bg-asphalt border border-vapor/10 focus:border-gold/50 outline-none text-vapor px-4 py-3 text-sm font-mono-tech rounded-sm transition-colors duration-200';
 const LABEL = 'block text-xs font-mono-tech tracking-widest text-vapor/50 mb-2';
 
@@ -23,9 +28,21 @@ export default function ContractorModal({ contractor, onClose, onSave, busy }) {
     home_address: contractor.home_address || '',
     linked_user_emails: contractor.linked_user_emails || '',
   });
+  const [avail, setAvail] = useState(() => {
+    const map = {};
+    for (const d of DAYS) {
+      const ex = (contractor.weekly_availability || []).find(a => a.day === d.key);
+      map[d.key] = ex
+        ? { available: ex.available, start: ex.start || '', end: ex.end || '' }
+        : { available: false, start: '', end: '' };
+    }
+    return map;
+  });
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
   const toggleSkill = (s) => setForm(f => ({ ...f, skills: f.skills.includes(s) ? f.skills.filter(x => x !== s) : [...f.skills, s] }));
+  const toggleDay = (day) => setAvail(p => ({ ...p, [day]: { ...p[day], available: !p[day].available } }));
+  const setDayField = (day, field, val) => setAvail(p => ({ ...p, [day]: { ...p[day], [field]: val } }));
 
   const submit = (e) => {
     e.preventDefault();
@@ -42,6 +59,12 @@ export default function ContractorModal({ contractor, onClose, onSave, busy }) {
       },
       home_address: form.home_address,
       linked_user_emails: form.linked_user_emails,
+      weekly_availability: DAYS.map(d => ({
+        day: d.key,
+        available: avail[d.key].available,
+        start: avail[d.key].start || undefined,
+        end: avail[d.key].end || undefined,
+      })),
     }, isNew);
   };
 
@@ -89,6 +112,33 @@ export default function ContractorModal({ contractor, onClose, onSave, busy }) {
             <div className="col-span-2"><label className={LABEL}>SERVICE CITIES (comma separated)</label>
               <input value={form.counties} onChange={e => set('counties', e.target.value)} className={INPUT} placeholder="Alpharetta, Johns Creek, Roswell" /></div>
             <div><label className={LABEL}>MAX TRAVEL (mi)</label><input type="number" value={form.max_travel} onChange={e => set('max_travel', e.target.value)} className={INPUT} /></div>
+          </div>
+          <div>
+            <label className={LABEL}>WEEKLY AVAILABILITY</label>
+            <div className="glass-panel border border-vapor/10 rounded-sm p-3 space-y-1">
+              {DAYS.map(d => {
+                const a = avail[d.key];
+                return (
+                  <div key={d.key} className="flex items-center gap-3 py-1.5 border-b border-vapor/5 last:border-0">
+                    <button type="button" onClick={() => toggleDay(d.key)}
+                      className={`w-12 text-xs font-mono-tech tracking-widest px-3 py-2 rounded-sm border transition-colors ${a.available ? 'bg-gold/10 text-gold border-gold/30' : 'bg-vapor/5 text-vapor/40 border-vapor/15'}`}>
+                      {d.label}
+                    </button>
+                    {a.available ? (
+                      <div className="flex items-center gap-2 text-xs font-mono-tech text-vapor/50">
+                        <span>FROM</span>
+                        <input type="time" value={a.start} onChange={e => setDayField(d.key, 'start', e.target.value)} className={TIME_INPUT} />
+                        <span>TO</span>
+                        <input type="time" value={a.end} onChange={e => setDayField(d.key, 'end', e.target.value)} className={TIME_INPUT} />
+                        {(!a.start || !a.end) && <span className="text-gold/50">(blank = all day)</span>}
+                      </div>
+                    ) : (
+                      <span className="text-xs font-mono-tech text-vapor/30">Unavailable</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
           <button type="submit" disabled={busy}
             className="w-full bg-gold text-obsidian py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold-light disabled:opacity-50">
