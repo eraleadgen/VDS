@@ -32,6 +32,9 @@ export default function ConditionSelector({ conditions, value, onChange }) {
           </button>
         ))}
       </div>
+      <p className="text-xs font-mono-tech text-vapor/40 mt-3 leading-relaxed">
+        By selecting a vehicle condition, you acknowledge that your quote is based on the condition provided. If a VDS specialist determines the vehicle is in worse or different condition than stated at the time of service, VDS Mobile reserves the right to adjust pricing according to the actual condition.
+      </p>
     </div>
   );
 }
