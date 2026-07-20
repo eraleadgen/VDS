@@ -7,6 +7,7 @@
 // No clock in/out, timesheets, or shift tracking — contractors self-schedule availability and update job status.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+import { parseTimeTo24h } from '../../shared/timezone.ts';
 
 const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 
@@ -214,34 +215,63 @@ async function checkAvailability(base44, data, cfg) {
 }
 
 // ── auto-assign: pick the best available contractor for a slot ──────────
+// Considers each specialist's weekly_availability, blocked dates, skill, the slot
+// window, and current workload. Jobs are distributed equally — the specialist
+// carrying the lightest upcoming load is assigned next. A generalist fallback
+// (Tier 3) keeps booking working before specialists configure availability.
 async function autoAssign(base44, cfg, dateStr, serviceKey, slotStart, slotEnd) {
   const tz = cfg.timezone || 'America/New_York';
   const bufferMs = (cfg.scheduling_rules && cfg.scheduling_rules.booking_buffer_hours || 0) * 3600000;
 
-  // ── "VDS Founders" preference ──
-  // Until more specialists are hired, all new bookings auto-assign to "VDS Founders"
-  // regardless of skill/availability filters. Remove this block to restore normal scheduling.
   const allActive = await base44.asServiceRole.entities.Contractor.filter({ status: 'active' });
-  const founders = (allActive || []).find(c => c.is_enabled !== false && /vds\s*founders/i.test(c.name || ''));
-  if (founders) return founders;
+  const pool = (allActive || []).filter(c => c.is_enabled !== false);
+  if (!pool.length) return null;
 
-  const eligible = await eligibleContractors(base44, cfg, dateStr, serviceKey);
-  if (!eligible.length) return null;
   const dayAppts = await dayAppointments(base44, dateStr);
-  const scored = [];
-  for (const c of eligible) {
-    if (!inAvailWindow(c, dateStr, slotStart, slotEnd, cfg)) continue;
+
+  // Equal-distribution metric: total upcoming (non-cancelled, non-completed) jobs per
+  // specialist. The specialist carrying the lightest overall load gets the next job.
+  let upcomingJobs = [];
+  try { upcomingJobs = await base44.asServiceRole.entities.Job.list('-updated_date', 500); } catch {}
+  const loadByContractor = {};
+  for (const j of (upcomingJobs || [])) {
+    if (!j.specialist_id || j.status === 'cancelled' || j.status === 'completed') continue;
+    loadByContractor[j.specialist_id] = (loadByContractor[j.specialist_id] || 0) + 1;
+  }
+  const loadOf = (c) => loadByContractor[c.id] || 0;
+  const byLoad = (a, b) => loadOf(a) - loadOf(b);
+
+  const skill = serviceToSkill(serviceKey);
+  const dayKey = weekdayKey(dateStr);
+  // A specialist with no skills listed is treated as a generalist (eligible for any service).
+  const hasSkill = (c) => !skill || !(c.skills || []).length || (c.skills || []).includes(skill);
+  const notBlocked = (c) => !(c.blocked_dates || []).some(b => b.date === dateStr);
+  const availDay = (c) => {
+    const da = (c.weekly_availability || []).find(a => a.day === dayKey);
+    return !!(da && da.available);
+  };
+
+  // Tier 1: available that day, within the slot window, free that slot, skill match, not blocked.
+  const dayAvailable = pool.filter(c => hasSkill(c) && notBlocked(c) && availDay(c));
+  const tier1 = dayAvailable.filter(c => {
+    if (!inAvailWindow(c, dateStr, slotStart, slotEnd, cfg)) return false;
     const myBusy = dayAppts
       .filter(a => a.contractor_id === c.id)
       .map(a => ({ start: apptStartMs(a, tz), end: apptEndMs(a, tz) }))
       .filter(x => x.start != null && x.end != null);
-    if (overlapsBusy(myBusy, slotStart, slotEnd, bufferMs)) continue;
-    scored.push({ contractor: c, workToday: myBusy.length });
-  }
-  if (!scored.length) return null;
-  // Priority: least amount of work scheduled that day, then closest distance (service-area county match), then best skill match.
-  scored.sort((a, b) => a.workToday - b.workToday);
-  return scored[0].contractor;
+    return !overlapsBusy(myBusy, slotStart, slotEnd, bufferMs);
+  }).sort(byLoad);
+  if (tier1.length) return tier1[0];
+
+  // Tier 2: available that day (skill match, not blocked) but the exact window is taken.
+  if (dayAvailable.length) return dayAvailable.slice().sort(byLoad)[0];
+
+  // Tier 3: no specialist has listed availability for this day — fall back to any active,
+  // enabled specialist with the skill (generalist) so the booking is never orphaned.
+  // This is where VDS Founders (no availability configured yet) is assigned today.
+  const generalists = pool.filter(c => hasSkill(c) && notBlocked(c));
+  if (generalists.length) return generalists.slice().sort(byLoad)[0];
+  return null;
 }
 
 // ── assign_contractor (internal: auto-assign a named contractor by portal availability) ──
@@ -271,15 +301,7 @@ async function assignContractor(base44, data, cfg) {
   if (!dayAvail || !dayAvail.available) return { assigned: false, reason: 'not_available_day', contractor: contractor.name };
 
   // Parse preferred_time ("9:00 AM" or "09:00") → 24h "HH:MM"
-  const t24 = (() => {
-    const m = (appt.preferred_time || '').match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
-    if (!m) return null;
-    let h = parseInt(m[1], 10); const min = parseInt(m[2], 10);
-    const mer = (m[3] || '').toUpperCase();
-    if (mer === 'PM' && h !== 12) h += 12;
-    if (mer === 'AM' && h === 12) h = 0;
-    return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
-  })();
+  const t24 = parseTimeTo24h(appt.preferred_time);
   if (!t24) return { assigned: false, reason: 'no_start_time', contractor: contractor.name };
 
   const dur = appt.estimated_duration_minutes || 120;
@@ -309,6 +331,50 @@ async function assignContractor(base44, data, cfg) {
         extendedProperties: { shared: { type: 'vds_appointment', service: appt.service_type || '', contractor_id: contractor.id } },
       });
     } catch (e) { console.error('GCal assign patch error:', e.message); }
+  }
+
+  return { success: true, assigned: true, contractor: { id: contractor.id, name: contractor.name } };
+}
+
+// ── auto_assign (internal: availability-based equal-distribution auto-assignment) ──
+// Used by the website booking flow to assign the best available registered specialist
+// to a job already mirrored to Google Calendar, instead of hardcoding a name.
+async function autoAssignContractor(base44, data, cfg) {
+  const { appointment_id } = data;
+  if (!appointment_id) return { error: 'appointment_id is required.' };
+  const appt = await base44.asServiceRole.entities.Appointment.get(appointment_id);
+  if (!appt) return { error: 'Appointment not found.' };
+
+  const tz = cfg.timezone || 'America/New_York';
+  const dateStr = appt.preferred_date;
+  if (!dateStr) return { assigned: false, reason: 'no_date' };
+
+  const t24 = parseTimeTo24h(appt.preferred_time);
+  if (!t24) return { assigned: false, reason: 'no_start_time' };
+
+  const dur = appt.estimated_duration_minutes || 120;
+  const startMs = zonedToUtc(dateStr, t24, tz).getTime();
+  if (!Number.isFinite(startMs)) return { assigned: false, reason: 'no_start_time' };
+  const endMs = startMs + dur * 60000;
+
+  const contractor = await autoAssign(base44, cfg, dateStr, appt.service_type, startMs, endMs);
+  if (!contractor) return { assigned: false, reason: 'no_available_contractor' };
+
+  await base44.asServiceRole.entities.Appointment.update(appt.id, {
+    contractor_id: contractor.id,
+    contractor_name: contractor.name,
+    job_status: 'assigned',
+    status: 'confirmed',
+  });
+
+  if (appt.google_calendar_event_id) {
+    try {
+      const { accessToken } = await base44.asServiceRole.connectors.getConnection('googlecalendar');
+      await gcal(accessToken, 'PATCH', `/calendars/primary/events/${appt.google_calendar_event_id}`, {
+        summary: `VDS — ${appt.service_label || 'Appointment'} — ${appt.customer_name} — ${contractor.name}`,
+        extendedProperties: { shared: { type: 'vds_appointment', service: appt.service_type || '', contractor_id: contractor.id } },
+      });
+    } catch (e) { console.error('GCal auto-assign patch error:', e.message); }
   }
 
   return { success: true, assigned: true, contractor: { id: contractor.id, name: contractor.name } };
@@ -1178,6 +1244,17 @@ Deno.serve(async (req) => {
         if (!me || me.role !== 'admin') return Response.json({ error: 'Admin only.' }, { status: 403 });
       }
       return Response.json(await assignContractor(base44, body, cfg));
+    }
+    if (action === 'auto_assign') {
+      // Internal availability-based auto-assignment used by the website booking flow
+      // (server-to-server via SCHEDULER_TOKEN) or an authenticated admin.
+      const schedulerToken = Deno.env.get('SCHEDULER_TOKEN');
+      const tokenOk = !!(schedulerToken && body.scheduler_token && body.scheduler_token === schedulerToken);
+      if (!tokenOk) {
+        const me = await base44.auth.me().catch(() => null);
+        if (!me || me.role !== 'admin') return Response.json({ error: 'Admin only.' }, { status: 403 });
+      }
+      return Response.json(await autoAssignContractor(base44, body, cfg));
     }
     if (action === 'get_my_profile') return Response.json(await getMyProfile(base44));
     if (action === 'my_jobs') return Response.json(await myJobs(base44));

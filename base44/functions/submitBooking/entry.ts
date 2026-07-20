@@ -409,7 +409,7 @@ Deno.serve(async (req) => {
     // ── Auto-assign specialist via scheduler ──────────────────────────────
     if (appt) {
       try {
-        const r = await base44.functions.invoke('scheduler', { action: 'assign_contractor', appointment_id: appt.id, target: 'Noah', scheduler_token: Deno.env.get('SCHEDULER_TOKEN') });
+        const r = await base44.functions.invoke('scheduler', { action: 'auto_assign', appointment_id: appt.id, scheduler_token: Deno.env.get('SCHEDULER_TOKEN') });
         console.log('Auto-assign result:', JSON.stringify(r?.data || r));
 
         // Sync specialist info from the updated Appointment to the Job
