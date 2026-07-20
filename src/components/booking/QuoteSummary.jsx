@@ -48,6 +48,11 @@ export default function QuoteSummary({ vehicleLabel, conditionLabel, quote, hasI
               <span>Add-ons</span><span>+${quote.addOnTotal}</span>
             </div>
           )}
+          {quote.paintProtectionDiscount > 0 && (
+            <div className="flex items-center justify-between text-xs font-mono-tech text-gold mb-3">
+              <span>Paint protection discount (20%)</span><span>−${quote.paintProtectionDiscount}</span>
+            </div>
+          )}
 
           <div className="flex items-end justify-between mb-2 pt-3 border-t border-vapor/10">
             <span className="text-xs font-mono-tech tracking-widest text-vapor/40">CUSTOM QUOTE</span>

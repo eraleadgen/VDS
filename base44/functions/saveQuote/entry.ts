@@ -38,7 +38,7 @@ Deno.serve(async (req) => {
 
     const {
       vehicle_classification, vehicle_year, vehicle_make, vehicle_model,
-      services, condition, add_ons,
+      services, condition, add_ons, paint_protection,
       estimated_price, estimated_duration_minutes, quote_summary,
       customer_name, customer_phone, customer_email,
     } = body;
@@ -80,7 +80,10 @@ Deno.serve(async (req) => {
         if (tier) { addOnTotal += tier.price || 0; computedDuration += tier.duration_minutes || 0; }
       }
       if (basePrice > 0) computedDuration += (conditionEntry && conditionEntry.duration_add_minutes) || 0;
-      computedPrice = Math.round(basePrice * conditionMultiplier) + addOnTotal;
+      const conditionedBase = Math.round(basePrice * conditionMultiplier);
+      const hasProtection = paint_protection && paint_protection !== 'none' && basePrice > 0;
+      const protectionDiscount = hasProtection ? Math.round(conditionedBase * 0.2) : 0;
+      computedPrice = conditionedBase + addOnTotal - protectionDiscount;
     }
 
     const expiration = new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString().split('T')[0];
@@ -97,6 +100,7 @@ Deno.serve(async (req) => {
       requested_services: services,
       add_ons: add_ons || [],
       condition: condition || '',
+      paint_protection: paint_protection || 'none',
       starting_price: computedPrice,
       final_price: computedPrice,
       estimated_duration_minutes: estimated_duration_minutes || computedDuration || 0,

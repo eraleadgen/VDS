@@ -10,6 +10,7 @@ import VehicleSelector from '../components/vds/VehicleSelector';
 import SmsConsent from '../components/vds/SmsConsent';
 import ConditionSelector from '../components/booking/ConditionSelector';
 import ServicePicker from '../components/booking/ServicePicker';
+import PaintProtectionSelector from '../components/booking/PaintProtectionSelector';
 import QuoteSummary from '../components/booking/QuoteSummary';
 import BookingCalendar from '../components/booking/BookingCalendar';
 import SavedVehiclePicker from '../components/booking/SavedVehiclePicker';
@@ -48,6 +49,7 @@ export default function BookAppointment() {
   const [selected, setSelected] = useState([]);
   const [addOns, setAddOns] = useState([]);
   const [consultations, setConsultations] = useState([]);
+  const [paintProtection, setPaintProtection] = useState('none');
 
   const [form, setForm] = useState(DEFAULT_FORM);
   const [calendarDate, setCalendarDate] = useState(new Date());
@@ -167,10 +169,11 @@ export default function BookAppointment() {
   const toggleConsultation = (key) => setConsultations(s => s.includes(key) ? s.filter(x => x !== key) : [...s, key]);
 
   const quote = useMemo(() => computeQuote({
-    config, classification, condition, selected, addOns, consultations,
-  }), [config, classification, condition, selected, addOns, consultations]);
+    config, classification, condition, selected, addOns, consultations, paintProtection,
+  }), [config, classification, condition, selected, addOns, consultations, paintProtection]);
 
   const hasItems = quote.lineItems.length > 0 && !!classification;
+  const hasDetailService = selected.some(k => config?.services?.find(s => s.key === k && s.category === 'detail'));
   const conditionEntry = config?.pricing_rules?.condition_multipliers?.find(c => c.key === condition);
 
   const primaryService = useMemo(() => {
@@ -232,6 +235,7 @@ export default function BookAppointment() {
           services: [...selected, ...consultations],
           add_ons: addOns,
           condition,
+          paint_protection: paintProtection,
           estimated_price: quote.total,
           estimated_duration_minutes: quote.totalMins,
           quote_summary: quote.summary,
@@ -244,7 +248,8 @@ export default function BookAppointment() {
       const addonsArr = addOns.map(k => config.services.find(s => s.key === k)?.label).filter(Boolean);
       const serviceLabel = config.services.find(s => s.key === primaryService)?.label || primaryService;
       const vehicleDetails = `${vehicleLabel} (${CLASSIFICATION_LABEL[classification] || classification}) — ${serviceLabel}${addonsArr.length ? ` + ${addonsArr.join(', ')}` : ''}`;
-      const quoteNote = `Estimated Total: $${quote.total}`;
+      const ppLabel = paintProtection === 'ppf' ? 'PPF' : paintProtection === 'ceramic_coating' ? 'Ceramic Coating' : '';
+      const quoteNote = `Estimated Total: $${quote.total}${ppLabel ? ` (Paint Protection: ${ppLabel}, -20% applied)` : ''}`;
 
       await base44.functions.invoke('submitBooking', {
         ...form,
@@ -336,7 +341,7 @@ export default function BookAppointment() {
               ) : (
                 <a href="/member-login" className="border border-gold/40 text-gold px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold/10 transition-colors text-center">CREATE ACCOUNT TO TRACK →</a>
               )}
-              <button onClick={() => { setSubmitted(false); setForm(DEFAULT_FORM); setSelectedDay(null); setGuestVehicle(DEFAULT_GUEST_VEHICLE); setSelected([]); setAddOns([]); setConsultations([]); setCondition('light'); setSmsConsent(false); setExistingQuoteId(null); navigate('/book', { replace: true }); }}
+              <button onClick={() => { setSubmitted(false); setForm(DEFAULT_FORM); setSelectedDay(null); setGuestVehicle(DEFAULT_GUEST_VEHICLE); setSelected([]); setAddOns([]); setConsultations([]); setCondition('light'); setPaintProtection('none'); setSmsConsent(false); setExistingQuoteId(null); navigate('/book', { replace: true }); }}
                 className="border border-vapor/20 text-vapor/60 px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:border-vapor/50 hover:text-vapor transition-colors">BOOK ANOTHER</button>
             </div>
           </div>
@@ -416,6 +421,11 @@ export default function BookAppointment() {
                     selected={selected} addOns={addOns} consultations={consultations}
                     onToggleService={toggleService} onToggleAddOn={toggleAddOn} onToggleConsultation={toggleConsultation}
                   />
+                  {hasDetailService && (
+                    <div className="mt-6">
+                      <PaintProtectionSelector value={paintProtection} onChange={setPaintProtection} />
+                    </div>
+                  )}
                 </div>
               )}
 

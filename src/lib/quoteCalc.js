@@ -39,7 +39,7 @@ export const CATEGORY_LABEL = {
 };
 
 // Compute a live client-side quote (display only; server recomputes on submit)
-export function computeQuote({ config, classification, condition, selected, addOns, consultations }) {
+export function computeQuote({ config, classification, condition, selected, addOns, consultations, paintProtection }) {
   const mapping = config?.classification_to_pricing_group || {};
   const pricingGroup = classification ? classificationToPricingGroup(mapping, classification) : null;
   const conditions = config?.pricing_rules?.condition_multipliers || [];
@@ -80,9 +80,11 @@ export function computeQuote({ config, classification, condition, selected, addO
   }
 
   const conditionedBase = Math.round(basePrice * conditionMultiplier);
-  const total = conditionedBase + addOnTotal;
+  const hasProtection = paintProtection && paintProtection !== 'none' && basePrice > 0;
+  const paintProtectionDiscount = hasProtection ? Math.round(conditionedBase * 0.2) : 0;
+  const total = conditionedBase + addOnTotal - paintProtectionDiscount;
   const totalMins = baseMins + addOnMins + (basePrice > 0 ? conditionDurationAdd : 0);
-  const summary = lineItems.map(i => i.consultation ? `${i.label} — Consultation` : `${i.label} — $${i.price}`).join(' | ');
+  const summary = lineItems.map(i => i.consultation ? `${i.label} — Consultation` : `${i.label} — $${i.price}`).join(' | ') + (hasProtection ? ` | Paint Protection: ${paintProtection === 'ppf' ? 'PPF' : 'Ceramic Coating'} (-20%)` : '');
 
-  return { lineItems, basePrice, conditionedBase, addOnTotal, total, totalMins, pricingGroup, conditionMultiplier, conditionEntry, summary };
+  return { lineItems, basePrice, conditionedBase, addOnTotal, paintProtectionDiscount, total, totalMins, pricingGroup, conditionMultiplier, conditionEntry, summary };
 }
