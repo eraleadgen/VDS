@@ -7,6 +7,7 @@
 // automation's function_args) and uses asServiceRole throughout.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
+import { jobStartMs } from '../../shared/timezone.ts';
 
 const FONT = "'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 const MONO = "'Space Mono','Courier New',monospace";
@@ -16,35 +17,6 @@ const WINDOW_1H = 1 * 3600000;
 
 // Job lifecycle statuses that represent a confirmed upcoming appointment.
 const UPCOMING_STATUSES = new Set(['appointment_scheduled', 'specialist_assigned', 'appointment_confirmed']);
-
-// ── Timezone helpers (Deno runtime is UTC; convert wall times explicitly) ──
-function parseTimeTo24h(preferred_time) {
-  if (!preferred_time) return null;
-  const m = preferred_time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
-  if (!m) return null;
-  let h = parseInt(m[1], 10);
-  const min = parseInt(m[2], 10);
-  const mer = (m[3] || '').toUpperCase();
-  if (mer === 'PM' && h !== 12) h += 12;
-  if (mer === 'AM' && h === 12) h = 0;
-  return `${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`;
-}
-function getTzOffsetMs(date, tz) {
-  const tzDate = new Date(date.toLocaleString('en-US', { timeZone: tz }));
-  const utcDate = new Date(date.toLocaleString('en-US', { timeZone: 'UTC' }));
-  return tzDate.getTime() - utcDate.getTime();
-}
-function zonedToUtc(dateStr, timeStr, tz) {
-  const wallAsUtc = new Date(`${dateStr}T${timeStr}:00.000Z`);
-  return new Date(wallAsUtc.getTime() - getTzOffsetMs(wallAsUtc, tz));
-}
-function jobStartMs(job, tz) {
-  if (!job || !job.appointment_date) return null;
-  const t24 = parseTimeTo24h(job.appointment_time);
-  if (!t24) return null;
-  try { return zonedToUtc(job.appointment_date, t24, tz).getTime(); }
-  catch { return null; }
-}
 
 // Send an outbound SMS — routed through sendMessage → Communication Rules Engine.
 // Returns true when the engine has processed the message (sent or suppressed) so the

@@ -35,6 +35,16 @@ Deno.serve(async (req) => {
     // appointments whose stored phone does not match the caller's verified Customer may only be
     // cancelled by an admin.
     let owns = !!(user.id && appointment.created_by_id && appointment.created_by_id === user.id);
+    // Email match — mirrors the Appointment read RLS (customer_email === caller email).
+    // Covers members whose bookings predate the ERA Core Customer entity (no Customer row yet),
+    // which was causing a silent 403 and the "cancel does nothing" symptom on the live site.
+    if (!owns && user.email && appointment.customer_email) {
+      owns = appointment.customer_email.toLowerCase() === user.email.toLowerCase();
+    }
+    // Phone match against the caller's verified profile phone (Appointment read RLS).
+    if (!owns && user.data?.phone && appointment.customer_phone) {
+      owns = appointment.customer_phone.replace(/\D/g, '').slice(-10) === String(user.data.phone).replace(/\D/g, '').slice(-10);
+    }
     if (!owns && user.id) {
       const myCustomers = await base44.asServiceRole.entities.Customer.filter({ linked_user_id: user.id }).catch(() => []);
       const c = myCustomers && myCustomers[0];
