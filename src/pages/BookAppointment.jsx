@@ -164,7 +164,7 @@ export default function BookAppointment() {
     ? { year: guestVehicle.year, make: guestVehicle.make, model: guestVehicle.model, classification: guestVehicle.classification }
     : null;
 
-  const toggleService = (key) => setSelected(s => s.includes(key) ? s.filter(x => x !== key) : [...s, key]);
+  const toggleService = (key) => setSelected(s => s.includes(key) ? [] : [key]);
   const toggleAddOn = (key) => setAddOns(s => s.includes(key) ? s.filter(x => x !== key) : [...s, key]);
   const toggleConsultation = (key) => setConsultations(s => s.includes(key) ? s.filter(x => x !== key) : [...s, key]);
 
