@@ -670,6 +670,23 @@ async function updateJobStatus(base44, data, cfg, job) {
     } catch (e) { console.error('completion sms error:', e.message); }
   }
 
+  // Auto-finalize the originating quote when the job completes (booked → finalized).
+  if (newStatus === 'completed' && job.job_status !== 'completed' && job.quote_id) {
+    try {
+      const quote = await base44.asServiceRole.entities.Quote.get(job.quote_id).catch(() => null);
+      if (quote && quote.status !== 'finalized') {
+        const finalizePrice = job.final_price ?? quote.final_price ?? job.estimated_price ?? 0;
+        await base44.asServiceRole.entities.Quote.update(job.quote_id, { status: 'finalized', final_price: finalizePrice });
+        await base44.asServiceRole.functions.invoke('logEvent', {
+          event_type: 'quote_finalized', entity_type: 'quote', entity_id: job.quote_id, customer_id: job.customer_id,
+          description: `Quote finalized (job completed): ${quote.quote_summary || (quote.requested_services || []).join(', ')}`,
+          metadata: { quote_id: job.quote_id, job_id: job.id, final_price: finalizePrice },
+          scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
+        });
+      }
+    } catch (e) { console.error('quote auto-finalize error:', e.message); }
+  }
+
   // Increment contractor jobs_completed the first time a job reaches 'completed'.
   if (newStatus === 'completed' && job.job_status !== 'completed' && job.specialist_id) {
     try {
@@ -1041,10 +1058,9 @@ async function adminUpdateInvoice(base44, body) {
         scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
       });
 
-      // ── Auto-archive the linked quote when the invoice is paid ──
-      // The quote's details are preserved in the SystemEventLog + CustomerJourney
-      // (service history), then the Quote record is deleted so it no longer
-      // clutters the admin Quotes tab. Status auto-updates: booked → finalized → archived.
+      // ── Auto-finalize the linked quote when the invoice is paid ──
+      // The quote's status moves to 'finalized' (kept visible in the Quotes tab);
+      // details are also preserved in the SystemEventLog + CustomerJourney.
       if (invoice?.job_id) {
         try {
           const job = await base44.asServiceRole.entities.Job.get(invoice.job_id).catch(() => null);
@@ -1059,10 +1075,10 @@ async function adminUpdateInvoice(base44, body) {
                 metadata: { quote_id: job.quote_id, job_id: job.id, invoice_id: invoice.id, amount: invoice.final_amount || invoice.amount },
                 scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
               });
-              await base44.asServiceRole.entities.Quote.delete(job.quote_id);
-            }
-          }
-        } catch (e) { console.error('Quote auto-archive on payment failed:', e.message); }
+              // Finalized quotes stay visible in the Quotes tab (also preserved in the history log).
+              }
+              }
+              } catch (e) { console.error('Quote auto-finalize on payment failed:', e.message); }
       }
     } catch (e) { console.error('Invoice payment update error:', e.message); }
   }
@@ -1206,9 +1222,29 @@ async function adminArchiveQuote(base44, body) {
     });
   } catch (e) { console.error('logEvent error:', e.message); }
 
-  // Delete the quote — details are now preserved in the history log
-  await base44.asServiceRole.entities.Quote.delete(quote_id);
-  return { success: true, archived: true };
+  // Keep the finalized quote visible in the Quotes tab — details are also logged to history.
+  return { success: true, finalized: true };
+}
+
+// ── Admin: Quotes list with automatic expiry sweep ──
+// Pending quotes past their expiration_date are auto-marked 'expired' on read,
+// so the admin Quotes tab always reflects the 7-day quote validity window.
+async function adminQuotes(base44, body) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const today = new Date().toISOString().split('T')[0];
+  try {
+    const pending = await base44.asServiceRole.entities.Quote.filter({ status: 'pending' });
+    const toExpire = (pending || []).filter(q => q.expiration_date && q.expiration_date < today);
+    for (const q of toExpire) {
+      try { await base44.asServiceRole.entities.Quote.update(q.id, { status: 'expired' }); }
+      catch (e) { console.error('expire quote error:', q.id, e.message); }
+    }
+  } catch (e) { console.error('quote expiry sweep error:', e.message); }
+  let quotes;
+  if (body.status) quotes = await base44.asServiceRole.entities.Quote.filter({ status: body.status });
+  else quotes = await base44.asServiceRole.entities.Quote.list('-created_date', 200);
+  return { success: true, quotes: quotes || [] };
 }
 
 // ── Main Handler ────────────────────────────────────────────────────────
@@ -1289,6 +1325,7 @@ Deno.serve(async (req) => {
     if (action === 'admin_delete_job') return Response.json(await adminDeleteJob(base44, body));
     if (action === 'admin_bulk_delete_jobs') return Response.json(await adminBulkDeleteJobs(base44, body));
     if (action === 'admin_archive_quote') return Response.json(await adminArchiveQuote(base44, body));
+    if (action === 'admin_quotes') return Response.json(await adminQuotes(base44, body));
 
     // ── Job-scoped actions (Phase 7+8: specialist portal operates on the Job entity) ──
     if (['update_job_status', 'request_review'].includes(action)) {

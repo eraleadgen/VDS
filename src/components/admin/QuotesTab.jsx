@@ -11,7 +11,7 @@ const STATUS_BADGE = {
   declined: 'text-red-400 bg-red-400/5 border-red-400/20',
 };
 const STATUS_LABEL = (s) => s ? s.replace(/_/g, ' ') : '';
-const STATUSES = ['pending', 'sent', 'booked', 'finalized', 'expired', 'declined'];
+const STATUSES = ['pending', 'booked', 'finalized', 'expired'];
 
 const CLASSIFICATION_LABEL = {
   coupe: 'Coupe', sedan: 'Sedan', mid_size_suv: 'Mid Size SUV', truck_3_row_suv: 'Truck / 3-Row SUV',
@@ -29,8 +29,8 @@ export default function QuotesTab() {
   const load = async () => {
     setLoading(true);
     try {
-      const list = await base44.entities.Quote.list('-created_date', 200);
-      setQuotes(list || []);
+      const r = await invoke({ action: 'admin_quotes' });
+      setQuotes(r?.quotes || []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
   };
