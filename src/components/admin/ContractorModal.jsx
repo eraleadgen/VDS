@@ -86,7 +86,7 @@ export default function ContractorModal({ contractor, onClose, onSave, busy }) {
             </div>
           </div>
           <div className="grid grid-cols-3 gap-4">
-            <div className="col-span-2"><label className={LABEL}>SERVICE COUNTIES (comma separated)</label>
+            <div className="col-span-2"><label className={LABEL}>SERVICE CITIES (comma separated)</label>
               <input value={form.counties} onChange={e => set('counties', e.target.value)} className={INPUT} placeholder="Alpharetta, Johns Creek, Roswell" /></div>
             <div><label className={LABEL}>MAX TRAVEL (mi)</label><input type="number" value={form.max_travel} onChange={e => set('max_travel', e.target.value)} className={INPUT} /></div>
           </div>
