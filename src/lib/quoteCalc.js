@@ -84,7 +84,7 @@ export function computeQuote({ config, classification, condition, selected, addO
   const paintProtectionDiscount = hasProtection ? Math.round(conditionedBase * 0.2) : 0;
   const total = conditionedBase + addOnTotal - paintProtectionDiscount;
   const totalMins = baseMins + addOnMins + (basePrice > 0 ? conditionDurationAdd : 0);
-  const summary = lineItems.map(i => i.consultation ? `${i.label} — Consultation` : `${i.label} — $${i.price}`).join(' | ') + (hasProtection ? ` | Paint Protection: ${paintProtection === 'ppf' ? 'PPF' : 'Ceramic Coating'} (-20%)` : '');
+  const summary = lineItems.map(i => i.consultation ? `${i.label} — Consultation` : `${i.label} — $${i.price}`).join(' | ') + (hasProtection ? ` | Paint Protection (PPF or Ceramic Coating) (-20%)` : '');
 
   return { lineItems, basePrice, conditionedBase, addOnTotal, paintProtectionDiscount, total, totalMins, pricingGroup, conditionMultiplier, conditionEntry, summary };
 }

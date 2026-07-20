@@ -61,11 +61,10 @@
       "type": "string",
       "enum": [
         "none",
-        "ppf",
-        "ceramic_coating"
+        "paint_protection"
       ],
       "default": "none",
-      "description": "Existing paint protection on the vehicle, selected on the quote/book page. When set to ppf or ceramic_coating, a 20% discount is applied to the detail service base price."
+      "description": "Existing paint protection on the vehicle (PPF or ceramic coating), selected on the quote/book page. When set to paint_protection, a 20% discount is applied to the detail service base price."
     },
     "starting_price": {
       "type": "number",

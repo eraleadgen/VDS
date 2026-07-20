@@ -248,8 +248,7 @@ export default function BookAppointment() {
       const addonsArr = addOns.map(k => config.services.find(s => s.key === k)?.label).filter(Boolean);
       const serviceLabel = config.services.find(s => s.key === primaryService)?.label || primaryService;
       const vehicleDetails = `${vehicleLabel} (${CLASSIFICATION_LABEL[classification] || classification}) — ${serviceLabel}${addonsArr.length ? ` + ${addonsArr.join(', ')}` : ''}`;
-      const ppLabel = paintProtection === 'ppf' ? 'PPF' : paintProtection === 'ceramic_coating' ? 'Ceramic Coating' : '';
-      const quoteNote = `Estimated Total: $${quote.total}${ppLabel ? ` (Paint Protection: ${ppLabel}, -20% applied)` : ''}`;
+      const quoteNote = `Estimated Total: $${quote.total}${paintProtection && paintProtection !== 'none' ? ' (Paint Protection: PPF or Ceramic Coating, -20% applied)' : ''}`;
 
       await base44.functions.invoke('submitBooking', {
         ...form,
