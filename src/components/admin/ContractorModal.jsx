@@ -10,7 +10,7 @@ const DAYS = [
   { key: 'mon', label: 'MON' }, { key: 'tue', label: 'TUE' }, { key: 'wed', label: 'WED' },
   { key: 'thu', label: 'THU' }, { key: 'fri', label: 'FRI' }, { key: 'sat', label: 'SAT' }, { key: 'sun', label: 'SUN' },
 ];
-const TIME_INPUT = 'bg-asphalt border border-vapor/10 focus:border-gold/50 outline-none text-vapor px-2 py-2 text-xs font-mono-tech rounded-sm w-24';
+const TIME_INPUT = 'bg-asphalt border border-vapor/10 focus:border-gold/50 outline-none text-vapor px-2 py-2 text-xs font-mono-tech rounded-sm w-24 [color-scheme:dark]';
 const INPUT = 'w-full bg-asphalt border border-vapor/10 focus:border-gold/50 outline-none text-vapor px-4 py-3 text-sm font-mono-tech rounded-sm transition-colors duration-200';
 const LABEL = 'block text-xs font-mono-tech tracking-widest text-vapor/50 mb-2';
 
