@@ -58,17 +58,6 @@ export default function ContractorModal({ contractor, onClose, onSave, busy }) {
     return opts;
   })();
 
-  const toMin = (t) => { const [h, m] = (t || '').split(':').map(Number); return Number.isFinite(h) && Number.isFinite(m) ? h * 60 + m : null; };
-  const weeklyHours = DAYS.reduce((sum, d) => {
-    const a = avail[d.key];
-    if (!a.available) return sum;
-    if (a.start && a.end) {
-      const s = toMin(a.start), e = toMin(a.end);
-      if (s != null && e != null && e > s) return sum + (e - s) / 60;
-    }
-    return sum + 8; // blank = all day → standard 8h workday
-  }, 0);
-
   const submit = (e) => {
     e.preventDefault();
     onSave({
@@ -168,17 +157,6 @@ export default function ContractorModal({ contractor, onClose, onSave, busy }) {
                   </div>
                 );
               })}
-            </div>
-            <div className="mt-3">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-[10px] font-mono-tech tracking-widest text-vapor/40">WEEKLY CAPACITY</span>
-                <span className="text-xs font-mono-tech text-gold">{Math.round(weeklyHours)}h / week</span>
-              </div>
-              <div className="h-2 bg-asphalt rounded-full overflow-hidden border border-vapor/10">
-                <div className="h-full bg-gradient-to-r from-gold-dark via-gold to-gold-light transition-all duration-500"
-                  style={{ width: `${Math.min(100, (weeklyHours / 40) * 100)}%` }} />
-              </div>
-              <p className="text-[10px] font-mono-tech text-vapor/30 mt-1">Based on times set (blank days count as a standard 8h workday). 40h = full-time.</p>
             </div>
           </div>
           <button type="submit" disabled={busy}
