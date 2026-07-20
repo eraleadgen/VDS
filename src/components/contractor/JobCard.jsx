@@ -1,17 +1,5 @@
 import { MapPin, Clock, Phone, Mail, FileText, Play, CheckCircle2, Camera, Star } from 'lucide-react';
 
-const STATUS_COLORS = {
-  assigned: 'text-vapor/60 bg-vapor/5 border-vapor/20',
-  accepted: 'text-blue-300 bg-blue-300/5 border-blue-300/20',
-  driving: 'text-amber-300 bg-amber-300/5 border-amber-300/20',
-  arrived: 'text-amber-200 bg-amber-200/5 border-amber-200/20',
-  in_progress: 'text-gold bg-gold/10 border-gold/30',
-  quality_check: 'text-gold bg-gold/10 border-gold/30',
-  completed: 'text-green-300 bg-green-300/5 border-green-300/20',
-  photos_uploaded: 'text-green-300 bg-green-300/5 border-green-300/20',
-  invoice_complete: 'text-green-200 bg-green-200/5 border-green-200/20',
-};
-
 const IN_PROGRESS_LIKE = ['accepted', 'driving', 'arrived', 'in_progress', 'quality_check'];
 const DONE_LIKE = ['completed', 'photos_uploaded', 'invoice_complete'];
 
@@ -30,8 +18,8 @@ export default function JobCard({ job, onStart, onComplete, onPhotos, onReview, 
           <h3 className="text-base font-grotesk font-bold text-vapor">{job.service_label || job.service_package}</h3>
           <p className="text-sm text-vapor/60 mt-1 truncate">{job.customer_name} · {job.vehicle_info || 'Vehicle N/A'}</p>
         </div>
-        <span className={`text-xs font-mono-tech tracking-widest px-3 py-1 rounded-sm border whitespace-nowrap ${STATUS_COLORS[status] || STATUS_COLORS.assigned}`}>
-          {status.replace(/_/g, ' ').toUpperCase()}
+        <span className={`text-xs font-mono-tech tracking-widest px-3 py-1 rounded-sm border whitespace-nowrap ${isDone ? 'text-green-300 bg-green-300/5 border-green-300/20' : isStarted ? 'text-gold bg-gold/10 border-gold/30' : 'text-blue-300 bg-blue-300/5 border-blue-300/20'}`}>
+          {isDone ? 'COMPLETED' : isStarted ? 'IN PROGRESS' : 'APPOINTMENT SCHEDULED'}
         </span>
       </div>
       <div className="space-y-1 text-xs font-mono-tech text-vapor/50 mb-4">

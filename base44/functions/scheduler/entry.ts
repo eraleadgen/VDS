@@ -651,6 +651,15 @@ async function updateJobStatus(base44, data, cfg, job) {
     }
   } catch (e) { console.error('Appointment mirror sync error:', e.message); }
 
+  // Notify the customer the first time a job moves to 'in_progress' ("we're getting started").
+  if (newStatus === 'in_progress' && job.job_status !== 'in_progress') {
+    try {
+      const first = (job.customer_name || '').split(' ')[0] || 'there';
+      const msg = `Hi ${first}, your VDS specialist is getting started on your vehicle now! — VDS Mobile`;
+      await sendTwilioSms(base44, job.customer_phone, msg, job.customer_name, 'job_started');
+    } catch (e) { console.error('start sms error:', e.message); }
+  }
+
   // Notify the customer the first time a job reaches 'completed'.
   if (newStatus === 'completed' && job.job_status !== 'completed') {
     await removeGcalEvent(base44, job.google_calendar_event_id);
