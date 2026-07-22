@@ -21,7 +21,7 @@ const SECTIONS = [
   {
     num: '4.',
     title: 'Pricing and Payment',
-    content: 'An estimate of the service duration, typically ranging from two to five hours, will be provided before your appointment begins. We accept payment via Cash, Zelle, Venmo, Cash App, and Debit/Credit Card via Invoice. Payment is due in full upon completion of the service, unless other arrangements have been explicitly agreed upon in writing beforehand.',
+    content: 'An estimate of the service duration, typically ranging from two to five hours, will be provided before your appointment begins. All quotes and estimated pricing provided by Valet Detailing Service LLC are valid for seven (7) days from the date generated; pricing quoted after that period is subject to change. We accept payment via Cash, Zelle, Venmo, Cash App, and Debit/Credit Card via Invoice. Payment is due in full upon completion of the service, unless other arrangements have been explicitly agreed upon in writing beforehand.',
   },
   {
     num: '5.',
@@ -92,7 +92,7 @@ export default function Terms() {
       <section className="pt-36 pb-20 max-w-4xl mx-auto px-6">
         <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">LEGAL</p>
         <h1 className="text-5xl font-grotesk font-bold text-vapor mb-3">TERMS & CONDITIONS</h1>
-        <p className="text-xs font-mono-tech text-vapor/30 mb-16 tracking-widest">VALET DETAILING SERVICE LLC · LAST UPDATED: JULY 16, 2026</p>
+        <p className="text-xs font-mono-tech text-vapor/30 mb-16 tracking-widest">VALET DETAILING SERVICE LLC · LAST UPDATED: JULY 22, 2026</p>
 
         <div className="space-y-10">
           {SECTIONS.map(sec => (
