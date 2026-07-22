@@ -13,10 +13,10 @@ const PACKETS = {
     heading: 'Your Partner Welcome Packet',
     intro: 'As a VDS Partner, you earn attribution on every customer who books through your referral link — including future ceramic coatings and paint corrections, for the life of the customer relationship.',
     sections: [
-      { h: 'How Referrals Work', body: 'Every partner receives a unique referral code and QR card. When a customer books through your link, they are tagged to you in our system. Attribution lasts for the lifetime of that customer — even if they purchase a coating months later.', icon: Share2 },
-      { h: 'Your Digital Business Card', body: 'Visit the Business Card tab to view, share, and print your premium digital card. Hand it to customers at the dealership or share the link via text. Every scan routes to the booking page with your code baked in.', icon: CreditCard },
+      { h: 'How Referrals Work', body: 'Every partner receives a unique referral code and referral link. When a customer books through your link, they are tagged to you in our system. Attribution lasts for the lifetime of that customer — even if they purchase a coating months later.', icon: Share2 },
+      { h: 'Your Referral Link', body: 'Visit the Referral Link tab to view, copy, and share your unique referral link and QR code. Share the link via text or display the QR code at the dealership. Every scan routes to the booking page with your code baked in.', icon: CreditCard },
       { h: 'What Counts as a Conversion', body: 'A referral converts when the customer pays for a service. Conversions, total revenue, Gold memberships generated, and ceramic coatings generated all appear on your Overview dashboard.', icon: Gift },
-      { h: 'Founding Partners', body: 'Founding Partners are the earliest members of the network and receive a permanent badge on their business card. If you have this designation, lean into it — it signals seniority to your customers.', icon: Network },
+      { h: 'Founding Partners', body: 'Founding Partners are the earliest members of the VDS Partner Network. As a Founding Partner, you receive priority communication from VDS, early access to new features, and a permanent badge recognizing your role in building the network.', icon: Network },
       { h: 'Support', body: 'For questions about referrals, payouts, or your card, contact the VDS team at Valetdetailingservice@gmail.com or (470) 412-8986.', icon: Phone },
     ],
   },

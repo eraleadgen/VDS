@@ -33,7 +33,7 @@ export default function PartnerPortal() {
 
   const navItems = [
     { key: 'overview', label: 'OVERVIEW', icon: LayoutDashboard },
-    { key: 'referral', label: 'REFERRAL QR', icon: QrCode },
+    { key: 'referral', label: 'REFERRAL LINK', icon: QrCode },
     { key: 'resources', label: 'RESOURCES', icon: Library },
   ];
 

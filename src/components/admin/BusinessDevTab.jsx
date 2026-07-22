@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Users, UserPlus, CalendarClock, TrendingUp, Star, Sparkles, Palette, DollarSign, Heart } from 'lucide-react';
+import { Users, UserPlus, CalendarClock, TrendingUp, Star, Sparkles, Palette, DollarSign } from 'lucide-react';
 
 function Stat({ icon: Icon, label, value, accent }) {
   return (
@@ -37,7 +37,6 @@ export default function BusinessDevTab() {
     const gold = partners.reduce((s, p) => s + (p.gold_members_generated || 0), 0);
     const coatings = partners.reduce((s, p) => s + (p.ceramic_coatings_generated || 0), 0);
     const corrections = partners.reduce((s, p) => s + (p.paint_corrections_generated || 0), 0);
-    const avgHealth = active.length ? Math.round(active.reduce((s, p) => s + (p.relationship_health_score || 0), 0) / active.length) : 0;
     const conversionRate = totalReferrals ? Math.round((totalConversions / totalReferrals) * 100) : 0;
 
     const byDealership = {};
@@ -47,7 +46,7 @@ export default function BusinessDevTab() {
 
     return {
       activeCount: active.length, newThisMonth: newThisMonth.length, followUpsDue: followUpsDue.length,
-      totalReferrals, totalConversions, lifetimeRevenue, gold, coatings, corrections, avgHealth, conversionRate,
+      totalReferrals, totalConversions, lifetimeRevenue, gold, coatings, corrections, conversionRate,
       topDealerships, topPartners, foundingCount: partners.filter(p => p.is_founding_partner).length,
     };
   }, [partners]);
@@ -77,7 +76,6 @@ export default function BusinessDevTab() {
         <Stat icon={Star} label="GOLD MEMBERS" value={m.gold} />
         <Stat icon={Sparkles} label="CERAMIC COATINGS" value={m.coatings} />
         <Stat icon={Palette} label="PAINT CORRECTIONS" value={m.corrections} />
-        <Stat icon={Heart} label="AVG RELATIONSHIP" value={`${m.avgHealth}/100`} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
