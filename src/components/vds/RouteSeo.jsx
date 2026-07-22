@@ -55,6 +55,73 @@ const NOINDEX = new Set([
   '/forgot-password', '/reset-password',
 ]);
 
+// Per-page structured data (JSON-LD) for rich search results.
+const PROVIDER = {
+  '@type': 'Organization', name: 'VDS Mobile Detailing',
+  url: 'https://vdsmobile.com/', telephone: '+14704128986',
+  address: { '@type': 'PostalAddress', addressLocality: 'Alpharetta', addressRegion: 'GA', addressCountry: 'US' },
+};
+
+const ROUTE_JSON_LD = {
+  '/services': {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    name: 'Mobile Detailing Services — VDS Mobile',
+    serviceType: 'Mobile Auto Detailing',
+    provider: PROVIDER,
+    areaServed: 'Metro Atlanta, GA',
+    description: 'Full mobile detailing services in Metro Atlanta: interior detail, exterior detail, full detail, ceramic coating, paint correction, and headlight restoration — performed at your home or office.',
+    hasOfferCatalog: {
+      '@type': 'OfferCatalog', name: 'Detailing Services',
+      itemListElement: [
+        { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Full Mobile Detail' } },
+        { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Ceramic Coating' } },
+        { '@type': 'Offer', itemOffered: { '@type': 'Service', name: 'Paint Correction' } },
+      ],
+    },
+  },
+  '/vds-gold': {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: 'VDS Gold Membership',
+    description: 'Monthly unlimited mobile detailing membership: unlimited exterior details, one interior detail per month, and ceramic sealant on every detail, across Metro Atlanta. Cancel anytime.',
+    brand: { '@type': 'Brand', name: 'VDS Mobile' },
+    category: 'Auto Detailing Membership',
+    offers: [
+      {
+        '@type': 'Offer', name: 'VDS Gold — Sedan/Coupe',
+        price: '250', priceCurrency: 'USD', description: '$250/month per sedan or coupe vehicle.',
+        availability: 'https://schema.org/InStock', url: 'https://vdsmobile.com/vds-gold-signup',
+        seller: PROVIDER,
+      },
+      {
+        '@type': 'Offer', name: 'VDS Gold — Truck/SUV',
+        price: '300', priceCurrency: 'USD', description: '$300/month per truck or 3-row SUV vehicle.',
+        availability: 'https://schema.org/InStock', url: 'https://vdsmobile.com/vds-gold-signup',
+        seller: PROVIDER,
+      },
+    ],
+  },
+  '/faq': {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: [
+      { '@type': 'Question', name: 'Do I need to be home during the service?', acceptedAnswer: { '@type': 'Answer', text: "No. As long as we have access to the vehicle and the keys are arranged ahead of time, you don't need to be present." } },
+      { '@type': 'Question', name: 'How long does a detail usually take?', acceptedAnswer: { '@type': 'Answer', text: "Most appointments range from 2–5 hours. We'll give you an accurate time estimate before your service begins." } },
+      { '@type': 'Question', name: 'Is mobile detailing safe for high-end vehicles?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. We specialize in luxury and performance vehicles and use professional-grade products, tools, and paint-safe techniques.' } },
+      { '@type': 'Question', name: 'What products do you use?', acceptedAnswer: { '@type': 'Answer', text: "We exclusively use GTechniq professional detailing and protection products." } },
+      { '@type': 'Question', name: 'Do you offer paint protection film (PPF)?', acceptedAnswer: { '@type': 'Answer', text: 'Our protection offerings focus on ceramic coatings using GTechniq professional range, from 3-month maintenance to 7-year permanent protection.' } },
+      { '@type': 'Question', name: "What's the difference between a full detail and VDS Gold?", acceptedAnswer: { '@type': 'Answer', text: 'A full detail is a one-time service. VDS Gold is a monthly membership ($250/mo sedan/coupe, $300/mo truck/SUV) with unlimited exterior details and 1 interior detail per month.' } },
+      { '@type': 'Question', name: 'What is VDS Gold?', acceptedAnswer: { '@type': 'Answer', text: 'VDS Gold is our monthly membership: unlimited exterior details and 1 full interior detail per month, with ceramic sealant on every detail.' } },
+      { '@type': 'Question', name: 'Can I cancel VDS Gold anytime?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. VDS Gold is month-to-month with no long-term contracts. You can cancel anytime.' } },
+      { '@type': 'Question', name: 'Can I add multiple vehicles to VDS Gold?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Membership is priced per vehicle — $250/mo (sedan/coupe) or $300/mo (truck/3-row SUV) — so you can enroll as many vehicles as you need.' } },
+      { '@type': 'Question', name: 'What forms of payment do you accept?', acceptedAnswer: { '@type': 'Answer', text: 'We accept Cash, Zelle, Venmo, Cash App, and Debit/Credit Card via Invoice. Payment is collected after the service is completed.' } },
+      { '@type': 'Question', name: 'Are you insured?', acceptedAnswer: { '@type': 'Answer', text: 'Yes. Valet Detailing Service LLC is fully insured and a registered LLC in Georgia.' } },
+      { '@type': 'Question', name: 'What is your cancellation or rescheduling policy?', acceptedAnswer: { '@type': 'Answer', text: "We ask for at least 24 hours' notice for cancellations or reschedules." } },
+    ],
+  },
+};
+
 function upsertMeta(attrKey, attrValue, content) {
   let el = document.head.querySelector(`meta[${attrKey}="${attrValue}"]`);
   if (!el) {
@@ -77,6 +144,20 @@ function upsertLink(rel, href) {
     document.head.appendChild(el);
   }
   el.setAttribute('href', href);
+}
+
+// Inject or remove the route-specific JSON-LD structured-data block.
+function upsertJsonLd(obj) {
+  const id = 'route-ld-json';
+  let el = document.getElementById(id);
+  if (!obj) { if (el) el.remove(); return; }
+  if (!el) {
+    el = document.createElement('script');
+    el.type = 'application/ld+json';
+    el.id = id;
+    document.head.appendChild(el);
+  }
+  el.textContent = JSON.stringify(obj);
 }
 
 export default function RouteSeo() {
@@ -103,6 +184,8 @@ export default function RouteSeo() {
       upsertMeta('name', 'robots', noindex ? 'noindex, nofollow' : 'index, follow');
       upsertLink('canonical', `${BASE_URL}${path}`);
     }
+    // Per-route structured data (rich results). Removed on internal/non-indexed routes.
+    upsertJsonLd(NOINDEX.has(path) ? null : ROUTE_JSON_LD[path]);
   }, [path]);
 
   return null;
