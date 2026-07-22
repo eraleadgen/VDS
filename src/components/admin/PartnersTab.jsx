@@ -104,8 +104,9 @@ export default function PartnersTab() {
                 <Metric label="REFERRALS" value={p.referral_count || 0} />
                 <Metric label="CONVERSIONS" value={p.conversions_count || 0} />
                 <Metric label="GOLD" value={p.gold_members_generated || 0} />
-                <Metric label="HEALTH" value={`${p.relationship_health_score || 0}/100`} />
+                <Metric label="CERAMIC" value={p.ceramic_coatings_generated || 0} />
               </div>
+              <p className="text-xs font-mono-tech text-vapor/40 mt-1">{p.signup_date ? `SIGNED UP ${p.signup_date}` : 'NOT SIGNED UP'}</p>
               {p.account_created ? (
                 <p className="text-xs font-mono-tech text-green-300">◆ ACCOUNT ACTIVE</p>
               ) : (

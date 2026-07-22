@@ -571,7 +571,7 @@ export async function validatePartnerToken(base44, body) {
   const p = (all && all[0]) || null;
   if (!p) return { error: 'This invite link is invalid or no longer active.' };
   if (p.account_created) return { error: 'This invite has already been used. Please log in to your Partner Portal.', alreadyUsed: true };
-  return { success: true, name: p.name, email: p.email };
+  return { success: true, name: p.name, email: p.email, phone: p.phone };
 }
 
 // Authenticated: after the partner verifies their email, link the new account to the partner
@@ -588,7 +588,18 @@ export async function finalizePartnerSetup(base44, body) {
   if (!me.email || !p.email || me.email.toLowerCase() !== p.email.toLowerCase()) {
     return { error: 'The verified email does not match this partner invite.' };
   }
-  await base44.asServiceRole.entities.Partner.update(p.id, { linked_user_id: me.id, account_created: true, invite_token: '' });
+  // Merge the profile the partner filled in on the setup form (dealership, type, phone) and
+  // stamp their signup date.
+  const profile = body.profile || {};
+  const updates = {
+    linked_user_id: me.id, account_created: true, invite_token: '',
+    signup_date: new Date().toISOString().split('T')[0],
+  };
+  if (profile.dealership !== undefined) updates.dealership = profile.dealership;
+  if (profile.partner_type) updates.partner_type = profile.partner_type;
+  if (profile.phone) updates.phone = profile.phone;
+  if (profile.photo_url !== undefined) updates.photo_url = profile.photo_url;
+  await base44.asServiceRole.entities.Partner.update(p.id, updates);
   try { await base44.asServiceRole.entities.User.update(me.id, { role: 'partner' }); }
   catch (e) { console.error('role update error:', e.message); }
   return { success: true, partner_id: p.id };

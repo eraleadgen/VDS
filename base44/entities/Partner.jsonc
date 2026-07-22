@@ -87,22 +87,18 @@
       "type": "number",
       "default": 0
     },
-    "relationship_health_score": {
-      "type": "number",
-      "default": 0,
-      "description": "0-100 relationship health score."
-    },
     "last_contact_date": {
-      "type": "string",
-      "format": "date"
-    },
-    "next_follow_up_date": {
       "type": "string",
       "format": "date"
     },
     "welcome_packet_generated": {
       "type": "boolean",
       "default": false
+    },
+    "signup_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the partner completed their account setup (set when they create their password)."
     },
     "invite_token": {
       "type": "string",

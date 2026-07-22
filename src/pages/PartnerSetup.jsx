@@ -9,13 +9,19 @@ const invoke = (payload) => base44.functions.invoke('scheduler', payload).then(r
 const INPUT = 'w-full bg-asphalt border border-vapor/10 focus:border-gold/50 outline-none text-vapor px-4 py-3 text-sm font-mono-tech rounded-sm transition-colors duration-200';
 const LABEL = 'block text-xs font-mono-tech tracking-widest text-vapor/50 mb-2';
 
+// Partner account creation form. The admin enters only contact info; the partner fills in
+// their dealership / type / phone here AND sets their password, then verifies via OTP.
 export default function PartnerSetup() {
   const params = new URLSearchParams(window.location.search);
   const token = params.get('token') || '';
 
-  const [stage, setStage] = useState('validating'); // validating | invalid | password | otp
-  const [info, setInfo] = useState(null); // { name, email }
+  const [stage, setStage] = useState('validating'); // validating | invalid | form | otp
+  const [info, setInfo] = useState(null); // { name, email, phone }
   const [error, setError] = useState('');
+
+  const [dealership, setDealership] = useState('');
+  const [partnerType, setPartnerType] = useState('dealership_salesperson');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [showPass, setShowPass] = useState(false);
@@ -28,8 +34,9 @@ export default function PartnerSetup() {
       try {
         const r = await invoke({ action: 'validate_partner_token', token });
         if (r.error) { setStage('invalid'); setError(r.error); return; }
-        setInfo({ name: r.name, email: r.email });
-        setStage('password');
+        setInfo({ name: r.name, email: r.email, phone: r.phone || '' });
+        setPhone(r.phone || '');
+        setStage('form');
       } catch (e) {
         setStage('invalid');
         setError(e.message || 'Unable to validate this invite.');
@@ -37,7 +44,7 @@ export default function PartnerSetup() {
     })();
   }, [token]);
 
-  const submitPassword = async (e) => {
+  const submitForm = async (e) => {
     e.preventDefault();
     setError('');
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return; }
@@ -60,7 +67,11 @@ export default function PartnerSetup() {
     try {
       const result = await base44.auth.verifyOtp({ email: info.email, otpCode: otp });
       if (result?.access_token) base44.auth.setToken(result.access_token);
-      const r = await invoke({ action: 'finalize_partner_setup', invite_token: token });
+      const r = await invoke({
+        action: 'finalize_partner_setup',
+        invite_token: token,
+        profile: { dealership, partner_type: partnerType, phone },
+      });
       if (r.error) { setError(r.error); setBusy(false); return; }
       window.location.href = '/partner-portal';
     } catch (err) {
@@ -85,7 +96,7 @@ export default function PartnerSetup() {
               {stage === 'otp' ? <>VERIFY <GoldShimmer>EMAIL</GoldShimmer></> : <>CREATE <GoldShimmer>ACCOUNT</GoldShimmer></>}
             </h1>
             <p className="text-vapor/50 text-sm font-mono-tech">
-              {stage === 'otp' ? 'Enter the code we sent to your email.' : 'Set your password to activate your partner access.'}
+              {stage === 'otp' ? 'Enter the code we sent to your email.' : 'Complete your profile and set your password.'}
             </p>
           </div>
 
@@ -101,11 +112,27 @@ export default function PartnerSetup() {
               </div>
             )}
 
-            {stage === 'password' && (
-              <form onSubmit={submitPassword} className="space-y-5">
+            {stage === 'form' && (
+              <form onSubmit={submitForm} className="space-y-5">
                 <div>
                   <label className={LABEL}>EMAIL</label>
                   <input value={info?.email || ''} disabled className={`${INPUT} opacity-60`} />
+                </div>
+                <div>
+                  <label className={LABEL}>DEALERSHIP / COMPANY</label>
+                  <input value={dealership} onChange={e => setDealership(e.target.value)} className={INPUT} placeholder="Where you work" />
+                </div>
+                <div>
+                  <label className={LABEL}>PARTNER TYPE</label>
+                  <select value={partnerType} onChange={e => setPartnerType(e.target.value)} className={INPUT}>
+                    <option value="dealership_salesperson">Dealership Salesperson</option>
+                    <option value="strategic_partner">Strategic Partner</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div>
+                  <label className={LABEL}>PHONE</label>
+                  <input value={phone} onChange={e => setPhone(e.target.value)} className={INPUT} />
                 </div>
                 <div>
                   <label className={LABEL}>PASSWORD</label>
