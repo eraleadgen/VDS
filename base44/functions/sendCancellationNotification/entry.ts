@@ -1,6 +1,6 @@
 // Cancellation Notification — internal email to the business when an appointment is cancelled.
 // POST /functions/sendCancellationNotification
-// Called after a cancellation (cancelAppointmentInGHL, scheduler cancel, adminChangeStatus).
+// Called after a cancellation (cancelAppointment, scheduler cancel, adminChangeStatus).
 // Auth: SCHEDULER_TOKEN (internal) or admin session.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';

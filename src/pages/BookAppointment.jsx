@@ -267,7 +267,7 @@ export default function BookAppointment() {
       });
 
       if (location.state?.reschedule_from) {
-        try { await base44.functions.invoke('cancelAppointmentInGHL', { appointment_id: location.state.reschedule_from }); }
+        try { await base44.functions.invoke('cancelAppointment', { appointment_id: location.state.reschedule_from }); }
         catch (e) { console.error('Reschedule cancel failed:', e); }
       }
       setSubmitted(true);

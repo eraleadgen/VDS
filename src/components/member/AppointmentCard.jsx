@@ -2,10 +2,44 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { format } from 'date-fns';
-import { Calendar, Clock, MapPin, X, CheckCircle, AlertCircle, RotateCw } from 'lucide-react';
+import { Calendar, Clock, MapPin, X, CheckCircle, AlertCircle, RotateCw, Loader2 } from 'lucide-react';
 import BookingCalendar from '@/components/booking/BookingCalendar';
 
 const CONSULTATION_SERVICES = ['ceramic_coating', 'paint_correction'];
+
+// Convert a 12h time string ("9:00 AM") or 24h ("09:00") into 24h "HH:MM" for date parsing.
+function to24h(t) {
+  if (!t) return '23:59';
+  const m = t.match(/(\d+):(\d+)\s*(AM|PM)/i);
+  if (!m) return t.includes(':') && t.length === 5 ? t : '23:59';
+  let h = parseInt(m[1], 10);
+  const min = m[2];
+  const ap = m[3].toUpperCase();
+  if (ap === 'PM' && h !== 12) h += 12;
+  if (ap === 'AM' && h === 12) h = 0;
+  return `${String(h).padStart(2, '0')}:${min}`;
+}
+
+// Derive the client-facing live status from the synced Appointment mirror. The specialist
+// portal writes `job_status` (in_progress / completed / …) and the admin portal writes the
+// lifecycle `status`; this unifies both so the member always sees the current job state.
+function deriveLiveStatus(appointment) {
+  const st = appointment.status;
+  const js = appointment.job_status;
+  if (st === 'cancelled') return 'cancelled';
+  if (['completed', 'photos_uploaded', 'invoice_complete', 'quality_check'].includes(js) || st === 'completed') return 'completed';
+  if (['in_progress', 'driving', 'arrived'].includes(js) || st === 'in_progress') return 'in_progress';
+  if (st === 'pending') return 'pending';
+  return 'scheduled';
+}
+
+const STATUS_META = {
+  pending: { label: 'Pending', color: 'text-amber-400 border-amber-400/30 bg-amber-400/5', icon: AlertCircle },
+  scheduled: { label: 'Scheduled', color: 'text-gold border-gold/30 bg-gold/5', icon: CheckCircle },
+  in_progress: { label: 'In Progress', color: 'text-cyan-300 border-cyan-300/30 bg-cyan-300/5', icon: Loader2 },
+  completed: { label: 'Completed', color: 'text-vapor/40 border-vapor/20 bg-vapor/5', icon: CheckCircle },
+  cancelled: { label: 'Cancelled', color: 'text-red-400 border-red-400/30 bg-red-400/5', icon: X },
+};
 
 export default function AppointmentCard({ appointment, onRefresh }) {
   const [cancelling, setCancelling] = useState(false);
@@ -25,11 +59,16 @@ export default function AppointmentCard({ appointment, onRefresh }) {
   const vehicleCount = Math.min(Math.max(Math.round((appointment.estimated_duration_minutes || 120) / 120), 1), 4);
   const isConsultation = CONSULTATION_SERVICES.includes(appointment.service_type);
 
+  const liveStatus = deriveLiveStatus(appointment);
+  const meta = STATUS_META[liveStatus] || STATUS_META.scheduled;
+  const StatusIcon = meta.icon;
+  const inProgress = liveStatus === 'in_progress';
+
   const handleCancel = async () => {
     setCancelling(true);
     setCancelError('');
     try {
-      await base44.functions.invoke('cancelAppointmentInGHL', { appointment_id: appointment.id });
+      await base44.functions.invoke('cancelAppointment', { appointment_id: appointment.id });
       await onRefresh();
     } catch (err) {
       console.error('Cancel error:', err);
@@ -78,29 +117,18 @@ export default function AppointmentCard({ appointment, onRefresh }) {
     }
   };
 
-  const statusColors = {
-    pending: 'text-amber-400 border-amber-400/30 bg-amber-400/5',
-    confirmed: 'text-gold border-gold/30 bg-gold/5',
-    completed: 'text-vapor/40 border-vapor/20 bg-vapor/5',
-    cancelled: 'text-red-400 border-red-400/30 bg-red-400/5',
-  };
+  const apptDateTime = new Date(`${appointment.preferred_date}T${to24h(appointment.preferred_time)}`);
+  const isPast = !isNaN(apptDateTime.getTime()) && apptDateTime < new Date();
 
-  const statusIcons = {
-    pending: <AlertCircle size={14} />,
-    confirmed: <CheckCircle size={14} />,
-    completed: <CheckCircle size={14} />,
-    cancelled: <X size={14} />,
-  };
-
-  const apptDateTime = new Date(`${appointment.preferred_date}T${appointment.preferred_time || '23:59'}`);
-  const isPast = apptDateTime < new Date();
+  // Members may only cancel/reschedule scheduled (not yet started) appointments.
+  const canModify = (liveStatus === 'pending' || liveStatus === 'scheduled') && !isPast;
 
   return (
-    <div className={`glass-panel border rounded-sm p-5 ${statusColors[appointment.status] || statusColors.pending}`}>
+    <div className={`glass-panel border rounded-sm p-5 ${meta.color}`}>
       <div className="flex items-start justify-between gap-4 mb-4">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 border border-current rounded-sm flex items-center justify-center shrink-0">
-            {statusIcons[appointment.status]}
+            <StatusIcon size={14} className={inProgress ? 'animate-spin' : ''} />
           </div>
           <div>
             <p className="text-vapor font-grotesk font-semibold text-sm">
@@ -113,7 +141,7 @@ export default function AppointmentCard({ appointment, onRefresh }) {
         </div>
         <div className="text-right">
           <p className="text-xs font-mono-tech tracking-widest opacity-60">STATUS</p>
-          <p className="text-sm font-grotesk font-semibold uppercase">{appointment.status}</p>
+          <p className="text-sm font-grotesk font-semibold uppercase">{meta.label}</p>
         </div>
       </div>
 
@@ -145,7 +173,7 @@ export default function AppointmentCard({ appointment, onRefresh }) {
         </div>
       )}
 
-      {appointment.status !== 'cancelled' && appointment.status !== 'completed' && !isPast && (
+      {canModify && (
         rescheduleMode ? (
           <div className="pt-4 border-t border-current border-opacity-20">
             <div className="flex items-center gap-2 mb-4">
@@ -223,11 +251,11 @@ export default function AppointmentCard({ appointment, onRefresh }) {
         )
       )}
 
-      {cancelError && appointment.status !== 'cancelled' && appointment.status !== 'completed' && !isPast && !rescheduleMode && (
+      {cancelError && canModify && !rescheduleMode && (
         <p className="text-xs font-mono-tech text-red-400 mt-3">{cancelError}</p>
       )}
 
-      {appointment.status === 'cancelled' && (
+      {liveStatus === 'cancelled' && (
         <div className="pt-3 border-t border-current border-opacity-20">
           <Link
             to="/book"

@@ -1,6 +1,6 @@
 // Booking Notifications — customer SMS + email confirmation + internal email.
 // POST /functions/sendBookingNotifications
-// Called after a booking is created (submitBookingToGHL, scheduler book, admin book).
+// Called after a booking is created (submitBooking, scheduler book, admin book).
 // Auth: SCHEDULER_TOKEN (internal) or admin session.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';

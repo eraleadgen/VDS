@@ -74,7 +74,9 @@ async function eligibleContractors(base44, cfg, dateStr, serviceKey) {
   const all = await base44.asServiceRole.entities.Contractor.filter({ status: 'active' });
   return all.filter(c => {
     if (c.is_enabled === false) return false;
-    if (skill && !(c.skills || []).includes(skill)) return false;
+    // A specialist with no skills listed is treated as a generalist (eligible for any service),
+    // matching the auto-assignment logic so availability never under-reports bookable slots.
+    if (skill && (c.skills || []).length && !(c.skills || []).includes(skill)) return false;
     if ((c.blocked_dates || []).some(b => b.date === dateStr)) return false;
     const dayAvail = (c.weekly_availability || []).find(a => a.day === dayKey);
     return !!(dayAvail && dayAvail.available);
@@ -517,6 +519,10 @@ async function updateJobStatus(base44, data, cfg, job) {
   }
   if (newStatus === 'completed' || newStatus === 'photos_uploaded' || newStatus === 'invoice_complete') {
     updates.status = 'completed';
+  } else if (['driving', 'arrived', 'in_progress', 'quality_check'].includes(newStatus)) {
+    // Reflect active work in the lifecycle status so the admin portal and client see
+    // "In Progress" the moment the specialist starts, not just on completion.
+    updates.status = 'in_progress';
   }
   await base44.asServiceRole.entities.Job.update(job.id, updates);
 

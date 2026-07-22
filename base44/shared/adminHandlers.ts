@@ -362,12 +362,26 @@ export async function adminChangeJobStatus(base44, body) {
   if (!JOB_LIFECYCLE_STATUSES.includes(status)) return { error: 'Invalid status.' };
   const job = await base44.asServiceRole.entities.Job.get(job_id).catch(() => null);
   if (!job) return { error: 'Job not found.' };
-  await base44.asServiceRole.entities.Job.update(job_id, { status });
+  // Map the lifecycle status to the specialist workflow status so the client-facing
+  // Appointment mirror carries the live job state (in_progress / completed) the member sees.
+  let jobStatusUpdate = {};
+  if (status === 'in_progress') jobStatusUpdate.job_status = 'in_progress';
+  else if (status === 'technician_en_route') jobStatusUpdate.job_status = 'driving';
+  else if (['completed', 'awaiting_payment', 'review_requested'].includes(status)) jobStatusUpdate.job_status = 'completed';
+  await base44.asServiceRole.entities.Job.update(job_id, { status, ...jobStatusUpdate });
   try {
     const linked = await base44.asServiceRole.entities.Appointment.filter({ job_id });
     if (linked && linked.length) {
-      const apptStatus = status === 'cancelled' ? 'cancelled' : (['completed','awaiting_payment','review_requested'].includes(status) ? 'completed' : 'confirmed');
-      await base44.asServiceRole.entities.Appointment.update(linked[0].id, { status: apptStatus });
+      let apptStatus;
+      let apptJobStatus;
+      if (status === 'cancelled') { apptStatus = 'cancelled'; }
+      else if (['completed', 'awaiting_payment', 'review_requested'].includes(status)) { apptStatus = 'completed'; apptJobStatus = 'completed'; }
+      else if (status === 'in_progress') { apptStatus = 'confirmed'; apptJobStatus = 'in_progress'; }
+      else if (status === 'technician_en_route') { apptStatus = 'confirmed'; apptJobStatus = 'driving'; }
+      else { apptStatus = 'confirmed'; }
+      const apptUpdates = { status: apptStatus };
+      if (apptJobStatus) apptUpdates.job_status = apptJobStatus;
+      await base44.asServiceRole.entities.Appointment.update(linked[0].id, apptUpdates);
     }
   } catch (e) { console.error('Appointment mirror sync error:', e.message); }
   if (['cancelled','completed','awaiting_payment','review_requested'].includes(status)) {

@@ -118,18 +118,41 @@ Deno.serve(async (req) => {
     const subscription = goldSubscriptions[0];
     let created = 0;
 
+    // Expand the subscription items so each vehicle maps to its own line-item id, enabling
+    // per-vehicle cancellation later. Match items to vehicles by the pricing-group price id.
+    const priceToGroup = {};
+    for (const plan of ((cfg && cfg.membership_plans) || [])) {
+      for (const pg of (plan.pricing_by_group || [])) {
+        if (pg.stripe_price_id) priceToGroup[pg.stripe_price_id] = pg.pricing_group;
+      }
+    }
+    let itemPool = [];
+    try {
+      const fullSub = await stripe.subscriptions.retrieve(subscription.id, { expand: ['items.data'] });
+      itemPool = (fullSub.items && fullSub.items.data) ? [...fullSub.items.data] : [];
+    } catch (e) { console.error('Expand subscription items failed:', e.message); }
+
     for (const vehicleId of vehicleIdsToEnroll) {
       const vehicle = vehicles.find(v => v.id === vehicleId);
       if (!vehicle) {
         console.log('Vehicle not found:', vehicleId);
         continue;
       }
-      const tier = vehicle.vehicle_type || 'sedan_coupe';
+      const pricing_group = (vehicle.pricing_group || vehicle.vehicle_type) === 'truck_suv' ? 'truck_suv' : 'sedan_coupe';
+      const tier = pricing_group;
+
+      // Assign this vehicle a subscription item whose price matches its pricing group.
+      let item = itemPool.find(it => priceToGroup[it.price?.id] === pricing_group);
+      if (!item) item = itemPool.find(it => priceToGroup[it.price?.id] === 'sedan_coupe' || priceToGroup[it.price?.id] === 'truck_suv');
+      if (item) itemPool = itemPool.filter(it => it.id !== item.id);
 
       await base44.asServiceRole.entities.VehicleSubscription.create({
         vehicle_id: vehicleId,
         stripe_subscription_id: subscription.id,
+        stripe_item_id: item?.id || '',
         stripe_customer_id: customer.id,
+        stripe_price_id: item?.price?.id || '',
+        pricing_group,
         tier,
         status: 'active',
         started_date: new Date().toISOString().split('T')[0],

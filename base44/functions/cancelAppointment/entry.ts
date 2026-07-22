@@ -1,8 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 
-// ERA Core appointment cancellation.
-// GoHighLevel sync has been eliminated — ERA Core is the sole source of truth.
-// Cancels the Appointment (deprecated mirror), the linked Job, and the Google Calendar mirror.
+// ERA Core appointment cancellation (GoHighLevel sync has been fully eliminated —
+// ERA Core is the sole source of truth). Cancels the Appointment (deprecated mirror),
+// the linked Job, and the Google Calendar mirror event.
 
 async function logEvent(base44, event) {
   try {

@@ -1,14 +1,22 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 import Stripe from 'npm:stripe@17.0.0';
 
+// Stripe webhook — provisions VDS Gold memberships and keeps VehicleSubscription
+// records in sync with Stripe lifecycle events. GoHighLevel has been fully removed;
+// Stripe + ERA Core are the sole sources of truth for memberships.
+//
+// Each vehicle enrolled in a checkout gets its OWN VehicleSubscription record with its
+// individual stripe_item_id, so a single vehicle can be canceled without touching the
+// other vehicles sharing the same Stripe subscription.
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
-    
+
     const body = await req.text();
     const signature = req.headers.get('stripe-signature');
-    
+
     if (!signature) {
       return Response.json({ error: 'Missing signature' }, { status: 400 });
     }
@@ -23,7 +31,7 @@ Deno.serve(async (req) => {
     // Handle checkout session completed
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
-      
+
       if (session.metadata?.base44_app_id !== Deno.env.get('BASE44_APP_ID')) {
         return Response.json({ received: true });
       }
@@ -36,38 +44,56 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Invalid metadata' }, { status: 400 });
       }
 
-      const subscriptions = await stripe.subscriptions.list({
-        customer: session.customer
-      });
-      
-      const subscription = subscriptions.data[0];
-      if (!subscription) {
-        console.error('No subscription found for customer');
+      // Use the subscription created by this checkout session directly (more reliable than
+      // listing the customer's subscriptions, which could return a different one when a
+      // customer has multiple memberships).
+      const subId = session.subscription;
+      if (!subId) {
+        console.error('No subscription found on checkout session');
         return Response.json({ error: 'No subscription found' }, { status: 400 });
       }
 
-      for (const vehicleId of vehicleIds) {
+      // Expand the subscription items so each vehicle maps to its own line-item id.
+      const fullSub = await stripe.subscriptions.retrieve(subId, { expand: ['items.data'] });
+      const items = (fullSub.items && fullSub.items.data) || [];
+
+      for (let i = 0; i < vehicleIds.length; i++) {
+        const vehicleId = vehicleIds[i];
         const vehicle = await base44.asServiceRole.entities.MemberVehicle.get(vehicleId);
-        const tier = vehicle.vehicle_type || 'sedan_coupe';
-        
+        const tier = vehicle?.vehicle_type || vehicle?.pricing_group || 'sedan_coupe';
+        const item = items[i];
+        const priceId = item?.price?.id || '';
+        const pricing_group = tier === 'truck_suv' ? 'truck_suv' : 'sedan_coupe';
+
         await base44.asServiceRole.entities.VehicleSubscription.create({
           vehicle_id: vehicleId,
-          stripe_subscription_id: subscription.id,
+          stripe_subscription_id: fullSub.id,
+          stripe_item_id: item?.id || '',
           stripe_customer_id: session.customer,
-          tier: tier,
+          stripe_price_id: priceId,
+          pricing_group,
+          tier,
           status: 'active',
           started_date: new Date().toISOString().split('T')[0],
-          current_period_end: new Date(subscription.current_period_end * 1000).toISOString().split('T')[0]
+          current_period_end: new Date(fullSub.current_period_end * 1000).toISOString().split('T')[0]
         });
+
+        // Mark the vehicle as Gold-registered.
+        if (vehicle) {
+          try {
+            await base44.asServiceRole.entities.MemberVehicle.update(vehicleId, { is_gold_registered: true });
+          } catch (e) { console.error('is_gold_registered update failed:', vehicleId, e.message); }
+        }
       }
 
       console.log(`Gold subscriptions created for user ${userId}, vehicles: ${vehicleIds.join(', ')}`);
     }
 
-    // Handle subscription updates
+    // Handle subscription updates / deletion — sync status to every VehicleSubscription
+    // sharing this Stripe subscription id.
     if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted') {
       const subscription = event.data.object;
-      const newStatus = subscription.status === 'active' ? 'active' : 
+      const newStatus = subscription.status === 'active' ? 'active' :
                        subscription.status === 'canceled' ? 'canceled' :
                        subscription.status === 'past_due' ? 'past_due' : 'trialing';
 
@@ -78,9 +104,15 @@ Deno.serve(async (req) => {
       for (const sub of subs) {
         await base44.asServiceRole.entities.VehicleSubscription.update(sub.id, {
           status: newStatus,
-          current_period_end: subscription.ended_at ? new Date(subscription.ended_at * 1000).toISOString().split('T')[0] : 
+          current_period_end: subscription.ended_at ? new Date(subscription.ended_at * 1000).toISOString().split('T')[0] :
                               new Date(subscription.current_period_end * 1000).toISOString().split('T')[0]
         });
+        // If the whole subscription was deleted/canceled, clear the Gold flag on each vehicle.
+        if (newStatus === 'canceled') {
+          try {
+            await base44.asServiceRole.entities.MemberVehicle.update(sub.vehicle_id, { is_gold_registered: false });
+          } catch (e) { console.error('clear is_gold_registered failed:', sub.vehicle_id, e.message); }
+        }
       }
 
       console.log(`Subscription ${subscription.id} updated to ${newStatus}`);

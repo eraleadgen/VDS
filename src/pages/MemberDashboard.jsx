@@ -52,7 +52,7 @@ export default function MemberDashboard() {
     }
   };
 
-  // Real-time subscription — auto-refreshes appointments when GHL syncs cancel/confirm
+  // Real-time subscription — auto-refreshes appointments when status changes sync in
   useEffect(() => {
     const unsubscribe = base44.entities.Appointment.subscribe(() => loadData());
     const onVisibility = () => {
@@ -313,7 +313,7 @@ export default function MemberDashboard() {
               </div>
               <div className="flex flex-col items-end gap-2">
                 <p className="text-gold font-mono-tech text-xs tracking-widest">
-                  ${subscriptions.reduce((sum, sub) => sum + (sub.tier === 'truck_suv' ? 300 : 250), 0)} / MO
+                  ${subscriptions.reduce((sum, sub) => sum + ((sub.pricing_group || sub.tier) === 'truck_suv' ? 300 : 250), 0)} / MO
                 </p>
                 <p className="text-vapor/30 text-xs font-mono-tech">
                   {subscriptions.length} Gold vehicle{subscriptions.length > 1 ? 's' : ''} · Billed via Stripe

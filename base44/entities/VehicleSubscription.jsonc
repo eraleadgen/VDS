@@ -1,7 +1,7 @@
 {
   "name": "VehicleSubscription",
   "type": "object",
-  "description": "Active recurring VDS Gold membership for a vehicle. References the single Stripe product with per-pricing-group pricing. Pricing group is resolved from the vehicle's classification via BusinessConfig mapping. Only one active VDS Gold membership may exist per vehicle.",
+  "description": "Active recurring VDS Gold membership for a single vehicle. Each vehicle enrolled in a checkout gets its own VehicleSubscription record pointing at the shared Stripe subscription, with its individual stripe_item_id so a single vehicle can be canceled without affecting other vehicles on the same subscription. Only one active VDS Gold membership may exist per vehicle.",
   "properties": {
     "vehicle_id": {
       "type": "string",
@@ -13,7 +13,11 @@
     },
     "stripe_subscription_id": {
       "type": "string",
-      "description": "Stripe subscription ID"
+      "description": "Stripe subscription ID. Shared across vehicles enrolled in the same checkout (one subscription, multiple line items)."
+    },
+    "stripe_item_id": {
+      "type": "string",
+      "description": "Stripe subscription item ID (si_...) for this vehicle's line item on the shared subscription. Used to cancel a single vehicle's membership without canceling other vehicles on the same subscription."
     },
     "stripe_customer_id": {
       "type": "string",
