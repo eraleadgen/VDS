@@ -15,7 +15,7 @@ export default function PartnerPortal() {
 
   useEffect(() => {
     if (!authChecked) return;
-    if (!user || (user.role !== 'admin' && user.role !== 'partner')) { window.location.href = '/admin-login'; return; }
+    if (!user || (user.role !== 'admin' && user.role !== 'partner')) { window.location.href = '/partner-login'; return; }
   }, [authChecked, user]);
 
   const load = useCallback(async () => {
@@ -38,7 +38,7 @@ export default function PartnerPortal() {
   ];
 
   return (
-    <PortalShell title="Partner Portal" navItems={navItems} active={tab} onNavigate={setTab} userLabel={partner?.name || user?.email} onLogout={() => base44.auth.logout('/admin-login')}>
+    <PortalShell title="Partner Portal" navItems={navItems} active={tab} onNavigate={setTab} userLabel={partner?.name || user?.email} onLogout={() => base44.auth.logout('/partner-login')}>
       {loading ? (
         <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-gold/20 border-t-gold rounded-full animate-spin" /></div>
       ) : !partner ? (

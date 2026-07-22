@@ -41,6 +41,8 @@ export default function Footer() {
           <div>
             <p className="text-xs font-mono-tech tracking-widest text-gold mb-6">PORTALS</p>
             <div className="flex flex-col gap-3">
+              <Link to="/specialist-login" className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">Specialist Login</Link>
+              <Link to="/partner-login" className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">Partner Login</Link>
               <Link to="/admin-login" className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">Admin Login</Link>
             </div>
           </div>
