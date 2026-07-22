@@ -17,7 +17,9 @@ export default function VehicleSubscriptionManager({ vehicle, onSubscriptionChan
       if (actionType === 'enroll') {
         await base44.functions.invoke('upgradeVehicleToGold', { vehicle_id: vehicleId });
       } else {
-        await base44.entities.MemberVehicle.update(vehicleId, { is_gold_registered: false });
+        // Cancel the Stripe subscription + VehicleSubscription record (per-vehicle),
+        // not just the vehicle flag — otherwise the customer keeps getting billed.
+        await base44.functions.invoke('cancelGoldSubscription', { vehicle_id: vehicleId });
       }
       await onSubscriptionChange();
       setShowModal(false);

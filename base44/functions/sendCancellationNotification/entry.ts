@@ -22,6 +22,7 @@ async function sendTwilioSms(base44, to, body, customerName, messageType) {
     await base44.asServiceRole.functions.invoke('sendMessage', {
       customer_phone: to, message_type: messageType || 'cancellation_confirmation', content: body,
       customer_name: customerName || '', scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
+      suppress_email_fallback: true,
     });
     return true;
   } catch (e) { console.error('sendMessage error:', e.message); return false; }
@@ -31,8 +32,8 @@ function buildCustomerCancellationEmail(appt) {
   const firstName = (appt.customer_name || '').split(' ')[0] || 'there';
   return `<!DOCTYPE html>
 <html lang="en" style="margin:0;padding:0;">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background-color:#0A0B0D;font-family:${FONT};color:#E2E8F0;">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"></head>
+<body style="margin:0;padding:0;background-color:#0A0B0D;color-scheme:dark;font-family:${FONT};color:#E2E8F0;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0A0B0D;">
 <tr><td align="center" style="padding:32px 16px;">
 <table role="presentation" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#14161A;border-radius:14px;overflow:hidden;border:1px solid rgba(212,175,55,0.15);box-shadow:0 8px 30px rgba(0,0,0,0.5);">
@@ -77,8 +78,8 @@ function buildCustomerCancellationEmail(appt) {
 function buildCancellationEmail(appt) {
   return `<!DOCTYPE html>
 <html lang="en" style="margin:0;padding:0;">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background-color:#0A0B0D;font-family:${FONT};color:#E2E8F0;">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"></head>
+<body style="margin:0;padding:0;background-color:#0A0B0D;color-scheme:dark;font-family:${FONT};color:#E2E8F0;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0A0B0D;">
 <tr><td align="center" style="padding:32px 16px;">
 <table role="presentation" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#14161A;border-radius:14px;overflow:hidden;border:1px solid rgba(212,175,55,0.15);box-shadow:0 8px 30px rgba(0,0,0,0.5);">

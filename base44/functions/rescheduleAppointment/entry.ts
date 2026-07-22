@@ -188,6 +188,7 @@ Deno.serve(async (req) => {
         await base44.asServiceRole.functions.invoke('sendMessage', {
           customer_phone: appt.customer_phone, message_type: 'reschedule_confirmation', content: msg,
           customer_name: appt.customer_name || '', scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
+          suppress_email_fallback: true,
         });
       }
     } catch (e) { console.error('Customer reschedule SMS failed:', e.message); }
@@ -196,8 +197,8 @@ Deno.serve(async (req) => {
       try {
         const firstName = (appt.customer_name || '').split(' ')[0] || 'there';
         const custHtml = `<!DOCTYPE html><html lang="en" style="margin:0;padding:0;">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background-color:#0A0B0D;font-family:${FONT};color:#E2E8F0;">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"></head>
+<body style="margin:0;padding:0;background-color:#0A0B0D;color-scheme:dark;font-family:${FONT};color:#E2E8F0;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0A0B0D;"><tr><td align="center" style="padding:32px 16px;">
 <table role="presentation" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#14161A;border-radius:14px;overflow:hidden;border:1px solid rgba(212,175,55,0.15);box-shadow:0 8px 30px rgba(0,0,0,0.5);">
   <tr><td style="background-color:#0A0B0D;padding:22px 28px;border-bottom:2px solid #D4AF37;">

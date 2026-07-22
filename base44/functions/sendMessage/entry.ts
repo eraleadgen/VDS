@@ -101,6 +101,22 @@ Deno.serve(async (req) => {
 
     // ── Deliver via Email (registered users only — SendEmail limitation) ──
     if (decision.channel === 'email') {
+      // When the caller already sent a branded HTML email directly (booking / cancellation /
+      // reschedule notifications), suppress the plain-text SMS-to-email fallback so the
+      // customer doesn't receive a duplicate, unstyled email.
+      if (body.suppress_email_fallback) {
+        try {
+          await base44.asServiceRole.functions.invoke('logEvent', {
+            event_type: 'message_suppressed', entity_type: 'customer',
+            entity_id: decision.customer_id || null, customer_id: decision.customer_id || null,
+            description: `'${message_type}' SMS email-fallback suppressed (branded email sent directly)`,
+            suppression_reason: 'suppressed_email_fallback',
+            metadata: { message_type, reason: 'suppressed_email_fallback' },
+            scheduler_token: SCHEDULER_TOKEN,
+          });
+        } catch (e) { console.error('log suppression error:', e.message); }
+        return Response.json({ sent: false, channel: 'suppressed', reason: 'suppressed_email_fallback' });
+      }
       const to = decision.customer_email || email;
       if (!to) return Response.json({ sent: false, channel: 'email', error: 'No email address available.' });
       const emailSubject = subject || SUBJECTS[message_type] || 'VDS Mobile';
