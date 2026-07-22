@@ -694,7 +694,7 @@ Deno.serve(async (req) => {
     if (action === 'check_availability') return Response.json(await checkAvailability(base44, body, cfg));
     if (action === 'book') {
       const ip = clientIp(req);
-      if (!rateLimit('book:' + ip, 8, 15 * 60 * 1000)) {
+      if (!rateLimit('book:' + ip, 5, 15 * 60 * 1000)) {
         return Response.json({ error: 'Too many booking attempts. Please try again later.' }, { status: 429 });
       }
       return Response.json(await bookAppointment(base44, body, cfg));

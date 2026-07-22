@@ -15,9 +15,22 @@ import { gcal } from '../../shared/gcal.ts';
 
 Deno.serve(async (req) => {
   try {
-    // This is a scheduled, idempotent, non-destructive scanner (assigns unassigned jobs only).
-    // It runs via the platform scheduler with no human caller, so no caller-provided token is
-    // required — the operation is safe to repeat and never modifies already-assigned jobs.
+    // Authorization: this scheduled function mutates Job/Appointment records with service-role
+    // permissions. Every caller — including the platform's internal scheduled automation —
+    // MUST present the shared SCHEDULER_TOKEN (injected into the request body for scheduled
+    // runs; also accepted under body.args for function_args-based invocations). Client-supplied
+    // markers are NOT trusted as auth evidence (CWE-290) — only the shared secret authenticates.
+    const expectedToken = Deno.env.get('SCHEDULER_TOKEN');
+    let providedToken = null;
+    try {
+      const parsedBody = await req.clone().json();
+      providedToken = parsedBody?.scheduler_token || parsedBody?.args?.scheduler_token || null;
+    } catch { /* non-JSON body */ }
+    const tokenOk = !!(expectedToken && providedToken && providedToken === expectedToken);
+    if (!tokenOk) {
+      return Response.json({ error: 'Unauthorized.' }, { status: 401 });
+    }
+
     const base44 = createClientFromRequest(req);
     const cfg = await loadConfig(base44);
     if (!cfg) return Response.json({ error: 'Business configuration not found.' }, { status: 500 });
