@@ -82,12 +82,6 @@ export default function Navbar() {
               MEMBER LOGIN
             </Link>
           )}
-          <Link
-            to="/specialist-login"
-            className="text-xs font-mono-tech tracking-widest text-vapor/50 hover:text-gold transition-colors duration-200"
-          >
-            SPECIALIST
-          </Link>
           </div>
 
         {/* Mobile hamburger */}
@@ -133,12 +127,6 @@ export default function Navbar() {
                 MEMBER LOGIN
               </Link>
             )}
-            <Link
-              to="/specialist-login"
-              className="text-sm font-mono-tech tracking-widest text-vapor/50 border border-vapor/20 px-4 py-3 text-center rounded-sm hover:text-gold hover:border-gold/40 transition-colors"
-            >
-              SPECIALIST PORTAL
-            </Link>
           </div>
         </div>
       )}

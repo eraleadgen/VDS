@@ -7,7 +7,7 @@ export default function Footer() {
   return (
     <footer className="bg-obsidian border-t border-gold/10 pt-16 pb-8">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-8 md:gap-10 mb-16">
           {/* Brand */}
           <div className="md:col-span-1">
             <img src={LOGO} alt="VDS Mobile" className="h-10 w-auto mb-4" />
@@ -34,6 +34,16 @@ export default function Footer() {
               {[['/', 'Home'], ['/services', 'Services'], ['/book', 'Quote & Book'], ['/gallery', 'Gallery'], ['/vds-gold', 'VDS Gold'], ['/faq', 'FAQ']].map(([path, label]) => (
                 <Link key={path} to={path} className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">{label}</Link>
               ))}
+            </div>
+          </div>
+
+          {/* Portal Logins */}
+          <div>
+            <p className="text-xs font-mono-tech tracking-widest text-gold mb-6">PORTALS</p>
+            <div className="flex flex-col gap-3">
+              <Link to="/specialist-login" className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">Specialist Login</Link>
+              <Link to="/admin-login" className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">Admin Login</Link>
+              <Link to="/partner-portal" className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">Partner Login</Link>
             </div>
           </div>
 
