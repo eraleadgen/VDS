@@ -8,6 +8,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 import { jobStartMs } from '../../shared/timezone.ts';
+import { requireAdminOrSchedulerToken } from '../../shared/authGate.ts';
 
 const FONT = "'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 const MONO = "'Space Mono','Courier New',monospace";
@@ -95,25 +96,12 @@ function buildReminderEmail(firstName, job) {
 
 Deno.serve(async (req) => {
   try {
-    // Authorization: this scheduled function triggers outbound SMS/email to customers.
-    // Every caller — including the platform's internal scheduled automation — MUST present
-    // the shared SCHEDULER_TOKEN. The scheduled automation passes it via its function_args
-    // (which arrive under body.args); external callers pass it in body.scheduler_token.
-    // Client-supplied body markers (e.g. args.source) are NOT trusted as auth evidence —
-    // an external attacker can send them too (CWE-290). Only the shared secret authenticates.
-    const expectedToken = Deno.env.get('SCHEDULER_TOKEN');
-    let providedToken = null;
-    let parsedBody = null;
-    try {
-      parsedBody = await req.clone().json();
-      providedToken = parsedBody?.scheduler_token || parsedBody?.args?.scheduler_token || null;
-    } catch { /* non-JSON body */ }
-    const tokenOk = !!(expectedToken && providedToken && providedToken === expectedToken);
-    if (!tokenOk) {
-      return Response.json({ error: 'Unauthorized.' }, { status: 401 });
-    }
-
     const base44 = createClientFromRequest(req);
+    // Authorization: scheduled task — runs unattended under the platform's admin context,
+    // so base44.auth.me() resolves to an admin. External/anonymous callers are rejected
+    // (CWE-306). Internal function-to-function calls may present the shared SCHEDULER_TOKEN.
+    const gate = await requireAdminOrSchedulerToken(base44, req);
+    if (gate) return gate;
 
     // Load business config for timezone
     let tz = 'America/New_York';

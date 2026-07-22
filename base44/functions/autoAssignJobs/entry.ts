@@ -12,26 +12,16 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 import { jobStartMs } from '../../shared/timezone.ts';
 import { autoAssign, loadConfig } from '../../shared/autoAssign.ts';
 import { gcal } from '../../shared/gcal.ts';
+import { requireAdminOrSchedulerToken } from '../../shared/authGate.ts';
 
 Deno.serve(async (req) => {
   try {
-    // Authorization: this scheduled function mutates Job/Appointment records with service-role
-    // permissions. Every caller — including the platform's internal scheduled automation —
-    // MUST present the shared SCHEDULER_TOKEN (injected into the request body for scheduled
-    // runs; also accepted under body.args for function_args-based invocations). Client-supplied
-    // markers are NOT trusted as auth evidence (CWE-290) — only the shared secret authenticates.
-    const expectedToken = Deno.env.get('SCHEDULER_TOKEN');
-    let providedToken = null;
-    try {
-      const parsedBody = await req.clone().json();
-      providedToken = parsedBody?.scheduler_token || parsedBody?.args?.scheduler_token || null;
-    } catch { /* non-JSON body */ }
-    const tokenOk = !!(expectedToken && providedToken && providedToken === expectedToken);
-    if (!tokenOk) {
-      return Response.json({ error: 'Unauthorized.' }, { status: 401 });
-    }
-
     const base44 = createClientFromRequest(req);
+    // Authorization: scheduled/admin task — requires an authenticated admin (the platform
+    // runs scheduled automations under an admin context) or a valid SCHEDULER_TOKEN for
+    // internal function-to-function calls. Anonymous/external callers are rejected (CWE-306).
+    const gate = await requireAdminOrSchedulerToken(base44, req);
+    if (gate) return gate;
     const cfg = await loadConfig(base44);
     if (!cfg) return Response.json({ error: 'Business configuration not found.' }, { status: 500 });
     const tz = cfg.timezone || 'America/New_York';
