@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { LayoutDashboard, Briefcase, CalendarDays, UserCircle } from 'lucide-react';
+import { LayoutDashboard, Briefcase, CalendarDays, UserCircle, Library } from 'lucide-react';
 import PortalShell from '@/components/portal/PortalShell';
 import JobCard from '@/components/contractor/JobCard';
 import CompletionModal from '@/components/contractor/CompletionModal';
 import AvailabilityEditor from '@/components/contractor/AvailabilityEditor';
 import OverviewTab from '@/components/contractor/OverviewTab';
+import ResourceCenter from '@/components/shared/ResourceCenter';
 
 const invoke = (payload) => base44.functions.invoke('scheduler', payload).then(r => r.data ?? r);
 const SKILL_LABELS = {
@@ -92,6 +93,7 @@ export default function SpecialistPortal() {
     { key: 'overview', label: 'OVERVIEW', icon: LayoutDashboard },
     { key: 'jobs', label: 'MY JOBS', icon: Briefcase },
     { key: 'availability', label: 'AVAILABILITY', icon: CalendarDays },
+    { key: 'resources', label: 'RESOURCES', icon: Library },
     { key: 'profile', label: 'PROFILE', icon: UserCircle },
   ];
 
@@ -136,6 +138,8 @@ export default function SpecialistPortal() {
               <AvailabilityEditor contractor={profile} onSave={saveAvailability} saving={saving} />
             </div>
           )}
+
+          {tab === 'resources' && <ResourceCenter variant="specialist" />}
 
           {tab === 'profile' && (
             <div className="space-y-6 max-w-xl">

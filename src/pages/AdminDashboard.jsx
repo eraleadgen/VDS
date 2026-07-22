@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { LayoutDashboard, Users, CalendarRange, MessageSquare, DollarSign, Route, FileText, Network, LineChart } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarRange, MessageSquare, DollarSign, Route, FileText, Network, LineChart, Library } from 'lucide-react';
 import PortalShell from '@/components/portal/PortalShell';
 import ContractorsTab from '@/components/admin/ContractorsTab';
 import AppointmentsTab from '@/components/admin/AppointmentsTab';
@@ -12,6 +12,7 @@ import QuotesTab from '@/components/admin/QuotesTab';
 import OverviewTab from '@/components/admin/OverviewTab';
 import PartnersTab from '@/components/admin/PartnersTab';
 import BusinessDevTab from '@/components/admin/BusinessDevTab';
+import ResourceCenter from '@/components/shared/ResourceCenter';
 
 const invoke = (payload) => base44.functions.invoke('scheduler', payload).then(r => r.data ?? r);
 
@@ -47,6 +48,7 @@ export default function AdminDashboard() {
     { key: 'journey', label: 'JOURNEY', icon: Route },
     { key: 'partners', label: 'PARTNERS', icon: Network },
     { key: 'business', label: 'BUSINESS DEV', icon: LineChart },
+    { key: 'resources', label: 'RESOURCES', icon: Library },
     { key: 'messages', label: 'MESSAGES', icon: MessageSquare },
   ];
 
@@ -61,6 +63,7 @@ export default function AdminDashboard() {
           {tab === 'journey' && <JourneyTab />}
           {tab === 'partners' && <PartnersTab />}
           {tab === 'business' && <BusinessDevTab />}
+          {tab === 'resources' && <ResourceCenter variant="admin" />}
           {tab === 'messages' && <MessagesTab />}
         </>
     </PortalShell>

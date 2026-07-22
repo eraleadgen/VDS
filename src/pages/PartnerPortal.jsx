@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { LayoutDashboard, QrCode, CreditCard } from 'lucide-react';
+import { LayoutDashboard, QrCode, CreditCard, Library } from 'lucide-react';
 import PortalShell from '@/components/portal/PortalShell';
 import PartnerOverview from '@/components/partner/PartnerOverview';
 import ReferralCard from '@/components/partner/ReferralCard';
 import DigitalBusinessCard from '@/components/partner/DigitalBusinessCard';
+import ResourceCenter from '@/components/shared/ResourceCenter';
 
 export default function PartnerPortal() {
   const { user, isLoadingAuth, authChecked } = useAuth();
@@ -35,6 +36,7 @@ export default function PartnerPortal() {
     { key: 'overview', label: 'OVERVIEW', icon: LayoutDashboard },
     { key: 'referral', label: 'REFERRAL QR', icon: QrCode },
     { key: 'card', label: 'BUSINESS CARD', icon: CreditCard },
+    { key: 'resources', label: 'RESOURCES', icon: Library },
   ];
 
   return (
@@ -50,6 +52,7 @@ export default function PartnerPortal() {
           {tab === 'overview' && <PartnerOverview partner={partner} />}
           {tab === 'referral' && <ReferralCard partner={partner} />}
           {tab === 'card' && <DigitalBusinessCard partner={partner} />}
+          {tab === 'resources' && <ResourceCenter variant="partner" />}
         </>
       )}
     </PortalShell>
