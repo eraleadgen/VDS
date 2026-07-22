@@ -15,7 +15,9 @@ export default function VehicleSubscriptionManager({ vehicle, onSubscriptionChan
     setIsProcessing(true);
     try {
       if (actionType === 'enroll') {
-        await base44.functions.invoke('upgradeVehicleToGold', { vehicle_id: vehicleId });
+        // Enrollment is handled via Stripe checkout on the signup page.
+        window.location.href = '/vds-gold-signup';
+        return;
       } else {
         // Cancel the Stripe subscription + VehicleSubscription record (per-vehicle),
         // not just the vehicle flag — otherwise the customer keeps getting billed.
