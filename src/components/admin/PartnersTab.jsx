@@ -1,0 +1,126 @@
+import { useState, useEffect } from 'react';
+import { base44 } from '@/api/base44Client';
+import { Plus, Pencil, Trash2, Star, Copy, Check } from 'lucide-react';
+import ExpandableCard from '@/components/portal/ExpandableCard';
+import PartnerModal from '@/components/admin/PartnerModal';
+
+const STATUS_BADGE = {
+  active: 'text-green-300 bg-green-300/5 border-green-300/20',
+  inactive: 'text-vapor/50 bg-vapor/5 border-vapor/20',
+  prospect: 'text-amber-300 bg-amber-300/5 border-amber-300/20',
+};
+const TYPE_LABEL = { dealership_salesperson: 'Dealership Salesperson', strategic_partner: 'Strategic Partner', other: 'Other' };
+
+export default function PartnersTab() {
+  const [partners, setPartners] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(null);
+  const [adding, setAdding] = useState(false);
+  const [busy, setBusy] = useState({});
+  const [confirmId, setConfirmId] = useState(null);
+  const [copied, setCopied] = useState('');
+
+  const load = async () => {
+    setLoading(true);
+    try { const list = await base44.entities.Partner.list('-created_date', 200); setPartners(list || []); }
+    catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  };
+  useEffect(() => { load(); }, []);
+
+  const save = async (data) => {
+    await (editing ? base44.entities.Partner.update(editing.id, data) : base44.entities.Partner.create(data));
+    setEditing(null); setAdding(false); await load();
+  };
+
+  const remove = async (id) => {
+    setBusy(b => ({ ...b, [id]: true }));
+    try { await base44.entities.Partner.delete(id); setConfirmId(null); await load(); }
+    catch (e) { alert(e.message); }
+    finally { setBusy(b => ({ ...b, [id]: false })); }
+  };
+
+  const copy = (code) => {
+    navigator.clipboard?.writeText(`${window.location.origin}/book?ref=${code}`);
+    setCopied(code); setTimeout(() => setCopied(''), 1500);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-grotesk font-bold text-vapor">Partners</h1>
+        <button onClick={() => setAdding(true)} className="flex items-center gap-2 bg-gold/10 border border-gold/30 text-gold px-4 py-2 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold/20">
+          <Plus size={14} /> NEW PARTNER
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-gold/20 border-t-gold rounded-full animate-spin" /></div>
+      ) : partners.length === 0 ? (
+        <p className="p-8 text-center text-vapor/40 font-mono-tech text-sm">No partners yet. Add your first partner to launch the network.</p>
+      ) : (
+        <div className="space-y-3">
+          {partners.map(p => (
+            <ExpandableCard
+              key={p.id}
+              header={
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-grotesk font-bold text-vapor truncate">{p.name}</h3>
+                    {p.is_founding_partner && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-mono-tech tracking-widest text-gold border border-gold/40 bg-gold/10 px-1.5 py-0.5 rounded-sm">
+                        <Star size={9} className="fill-gold" /> FOUNDING
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-vapor/50 font-mono-tech truncate">{p.dealership || TYPE_LABEL[p.partner_type]}</p>
+                </div>
+              }
+              right={
+                <div className="text-right">
+                  <p className="text-xs font-mono-tech text-gold mb-1">${(p.revenue_generated || 0).toLocaleString()}</p>
+                  <span className={`inline-block text-xs font-mono-tech tracking-widest px-2 py-1 rounded-sm border whitespace-nowrap ${STATUS_BADGE[p.status] || 'text-vapor/50 border-vapor/10'}`}>{p.status}</span>
+                </div>
+              }
+            >
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <Metric label="REFERRALS" value={p.referral_count || 0} />
+                <Metric label="CONVERSIONS" value={p.conversions_count || 0} />
+                <Metric label="GOLD" value={p.gold_members_generated || 0} />
+                <Metric label="HEALTH" value={`${p.relationship_health_score || 0}/100`} />
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <code className="text-xs font-mono-tech text-gold bg-gold/5 border border-gold/20 px-2 py-1 rounded-sm">{p.referral_code}</code>
+                <button onClick={() => copy(p.referral_code)} className="flex items-center gap-1.5 text-xs font-mono-tech text-vapor/60 hover:text-gold border border-vapor/20 px-2 py-1.5 rounded-sm">
+                  {copied === p.referral_code ? <Check size={12} /> : <Copy size={12} />} COPY LINK
+                </button>
+                <button onClick={() => setEditing(p)} className="flex items-center gap-1.5 text-xs font-mono-tech text-vapor/60 hover:text-gold border border-vapor/20 px-2 py-1.5 rounded-sm">
+                  <Pencil size={12} /> EDIT
+                </button>
+                {confirmId === p.id ? (
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setConfirmId(null)} disabled={busy[p.id]} className="text-xs font-mono-tech text-vapor/50 hover:text-vapor px-2 py-1.5">CANCEL</button>
+                    <button onClick={() => remove(p.id)} disabled={busy[p.id]} className="text-xs font-mono-tech text-red-400 border border-red-400/40 bg-red-400/10 hover:bg-red-400/20 px-2 py-1.5 rounded-sm">CONFIRM DELETE</button>
+                  </div>
+                ) : (
+                  <button onClick={() => setConfirmId(p.id)} disabled={busy[p.id]} className="text-vapor/50 hover:text-red-400 disabled:opacity-50 px-2 py-1.5"><Trash2 size={14} /></button>
+                )}
+              </div>
+            </ExpandableCard>
+          ))}
+        </div>
+      )}
+
+      {(adding || editing) && <PartnerModal onClose={() => { setAdding(false); setEditing(null); }} onSave={save} partner={editing} />}
+    </div>
+  );
+}
+
+function Metric({ label, value }) {
+  return (
+    <div>
+      <p className="text-lg font-grotesk font-bold text-vapor">{value}</p>
+      <p className="text-[10px] font-mono-tech tracking-widest text-vapor/40">{label}</p>
+    </div>
+  );
+}

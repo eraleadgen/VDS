@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { LayoutDashboard, Users, CalendarRange, MessageSquare, DollarSign, Route, FileText } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarRange, MessageSquare, DollarSign, Route, FileText, Network, LineChart } from 'lucide-react';
 import PortalShell from '@/components/portal/PortalShell';
 import ContractorsTab from '@/components/admin/ContractorsTab';
 import AppointmentsTab from '@/components/admin/AppointmentsTab';
@@ -10,6 +10,8 @@ import InvoicesTab from '@/components/admin/InvoicesTab';
 import JourneyTab from '@/components/admin/JourneyTab';
 import QuotesTab from '@/components/admin/QuotesTab';
 import OverviewTab from '@/components/admin/OverviewTab';
+import PartnersTab from '@/components/admin/PartnersTab';
+import BusinessDevTab from '@/components/admin/BusinessDevTab';
 
 const invoke = (payload) => base44.functions.invoke('scheduler', payload).then(r => r.data ?? r);
 
@@ -43,6 +45,8 @@ export default function AdminDashboard() {
     { key: 'quotes', label: 'QUOTES', icon: FileText },
     { key: 'invoices', label: 'INVOICES', icon: DollarSign },
     { key: 'journey', label: 'JOURNEY', icon: Route },
+    { key: 'partners', label: 'PARTNERS', icon: Network },
+    { key: 'business', label: 'BUSINESS DEV', icon: LineChart },
     { key: 'messages', label: 'MESSAGES', icon: MessageSquare },
   ];
 
@@ -55,6 +59,8 @@ export default function AdminDashboard() {
           {tab === 'quotes' && <QuotesTab />}
           {tab === 'invoices' && <InvoicesTab />}
           {tab === 'journey' && <JourneyTab />}
+          {tab === 'partners' && <PartnersTab />}
+          {tab === 'business' && <BusinessDevTab />}
           {tab === 'messages' && <MessagesTab />}
         </>
     </PortalShell>

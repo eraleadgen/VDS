@@ -32,6 +32,7 @@ import SpecialistSetup from './pages/SpecialistSetup';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import EraDocDownload from './pages/EraDocDownload';
+import PartnerPortal from './pages/PartnerPortal';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -85,6 +86,7 @@ const AuthenticatedApp = () => {
       <Route path="/specialist-setup" element={<SpecialistSetup />} />
       <Route path="/admin-login" element={<AdminLogin />} />
       <Route path="/admin" element={<AdminDashboard />} />
+      <Route path="/partner-portal" element={<PartnerPortal />} />
       <Route path="/era-doc" element={<EraDocDownload />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>

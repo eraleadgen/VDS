@@ -1,0 +1,153 @@
+{
+  "name": "Partner",
+  "type": "object",
+  "description": "VDS Partner Network \u2014 ERA Core growth module. A Partner is a dealership salesperson or strategic partner who refers customers. Founding Partners are the earliest joiners. Each partner receives an auto-generated referral code (QR/link derived in UI). Revenue, conversions, and service-type generation are tracked as metrics. Engineered as a reusable ERA Core module with configurable terminology for future multi-industry expansion (roofing, HVAC, plumbing, etc.).",
+  "properties": {
+    "linked_user_id": {
+      "type": "string",
+      "description": "Base44 User id this partner authenticates as (role 'partner'). Null for prospects not yet onboarded."
+    },
+    "first_name": {
+      "type": "string"
+    },
+    "last_name": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string",
+      "description": "Full display name"
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "photo_url": {
+      "type": "string",
+      "description": "Optional partner profile photo URL"
+    },
+    "dealership": {
+      "type": "string",
+      "description": "Dealership or company the partner represents"
+    },
+    "partner_type": {
+      "type": "string",
+      "enum": [
+        "dealership_salesperson",
+        "strategic_partner",
+        "other"
+      ],
+      "default": "dealership_salesperson",
+      "description": "Configurable partner type. In the generic ERA Core module this maps to the industry's equivalent role."
+    },
+    "is_founding_partner": {
+      "type": "boolean",
+      "default": false,
+      "description": "Founding Partner designation \u2014 early joiners recognized as builders of the network."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive",
+        "prospect"
+      ],
+      "default": "active"
+    },
+    "referral_code": {
+      "type": "string",
+      "description": "Unique short referral code, auto-generated on creation. Appended as ?ref= on the booking URL for automatic attribution."
+    },
+    "referral_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Total referrals attributed to this partner."
+    },
+    "conversions_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Referrals that converted to paying customers."
+    },
+    "revenue_generated": {
+      "type": "number",
+      "default": 0,
+      "description": "Lifetime revenue attributed to this partner's referrals."
+    },
+    "gold_members_generated": {
+      "type": "number",
+      "default": 0
+    },
+    "ceramic_coatings_generated": {
+      "type": "number",
+      "default": 0
+    },
+    "paint_corrections_generated": {
+      "type": "number",
+      "default": 0
+    },
+    "relationship_health_score": {
+      "type": "number",
+      "default": 0,
+      "description": "0-100 relationship health score."
+    },
+    "last_contact_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "next_follow_up_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "welcome_packet_generated": {
+      "type": "boolean",
+      "default": false
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "email",
+    "partner_type",
+    "referral_code"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "$or": [
+        {
+          "data.linked_user_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        },
+        {
+          "data.linked_user_id": "{{user.id}}"
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
