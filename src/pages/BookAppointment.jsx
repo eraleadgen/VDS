@@ -130,6 +130,7 @@ export default function BookAppointment() {
     if (!q) return;
     setExistingQuoteId(location.state?.quote_id || q.id || null);
     if (q.condition) setCondition(q.condition);
+    if (q.paint_protection) setPaintProtection(q.paint_protection);
     const addOnIds = q.add_ons || [];
     const requested = q.requested_services || [];
     const allServices = config?.services || [];
