@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { LayoutDashboard, QrCode, CreditCard, Library } from 'lucide-react';
+import { LayoutDashboard, QrCode, Library } from 'lucide-react';
 import PortalShell from '@/components/portal/PortalShell';
 import PartnerOverview from '@/components/partner/PartnerOverview';
 import ReferralCard from '@/components/partner/ReferralCard';
-import DigitalBusinessCard from '@/components/partner/DigitalBusinessCard';
 import ResourceCenter from '@/components/shared/ResourceCenter';
 
 export default function PartnerPortal() {
@@ -35,7 +34,6 @@ export default function PartnerPortal() {
   const navItems = [
     { key: 'overview', label: 'OVERVIEW', icon: LayoutDashboard },
     { key: 'referral', label: 'REFERRAL QR', icon: QrCode },
-    { key: 'card', label: 'BUSINESS CARD', icon: CreditCard },
     { key: 'resources', label: 'RESOURCES', icon: Library },
   ];
 
@@ -51,7 +49,6 @@ export default function PartnerPortal() {
         <>
           {tab === 'overview' && <PartnerOverview partner={partner} />}
           {tab === 'referral' && <ReferralCard partner={partner} />}
-          {tab === 'card' && <DigitalBusinessCard partner={partner} />}
           {tab === 'resources' && <ResourceCenter variant="partner" />}
         </>
       )}
