@@ -16,6 +16,7 @@ import {
   validateSpecialistToken, finalizeSpecialistSetup, adminDeleteContractor, adminMetrics,
   adminInvoices, adminUpdateInvoice, adminJobs, adminReassignJob, adminChangeJobStatus,
   adminDeleteJob, adminBulkDeleteJobs, adminArchiveQuote, adminQuotes,
+  adminSendPartnerInvite, validatePartnerToken, finalizePartnerSetup,
 } from '../../shared/adminHandlers.ts';
 
 // weekdayKey, serviceToSkill, loadConfig, inAvailWindow, overlapsBusy, apptStartMs, apptEndMs,
@@ -740,6 +741,9 @@ Deno.serve(async (req) => {
     if (action === 'send_specialist_invite') return Response.json(await adminSendSpecialistInvite(base44, body));
     if (action === 'validate_specialist_token') return Response.json(await validateSpecialistToken(base44, body));
     if (action === 'finalize_specialist_setup') return Response.json(await finalizeSpecialistSetup(base44, body));
+    if (action === 'send_partner_invite') return Response.json(await adminSendPartnerInvite(base44, body));
+    if (action === 'validate_partner_token') return Response.json(await validatePartnerToken(base44, body));
+    if (action === 'finalize_partner_setup') return Response.json(await finalizePartnerSetup(base44, body));
     if (action === 'admin_metrics') return Response.json(await adminMetrics(base44));
     if (action === 'admin_invoices') return Response.json(await adminInvoices(base44, body));
     if (action === 'admin_update_invoice') return Response.json(await adminUpdateInvoice(base44, body));

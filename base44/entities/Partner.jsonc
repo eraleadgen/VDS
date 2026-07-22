@@ -58,7 +58,7 @@
     },
     "referral_code": {
       "type": "string",
-      "description": "Unique short referral code, auto-generated on creation. Appended as ?ref= on the booking URL for automatic attribution."
+      "description": "Unique short referral code, auto-generated on creation. Used as the vanity path (domain/CODE) for the partner's referral link \u2014 visiting it redirects to the booking flow with automatic attribution."
     },
     "referral_count": {
       "type": "number",
@@ -101,6 +101,18 @@
       "format": "date"
     },
     "welcome_packet_generated": {
+      "type": "boolean",
+      "default": false
+    },
+    "invite_token": {
+      "type": "string",
+      "description": "One-time token for the partner setup link. Cleared once the account is created."
+    },
+    "invite_sent": {
+      "type": "boolean",
+      "default": false
+    },
+    "account_created": {
       "type": "boolean",
       "default": false
     },

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Plus, Pencil, Trash2, Star, Copy, Check } from 'lucide-react';
+import { Plus, Pencil, Trash2, Star, Copy, Check, Mail } from 'lucide-react';
 import ExpandableCard from '@/components/portal/ExpandableCard';
 import PartnerModal from '@/components/admin/PartnerModal';
 
@@ -28,9 +28,26 @@ export default function PartnersTab() {
   };
   useEffect(() => { load(); }, []);
 
-  const save = async (data) => {
-    await (editing ? base44.entities.Partner.update(editing.id, data) : base44.entities.Partner.create(data));
-    setEditing(null); setAdding(false); await load();
+  const invoke = (payload) => base44.functions.invoke('scheduler', payload).then(r => r.data ?? r);
+
+  const save = async (data, sendInvite) => {
+    try {
+      let id;
+      if (editing) { await base44.entities.Partner.update(editing.id, data); id = editing.id; }
+      else { const created = await base44.entities.Partner.create(data); id = created?.id; }
+      if (sendInvite && id) {
+        const r = await invoke({ action: 'send_partner_invite', partner_id: id });
+        if (r.error) alert(r.error); else alert(`Setup link sent to ${data.email || 'partner'}.`);
+      }
+      setEditing(null); setAdding(false); await load();
+    } catch (e) { alert(e.message); }
+  };
+
+  const sendInvite = async (p) => {
+    try {
+      const r = await invoke({ action: 'send_partner_invite', partner_id: p.id });
+      if (r.error) alert(r.error); else { alert(`Setup link sent to ${p.email}.`); await load(); }
+    } catch (e) { alert(e.message); }
   };
 
   const remove = async (id) => {
@@ -41,7 +58,7 @@ export default function PartnersTab() {
   };
 
   const copy = (code) => {
-    navigator.clipboard?.writeText(`${window.location.origin}/book?ref=${code}`);
+    navigator.clipboard?.writeText(`${window.location.origin}/${code}`);
     setCopied(code); setTimeout(() => setCopied(''), 1500);
   };
 
@@ -89,6 +106,16 @@ export default function PartnersTab() {
                 <Metric label="GOLD" value={p.gold_members_generated || 0} />
                 <Metric label="HEALTH" value={`${p.relationship_health_score || 0}/100`} />
               </div>
+              {p.account_created ? (
+                <p className="text-xs font-mono-tech text-green-300">◆ ACCOUNT ACTIVE</p>
+              ) : (
+                <div className="flex items-center gap-2">
+                  {p.invite_sent && <span className="text-xs font-mono-tech text-amber-300">INVITE SENT</span>}
+                  <button onClick={() => sendInvite(p)} className="flex items-center gap-1.5 text-xs font-mono-tech text-vapor/60 hover:text-gold border border-vapor/20 px-2 py-1.5 rounded-sm">
+                    <Mail size={12} /> {p.invite_sent ? 'RESEND SETUP LINK' : 'SEND SETUP LINK'}
+                  </button>
+                </div>
+              )}
               <div className="flex flex-wrap items-center gap-2">
                 <code className="text-xs font-mono-tech text-gold bg-gold/5 border border-gold/20 px-2 py-1 rounded-sm">{p.referral_code}</code>
                 <button onClick={() => copy(p.referral_code)} className="flex items-center gap-1.5 text-xs font-mono-tech text-vapor/60 hover:text-gold border border-vapor/20 px-2 py-1.5 rounded-sm">

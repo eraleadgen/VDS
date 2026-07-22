@@ -106,6 +106,10 @@
         "blocked"
       ],
       "default": "active"
+    },
+    "referred_by_partner_id": {
+      "type": "string",
+      "description": "Partner entity ID this customer was referred by. Set automatically the first time the customer books via a partner referral link. Drives attribution for ALL future jobs \u2014 including a ceramic-coating or paint-correction purchase made after a consultation \u2014 so the referring partner always gets credit."
     }
   },
   "required": [

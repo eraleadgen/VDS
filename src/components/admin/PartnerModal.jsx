@@ -29,7 +29,7 @@ export default function PartnerModal({ onClose, onSave, partner }) {
     setBusy(true);
     try {
       const name = `${form.first_name} ${form.last_name}`.trim();
-      await onSave({ ...form, name });
+      await onSave({ ...form, name }, !partner);
     } finally { setBusy(false); }
   };
 
@@ -60,7 +60,7 @@ export default function PartnerModal({ onClose, onSave, partner }) {
         </label>
         <div className="flex items-center justify-end gap-2 pt-2">
           <button type="button" onClick={onClose} className="text-xs font-mono-tech text-vapor/50 hover:text-vapor px-4 py-2.5">CANCEL</button>
-          <button type="submit" disabled={busy} className="bg-gold text-obsidian px-6 py-2.5 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold-light disabled:opacity-50">{partner ? 'SAVE CHANGES' : 'CREATE PARTNER'}</button>
+          <button type="submit" disabled={busy} className="bg-gold text-obsidian px-6 py-2.5 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold-light disabled:opacity-50">{partner ? 'SAVE CHANGES' : 'CREATE & SEND SETUP LINK'}</button>
         </div>
       </form>
     </div>

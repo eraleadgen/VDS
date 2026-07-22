@@ -264,6 +264,7 @@ export default function BookAppointment() {
         preferred_time: form.preferred_time || null,
         sms_consent: smsConsent,
         quote_id: quoteId,
+        partner_referral_code: new URLSearchParams(window.location.search).get('ref') || '',
       });
 
       if (location.state?.reschedule_from) {

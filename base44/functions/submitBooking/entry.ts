@@ -129,7 +129,7 @@ Deno.serve(async (req) => {
       name, phone, email, address,
       service_type, vehicle_type, vehicle_info, vehicle_classification,
       vehicle_details, notes,
-      preferred_date, preferred_time, sms_consent, quote_id,
+      preferred_date, preferred_time, sms_consent, quote_id, partner_referral_code,
     } = await req.json();
 
     if (!name || !phone || !address || !service_type) {
@@ -254,6 +254,34 @@ Deno.serve(async (req) => {
     } catch (err) {
       console.error('Failed to create Job:', err.message);
     }
+
+    // ── Partner Network: capture referral attribution ──
+    // The customer is tagged with the referring partner the FIRST time they book via a partner
+    // link. Attribution lives on the Customer record, so any later job for the same customer —
+    // including a ceramic-coating purchase made after a consultation — automatically credits the
+    // partner when its invoice is paid (see adminUpdateInvoice).
+    try {
+      const refCode = (partner_referral_code || '').trim();
+      if (refCode && customer) {
+        const partners = await base44.asServiceRole.entities.Partner.filter({ referral_code: refCode });
+        const partner = partners && partners[0];
+        if (partner) {
+          if (!customer.referred_by_partner_id) {
+            await base44.asServiceRole.entities.Customer.update(customer.id, { referred_by_partner_id: partner.id });
+            await base44.asServiceRole.entities.Partner.update(partner.id, { referral_count: (partner.referral_count || 0) + 1 });
+          }
+          if (job) {
+            const existing = await base44.asServiceRole.entities.PartnerReferral.filter({ job_id: job.id }).catch(() => []);
+            if (!existing || !existing.length) {
+              await base44.asServiceRole.entities.PartnerReferral.create({
+                partner_id: partner.id, customer_id: customer.id, job_id: job.id,
+                service_package: job.service_package || '', status: 'referred', revenue: 0, attributed: false,
+              });
+            }
+          }
+        }
+      }
+    } catch (e) { console.error('Partner referral capture failed:', e.message); }
 
     // ── Link the originating Quote (if this booking came from the pricing page) ──
     if (quote_id) {

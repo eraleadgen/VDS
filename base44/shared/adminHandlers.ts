@@ -282,6 +282,52 @@ export async function adminUpdateInvoice(base44, body) {
           });
         }
       }
+      // ── Partner Network: attribute conversion + revenue to the referring partner ──
+      // Attribution is keyed off the Customer's referred_by_partner_id (set at first referral
+      // booking). This correctly credits a partner when a customer books a coating CONSULTATION
+      // via their link and later PURCHASES the coating — the coating job's invoice payment
+      // credits the partner's conversions, revenue, and ceramic_coatings_generated. Idempotent
+      // via the PartnerReferral.attributed flag.
+      try {
+        if (invoice?.customer_id) {
+          const cust = await base44.asServiceRole.entities.Customer.get(invoice.customer_id).catch(() => null);
+          const partnerId = cust?.referred_by_partner_id;
+          if (partnerId) {
+            const job = invoice.job_id ? await base44.asServiceRole.entities.Job.get(invoice.job_id).catch(() => null) : null;
+            const svcLower = ((job?.service_package || '') + ' ' + (job?.service_label || '')).toLowerCase();
+            const revenue = invoice.final_amount || invoice.amount || 0;
+            let referral = null;
+            if (invoice.job_id) {
+              const existing = await base44.asServiceRole.entities.PartnerReferral.filter({ job_id: invoice.job_id }).catch(() => []);
+              referral = existing && existing[0];
+            }
+            let credit = false;
+            if (!referral) {
+              await base44.asServiceRole.entities.PartnerReferral.create({
+                partner_id: partnerId, customer_id: invoice.customer_id, job_id: invoice.job_id || null,
+                service_package: job?.service_package || '', status: 'converted', revenue, attributed: true,
+              });
+              credit = true;
+            } else if (!referral.attributed) {
+              await base44.asServiceRole.entities.PartnerReferral.update(referral.id, { status: 'converted', revenue, attributed: true });
+              credit = true;
+            }
+            if (credit) {
+              const partner = await base44.asServiceRole.entities.Partner.get(partnerId).catch(() => null);
+              if (partner) {
+                const inc = {
+                  conversions_count: (partner.conversions_count || 0) + 1,
+                  revenue_generated: (partner.revenue_generated || 0) + revenue,
+                };
+                if (svcLower.includes('coating') || svcLower.includes('ceramic')) inc.ceramic_coatings_generated = (partner.ceramic_coatings_generated || 0) + 1;
+                if (svcLower.includes('paint correction') || svcLower.includes('correction')) inc.paint_corrections_generated = (partner.paint_corrections_generated || 0) + 1;
+                await base44.asServiceRole.entities.Partner.update(partnerId, inc);
+              }
+            }
+          }
+        }
+      } catch (e) { console.error('Partner attribution error:', e.message); }
+
       await base44.asServiceRole.functions.invoke('logEvent', {
         event_type: 'invoice_paid', entity_type: 'invoice', entity_id: invoice_id,
         customer_id: invoice?.customer_id, description: `Invoice ${invoice?.invoice_number} marked as paid`,
@@ -490,4 +536,60 @@ export async function adminQuotes(base44, body) {
   if (body.status) quotes = await base44.asServiceRole.entities.Quote.filter({ status: body.status });
   else quotes = await base44.asServiceRole.entities.Quote.list('-created_date', 200);
   return { success: true, quotes: quotes || [] };
+}
+
+// ── Partner Network (ERA Core growth module) ────────────────────────────────
+// Invite / setup flow mirrors the specialist invite flow (adminSendSpecialistInvite,
+// validateSpecialistToken, finalizeSpecialistSetup) but targets the Partner entity and
+// elevates the verified user to role 'partner'.
+
+// Admin: send the themed partner invite email (with a private set-password link).
+export async function adminSendPartnerInvite(base44, body) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const { partner_id } = body;
+  if (!partner_id) return { error: 'partner_id is required.' };
+  const p = await base44.asServiceRole.entities.Partner.get(partner_id).catch(() => null);
+  if (!p) return { error: 'Partner not found.' };
+  if (p.account_created) return { error: 'This partner has already created their account.' };
+  const inviteToken = p.invite_token || crypto.randomUUID();
+  await base44.asServiceRole.entities.Partner.update(partner_id, { invite_token: inviteToken, invite_sent: true });
+  try {
+    await base44.functions.invoke('sendPartnerInvite', {
+      email: p.email, firstName: (p.name || '').split(' ')[0] || 'there', invite_token: inviteToken,
+      scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
+    });
+  } catch (e) { console.error('partner invite email error:', e.message); return { error: 'Failed to send the invite email.' }; }
+  return { success: true, invite_sent: true };
+}
+
+// Public: validate a setup token from the invite email link (returns the partner name + email).
+export async function validatePartnerToken(base44, body) {
+  const { token } = body;
+  if (!token) return { error: 'Missing invite token.' };
+  const all = await base44.asServiceRole.entities.Partner.filter({ invite_token: token });
+  const p = (all && all[0]) || null;
+  if (!p) return { error: 'This invite link is invalid or no longer active.' };
+  if (p.account_created) return { error: 'This invite has already been used. Please log in to your Partner Portal.', alreadyUsed: true };
+  return { success: true, name: p.name, email: p.email };
+}
+
+// Authenticated: after the partner verifies their email, link the new account to the partner
+// profile, elevate the role to 'partner'.
+export async function finalizePartnerSetup(base44, body) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!me) return { error: 'Unauthorized.' };
+  const { invite_token } = body;
+  if (!invite_token) return { error: 'Missing invite token.' };
+  const all = await base44.asServiceRole.entities.Partner.filter({ invite_token });
+  const p = (all && all[0]) || null;
+  if (!p) return { error: 'This invite link is invalid or no longer active.' };
+  if (p.account_created) return { error: 'This invite has already been used.' };
+  if (!me.email || !p.email || me.email.toLowerCase() !== p.email.toLowerCase()) {
+    return { error: 'The verified email does not match this partner invite.' };
+  }
+  await base44.asServiceRole.entities.Partner.update(p.id, { linked_user_id: me.id, account_created: true, invite_token: '' });
+  try { await base44.asServiceRole.entities.User.update(me.id, { role: 'partner' }); }
+  catch (e) { console.error('role update error:', e.message); }
+  return { success: true, partner_id: p.id };
 }

@@ -16,7 +16,7 @@ async function downloadImage(url, filename) {
 
 export default function ReferralCard({ partner }) {
   const [copied, setCopied] = useState(false);
-  const referralUrl = `${window.location.origin}/book?ref=${partner.referral_code}`;
+  const referralUrl = `${window.location.origin}/${partner.referral_code}`;
 
   const copy = () => { navigator.clipboard?.writeText(referralUrl); setCopied(true); setTimeout(() => setCopied(false), 1500); };
 

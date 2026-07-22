@@ -1,0 +1,67 @@
+{
+  "name": "PartnerReferral",
+  "type": "object",
+  "description": "Tracks a single Partner Network referral event. Created when a customer books via a partner's referral link (status 'referred'). Attributed (status 'converted', attributed=true) when the linked job's invoice is paid \u2014 crediting the partner's conversions, revenue, and service-type counters. Powers accurate, idempotent partner metrics.",
+  "properties": {
+    "partner_id": {
+      "type": "string",
+      "description": "Partner entity ID this referral belongs to."
+    },
+    "customer_id": {
+      "type": "string",
+      "description": "Customer entity ID referred."
+    },
+    "job_id": {
+      "type": "string",
+      "description": "Job entity ID this referral originated from."
+    },
+    "service_package": {
+      "type": "string",
+      "description": "Service key of the job at referral time."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "referred",
+        "converted"
+      ],
+      "default": "referred"
+    },
+    "revenue": {
+      "type": "number",
+      "default": 0,
+      "description": "Revenue attributed when converted (invoice final_amount)."
+    },
+    "attributed": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once partner metrics have been credited for this referral (idempotency flag preventing double-counting)."
+    }
+  },
+  "required": [
+    "partner_id",
+    "customer_id"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

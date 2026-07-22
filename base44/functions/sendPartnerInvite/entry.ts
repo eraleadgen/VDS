@@ -1,20 +1,21 @@
-// Specialist Invite Email — themed HTML (VDS Mobile dark/gold theme)
-// POST /functions/sendSpecialistInvite
-// Sends a branded invitation email containing a private set-password link.
-// Auth + send scaffolding live in base44/shared/inviteEmail.ts (shared with the partner invite).
+// Partner Network Invite Email — themed HTML (VDS Mobile dark/gold theme)
+// POST /functions/sendPartnerInvite
+// Sends a branded invitation email containing a private set-password link to the Partner
+// Setup page. Auth + send scaffolding live in base44/shared/inviteEmail.ts (shared with the
+// specialist invite).
 
 import { runInviteEndpoint } from '../../shared/inviteEmail.ts';
 
-const SUBJECT = "You're Invited — Set Up Your VDS Mobile Specialist Account";
+const SUBJECT = "You're Invited — Set Up Your VDS Partner Network Account";
 const FONT = "'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 const MONO = "'Space Mono','Courier New',monospace";
 
 function buildHtml(firstName, setupUrl) {
   const steps = [
-    'Click the button below to open your private setup page.',
+    'Click the button below to open your private setup page — your name, phone, and email are pre-filled.',
     'Create your account password.',
     'Verify your email with the code we send you.',
-    'Log in to your Specialist Portal and start accepting jobs.',
+    'Log in to your Partner Portal to access your referral QR code, digital business card, and resources.',
   ];
   const stepsHtml = steps.map((t, i) => `
    <tr>
@@ -29,11 +30,12 @@ function buildHtml(firstName, setupUrl) {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
 <title>${SUBJECT}</title>
 </head>
 <body style="margin:0;padding:0;background-color:#0A0B0D;font-family:${FONT};color:#E2E8F0;-webkit-font-smoothing:antialiased;">
 
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;">You've been invited to join VDS Mobile as a Specialist — set up your account to get started.</div>
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">You've been invited to join the VDS Partner Network — set up your account to get started.</div>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0A0B0D;">
 <tr><td align="center" style="padding:32px 16px;">
@@ -43,7 +45,7 @@ function buildHtml(firstName, setupUrl) {
 <tr><td style="background-color:#0A0B0D;padding:26px 32px;border-bottom:2px solid #D4AF37;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
     <td style="font-family:${FONT};font-size:19px;font-weight:700;letter-spacing:3px;color:#FFFFFF;">VDS&nbsp;MOBILE</td>
-    <td align="right" style="font-family:${MONO};font-size:11px;letter-spacing:2px;color:#D4AF37;font-weight:700;text-transform:uppercase;">Specialist Invite</td>
+    <td align="right" style="font-family:${MONO};font-size:11px;letter-spacing:2px;color:#D4AF37;font-weight:700;text-transform:uppercase;">Partner Invite</td>
   </tr></table>
 </td></tr>
 
@@ -53,8 +55,8 @@ function buildHtml(firstName, setupUrl) {
 </td></tr>
 
 <tr><td style="padding:14px 32px 0 32px;">
-  <p style="margin:0 0 16px 0;font-size:15px;line-height:25px;color:#CBD5E1;">You've been invited to join the VDS Mobile team as a Specialist. Set up your account password below to activate your Specialist Portal access.</p>
-  <p style="margin:0 0 22px 0;font-size:15px;line-height:25px;color:#CBD5E1;">Once your account is created, you'll be able to view your schedule, accept jobs, manage your availability, and upload before &amp; after photos.</p>
+  <p style="margin:0 0 16px 0;font-size:15px;line-height:25px;color:#CBD5E1;">You've been invited to join the VDS Partner Network. As a partner, you'll receive a personalized referral QR code and digital business card — every customer who books through your link is automatically attributed to you.</p>
+  <p style="margin:0 0 22px 0;font-size:15px;line-height:25px;color:#CBD5E1;">Set up your account password below to activate your Partner Portal access.</p>
 </td></tr>
 
 <tr><td style="padding:0 32px 26px 32px;">
@@ -82,4 +84,4 @@ function buildHtml(firstName, setupUrl) {
 </html>`;
 }
 
-Deno.serve((req) => runInviteEndpoint(req, { subject: SUBJECT, buildHtml, pathSegment: 'specialist-setup' }));
+Deno.serve((req) => runInviteEndpoint(req, { subject: SUBJECT, buildHtml, pathSegment: 'partner-setup' }));

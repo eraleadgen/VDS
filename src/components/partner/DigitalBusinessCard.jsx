@@ -5,7 +5,7 @@ const PHONE = "(470) 412-8986";
 const qrUrl = (data) => `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(data)}`;
 
 export default function DigitalBusinessCard({ partner }) {
-  const referralUrl = `${window.location.origin}/book?ref=${partner.referral_code}`;
+  const referralUrl = `${window.location.origin}/${partner.referral_code}`;
 
   const printCard = () => {
     const w = window.open('', '_blank');
