@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Filter, Plus, Trash2 } from 'lucide-react';
 import AppointmentFormModal from '@/components/admin/AppointmentFormModal';
 import DistanceGauge from '@/components/admin/DistanceGauge';
+import ExpandableCard from '@/components/portal/ExpandableCard';
 
 const Checkbox = ({ checked, onChange, disabled }) => (
   <input
@@ -160,64 +161,68 @@ export default function AppointmentsTab() {
           {sorted.length === 0 ? (
             <p className="p-8 text-center text-vapor/40 font-mono-tech text-sm">No jobs match these filters.</p>
           ) : sorted.map(a => (
-            <div key={a.id} className={`glass-panel border rounded-sm p-4 transition-colors ${selected.includes(a.id) ? 'border-gold/40 bg-gold/[0.03]' : 'border-vapor/10'}`}>
-              <div className="flex items-start gap-3">
-                <Checkbox checked={selected.includes(a.id)} onChange={() => toggle(a.id)} disabled={busy[a.id]} />
-                <div className="flex-1 min-w-0 space-y-3">
-                  <div className="flex items-start justify-between gap-2 flex-wrap">
-                    <div className="min-w-0">
-                      <p className="text-xs font-mono-tech tracking-widest text-gold/70">{a.appointment_date} · {a.appointment_time}</p>
-                      <h3 className="text-sm font-grotesk font-bold text-vapor">{a.customer_name}</h3>
-                      <p className="text-xs text-vapor/50 font-mono-tech">{a.customer_phone}</p>
-                    </div>
-                    <select
-                      value={a.status}
-                      disabled={busy[a.id]}
-                      onChange={e => changeStatus(a.id, e.target.value)}
-                      className={`text-xs font-mono-tech px-2 py-1 rounded-sm border bg-transparent cursor-pointer whitespace-nowrap ${STATUS_BADGE[a.status] || 'text-vapor/50 border-vapor/10'}`}
-                    >
-                      {STATUSES.map(s => <option key={s} value={s} className="bg-asphalt text-vapor">{STATUS_LABEL(s)}</option>)}
-                    </select>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
-                    <div>
-                      <p className="text-sm text-vapor/80">{a.service_label || a.service_package}</p>
-                      <p className="text-xs text-vapor/40 font-mono-tech">{a.vehicle_info || ''}</p>
-                      {a.estimated_price != null && (
-                        <p className="text-xs font-mono-tech text-gold mt-1">
-                          {(a.final_price != null ? a.final_price : a.estimated_price).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
-                          <span className="text-vapor/40 ml-1">{a.final_price != null ? 'final' : 'quoted'}</span>
-                        </p>
-                      )}
-                    </div>
-                    <div className="min-w-0">
-                      <DistanceGauge address={a.address} />
-                      {a.address && <p className="text-xs text-vapor/30 font-mono-tech mt-1 truncate" title={a.address}>{a.address}</p>}
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <select
-                      value={a.specialist_id || ''}
-                      disabled={busy[a.id]}
-                      onChange={e => reassign(a.id, e.target.value)}
-                      className="bg-asphalt border border-vapor/10 text-vapor text-xs font-mono-tech px-3 py-2 rounded-sm flex-1 min-w-[160px]"
-                    >
-                      <option value="">— Unassigned —</option>
-                      {contractors.map(c => <option key={c.id} value={c.id}>{c.name}{a.specialist_id === c.id ? ' ✓' : ''}</option>)}
-                    </select>
-                    {confirmId === a.id ? (
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => setConfirmId(null)} disabled={busy[a.id]} className="text-xs font-mono-tech text-vapor/50 hover:text-vapor px-2 py-2">CANCEL</button>
-                        <button onClick={() => remove(a.id)} disabled={busy[a.id]} className="text-xs font-mono-tech text-red-400 border border-red-400/40 bg-red-400/10 hover:bg-red-400/20 px-3 py-2 rounded-sm">CONFIRM</button>
-                      </div>
-                    ) : (
-                      <button onClick={() => setConfirmId(a.id)} disabled={busy[a.id]} className="text-vapor/50 hover:text-red-400 disabled:opacity-50 px-2 py-2"><Trash2 size={15} /></button>
-                    )}
-                  </div>
-                  {a.job_status && <p className="text-[10px] text-vapor/40 font-mono-tech">{a.job_status.replace(/_/g, ' ')}</p>}
+            <ExpandableCard
+              key={a.id}
+              selected={selected.includes(a.id)}
+              leading={<Checkbox checked={selected.includes(a.id)} onChange={() => toggle(a.id)} disabled={busy[a.id]} />}
+              header={
+                <div className="min-w-0">
+                  <p className="text-xs font-mono-tech tracking-widest text-gold/70">{a.appointment_date} · {a.appointment_time}</p>
+                  <h3 className="text-sm font-grotesk font-bold text-vapor truncate">{a.customer_name}</h3>
+                  <p className="text-xs text-vapor/50 font-mono-tech truncate">{a.customer_phone}</p>
+                </div>
+              }
+              right={
+                <div className="text-right">
+                  {a.estimated_price != null && (
+                    <p className="text-xs font-mono-tech text-gold mb-1">
+                      {(a.final_price != null ? a.final_price : a.estimated_price).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                      <span className="text-vapor/40 ml-1">{a.final_price != null ? 'final' : 'quoted'}</span>
+                    </p>
+                  )}
+                  <span className={`inline-block text-xs font-mono-tech tracking-widest px-2 py-1 rounded-sm border whitespace-nowrap ${STATUS_BADGE[a.status] || 'text-vapor/50 border-vapor/10'}`}>{STATUS_LABEL(a.status)}</span>
+                </div>
+              }
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
+                <div>
+                  <p className="text-sm text-vapor/80">{a.service_label || a.service_package}</p>
+                  <p className="text-xs text-vapor/40 font-mono-tech">{a.vehicle_info || ''}</p>
+                </div>
+                <div className="min-w-0">
+                  <DistanceGauge address={a.address} />
+                  {a.address && <p className="text-xs text-vapor/30 font-mono-tech mt-1 truncate" title={a.address}>{a.address}</p>}
                 </div>
               </div>
-            </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={a.status}
+                  disabled={busy[a.id]}
+                  onChange={e => changeStatus(a.id, e.target.value)}
+                  className={`text-xs font-mono-tech px-2 py-2 rounded-sm border bg-asphalt cursor-pointer whitespace-nowrap ${STATUS_BADGE[a.status] || 'text-vapor/50 border-vapor/10'}`}
+                >
+                  {STATUSES.map(s => <option key={s} value={s} className="bg-asphalt text-vapor">{STATUS_LABEL(s)}</option>)}
+                </select>
+                <select
+                  value={a.specialist_id || ''}
+                  disabled={busy[a.id]}
+                  onChange={e => reassign(a.id, e.target.value)}
+                  className="bg-asphalt border border-vapor/10 text-vapor text-xs font-mono-tech px-3 py-2 rounded-sm flex-1 min-w-[160px]"
+                >
+                  <option value="">— Unassigned —</option>
+                  {contractors.map(c => <option key={c.id} value={c.id}>{c.name}{a.specialist_id === c.id ? ' ✓' : ''}</option>)}
+                </select>
+                {confirmId === a.id ? (
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setConfirmId(null)} disabled={busy[a.id]} className="text-xs font-mono-tech text-vapor/50 hover:text-vapor px-2 py-2">CANCEL</button>
+                    <button onClick={() => remove(a.id)} disabled={busy[a.id]} className="text-xs font-mono-tech text-red-400 border border-red-400/40 bg-red-400/10 hover:bg-red-400/20 px-3 py-2 rounded-sm">CONFIRM</button>
+                  </div>
+                ) : (
+                  <button onClick={() => setConfirmId(a.id)} disabled={busy[a.id]} className="text-vapor/50 hover:text-red-400 disabled:opacity-50 px-2 py-2"><Trash2 size={15} /></button>
+                )}
+              </div>
+              {a.job_status && <p className="text-[10px] text-vapor/40 font-mono-tech">{a.job_status.replace(/_/g, ' ')}</p>}
+            </ExpandableCard>
           ))}
         </div>
       )}

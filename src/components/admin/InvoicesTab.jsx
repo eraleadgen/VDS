@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { DollarSign, Clock, CheckCircle2, X, CreditCard } from 'lucide-react';
+import ExpandableCard from '@/components/portal/ExpandableCard';
 
 const invoke = (payload) => base44.functions.invoke('scheduler', payload).then(r => r.data ?? r);
 
@@ -77,45 +78,37 @@ export default function InvoicesTab() {
       ) : invoices.length === 0 ? (
         <div className="glass-panel border border-vapor/10 rounded-sm p-8 text-center text-sm text-vapor/40 font-mono-tech">No invoices yet. Invoices are created automatically when a specialist marks a job as invoice-complete.</div>
       ) : (
-        <div className="glass-panel border border-vapor/10 rounded-sm overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-vapor/10">
-                  {['INVOICE #', 'CUSTOMER', 'AMOUNT', 'STATUS', 'ISSUED', 'PAID', ''].map(h => (
-                    <th key={h} className="text-left text-xs font-mono-tech tracking-widest text-vapor/40 px-4 py-3">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {invoices.map(inv => (
-                  <tr key={inv.id} className="border-b border-vapor/5 hover:bg-gold/[0.02]">
-                    <td className="px-4 py-3 text-sm font-mono-tech text-gold/80">{inv.invoice_number || '—'}</td>
-                    <td className="px-4 py-3 text-sm text-vapor">{inv.customer_name || '—'}</td>
-                    <td className="px-4 py-3 text-sm text-vapor font-mono-tech">${(inv.final_amount || inv.amount || 0).toLocaleString()}</td>
-                    <td className="px-4 py-3">
-                      <span className={`text-xs font-mono-tech tracking-widest px-2 py-1 rounded-sm border ${STATUS_STYLES[inv.payment_status] || STATUS_STYLES.pending}`}>
-                        {inv.payment_status.toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-xs font-mono-tech text-vapor/50">{inv.issued_date || '—'}</td>
-                    <td className="px-4 py-3 text-xs font-mono-tech text-vapor/50">{inv.paid_date || '—'}</td>
-                    <td className="px-4 py-3 text-right">
-                      {inv.payment_status === 'pending' && (
-                        <button onClick={() => setPayModal(inv)} disabled={saving}
-                          className="text-xs font-mono-tech tracking-widest text-gold hover:text-gold-light disabled:opacity-50">
-                          MARK PAID
-                        </button>
-                      )}
-                      {inv.payment_status === 'paid' && inv.payment_method && (
-                        <span className="text-xs font-mono-tech text-vapor/50 uppercase">{inv.payment_method}</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <div className="space-y-3">
+          {invoices.map(inv => (
+            <ExpandableCard
+              key={inv.id}
+              header={
+                <div className="min-w-0">
+                  <p className="text-xs font-mono-tech tracking-widest text-gold/70 truncate">{inv.invoice_number || '—'}</p>
+                  <h3 className="text-sm font-grotesk font-bold text-vapor truncate">{inv.customer_name || '—'}</h3>
+                </div>
+              }
+              right={
+                <div className="text-right">
+                  <p className="text-sm font-grotesk font-bold text-vapor font-mono-tech">${(inv.final_amount || inv.amount || 0).toLocaleString()}</p>
+                  <span className={`inline-block text-xs font-mono-tech tracking-widest px-2 py-1 rounded-sm border whitespace-nowrap ${STATUS_STYLES[inv.payment_status] || STATUS_STYLES.pending}`}>{inv.payment_status.toUpperCase()}</span>
+                </div>
+              }
+            >
+              <div className="grid grid-cols-2 gap-3 text-xs font-mono-tech text-vapor/50">
+                <p><span className="text-vapor/40">Issued:</span> {inv.issued_date || '—'}</p>
+                <p><span className="text-vapor/40">Paid:</span> {inv.paid_date || '—'}</p>
+              </div>
+              {inv.payment_status === 'pending' && (
+                <button onClick={() => setPayModal(inv)} disabled={saving} className="text-xs font-mono-tech tracking-widest text-gold border border-gold/30 bg-gold/10 hover:bg-gold/20 px-3 py-2 rounded-sm w-full sm:w-auto disabled:opacity-50">
+                  MARK PAID
+                </button>
+              )}
+              {inv.payment_status === 'paid' && inv.payment_method && (
+                <p className="text-xs font-mono-tech text-vapor/50 uppercase">Paid via {inv.payment_method}</p>
+              )}
+            </ExpandableCard>
+          ))}
         </div>
       )}
 

@@ -1,4 +1,5 @@
 import { MapPin, Clock, Phone, Mail, FileText, Play, CheckCircle2, Camera, Star } from 'lucide-react';
+import ExpandableCard from '@/components/portal/ExpandableCard';
 
 const IN_PROGRESS_LIKE = ['accepted', 'driving', 'arrived', 'in_progress', 'quality_check'];
 const DONE_LIKE = ['completed', 'photos_uploaded', 'invoice_complete'];
@@ -12,24 +13,38 @@ export default function JobCard({ job, onStart, onComplete, onPhotos, onReview, 
   const reviewSent = job.review_requested || job.review_submitted;
   const reviewLabel = job.review_submitted ? 'REVIEW SUBMITTED' : 'REVIEW SENT';
 
+  const badgeClass = isCancelled
+    ? 'text-red-400 bg-red-400/5 border-red-400/20'
+    : isRescheduled
+      ? 'text-amber-300 bg-amber-300/5 border-amber-300/20'
+      : isDone
+        ? 'text-green-300 bg-green-300/5 border-green-300/20'
+        : isStarted
+          ? 'text-gold bg-gold/10 border-gold/30'
+          : 'text-blue-300 bg-blue-300/5 border-blue-300/20';
+  const badgeLabel = isCancelled ? 'CANCELLED' : isRescheduled ? 'RESCHEDULED' : isDone ? 'COMPLETED' : isStarted ? 'IN PROGRESS' : 'APPOINTMENT SCHEDULED';
+
   return (
-    <div className="glass-panel border border-gold/10 rounded-sm p-5">
-      <div className="flex items-start justify-between gap-3 mb-4">
+    <ExpandableCard
+      header={
         <div className="min-w-0">
           <p className="text-xs font-mono-tech tracking-widest text-gold/70 mb-1">{job.appointment_date} · {job.appointment_time}</p>
-          <h3 className="text-base font-grotesk font-bold text-vapor">{job.service_label || job.service_package}</h3>
-          <p className="text-sm text-vapor/60 mt-1 truncate">{job.customer_name} · {job.vehicle_info || 'Vehicle N/A'}</p>
-          {job.estimated_price != null ? (
-            <p className="text-xs font-mono-tech tracking-widest text-gold mt-1">
+          <h3 className="text-base font-grotesk font-bold text-vapor truncate">{job.service_label || job.service_package}</h3>
+          <p className="text-sm text-vapor/60 truncate">{job.customer_name} · {job.vehicle_info || 'Vehicle N/A'}</p>
+        </div>
+      }
+      right={
+        <div className="text-right">
+          {job.estimated_price != null && (
+            <p className="text-xs font-mono-tech tracking-widest text-gold mb-1">
               {job.final_price != null ? 'FINAL' : 'QUOTED'}: ${(job.final_price != null ? job.final_price : job.estimated_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
-          ) : null}
+          )}
+          <span className={`inline-block text-xs font-mono-tech tracking-widest px-3 py-1 rounded-sm border whitespace-nowrap ${badgeClass}`}>{badgeLabel}</span>
         </div>
-        <span className={`text-xs font-mono-tech tracking-widest px-3 py-1 rounded-sm border whitespace-nowrap ${isCancelled ? 'text-red-400 bg-red-400/5 border-red-400/20' : isRescheduled ? 'text-amber-300 bg-amber-300/5 border-amber-300/20' : isDone ? 'text-green-300 bg-green-300/5 border-green-300/20' : isStarted ? 'text-gold bg-gold/10 border-gold/30' : 'text-blue-300 bg-blue-300/5 border-blue-300/20'}`}>
-          {isCancelled ? 'CANCELLED' : isRescheduled ? 'RESCHEDULED' : isDone ? 'COMPLETED' : isStarted ? 'IN PROGRESS' : 'APPOINTMENT SCHEDULED'}
-        </span>
-      </div>
-      <div className="space-y-1 text-xs font-mono-tech text-vapor/50 mb-4">
+      }
+    >
+      <div className="space-y-1 text-xs font-mono-tech text-vapor/50">
         <p className="flex items-center gap-2"><MapPin size={12} /> {job.address || 'Address N/A'}</p>
         <p className="flex items-center gap-2"><Phone size={12} /> {job.customer_phone || 'N/A'}</p>
         {job.customer_email ? <p className="flex items-center gap-2"><Mail size={12} /> {job.customer_email}</p> : null}
@@ -70,6 +85,6 @@ export default function JobCard({ job, onStart, onComplete, onPhotos, onReview, 
           </>
         )}
       </div>
-    </div>
+    </ExpandableCard>
   );
 }

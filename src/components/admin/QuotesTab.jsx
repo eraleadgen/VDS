@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { FileText, X, Check, Loader2, DollarSign } from 'lucide-react';
+import ExpandableCard from '@/components/portal/ExpandableCard';
 
 const STATUS_BADGE = {
   pending: 'text-slate-300 bg-slate-300/5 border-slate-300/20',
@@ -75,53 +76,41 @@ export default function QuotesTab() {
       {loading ? (
         <div className="flex justify-center py-20"><Loader2 size={24} className="text-gold animate-spin" /></div>
       ) : (
-        <div className="glass-panel border border-vapor/10 rounded-sm overflow-hidden overflow-x-auto">
-          <table className="w-full text-sm min-w-[960px]">
-            <thead className="bg-asphalt/60 text-xs font-mono-tech tracking-widest text-vapor/50">
-              <tr>
-                <th className="text-left p-4">DATE</th>
-                <th className="text-left p-4">CUSTOMER</th>
-                <th className="text-left p-4">VEHICLE</th>
-                <th className="text-left p-4">SERVICES</th>
-                <th className="text-left p-4">EST. PRICE</th>
-                <th className="text-left p-4">FINAL PRICE</th>
-                <th className="text-left p-4">STATUS</th>
-                <th className="text-left p-4">ACTIONS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(q => (
-                <tr key={q.id} className="border-t border-vapor/10">
-                  <td className="p-4 text-vapor/70 font-mono-tech text-xs">
-                    {q.created_date ? new Date(q.created_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}
-                  </td>
-                  <td className="p-4 text-vapor">
-                    <div className="text-sm">{q.customer_name || 'Guest'}</div>
-                    <div className="text-xs text-vapor/50 font-mono-tech">{q.customer_phone || q.customer_email || ''}</div>
-                  </td>
-                  <td className="p-4 text-vapor/70 text-xs font-mono-tech">
-                    {CLASSIFICATION_LABEL[q.vehicle_classification] || q.vehicle_type || '—'}
-                  </td>
-                  <td className="p-4 text-vapor/60 text-xs max-w-[240px]">
-                    <div className="truncate" title={q.quote_summary}>{q.quote_summary || (q.requested_services || []).join(', ')}</div>
-                    {q.condition && <span className="text-vapor/30">Condition: {q.condition.replace(/_/g, ' ')}</span>}
-                  </td>
-                  <td className="p-4 text-vapor/70 font-grotesk">${q.starting_price ?? 0}</td>
-                  <td className="p-4 text-gold font-grotesk font-bold">${q.final_price ?? 0}</td>
-                  <td className="p-4">
-                    <span className={`text-xs font-mono-tech px-2 py-1 rounded-sm border ${STATUS_BADGE[q.status] || 'text-vapor/50 border-vapor/10'}`}>{STATUS_LABEL(q.status)}</span>
-                    {q.job_id && <div className="text-xs text-cyan-300/60 font-mono-tech mt-1">linked to job</div>}
-                  </td>
-                  <td className="p-4">
-                    <button onClick={() => openEdit(q)} className="flex items-center gap-1.5 text-xs font-mono-tech text-gold border border-gold/30 bg-gold/10 hover:bg-gold/20 px-3 py-1.5 rounded-sm">
-                      <DollarSign size={12} /> FINALIZE
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {filtered.length === 0 && <p className="p-8 text-center text-vapor/40 font-mono-tech text-sm">No quotes match this filter.</p>}
+        <div className="space-y-3">
+          {filtered.length === 0 ? (
+            <p className="p-8 text-center text-vapor/40 font-mono-tech text-sm">No quotes match this filter.</p>
+          ) : filtered.map(q => (
+            <ExpandableCard
+              key={q.id}
+              header={
+                <div className="min-w-0">
+                  <p className="text-xs font-mono-tech tracking-widest text-gold/70">{q.created_date ? new Date(q.created_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—'}</p>
+                  <h3 className="text-sm font-grotesk font-bold text-vapor truncate">{q.customer_name || 'Guest'}</h3>
+                  <p className="text-xs text-vapor/50 font-mono-tech truncate">{q.customer_phone || q.customer_email || ''}</p>
+                </div>
+              }
+              right={
+                <div className="text-right">
+                  <p className="text-sm font-grotesk font-bold text-gold">${q.final_price ?? 0}</p>
+                  <span className={`inline-block text-xs font-mono-tech px-2 py-1 rounded-sm border whitespace-nowrap ${STATUS_BADGE[q.status] || 'text-vapor/50 border-vapor/10'}`}>{STATUS_LABEL(q.status)}</span>
+                </div>
+              }
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-xs font-mono-tech text-vapor/60">
+                <p><span className="text-vapor/40">Vehicle:</span> {CLASSIFICATION_LABEL[q.vehicle_classification] || q.vehicle_type || '—'}</p>
+                <p><span className="text-vapor/40">Est:</span> ${q.starting_price ?? 0}</p>
+              </div>
+              <div>
+                <p className="text-xs font-mono-tech text-vapor/40 mb-1">SERVICES</p>
+                <p className="text-xs text-vapor/60 whitespace-pre-line">{q.quote_summary || (q.requested_services || []).join(', ')}</p>
+                {q.condition && <p className="text-xs text-vapor/30 mt-1">Condition: {q.condition.replace(/_/g, ' ')}</p>}
+                {q.job_id && <p className="text-xs text-cyan-300/60 font-mono-tech mt-1">linked to job</p>}
+              </div>
+              <button onClick={() => openEdit(q)} className="flex items-center gap-1.5 text-xs font-mono-tech text-gold border border-gold/30 bg-gold/10 hover:bg-gold/20 px-3 py-2 rounded-sm w-full sm:w-auto">
+                <DollarSign size={12} /> FINALIZE
+              </button>
+            </ExpandableCard>
+          ))}
         </div>
       )}
 
