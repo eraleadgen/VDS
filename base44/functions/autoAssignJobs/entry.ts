@@ -5,8 +5,9 @@
 // Catches jobs left unassigned at booking time (e.g. no contractor was available
 // that moment, or the job was created outside the booking flow).
 // Idempotent: only touches jobs where specialist_id is empty; skips past/cancelled.
-// No user auth context (scheduled) — authenticates via SCHEDULER_TOKEN (passed in the
-// automation's function_args) and uses asServiceRole throughout.
+// Runs unattended under the platform's admin context (base44.auth.me() = admin); internal
+// function-to-function callers may instead present the shared SCHEDULER_TOKEN. See
+// base44/shared/authGate.ts.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 import { jobStartMs } from '../../shared/timezone.ts';
