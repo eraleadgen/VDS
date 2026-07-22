@@ -6,6 +6,7 @@
 // Protected by SCHEDULER_TOKEN — internal calls only (valerieTools, website, admin).
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
+import { findOrCreateCustomer } from '../../shared/customer.ts';
 
 function toE164(phone) {
   if (!phone) return '';
@@ -26,24 +27,12 @@ function resolvePricingGroup(cfg, classification, legacyType) {
   return 'sedan_coupe';
 }
 
-// Find-or-create a Customer by phone.
+// Find-or-create a Customer via the shared helper (canonical E.164 + last-10-digit fallback).
 async function ensureCustomer(base44, phone, name, email) {
-  const e164 = toE164(phone);
-  let customers = await base44.asServiceRole.entities.Customer.filter({ phone: e164 }).catch(() => []);
-  if (!customers.length) {
-    const d = phone.replace(/\D/g, '');
-    if (d.length >= 10) {
-      const all = await base44.asServiceRole.entities.Customer.list().catch(() => []);
-      customers = (all || []).filter(c => (c.phone || '').replace(/\D/g, '').slice(-10) === d.slice(-10));
-    }
-  }
-  if (customers.length) return customers[0];
   const firstName = (name || '').split(' ')[0] || '';
   const lastName = (name || '').split(' ').slice(1).join(' ') || '';
-  return await base44.asServiceRole.entities.Customer.create({
-    first_name: firstName, last_name: lastName, phone: e164, email: email || '',
-    customer_since: new Date().toISOString().split('T')[0], sms_consent: true, account_status: 'active',
-  });
+  const { customer } = await findOrCreateCustomer(base44, { phone, firstName, lastName, email });
+  return customer;
 }
 
 Deno.serve(async (req) => {

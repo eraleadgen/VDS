@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
+import { findOrCreateCustomer } from '../../shared/customer.ts';
 
 // ── Per-IP rate limiter (per-isolate) — protects public booking from spam / resource exhaustion ──
 const _rlHits = new Map();
@@ -160,36 +161,24 @@ Deno.serve(async (req) => {
       : [];
     const isGoldBooking = vehicleEntries.some(e => e.includes('VDS Gold'));
 
-    // ── Find or create Customer (ERA Core CRM — replaces GHL contact) ──────
+    // ── Find or create Customer (ERA Core CRM — shared helper) ────────────
+    // Uses canonical E.164 phone + last-10-digit fallback so a customer who first
+    // contacted via Valerie (E.164) isn't duplicated when booking on the website.
     let customer = null;
     let customerCreated = false;
     try {
-      if (user) {
-        const byUser = await base44.asServiceRole.entities.Customer.filter({ linked_user_id: user.id });
-        if (byUser && byUser.length > 0) customer = byUser[0];
-      }
-      if (!customer) {
-        const byPhone = await base44.asServiceRole.entities.Customer.filter({ phone: phoneDigits });
-        if (byPhone && byPhone.length > 0) customer = byPhone[0];
-      }
-      if (!customer && email) {
-        const byEmail = await base44.asServiceRole.entities.Customer.filter({ email });
-        if (byEmail && byEmail.length > 0) customer = byEmail[0];
-      }
-      if (!customer) {
-        customer = await base44.asServiceRole.entities.Customer.create({
-          linked_user_id: user ? user.id : null,
-          first_name: firstName,
-          last_name: lastName,
-          email: email || null,
-          phone: phoneDigits,
-          sms_consent: sms_consent !== false,
-          email_consent: true,
-          service_addresses: address ? [address] : [],
-          customer_since: new Date().toISOString().split('T')[0],
-          account_status: 'active',
-        });
-        customerCreated = true;
+      const result = await findOrCreateCustomer(base44, {
+        phone: phoneDigits,
+        firstName,
+        lastName,
+        email: email || null,
+        linkedUserId: user ? user.id : null,
+        address,
+        smsConsent: sms_consent !== false,
+      });
+      customer = result.customer;
+      customerCreated = result.created;
+      if (customerCreated) {
         await logEvent(base44, {
           event_type: 'customer_created',
           entity_type: 'customer',
@@ -198,17 +187,6 @@ Deno.serve(async (req) => {
           description: `New customer created: ${name}`,
           metadata: { source: 'website_booking', linked_user_id: user ? user.id : null, email: email || null },
         });
-      } else {
-        const updates = {};
-        if (sms_consent !== false && !customer.sms_consent) updates.sms_consent = true;
-        if (email && !customer.email) updates.email = email;
-        if (user && !customer.linked_user_id) updates.linked_user_id = user.id;
-        if (address && !(customer.service_addresses || []).includes(address)) {
-          updates.service_addresses = [...(customer.service_addresses || []), address];
-        }
-        if (Object.keys(updates).length > 0) {
-          await base44.asServiceRole.entities.Customer.update(customer.id, updates);
-        }
       }
     } catch (e) {
       console.error('Customer find/create failed:', e.message);
