@@ -256,6 +256,7 @@ export default function BookAppointment() {
         name: `${form.firstName.trim()} ${form.lastName.trim()}`.trim(),
         service_type: primaryService,
         vehicle_type: vt,
+        vehicle_classification: classification,
         vehicle_info: vehicleLabel,
         vehicle_details: vehicleDetails,
         notes: [quoteNote, form.notes].filter(Boolean).join(' | '),

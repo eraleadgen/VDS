@@ -126,7 +126,7 @@ Deno.serve(async (req) => {
 
     const {
       name, phone, email, address,
-      service_type, vehicle_type, vehicle_info,
+      service_type, vehicle_type, vehicle_info, vehicle_classification,
       vehicle_details, notes,
       preferred_date, preferred_time, sms_consent, quote_id,
     } = await req.json();
@@ -241,6 +241,7 @@ Deno.serve(async (req) => {
         customer_phone: phone,
         customer_email: email || '',
         vehicle_info: vehicle_info || 'TBD',
+        vehicle_classification: vehicle_classification || null,
         pricing_group: pricingGroup,
         service_package: service_type,
         service_label: serviceLabel,

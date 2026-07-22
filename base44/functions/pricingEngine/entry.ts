@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized.' }, { status: 401 });
     }
 
-    const { vehicle_classification, vehicle_type, services, condition, add_ons } = body;
+    const { vehicle_classification, vehicle_type, services, condition, add_ons, paint_protection } = body;
     if (!services || !Array.isArray(services)) {
       return Response.json({ error: 'services[] is required.' }, { status: 400 });
     }
@@ -85,10 +85,12 @@ Deno.serve(async (req) => {
       lineItems.push({ service: addOnKey, label: svc.label, price: tier.price, duration: tier.duration_minutes, is_add_on: true });
     }
 
-    // Custom quote = base services × condition multiplier + add-ons.
+    // Custom quote = base services × condition multiplier + add-ons − paint protection discount.
     if (basePrice > 0) totalDuration += (conditionEntry && conditionEntry.duration_add_minutes) || 0;
     const conditionedBase = Math.round(basePrice * conditionMultiplier);
-    const totalPrice = conditionedBase + addOnTotal;
+    const hasProtection = paint_protection && paint_protection !== 'none' && basePrice > 0;
+    const protectionDiscount = hasProtection ? Math.round(conditionedBase * 0.2) : 0;
+    const totalPrice = conditionedBase + addOnTotal - protectionDiscount;
 
     const durationFormatted = totalDuration >= 60
       ? `${Math.floor(totalDuration / 60)}–${Math.ceil(totalDuration / 60 + 0.5)} hrs`
@@ -107,6 +109,7 @@ Deno.serve(async (req) => {
       base_price: basePrice,
       condition_multiplier: conditionMultiplier,
       add_on_total: addOnTotal,
+      paint_protection_discount: protectionDiscount,
       starting_price: totalPrice,
       estimated_duration: durationFormatted,
       estimated_duration_minutes: totalDuration,

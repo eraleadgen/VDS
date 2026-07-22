@@ -84,16 +84,20 @@ export default function GoldBooking() {
     if (selectedVehicles.length === 0) return;
     setLoading(true);
     const vehicleSummary = selectedVehicles.join(', ');
+    const goldServiceLabel = GOLD_SERVICES.find(s => s.id === form.service_type)?.label || 'VDS Gold Service';
     // Get vehicle type from first selected vehicle for calendar routing
-    const firstVehicle = vehicles.find(v => 
+    const firstVehicle = vehicles.find(v =>
       `${v.year} ${v.make} ${v.model}${v.color ? ', ' + v.color : ''}` === selectedVehicles[0]
     );
-    await base44.functions.invoke('submitBookingToGHL', {
+    await base44.functions.invoke('submitBooking', {
       ...form,
       vehicle_type: firstVehicle?.vehicle_type || 'sedan_coupe',
+      vehicle_classification: firstVehicle?.vehicle_classification || null,
       vehicle_info: vehicleSummary,
+      vehicle_details: selectedVehicles.map(label => `${label} — ${goldServiceLabel}`).join(' | '),
       preferred_date: form.preferred_date,
       preferred_time: form.preferred_time,
+      sms_consent: smsConsent,
     });
     setLoading(false);
     setSubmitted(true);

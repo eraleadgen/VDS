@@ -38,6 +38,7 @@ Deno.serve(async (req) => {
       const allowed = {};
       if (typeof body.first_name === 'string') allowed.first_name = body.first_name.slice(0, 50);
       if (typeof body.last_name === 'string') allowed.last_name = body.last_name.slice(0, 50);
+      if (typeof body.phone === 'string') allowed.phone = body.phone.replace(/[^\d+\-\s()]/g, '').slice(0, 20);
       if (Array.isArray(body.saved_addresses)) allowed.saved_addresses = body.saved_addresses.slice(0, 20);
       await base44.asServiceRole.entities.User.update(me.id, allowed);
       const u = await base44.asServiceRole.entities.User.get(me.id);
