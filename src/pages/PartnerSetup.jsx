@@ -51,7 +51,19 @@ export default function PartnerSetup() {
     if (password !== confirm) { setError('Passwords do not match.'); return; }
     setBusy(true);
     try {
-      await base44.auth.register({ email: info.email, password, full_name: info.name });
+      try {
+        await base44.auth.register({ email: info.email, password, full_name: info.name });
+      } catch (regErr) {
+        // If an account already exists for this email (e.g. a previous incomplete setup or an
+        // existing member), don't block — send a fresh verification code and continue to OTP so
+        // they can finish linking their partner account.
+        const msg = (regErr.message || '').toLowerCase();
+        if (msg.includes('already') || msg.includes('exists') || msg.includes('duplicate') || msg.includes('registered')) {
+          await base44.auth.resendOtp(info.email);
+        } else {
+          throw regErr;
+        }
+      }
       setStage('otp');
     } catch (err) {
       setError(err.message || 'Could not create your account. If you already have an account with this email, please contact your administrator.');

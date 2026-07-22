@@ -62,6 +62,12 @@ export default function PartnersTab() {
     setCopied(code); setTimeout(() => setCopied(''), 1500);
   };
 
+  // A partner only counts as "onboarded" once they've completed their own account setup.
+  // Pending invites (record created, account not yet created) are shown separately so the
+  // dashboard reflects actual partners, not outstanding invitations.
+  const onboarded = partners.filter(p => p.account_created);
+  const pending = partners.filter(p => !p.account_created);
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -76,66 +82,87 @@ export default function PartnersTab() {
       ) : partners.length === 0 ? (
         <p className="p-8 text-center text-vapor/40 font-mono-tech text-sm">No partners yet. Add your first partner to launch the network.</p>
       ) : (
-        <div className="space-y-3">
-          {partners.map(p => (
-            <ExpandableCard
-              key={p.id}
-              header={
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-grotesk font-bold text-vapor truncate">{p.name}</h3>
-                    {p.is_founding_partner && (
-                      <span className="inline-flex items-center gap-1 text-[10px] font-mono-tech tracking-widest text-gold border border-gold/40 bg-gold/10 px-1.5 py-0.5 rounded-sm">
-                        <Star size={9} className="fill-gold" /> FOUNDING
-                      </span>
+        <div className="space-y-6">
+          {pending.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-xs font-mono-tech tracking-widest text-vapor/40">PENDING INVITES ({pending.length})</p>
+              {pending.map(p => (
+                <div key={p.id} className="glass-panel border border-vapor/10 rounded-sm px-4 py-3 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-grotesk font-semibold text-vapor truncate">{p.name}</p>
+                    <p className="text-xs font-mono-tech text-vapor/40 truncate">{p.email} — invite sent, awaiting account setup</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button onClick={() => sendInvite(p)} className="flex items-center gap-1.5 text-xs font-mono-tech text-vapor/60 hover:text-gold border border-vapor/20 px-2 py-1.5 rounded-sm">
+                      <Mail size={12} /> RESEND
+                    </button>
+                    {confirmId === p.id ? (
+                      <div className="flex items-center gap-1">
+                        <button onClick={() => setConfirmId(null)} className="text-xs font-mono-tech text-vapor/50 px-2 py-1.5">CANCEL</button>
+                        <button onClick={() => remove(p.id)} className="text-xs font-mono-tech text-red-400 border border-red-400/40 bg-red-400/10 px-2 py-1.5 rounded-sm">DELETE</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setConfirmId(p.id)} className="text-vapor/50 hover:text-red-400 px-1.5 py-1.5"><Trash2 size={14} /></button>
                     )}
                   </div>
-                  <p className="text-xs text-vapor/50 font-mono-tech truncate">{p.dealership || TYPE_LABEL[p.partner_type]}</p>
                 </div>
-              }
-              right={
-                <div className="text-right">
-                  <p className="text-xs font-mono-tech text-gold mb-1">${(p.revenue_generated || 0).toLocaleString()}</p>
-                  <span className={`inline-block text-xs font-mono-tech tracking-widest px-2 py-1 rounded-sm border whitespace-nowrap ${STATUS_BADGE[p.status] || 'text-vapor/50 border-vapor/10'}`}>{p.status}</span>
-                </div>
-              }
-            >
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <Metric label="REFERRALS" value={p.referral_count || 0} />
-                <Metric label="CONVERSIONS" value={p.conversions_count || 0} />
-                <Metric label="GOLD" value={p.gold_members_generated || 0} />
-                <Metric label="CERAMIC" value={p.ceramic_coatings_generated || 0} />
-              </div>
-              <p className="text-xs font-mono-tech text-vapor/40 mt-1">{p.signup_date ? `SIGNED UP ${p.signup_date}` : 'NOT SIGNED UP'}</p>
-              {p.account_created ? (
-                <p className="text-xs font-mono-tech text-green-300">◆ ACCOUNT ACTIVE</p>
-              ) : (
-                <div className="flex items-center gap-2">
-                  {p.invite_sent && <span className="text-xs font-mono-tech text-amber-300">INVITE SENT</span>}
-                  <button onClick={() => sendInvite(p)} className="flex items-center gap-1.5 text-xs font-mono-tech text-vapor/60 hover:text-gold border border-vapor/20 px-2 py-1.5 rounded-sm">
-                    <Mail size={12} /> {p.invite_sent ? 'RESEND SETUP LINK' : 'SEND SETUP LINK'}
-                  </button>
-                </div>
-              )}
-              <div className="flex flex-wrap items-center gap-2">
-                <code className="text-xs font-mono-tech text-gold bg-gold/5 border border-gold/20 px-2 py-1 rounded-sm">{p.referral_code}</code>
-                <button onClick={() => copy(p.referral_code)} className="flex items-center gap-1.5 text-xs font-mono-tech text-vapor/60 hover:text-gold border border-vapor/20 px-2 py-1.5 rounded-sm">
-                  {copied === p.referral_code ? <Check size={12} /> : <Copy size={12} />} COPY LINK
-                </button>
-                <button onClick={() => setEditing(p)} className="flex items-center gap-1.5 text-xs font-mono-tech text-vapor/60 hover:text-gold border border-vapor/20 px-2 py-1.5 rounded-sm">
-                  <Pencil size={12} /> EDIT
-                </button>
-                {confirmId === p.id ? (
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => setConfirmId(null)} disabled={busy[p.id]} className="text-xs font-mono-tech text-vapor/50 hover:text-vapor px-2 py-1.5">CANCEL</button>
-                    <button onClick={() => remove(p.id)} disabled={busy[p.id]} className="text-xs font-mono-tech text-red-400 border border-red-400/40 bg-red-400/10 hover:bg-red-400/20 px-2 py-1.5 rounded-sm">CONFIRM DELETE</button>
+              ))}
+            </div>
+          )}
+
+          {onboarded.length > 0 && (
+            <div className="space-y-3">
+              {onboarded.map(p => (
+                <ExpandableCard
+                  key={p.id}
+                  header={
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-grotesk font-bold text-vapor truncate">{p.name}</h3>
+                        {p.is_founding_partner && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-mono-tech tracking-widest text-gold border border-gold/40 bg-gold/10 px-1.5 py-0.5 rounded-sm">
+                            <Star size={9} className="fill-gold" /> FOUNDING
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-vapor/50 font-mono-tech truncate">{p.dealership || TYPE_LABEL[p.partner_type]}</p>
+                    </div>
+                  }
+                  right={
+                    <div className="text-right">
+                      <p className="text-xs font-mono-tech text-gold mb-1">${(p.revenue_generated || 0).toLocaleString()}</p>
+                      <span className={`inline-block text-xs font-mono-tech tracking-widest px-2 py-1 rounded-sm border whitespace-nowrap ${STATUS_BADGE[p.status] || 'text-vapor/50 border-vapor/10'}`}>{p.status}</span>
+                    </div>
+                  }
+                >
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <Metric label="REFERRALS" value={p.referral_count || 0} />
+                    <Metric label="CONVERSIONS" value={p.conversions_count || 0} />
+                    <Metric label="GOLD" value={p.gold_members_generated || 0} />
+                    <Metric label="CERAMIC" value={p.ceramic_coatings_generated || 0} />
                   </div>
-                ) : (
-                  <button onClick={() => setConfirmId(p.id)} disabled={busy[p.id]} className="text-vapor/50 hover:text-red-400 disabled:opacity-50 px-2 py-1.5"><Trash2 size={14} /></button>
-                )}
-              </div>
-            </ExpandableCard>
-          ))}
+                  <p className="text-xs font-mono-tech text-vapor/40 mt-1">{p.signup_date ? `SIGNED UP ${p.signup_date}` : 'NOT SIGNED UP'}</p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <code className="text-xs font-mono-tech text-gold bg-gold/5 border border-gold/20 px-2 py-1 rounded-sm">{p.referral_code}</code>
+                    <button onClick={() => copy(p.referral_code)} className="flex items-center gap-1.5 text-xs font-mono-tech text-vapor/60 hover:text-gold border border-vapor/20 px-2 py-1.5 rounded-sm">
+                      {copied === p.referral_code ? <Check size={12} /> : <Copy size={12} />} COPY LINK
+                    </button>
+                    <button onClick={() => setEditing(p)} className="flex items-center gap-1.5 text-xs font-mono-tech text-vapor/60 hover:text-gold border border-vapor/20 px-2 py-1.5 rounded-sm">
+                      <Pencil size={12} /> EDIT
+                    </button>
+                    {confirmId === p.id ? (
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => setConfirmId(null)} disabled={busy[p.id]} className="text-xs font-mono-tech text-vapor/50 hover:text-vapor px-2 py-1.5">CANCEL</button>
+                        <button onClick={() => remove(p.id)} disabled={busy[p.id]} className="text-xs font-mono-tech text-red-400 border border-red-400/40 bg-red-400/10 hover:bg-red-400/20 px-2 py-1.5 rounded-sm">CONFIRM DELETE</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setConfirmId(p.id)} disabled={busy[p.id]} className="text-vapor/50 hover:text-red-400 disabled:opacity-50 px-1.5 py-1.5"><Trash2 size={14} /></button>
+                    )}
+                  </div>
+                </ExpandableCard>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
