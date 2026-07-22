@@ -156,12 +156,12 @@ export default function AppointmentsTab() {
         <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-gold/20 border-t-gold rounded-full animate-spin" /></div>
       ) : (
         <div className="glass-panel border border-vapor/10 rounded-sm overflow-hidden overflow-x-auto">
-          <table className="w-full text-sm min-w-[1040px]">
+          <table className="w-full text-sm min-w-[1140px]">
             <thead className="bg-asphalt/60 text-xs font-mono-tech tracking-widest text-vapor/50">
               <tr>
                 <th className="text-left p-4 w-10"><Checkbox checked={allSelected} onChange={toggleAll} /></th>
                 <th className="text-left p-4">DATE / TIME</th><th className="text-left p-4">CUSTOMER</th>
-                <th className="text-left p-4">SERVICE</th><th className="text-left p-4">DISTANCE</th><th className="text-left p-4">STATUS</th>
+                <th className="text-left p-4">SERVICE</th><th className="text-left p-4">PRICE</th><th className="text-left p-4">DISTANCE</th><th className="text-left p-4">STATUS</th>
                 <th className="text-left p-4">ASSIGN TO</th><th className="text-left p-4">ACTIONS</th>
               </tr>
             </thead>
@@ -177,6 +177,14 @@ export default function AppointmentsTab() {
                   <td className="p-4 text-vapor/70">
                     <div className="text-sm">{a.service_label || a.service_package}</div>
                     <div className="text-xs text-vapor/40 font-mono-tech">{a.vehicle_info || ''}</div>
+                  </td>
+                  <td className="p-4 text-gold font-mono-tech text-xs">
+                    {a.estimated_price != null ? (
+                      <>
+                        <div>{(a.final_price != null ? a.final_price : a.estimated_price).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</div>
+                        <div className="text-[10px] text-vapor/40">{a.final_price != null ? 'final' : 'quoted'}</div>
+                      </>
+                    ) : <span className="text-vapor/30">—</span>}
                   </td>
                   <td className="p-4">
                     <DistanceGauge address={a.address} />

@@ -19,6 +19,11 @@ export default function JobCard({ job, onStart, onComplete, onPhotos, onReview, 
           <p className="text-xs font-mono-tech tracking-widest text-gold/70 mb-1">{job.appointment_date} · {job.appointment_time}</p>
           <h3 className="text-base font-grotesk font-bold text-vapor">{job.service_label || job.service_package}</h3>
           <p className="text-sm text-vapor/60 mt-1 truncate">{job.customer_name} · {job.vehicle_info || 'Vehicle N/A'}</p>
+          {job.estimated_price != null ? (
+            <p className="text-xs font-mono-tech tracking-widest text-gold mt-1">
+              {job.final_price != null ? 'FINAL' : 'QUOTED'}: ${(job.final_price != null ? job.final_price : job.estimated_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </p>
+          ) : null}
         </div>
         <span className={`text-xs font-mono-tech tracking-widest px-3 py-1 rounded-sm border whitespace-nowrap ${isCancelled ? 'text-red-400 bg-red-400/5 border-red-400/20' : isRescheduled ? 'text-amber-300 bg-amber-300/5 border-amber-300/20' : isDone ? 'text-green-300 bg-green-300/5 border-green-300/20' : isStarted ? 'text-gold bg-gold/10 border-gold/30' : 'text-blue-300 bg-blue-300/5 border-blue-300/20'}`}>
           {isCancelled ? 'CANCELLED' : isRescheduled ? 'RESCHEDULED' : isDone ? 'COMPLETED' : isStarted ? 'IN PROGRESS' : 'APPOINTMENT SCHEDULED'}
