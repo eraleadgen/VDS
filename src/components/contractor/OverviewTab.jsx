@@ -11,7 +11,7 @@ function Stat({ icon: Icon, label, value }) {
   );
 }
 
-export default function OverviewTab({ profile, todaysJobs, onStart, onComplete, onPhotos, onReview, saving }) {
+export default function OverviewTab({ profile, todaysJobs, onStart, onComplete, onPhotos, onReview, onSetConsultation, saving }) {
   const metrics = profile?.metrics || {};
 
   return (
@@ -35,7 +35,7 @@ export default function OverviewTab({ profile, todaysJobs, onStart, onComplete, 
         {todaysJobs.length ? (
           <div className="space-y-3">
             {todaysJobs.map(j => (
-              <JobCard key={j.id} job={j} onStart={onStart} onComplete={onComplete} onPhotos={onPhotos} onReview={onReview} disabled={saving} />
+              <JobCard key={j.id} job={j} onStart={onStart} onComplete={onComplete} onPhotos={onPhotos} onReview={onReview} onSetConsultation={onSetConsultation} disabled={saving} />
             ))}
           </div>
         ) : (

@@ -1,4 +1,5 @@
 import { Star, Users, TrendingUp, DollarSign, Sparkles } from 'lucide-react';
+import PartnerReferrals from '@/components/partner/PartnerReferrals';
 
 function Stat({ icon: Icon, label, value }) {
   return (
@@ -32,7 +33,7 @@ export default function PartnerOverview({ partner }) {
         <Stat icon={Users} label="REFERRALS" value={partner.referral_count || 0} />
         <Stat icon={TrendingUp} label="CONVERSIONS" value={partner.conversions_count || 0} />
         <Stat icon={DollarSign} label="REVENUE" value={`$${(partner.revenue_generated || 0).toLocaleString()}`} />
-        <Stat icon={Sparkles} label="GOLD MEMBERS" value={partner.gold_members_generated || 0} />
+        <Stat icon={Sparkles} label="INCENTIVES" value={`$${(partner.incentives_earned || 0).toLocaleString()}`} />
       </div>
 
       <div className="glass-panel border border-vapor/10 rounded-sm p-5">
@@ -44,6 +45,8 @@ export default function PartnerOverview({ partner }) {
           <div><p className="text-vapor/40">REFERRAL CODE</p><p className="text-gold mt-0.5">{partner.referral_code}</p></div>
         </div>
       </div>
+
+      <PartnerReferrals partner={partner} />
     </div>
   );
 }

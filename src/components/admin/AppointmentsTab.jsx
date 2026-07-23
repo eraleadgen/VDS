@@ -4,6 +4,7 @@ import { Filter, Plus, Trash2 } from 'lucide-react';
 import AppointmentFormModal from '@/components/admin/AppointmentFormModal';
 import DistanceGauge from '@/components/admin/DistanceGauge';
 import ExpandableCard from '@/components/portal/ExpandableCard';
+import ConsultationStatusControl, { isConsultationJob } from '@/components/shared/ConsultationStatusControl';
 
 const Checkbox = ({ checked, onChange, disabled }) => (
   <input
@@ -49,6 +50,7 @@ export default function AppointmentsTab() {
   const [selected, setSelected] = useState([]);
   const [bulkBusy, setBulkBusy] = useState(false);
   const [confirmBulk, setConfirmBulk] = useState(false);
+  const [consultBusy, setConsultBusy] = useState({});
 
   const load = async () => {
     setLoading(true);
@@ -66,6 +68,13 @@ export default function AppointmentsTab() {
   };
   useEffect(() => { load(); }, [statusFilter, dateFilter]);
 
+  // Realtime: any Job change (incl. consultation_status updates from the specialist or
+  // admin) refreshes this board automatically so the portal stays in sync across roles.
+  useEffect(() => {
+    const unsub = base44.entities.Job.subscribe(() => { load(); });
+    return unsub;
+  }, []);
+
   const reassign = async (jobId, specialistId) => {
     if (!specialistId) return;
     setBusy(b => ({ ...b, [jobId]: true }));
@@ -77,6 +86,12 @@ export default function AppointmentsTab() {
     setBusy(b => ({ ...b, [jobId]: true }));
     try { const r = await invoke({ action: 'admin_change_job_status', job_id: jobId, status }); if (r.error) alert(r.error); else await load(); }
     finally { setBusy(b => ({ ...b, [jobId]: false })); }
+  };
+
+  const setConsultation = async (jobId, consultation_status) => {
+    setConsultBusy(b => ({ ...b, [jobId]: true }));
+    try { const r = await invoke({ action: 'update_consultation_status', job_id: jobId, consultation_status }); if (r.error) alert(r.error); else await load(); }
+    finally { setConsultBusy(b => ({ ...b, [jobId]: false })); }
   };
 
   const remove = async (jobId) => {
@@ -194,6 +209,11 @@ export default function AppointmentsTab() {
                   {a.address && <p className="text-xs text-vapor/30 font-mono-tech mt-1 truncate" title={a.address}>{a.address}</p>}
                 </div>
               </div>
+              {isConsultationJob(a) && (
+                <div className="mb-3">
+                  <ConsultationStatusControl job={a} busy={consultBusy[a.id]} onChange={v => setConsultation(a.id, v)} />
+                </div>
+              )}
               <div className="flex flex-wrap items-center gap-2">
                 <select
                   value={a.status}

@@ -207,6 +207,15 @@
     "review_submitted": {
       "type": "boolean",
       "default": false
+    },
+    "consultation_status": {
+      "type": "string",
+      "enum": [
+        "not_interested",
+        "pending",
+        "sold"
+      ],
+      "description": "Consultation outcome for ceramic coating / paint correction consultation jobs. Updated by admin or the assigned specialist; visible across the admin, specialist, and partner portals in real time. Defaults to 'pending' for consultation-type jobs until set."
     }
   },
   "required": [

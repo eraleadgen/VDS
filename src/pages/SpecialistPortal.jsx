@@ -48,6 +48,14 @@ export default function SpecialistPortal() {
 
   useEffect(() => { if (authChecked && user && (user.role === 'contractor' || user.role === 'admin')) load(); }, [authChecked, user, load]);
 
+  // Realtime: Job updates (incl. consultation_status changes from admin or another shared
+  // specialist on this profile) refresh the board automatically.
+  useEffect(() => {
+    if (!user || (user.role !== 'contractor' && user.role !== 'admin')) return;
+    const unsub = base44.entities.Job.subscribe(() => { load(); });
+    return unsub;
+  }, [user, load]);
+
   if (!authChecked || isLoadingAuth) return <div className="min-h-screen bg-obsidian flex items-center justify-center"><div className="w-8 h-8 border-2 border-gold/20 border-t-gold rounded-full animate-spin" /></div>;
   if (error && !profile) return <div className="min-h-screen bg-obsidian flex items-center justify-center p-6 text-center"><div><p className="text-red-400 text-sm font-mono-tech mb-4">{error}</p><a href="/specialist-login" className="text-gold text-xs font-mono-tech tracking-widest">← BACK TO LOGIN</a></div></div>;
 
@@ -75,6 +83,11 @@ export default function SpecialistPortal() {
   const requestReview = async (job) => {
     setSaving(true);
     try { const r = await invoke({ action: 'request_review', job_id: job.id }); if (r.error) alert(r.error); else await load(); }
+    finally { setSaving(false); }
+  };
+  const setConsultation = async (job, consultation_status) => {
+    setSaving(true);
+    try { const r = await invoke({ action: 'update_consultation_status', job_id: job.id, consultation_status }); if (r.error) alert(r.error); else await load(); }
     finally { setSaving(false); }
   };
   const saveAvailability = async (patch) => {
@@ -116,6 +129,7 @@ export default function SpecialistPortal() {
               onComplete={completeJob}
               onPhotos={setPhotoJob}
               onReview={requestReview}
+              onSetConsultation={setConsultation}
               saving={saving}
             />
           )}
@@ -124,7 +138,7 @@ export default function SpecialistPortal() {
             <div className="space-y-4">
               <h1 className="text-2xl font-grotesk font-bold text-vapor mb-2">My Jobs</h1>
               {jobs.length ? (
-                <div className="space-y-3">{jobs.map(j => <JobCard key={j.id} job={j} onStart={startJob} onComplete={completeJob} onPhotos={setPhotoJob} onReview={requestReview} disabled={saving} />)}</div>
+                <div className="space-y-3">{jobs.map(j => <JobCard key={j.id} job={j} onStart={startJob} onComplete={completeJob} onPhotos={setPhotoJob} onReview={requestReview} onSetConsultation={setConsultation} disabled={saving} />)}</div>
               ) : (
                 <div className="glass-panel border border-vapor/10 rounded-sm p-8 text-center text-sm text-vapor/40 font-mono-tech">No jobs assigned yet.</div>
               )}

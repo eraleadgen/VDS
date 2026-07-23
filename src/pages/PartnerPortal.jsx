@@ -29,6 +29,14 @@ export default function PartnerPortal() {
 
   useEffect(() => { if (authChecked && user && (user.role === 'partner' || user.role === 'admin')) load(); }, [authChecked, user, load]);
 
+  // Realtime: when admin credits an incentive or updates this partner's metrics, the
+  // overview stats refresh automatically.
+  useEffect(() => {
+    if (!user || (user.role !== 'partner' && user.role !== 'admin')) return;
+    const unsub = base44.entities.Partner.subscribe(() => { load(); });
+    return unsub;
+  }, [user, load]);
+
   if (!authChecked || isLoadingAuth) return <div className="min-h-screen bg-obsidian flex items-center justify-center"><div className="w-8 h-8 border-2 border-gold/20 border-t-gold rounded-full animate-spin" /></div>;
 
   const navItems = [

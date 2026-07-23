@@ -16,7 +16,7 @@ import {
   validateSpecialistToken, finalizeSpecialistSetup, adminDeleteContractor, adminMetrics,
   adminInvoices, adminUpdateInvoice, adminJobs, adminReassignJob, adminChangeJobStatus,
   adminDeleteJob, adminBulkDeleteJobs, adminArchiveQuote, adminQuotes,
-  adminSendPartnerInvite, validatePartnerToken, finalizePartnerSetup,
+  adminSendPartnerInvite, validatePartnerToken, finalizePartnerSetup, partnerMyReferrals,
 } from '../../shared/adminHandlers.ts';
 
 // weekdayKey, serviceToSkill, loadConfig, inAvailWindow, overlapsBusy, apptStartMs, apptEndMs,
@@ -609,6 +609,18 @@ async function updateJobStatus(base44, data, cfg, job) {
   return { success: true, job_id: job.id, job_status: newStatus };
 }
 
+// ── update_consultation_status (contractor or admin) ────────────────────
+// Sets the consultation outcome (not_interested / pending / sold) on a ceramic
+// coating or paint correction consultation job. The partner portal reads this in
+// real time, so referral outcomes update across all portals automatically.
+const CONSULTATION_STATUSES = ['not_interested', 'pending', 'sold'];
+async function updateConsultationStatus(base44, data, job) {
+  const status = data.consultation_status;
+  if (!CONSULTATION_STATUSES.includes(status)) return { error: 'Invalid consultation_status.' };
+  await base44.asServiceRole.entities.Job.update(job.id, { consultation_status: status });
+  return { success: true, job_id: job.id, consultation_status: status };
+}
+
 // ── Contractor self-service (auth required) ────────────────────────────
 // A specialist profile may be shared by business partners: user_id is the primary owner and
 // linked_user_ids holds additional partners who all see the same jobs/availability/metrics.
@@ -744,6 +756,7 @@ Deno.serve(async (req) => {
     if (action === 'send_partner_invite') return Response.json(await adminSendPartnerInvite(base44, body));
     if (action === 'validate_partner_token') return Response.json(await validatePartnerToken(base44, body));
     if (action === 'finalize_partner_setup') return Response.json(await finalizePartnerSetup(base44, body));
+    if (action === 'partner_my_referrals') return Response.json(await partnerMyReferrals(base44));
     if (action === 'admin_metrics') return Response.json(await adminMetrics(base44));
     if (action === 'admin_invoices') return Response.json(await adminInvoices(base44, body));
     if (action === 'admin_update_invoice') return Response.json(await adminUpdateInvoice(base44, body));
@@ -756,7 +769,7 @@ Deno.serve(async (req) => {
     if (action === 'admin_quotes') return Response.json(await adminQuotes(base44, body));
 
     // ── Job-scoped actions (Phase 7+8: specialist portal operates on the Job entity) ──
-    if (['update_job_status', 'request_review'].includes(action)) {
+    if (['update_job_status', 'request_review', 'update_consultation_status'].includes(action)) {
       const job = body.job_id ? await base44.asServiceRole.entities.Job.get(body.job_id) : null;
       if (!job) return Response.json({ error: 'Job not found.' }, { status: 404 });
 
@@ -775,6 +788,7 @@ Deno.serve(async (req) => {
 
       let result;
       if (action === 'request_review') result = await requestReview(base44, body, cfg, job);
+      else if (action === 'update_consultation_status') result = await updateConsultationStatus(base44, body, job);
       else result = await updateJobStatus(base44, body, cfg, job);
       return Response.json(result);
     }

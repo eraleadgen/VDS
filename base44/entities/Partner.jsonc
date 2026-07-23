@@ -1,7 +1,7 @@
 {
   "name": "Partner",
   "type": "object",
-  "description": "VDS Partner Network \u2014 ERA Core growth module. A Partner is a dealership salesperson or strategic partner who refers customers. Founding Partners are the earliest joiners. Each partner receives an auto-generated referral code (QR/link derived in UI). Revenue, conversions, and service-type generation are tracked as metrics. Engineered as a reusable ERA Core module with configurable terminology for future multi-industry expansion (roofing, HVAC, plumbing, etc.).",
+  "description": "VDS Partner Network \u2014 ERA Core growth module. A Partner is a dealership salesperson or strategic partner who refers customers. Founding Partners are the earliest joiners. Each partner receives an auto-generated referral code (QR/link derived in UI). Revenue, conversions, incentive earnings, and service-type generation are tracked as metrics. Engineered as a reusable ERA Core module with configurable terminology for future multi-industry expansion (roofing, HVAC, plumbing, etc.).",
   "properties": {
     "linked_user_id": {
       "type": "string",
@@ -74,6 +74,11 @@
       "type": "number",
       "default": 0,
       "description": "Lifetime revenue attributed to this partner's referrals."
+    },
+    "incentives_earned": {
+      "type": "number",
+      "default": 0,
+      "description": "Total incentive payouts earned by this partner ($30 initial detail one-time per client + $100 per ceramic coating or paint correction job). Updated as referred jobs' invoices are paid."
     },
     "gold_members_generated": {
       "type": "number",

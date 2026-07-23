@@ -135,11 +135,12 @@ export default function PartnersTab() {
                     </div>
                   }
                 >
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                     <Metric label="REFERRALS" value={p.referral_count || 0} />
                     <Metric label="CONVERSIONS" value={p.conversions_count || 0} />
                     <Metric label="GOLD" value={p.gold_members_generated || 0} />
                     <Metric label="CERAMIC" value={p.ceramic_coatings_generated || 0} />
+                    <Metric label="INCENTIVES" value={`$${(p.incentives_earned || 0).toLocaleString()}`} />
                   </div>
                   <p className="text-xs font-mono-tech text-vapor/40 mt-1">{p.signup_date ? `SIGNED UP ${p.signup_date}` : 'NOT SIGNED UP'}</p>
                   <div className="flex flex-wrap items-center gap-2">

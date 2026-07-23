@@ -301,15 +301,43 @@ export async function adminUpdateInvoice(base44, body) {
               const existing = await base44.asServiceRole.entities.PartnerReferral.filter({ job_id: invoice.job_id }).catch(() => []);
               referral = existing && existing[0];
             }
+            // ── Incentive computation ─────────────────────────────────────────
+            // $30 for the referred client's initial detail (one-time per client),
+            // $100 for each ceramic coating or paint correction job. Payouts come
+            // from BusinessConfig.referral_program.incentives (configurable, not hardcoded).
+            let incentiveType = 'initial_detail';
+            if (svcLower.includes('coating') || svcLower.includes('ceramic')) incentiveType = 'ceramic_coating';
+            else if (svcLower.includes('paint correction') || svcLower.includes('correction')) incentiveType = 'paint_correction';
+            let incentiveAmount = 0;
+            try {
+              const cfgs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
+              const incentives = (cfgs && cfgs[0]?.referral_program?.incentives) || {};
+              incentiveAmount = Number(incentives[incentiveType] ?? (incentiveType === 'initial_detail' ? 30 : 100)) || 0;
+            } catch (e) { incentiveAmount = incentiveType === 'initial_detail' ? 30 : 100; }
+            // initial_detail is one-time per referred client: skip if this partner already earned it for this customer.
+            if (incentiveType === 'initial_detail' && invoice.customer_id) {
+              try {
+                const prior = await base44.asServiceRole.entities.PartnerReferral.filter({
+                  partner_id: partnerId, customer_id: invoice.customer_id, incentive_type: 'initial_detail'
+                });
+                const priorCredited = (prior || []).some(r => r.attributed && r.job_id !== invoice.job_id);
+                if (priorCredited) incentiveAmount = 0;
+              } catch (e) { console.error('incentive one-time check failed:', e.message); }
+            }
+            if (incentiveAmount <= 0) incentiveType = 'none';
+
             let credit = false;
             if (!referral) {
               await base44.asServiceRole.entities.PartnerReferral.create({
                 partner_id: partnerId, customer_id: invoice.customer_id, job_id: invoice.job_id || null,
                 service_package: job?.service_package || '', status: 'converted', revenue, attributed: true,
+                incentive_type: incentiveType, incentive_amount: incentiveAmount,
               });
               credit = true;
             } else if (!referral.attributed) {
-              await base44.asServiceRole.entities.PartnerReferral.update(referral.id, { status: 'converted', revenue, attributed: true });
+              await base44.asServiceRole.entities.PartnerReferral.update(referral.id, {
+                status: 'converted', revenue, attributed: true, incentive_type: incentiveType, incentive_amount: incentiveAmount,
+              });
               credit = true;
             }
             if (credit) {
@@ -318,6 +346,7 @@ export async function adminUpdateInvoice(base44, body) {
                 const inc = {
                   conversions_count: (partner.conversions_count || 0) + 1,
                   revenue_generated: (partner.revenue_generated || 0) + revenue,
+                  incentives_earned: (partner.incentives_earned || 0) + incentiveAmount,
                 };
                 if (svcLower.includes('coating') || svcLower.includes('ceramic')) inc.ceramic_coatings_generated = (partner.ceramic_coatings_generated || 0) + 1;
                 if (svcLower.includes('paint correction') || svcLower.includes('correction')) inc.paint_corrections_generated = (partner.paint_corrections_generated || 0) + 1;
@@ -603,4 +632,33 @@ export async function finalizePartnerSetup(base44, body) {
   try { await base44.asServiceRole.entities.User.update(me.id, { role: 'partner' }); }
   catch (e) { console.error('role update error:', e.message); }
   return { success: true, partner_id: p.id };
+}
+
+// Partner-authenticated: returns this partner's referrals enriched with the linked job's
+// consultation_status + service info, so the partner portal can show referral outcomes and
+// incentive earnings. Partners can't read PartnerReferral/Job directly (admin-only RLS), so
+// this server-side read is their access path.
+export async function partnerMyReferrals(base44) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!me) return { error: 'Unauthorized.' };
+  if (me.role === 'admin') return { success: true, referrals: [] }; // admin preview has no partner profile
+  const all = await base44.asServiceRole.entities.Partner.filter({ linked_user_id: me.id });
+  const p = all && all[0];
+  if (!p) return { error: 'No partner profile is linked to your account.' };
+  const refs = await base44.asServiceRole.entities.PartnerReferral.filter({ partner_id: p.id });
+  const enriched = await Promise.all((refs || []).map(async (r) => {
+    const job = r.job_id ? await base44.asServiceRole.entities.Job.get(r.job_id).catch(() => null) : null;
+    return {
+      id: r.id, status: r.status, revenue: r.revenue || 0, attributed: !!r.attributed,
+      incentive_type: r.incentive_type || 'none', incentive_amount: r.incentive_amount || 0,
+      service_package: r.service_package || '',
+      job_id: r.job_id || null,
+      consultation_status: job?.consultation_status || null,
+      job_service_label: job?.service_label || '',
+      appointment_date: job?.appointment_date || '',
+      customer_name: job?.customer_name || '',
+    };
+  }));
+  enriched.sort((a, b) => (b.appointment_date || '').localeCompare(a.appointment_date || ''));
+  return { success: true, referrals: enriched };
 }

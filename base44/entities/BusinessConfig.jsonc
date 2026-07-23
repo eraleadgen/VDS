@@ -391,6 +391,7 @@
     },
     "referral_program": {
       "type": "object",
+      "description": "Partner Network incentive program. Configurable payouts: $30 for the initial (first) detail per referred client (one-time per client), $100 for each ceramic coating or paint correction job. Adjust payouts here without code changes.",
       "properties": {
         "enabled": {
           "type": "boolean",
@@ -398,6 +399,27 @@
         },
         "credit_amount": {
           "type": "number"
+        },
+        "incentives": {
+          "type": "object",
+          "description": "Partner incentive payouts. The 'initial_detail' incentive is paid once per referred client; ceramic_coating and paint_correction are paid per qualifying job.",
+          "properties": {
+            "initial_detail": {
+              "type": "number",
+              "default": 30,
+              "description": "One-time payout for the referred client's initial detail."
+            },
+            "ceramic_coating": {
+              "type": "number",
+              "default": 100,
+              "description": "Payout per ceramic coating job converted."
+            },
+            "paint_correction": {
+              "type": "number",
+              "default": 100,
+              "description": "Payout per paint correction job converted."
+            }
+          }
         }
       }
     },

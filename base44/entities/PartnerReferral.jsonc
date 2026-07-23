@@ -1,7 +1,7 @@
 {
   "name": "PartnerReferral",
   "type": "object",
-  "description": "Tracks a single Partner Network referral event. Created when a customer books via a partner's referral link (status 'referred'). Attributed (status 'converted', attributed=true) when the linked job's invoice is paid \u2014 crediting the partner's conversions, revenue, and service-type counters. Powers accurate, idempotent partner metrics.",
+  "description": "Tracks a single Partner Network referral event. Created when a customer books via a partner's referral link (status 'referred'). Attributed (status 'converted', attributed=true) when the linked job's invoice is paid \u2014 crediting the partner's conversions, revenue, and service-type counters, plus the earned incentive. Powers accurate, idempotent partner metrics and incentive payouts.",
   "properties": {
     "partner_id": {
       "type": "string",
@@ -36,6 +36,22 @@
       "type": "boolean",
       "default": false,
       "description": "True once partner metrics have been credited for this referral (idempotency flag preventing double-counting)."
+    },
+    "incentive_type": {
+      "type": "string",
+      "enum": [
+        "initial_detail",
+        "ceramic_coating",
+        "paint_correction",
+        "none"
+      ],
+      "default": "none",
+      "description": "Which incentive tier this referral earned. 'initial_detail' is paid once per referred client; ceramic_coating and paint_correction are paid per qualifying job."
+    },
+    "incentive_amount": {
+      "type": "number",
+      "default": 0,
+      "description": "Incentive payout credited for this referral (0 if none \u2014 e.g. a repeat detail past the one-time initial detail incentive)."
     }
   },
   "required": [

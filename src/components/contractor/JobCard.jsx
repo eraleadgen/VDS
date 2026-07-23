@@ -1,10 +1,11 @@
 import { MapPin, Clock, Phone, Mail, FileText, Play, CheckCircle2, Camera, Star } from 'lucide-react';
 import ExpandableCard from '@/components/portal/ExpandableCard';
+import ConsultationStatusControl, { isConsultationJob } from '@/components/shared/ConsultationStatusControl';
 
 const IN_PROGRESS_LIKE = ['accepted', 'driving', 'arrived', 'in_progress', 'quality_check'];
 const DONE_LIKE = ['completed', 'photos_uploaded', 'invoice_complete'];
 
-export default function JobCard({ job, onStart, onComplete, onPhotos, onReview, disabled }) {
+export default function JobCard({ job, onStart, onComplete, onPhotos, onReview, onSetConsultation, disabled }) {
   const status = job.job_status || 'assigned';
   const isStarted = IN_PROGRESS_LIKE.includes(status);
   const isDone = DONE_LIKE.includes(status);
@@ -56,6 +57,11 @@ export default function JobCard({ job, onStart, onComplete, onPhotos, onReview, 
           </div>
         ) : null}
       </div>
+      {isConsultationJob(job) && !isCancelled && (
+        <div className="mb-3">
+          <ConsultationStatusControl job={job} busy={disabled} onChange={v => onSetConsultation?.(job, v)} />
+        </div>
+      )}
       <div className="flex flex-wrap gap-2">
         {isCancelled && (
           <p className="flex-1 text-center text-xs font-mono-tech tracking-widest text-red-400/70 py-3">This appointment has been cancelled.</p>
