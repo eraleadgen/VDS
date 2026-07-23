@@ -15,8 +15,8 @@ export default function CareGuide() {
     <div className="bg-obsidian min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-1 max-w-3xl mx-auto w-full px-5 sm:px-6 pt-28 md:pt-36 pb-16">
-        <Link to="/" className="inline-flex items-center gap-2 text-xs font-mono-tech tracking-widest text-vapor/50 hover:text-vapor mb-8">
-          <ArrowLeft size={13} /> BACK TO VDS MOBILE
+        <Link to="/member-dashboard" className="inline-flex items-center gap-2 text-xs font-mono-tech tracking-widest text-vapor/50 hover:text-vapor mb-8">
+          <ArrowLeft size={13} /> BACK TO ACCOUNT
         </Link>
 
         <div className="flex items-start justify-between gap-4 mb-6">
