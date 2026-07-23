@@ -17,7 +17,7 @@ export default function ResourceCenter({ variant }) {
         </div>
       </div>
 
-      <CareGuides />
+      <CareGuides compact />
       <WelcomePacket variant={variant} />
     </div>
   );
