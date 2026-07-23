@@ -18,6 +18,7 @@ import {
   adminDeleteJob, adminBulkDeleteJobs, adminArchiveQuote, adminQuotes,
   adminSendPartnerInvite, validatePartnerToken, finalizePartnerSetup, partnerMyReferrals,
 } from '../../shared/adminHandlers.ts';
+import { sendCareGuideEmail, guideKeyForService } from '../../shared/careGuideEmail.ts';
 
 // weekdayKey, serviceToSkill, loadConfig, inAvailWindow, overlapsBusy, apptStartMs, apptEndMs,
 // and autoAssign now live in base44/shared/autoAssign.ts (imported above).
@@ -562,6 +563,20 @@ async function updateJobStatus(base44, data, cfg, job) {
       const msg = `Hi ${first}, your VDS detail is complete! Your specialist has finished servicing your vehicle. We hope you love the results. — VDS Mobile`;
       await sendTwilioSms(base44, job.customer_phone, msg, job.customer_name, 'completion');
     } catch (e) { console.error('completion sms error:', e.message); }
+
+    // ── Auto-deliver the matching care guide email ──
+    // Regular detailing guides are sent on job completion. Ceramic coating & paint correction
+    // guides are sent on payment (see base44/shared/invoicePaid.ts), so we skip them here to
+    // avoid sending before the coating has cured / the job is paid.
+    try {
+      const gk = guideKeyForService(job.service_package, job.service_label);
+      if (gk === 'detailing') {
+        await sendCareGuideEmail(base44, {
+          guideKey: 'detailing', to: job.customer_email,
+          customerName: job.customer_name, customerId: job.customer_id,
+        });
+      }
+    } catch (e) { console.error('detailing care guide send failed:', e.message); }
   }
 
   // Auto-finalize the originating quote when the job completes (booked → finalized).

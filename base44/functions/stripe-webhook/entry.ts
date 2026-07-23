@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 import Stripe from 'npm:stripe@17.0.0';
 import { onInvoicePaid } from '../../shared/invoicePaid.ts';
 import { creditPartnerGoldSignup } from '../../shared/partnerIncentive.ts';
+import { sendCareGuideEmail } from '../../shared/careGuideEmail.ts';
 
 // Stripe webhook — provisions VDS Gold memberships and keeps VehicleSubscription
 // records in sync with Stripe lifecycle events. GoHighLevel has been fully removed;
@@ -109,6 +110,17 @@ Deno.serve(async (req) => {
           console.log('Partner Gold signup attribution:', JSON.stringify(r));
         }
       } catch (e) { console.error('Partner Gold attribution failed:', e.message); }
+
+      // ── Auto-deliver the VDS Gold member care guide ──
+      // Gold members are registered app users (they created accounts at checkout), so the
+      // SendEmail integration delivers reliably here.
+      try {
+        const goldEmailForGuide = session.customer_details?.email || goldEmail || null;
+        if (goldEmailForGuide) {
+          await sendCareGuideEmail(base44, { guideKey: 'vds_gold', to: goldEmailForGuide, customerName: goldName });
+          console.log('VDS Gold care guide sent to', goldEmailForGuide);
+        }
+      } catch (e) { console.error('VDS Gold care guide send failed:', e.message); }
     }
 
     // Handle subscription updates / deletion — sync status to every VehicleSubscription

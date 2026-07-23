@@ -1,5 +1,5 @@
 import { Library } from 'lucide-react';
-import VehicleCareGuide from '@/components/shared/VehicleCareGuide';
+import CareGuides from '@/components/shared/CareGuides';
 import WelcomePacket from '@/components/shared/WelcomePacket';
 
 // Shared Resource Center — wired into Admin, Specialist & Partner portals as a "Resources" tab.
@@ -13,12 +13,12 @@ export default function ResourceCenter({ variant }) {
         </div>
         <div>
           <h1 className="text-2xl font-grotesk font-bold text-vapor">Resource Center</h1>
-          <p className="text-sm text-vapor/50 font-mono-tech mt-1">Guides, welcome packets &amp; printable resources. Print any item to save it as a PDF.</p>
+          <p className="text-sm text-vapor/50 font-mono-tech mt-1">Client care guides &amp; printable resources. Print any item to save it as a PDF.</p>
         </div>
       </div>
 
+      <CareGuides />
       <WelcomePacket variant={variant} />
-      <VehicleCareGuide />
     </div>
   );
 }

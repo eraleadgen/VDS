@@ -10,6 +10,8 @@
 // Side effects: customer lifetime_revenue + total_jobs, partner conversion/revenue/
 // incentive credit, invoice_paid event log, and auto-finalization of the linked quote.
 
+import { sendCareGuideEmail, guideKeyForService } from './careGuideEmail.ts';
+
 export async function onInvoicePaid(base44, invoice_id) {
   if (!invoice_id) return;
   try {
@@ -126,5 +128,23 @@ export async function onInvoicePaid(base44, invoice_id) {
         }
       } catch (e) { console.error('Quote auto-finalize on payment failed:', e.message); }
     }
+
+    // 5. Auto-deliver the matching care guide for paid ceramic coating / paint correction
+    //    jobs. Regular detailing guides are sent on job completion (scheduler/entry.ts);
+    //    VDS Gold is handled at checkout (stripe-webhook).
+    try {
+      const paidJob = invoice.job_id ? await base44.asServiceRole.entities.Job.get(invoice.job_id).catch(() => null) : null;
+      if (paidJob) {
+        const gk = guideKeyForService(paidJob.service_package, paidJob.service_label);
+        if (gk === 'ceramic_coating' || gk === 'paint_correction') {
+          await sendCareGuideEmail(base44, {
+            guideKey: gk, to: invoice.customer_id
+              ? (await base44.asServiceRole.entities.Customer.get(invoice.customer_id).catch(() => null))?.email || paidJob.customer_email
+              : paidJob.customer_email,
+            customerName: paidJob.customer_name, customerId: invoice.customer_id,
+          });
+        }
+      }
+    } catch (e) { console.error('Care guide delivery on payment failed:', e.message); }
   } catch (e) { console.error('Invoice payment update error:', e.message); }
 }
