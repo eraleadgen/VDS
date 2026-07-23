@@ -103,7 +103,7 @@ export default function ProjectOverview() {
         <p className="text-sm text-vapor/50 leading-relaxed mb-2">
           An in-depth record of the platform built so far — architecture, data model, engines, portals, integrations, and how ERA Core &amp; VDS connect and communicate.
         </p>
-        <p className="text-xs font-mono-tech text-gold/70 mb-7">Authored &amp; built by Noah Grove · v1.0 · July 2026</p>
+        <p className="text-xs font-mono-tech text-gold/70 mb-7">Authored &amp; built by Noah Grove &amp; Shane Muenkel, Owners of ERA &amp; VDS · v1.0 · July 2026</p>
         <button onClick={handleDownload} className="w-full inline-flex items-center justify-center gap-2 bg-gold text-obsidian font-bold tracking-wider text-sm py-3.5 rounded-md hover:bg-gold-light transition-colors">
           <Download size={16} /> Download Document (.html)
         </button>
