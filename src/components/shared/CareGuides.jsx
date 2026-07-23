@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { ChevronDown, Printer, Library } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Printer, Library, Eye, Download, ChevronDown } from 'lucide-react';
 import { CARE_GUIDES, buildGuidePrintHtml } from '@/lib/careGuides';
 import printHtml from '@/components/shared/printHtml';
 
@@ -7,12 +8,50 @@ import printHtml from '@/components/shared/printHtml';
 // Paint Correction, Detailing, VDS Gold). Shown in the Resource Center of every portal
 // (admin / specialist / partner) with a dropdown to switch guides. Each guide closes with
 // a VDS Gold enrollment call-to-action.
-export default function CareGuides() {
+//
+// `compact` mode (used on the Member Dashboard) renders only the selector plus View and
+// Download buttons — no expanded accordion content — to keep the dashboard short.
+export default function CareGuides({ compact = false }) {
   const [active, setActive] = useState(CARE_GUIDES[0].key);
   const [open, setOpen] = useState(0);
   const guide = CARE_GUIDES.find((g) => g.key === active) || CARE_GUIDES[0];
 
   const onPick = (key) => { setActive(key); setOpen(0); };
+
+  if (compact) {
+    return (
+      <div className="glass-panel border border-gold/15 rounded-sm p-5">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex items-center gap-2 text-xs font-mono-tech tracking-widest text-gold/70 shrink-0">
+            <Library size={13} /> SELECT GUIDE
+          </div>
+          <select
+            value={active}
+            onChange={(e) => onPick(e.target.value)}
+            className="bg-asphalt border border-gold/30 text-vapor text-sm font-mono-tech px-4 py-2.5 rounded-sm outline-none focus:border-gold/60 transition-colors flex-1"
+          >
+            {CARE_GUIDES.map((g) => (
+              <option key={g.key} value={g.key}>{g.title}</option>
+            ))}
+          </select>
+        </div>
+        <div className="flex flex-wrap gap-2 mt-4">
+          <Link
+            to={`/care-guide/${guide.key}`}
+            className="flex items-center gap-2 text-xs font-mono-tech text-gold border border-gold/30 bg-gold/10 hover:bg-gold/20 px-4 py-2.5 rounded-sm transition-colors"
+          >
+            <Eye size={13} /> VIEW GUIDE
+          </Link>
+          <button
+            onClick={() => printHtml(guide.title, buildGuidePrintHtml(guide))}
+            className="flex items-center gap-2 text-xs font-mono-tech text-vapor/70 border border-vapor/20 hover:border-gold/40 hover:text-gold px-4 py-2.5 rounded-sm transition-colors"
+          >
+            <Download size={13} /> DOWNLOAD
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

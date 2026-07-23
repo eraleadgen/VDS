@@ -363,7 +363,7 @@ export default function MemberDashboard() {
         {/* Client Care Guides */}
         <div className="mb-8 md:mb-12">
           <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40 mb-4">CARE GUIDES</p>
-          <CareGuides />
+          <CareGuides compact />
         </div>
 
         {/* Account Details */}
