@@ -336,14 +336,14 @@ Job completed &amp; invoice paid
                             ├─► tag partner (first touch)
                             └─► credit $30 initial_detail incentive (one-time per client)
 
-Invoice paid (detail OR coating OR sealant)
-      └─► onInvoicePaid (shared, idempotent)
-             ├─► $30 initial_detail  — one-time per client (detail OR Gold, whichever first)
-             └─► $100 per ceramic coating / ceramic sealant / paint correction job</div>
+Invoice paid (detail OR coating)
+    └─► onInvoicePaid (shared, idempotent)
+           ├─► $30 initial_detail  — one-time per client (detail OR Gold, whichever first)
+           └─► $100 per ceramic coating / paint correction job (add-ons like ceramic sealant earn nothing)</div>
   <p>Incentive rules (configured in BusinessConfig, not code):</p>
   <ul>
     <li><strong>$30</strong> — a referred client's first completed job (a detail <em>or</em> a VDS Gold signup). One-time per client, idempotent.</li>
-    <li><strong>$100</strong> — each ceramic coating, ceramic sealant, or paint correction job that converts.</li>
+    <li><strong>$100</strong> — each ceramic coating or paint correction job that converts. Add-ons (e.g. ceramic sealant) earn no referral reward.</li>
   </ul>
   <p>Attribution is keyed off the Customer's <code>referred_by_partner_id</code>, set the first time a client books via a partner link — so a partner is correctly credited when a coating <em>consultation</em> converts to a later <em>purchase</em>, even months later.</p>
 
