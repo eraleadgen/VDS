@@ -23,6 +23,7 @@ export default function InvoicesTab() {
   const [filter, setFilter] = useState('all');
   const [payModal, setPayModal] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [chargingId, setChargingId] = useState(null);
 
   const load = useCallback(async () => {
     setLoading(true); setError('');
@@ -44,6 +45,21 @@ export default function InvoicesTab() {
       setPayModal(null);
       await load();
     } finally { setSaving(false); }
+  };
+
+  // Create + send a Stripe invoice for this one-time service. When the customer pays it
+  // online, the Stripe webhook marks the Base44 Invoice paid and credits the referring
+  // partner's incentive automatically.
+  const chargeStripe = async (invoiceId) => {
+    setChargingId(invoiceId);
+    try {
+      const r = await base44.functions.invoke('createStripeInvoice', { invoice_id: invoiceId }).then(res => res.data ?? res);
+      if (r.error) { alert(r.error); return; }
+      await load();
+      if (r.hosted_url) window.open(r.hosted_url, '_blank');
+      else alert('Stripe invoice sent to the customer.');
+    } catch (e) { alert(e.message); }
+    finally { setChargingId(null); }
   };
 
   const total = invoices.reduce((s, i) => s + (i.final_amount || i.amount || 0), 0);
@@ -100,9 +116,14 @@ export default function InvoicesTab() {
                 <p><span className="text-vapor/40">Paid:</span> {inv.paid_date || '—'}</p>
               </div>
               {inv.payment_status === 'pending' && (
-                <button onClick={() => setPayModal(inv)} disabled={saving} className="text-xs font-mono-tech tracking-widest text-gold border border-gold/30 bg-gold/10 hover:bg-gold/20 px-3 py-2 rounded-sm w-full sm:w-auto disabled:opacity-50">
-                  MARK PAID
-                </button>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <button onClick={() => setPayModal(inv)} disabled={saving} className="text-xs font-mono-tech tracking-widest text-gold border border-gold/30 bg-gold/10 hover:bg-gold/20 px-3 py-2 rounded-sm disabled:opacity-50">
+                    MARK PAID
+                  </button>
+                  <button onClick={() => chargeStripe(inv.id)} disabled={chargingId === inv.id} className="text-xs font-mono-tech tracking-widest text-vapor border border-vapor/20 hover:border-gold/40 hover:text-gold px-3 py-2 rounded-sm disabled:opacity-50 flex items-center gap-2">
+                    <CreditCard size={12} /> {chargingId === inv.id ? 'SENDING...' : 'CHARGE VIA STRIPE'}
+                  </button>
+                </div>
               )}
               {inv.payment_status === 'paid' && inv.payment_method && (
                 <p className="text-xs font-mono-tech text-vapor/50 uppercase">Paid via {inv.payment_method}</p>

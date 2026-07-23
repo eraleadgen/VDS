@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 import Stripe from 'npm:stripe@17.0.0';
+import { onInvoicePaid } from '../../shared/invoicePaid.ts';
 
 // Stripe webhook — provisions VDS Gold memberships and keeps VehicleSubscription
 // records in sync with Stripe lifecycle events. GoHighLevel has been fully removed;
@@ -116,6 +117,37 @@ Deno.serve(async (req) => {
       }
 
       console.log(`Subscription ${subscription.id} updated to ${newStatus}`);
+    }
+
+    // ── One-time service invoices (e.g. a ceramic coating job) ──
+    // When a Stripe invoice is paid, mark the linked Base44 Invoice paid and run the
+    // shared partner-incentive attribution. Subscription (Gold) invoices are skipped
+    // here — Gold memberships are handled by checkout.session.completed above.
+    if (event.type === 'invoice.paid' || event.type === 'invoice.payment_succeeded') {
+      const inv = event.data.object;
+      const isSubscription = !!(inv.subscription || inv.billing_reason === 'subscription_cycle' || inv.billing_reason === 'subscription_create');
+      const appMatch = inv.metadata?.base44_app_id === Deno.env.get('BASE44_APP_ID');
+      if (!isSubscription && appMatch) {
+        try {
+          const b44Id = inv.metadata?.base44_invoice_id;
+          let invoice = null;
+          if (b44Id) invoice = await base44.asServiceRole.entities.Invoice.get(b44Id).catch(() => null);
+          if (!invoice && inv.id) {
+            const byRef = await base44.asServiceRole.entities.Invoice.filter({ stripe_payment_reference: inv.id }).catch(() => []);
+            invoice = byRef && byRef[0];
+          }
+          if (invoice && invoice.payment_status !== 'paid') {
+            await base44.asServiceRole.entities.Invoice.update(invoice.id, {
+              payment_status: 'paid',
+              payment_method: 'stripe',
+              stripe_payment_reference: inv.id,
+              paid_date: new Date().toISOString().split('T')[0],
+            });
+            await onInvoicePaid(base44, invoice.id);
+            console.log(`Stripe invoice ${inv.id} paid → Base44 invoice ${invoice.id} marked paid + partner attributed`);
+          }
+        } catch (e) { console.error('One-time invoice paid handler error:', e.message); }
+      }
     }
 
     return Response.json({ received: true });
