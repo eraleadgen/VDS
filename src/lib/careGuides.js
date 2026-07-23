@@ -3,7 +3,7 @@
 // guide is auto-delivered after payment/completion). Every guide closes with a VDS Gold
 // enrollment call-to-action so clients can keep their vehicle in shape between visits.
 import {
-  Shield, Sparkles, Droplets, Wind, Calendar, AlertTriangle, Car, Crown, Leaf,
+  Shield, Sparkles, Droplets, Wind, Calendar, AlertTriangle, Car, Crown, Leaf, Handshake,
 } from 'lucide-react';
 
 const GOLD_CTA = {
@@ -169,9 +169,53 @@ export const CARE_GUIDES = [
     ],
     goldCta: { ...GOLD_CTA, title: 'Already a Gold Member?', body: GOLD_CTA.body + ' Manage your membership from your Member Dashboard.', link: '/member-dashboard', linkLabel: 'Go to Member Dashboard' },
   },
+  {
+    key: 'partner_network',
+    icon: Handshake,
+    title: 'VDS Partner Network Guide',
+    eyebrow: 'VDS Mobile · Partner Network Reference',
+    intro: 'Everything partners need to share their referral link, track referrals, and earn incentives. VDS Mobile partners are valued equally across the network — every referral you send is tracked end-to-end.',
+    sections: [
+      {
+        title: 'Your Referral Link',
+        bullets: [
+          'Your unique referral code is shown in the Partner Portal under "Referral Link." Share it as a short link (domain/CODE) or the QR code.',
+          'When a customer visits your link, they are sent to the booking flow with attribution automatically applied to their account.',
+          'Attribution is permanent — once a customer is referred by you, every future job (including a later ceramic coating or paint correction) is credited to you.',
+        ],
+      },
+      {
+        title: 'How Referrals Are Tracked',
+        bullets: [
+          'A referral is created the moment a customer books through your link.',
+          'It converts when the customer\'s invoice is paid — at that point your conversion count and revenue are updated automatically.',
+          'Track status, service type, and earnings in the Partner Portal Overview and Referrals tabs in real time.',
+        ],
+      },
+      {
+        title: 'Incentive Earnings',
+        bullets: [
+          'Initial Detail: $30 one-time payout the first time a referred client completes a detail (paid once per referred client).',
+          'Ceramic Coating: $100 payout per ceramic coating job converted.',
+          'Paint Correction: $100 payout per paint correction job converted.',
+          'VDS Gold Signup: $30 one-time compensation when a referred client registers for VDS Gold using your link.',
+          'Incentives apply to primary service packages only; add-ons (such as ceramic sealant) are excluded from payout calculations.',
+        ],
+      },
+      {
+        title: 'Tips for Success',
+        bullets: [
+          'Hand your referral card to customers in person, or text/email the link right after they express interest.',
+          'Mention VDS Gold membership — recurring revenue from your referred clients supports long-term relationship value.',
+          'Keep your contact info and dealership up to date in the Partner Portal so customers recognize your referral.',
+        ],
+      },
+    ],
+    goldCta: { title: 'Refer Clients to VDS Gold', body: 'VDS Gold keeps your referred clients\' vehicles showroom-fresh all year — $250/mo for sedans & coupes · $300/mo for trucks & SUVs. You earn a $30 bonus every time a referred client registers for Gold.', link: '/vds-gold', linkLabel: 'Explore VDS Gold' },
+  },
 ];
 
-export const CARE_GUIDE_ICONS = { Shield, Sparkles, Droplets, Wind, Calendar, AlertTriangle, Car, Crown, Leaf };
+export const CARE_GUIDE_ICONS = { Shield, Sparkles, Droplets, Wind, Calendar, AlertTriangle, Car, Crown, Leaf, Handshake };
 
 // Build the printable HTML for a single guide (used by the portal "print" buttons).
 export function buildGuidePrintHtml(guide) {
