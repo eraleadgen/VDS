@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Sparkles, CheckCircle2, XCircle, Clock, DollarSign, Loader2 } from 'lucide-react';
+import { Sparkles, CheckCircle2, XCircle, Clock, Loader2 } from 'lucide-react';
 
 const invoke = (payload) => base44.functions.invoke('scheduler', payload).then(r => r.data ?? r);
 
@@ -46,14 +46,14 @@ export default function PartnerReferrals({ partner }) {
     <div className="space-y-4">
       <div className="glass-panel border border-gold/20 bg-gold/[0.03] rounded-sm p-5">
         <div className="flex items-center gap-3 mb-3">
-          <DollarSign size={20} className="text-gold" />
+          <Sparkles size={20} className="text-gold" />
           <div>
             <p className="text-2xl font-grotesk font-bold text-gold leading-none">${(partner.incentives_earned || 0).toLocaleString()}</p>
             <p className="text-xs font-mono-tech tracking-widest text-vapor/50 mt-1.5">INCENTIVES EARNED (LIFETIME)</p>
           </div>
         </div>
         <p className="text-xs font-mono-tech text-vapor/40 leading-relaxed">
-          $30 for a referred client's initial detail (one-time per client) · $100 for each ceramic coating or paint correction job that converts.
+          $30 for a client's first completed job booked through your link (one-time per client) · $30 one-time when that client registers for VDS Gold · $100 for each ceramic coating or paint correction job that converts.
         </p>
       </div>
 
