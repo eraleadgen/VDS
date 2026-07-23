@@ -5,14 +5,21 @@ import CustomerJourneyCard from '@/components/admin/CustomerJourneyCard';
 
 export default function JourneyTab() {
   const [customers, setCustomers] = useState([]);
+  const [partnersById, setPartnersById] = useState({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
     (async () => {
       try {
-        const list = await base44.entities.Customer.list('-created_date', 200);
+        const [list, partners] = await Promise.all([
+          base44.entities.Customer.list('-created_date', 200),
+          base44.entities.Partner.list('-created_date', 200),
+        ]);
         setCustomers(list || []);
+        const map = {};
+        (partners || []).forEach(p => { map[p.id] = p.name || p.email || ''; });
+        setPartnersById(map);
       } catch (e) { console.error(e); }
       finally { setLoading(false); }
     })();
@@ -53,7 +60,7 @@ export default function JourneyTab() {
       ) : (
         <div className="space-y-3">
           {filtered.map(c => (
-            <CustomerJourneyCard key={c.id} customer={c} />
+            <CustomerJourneyCard key={c.id} customer={c} partnerName={partnersById[c.referred_by_partner_id] || ''} />
           ))}
         </div>
       )}

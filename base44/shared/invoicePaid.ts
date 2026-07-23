@@ -44,9 +44,9 @@ export async function onInvoicePaid(base44, invoice_id) {
             const existing = await base44.asServiceRole.entities.PartnerReferral.filter({ job_id: invoice.job_id }).catch(() => []);
             referral = existing && existing[0];
           }
-          // $30 initial detail (one-time per client), $100 ceramic coating / paint correction.
+          // $30 initial detail (one-time per client), $100 ceramic coating / ceramic sealant / paint correction.
           let incentiveType = 'initial_detail';
-          if (svcLower.includes('coating') || svcLower.includes('ceramic')) incentiveType = 'ceramic_coating';
+          if (svcLower.includes('coating') || svcLower.includes('ceramic') || svcLower.includes('sealant')) incentiveType = 'ceramic_coating';
           else if (svcLower.includes('paint correction') || svcLower.includes('correction')) incentiveType = 'paint_correction';
           let incentiveAmount = 0;
           try {
@@ -88,7 +88,7 @@ export async function onInvoicePaid(base44, invoice_id) {
                 revenue_generated: (partner.revenue_generated || 0) + revenue,
                 incentives_earned: (partner.incentives_earned || 0) + incentiveAmount,
               };
-              if (svcLower.includes('coating') || svcLower.includes('ceramic')) inc.ceramic_coatings_generated = (partner.ceramic_coatings_generated || 0) + 1;
+              if (svcLower.includes('coating') || svcLower.includes('ceramic') || svcLower.includes('sealant')) inc.ceramic_coatings_generated = (partner.ceramic_coatings_generated || 0) + 1;
               if (svcLower.includes('paint correction') || svcLower.includes('correction')) inc.paint_corrections_generated = (partner.paint_corrections_generated || 0) + 1;
               await base44.asServiceRole.entities.Partner.update(partnerId, inc);
             }

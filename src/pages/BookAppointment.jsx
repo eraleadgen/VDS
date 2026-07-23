@@ -15,6 +15,7 @@ import QuoteSummary from '../components/booking/QuoteSummary';
 import BookingCalendar from '../components/booking/BookingCalendar';
 import SavedVehiclePicker from '../components/booking/SavedVehiclePicker';
 import { computeQuote, deriveClassification, classificationToPricingGroup, CLASSIFICATION_LABEL } from '@/lib/quoteCalc';
+import { capturePartnerRef, getPartnerRef, deriveReferralSource } from '@/lib/partnerRef';
 
 const DEFAULT_FORM = {
   firstName: '', lastName: '', phone: '', email: '', address: '', notes: '',
@@ -83,6 +84,10 @@ export default function BookAppointment() {
   const vehicleLabel = activeVehicle
     ? `${activeVehicle.year || ''} ${activeVehicle.make || ''} ${activeVehicle.model || ''}${activeVehicle.color ? ', ' + activeVehicle.color : ''}`.trim()
     : null;
+
+  // Persist any partner referral code from the URL (?ref=CODE) so it survives
+  // navigation to VDS Gold or other pages and still attributes a later signup.
+  useEffect(() => { capturePartnerRef(); }, []);
 
   // Init: auth, config, member data, quote prefill
   useEffect(() => {
@@ -264,7 +269,8 @@ export default function BookAppointment() {
         preferred_time: form.preferred_time || null,
         sms_consent: smsConsent,
         quote_id: quoteId,
-        partner_referral_code: new URLSearchParams(window.location.search).get('ref') || '',
+        partner_referral_code: getPartnerRef() || new URLSearchParams(window.location.search).get('ref') || '',
+        referral_source: deriveReferralSource(getPartnerRef()),
       });
 
       if (location.state?.reschedule_from) {

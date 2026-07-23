@@ -17,7 +17,7 @@ function InfoRow({ label, value }) {
   );
 }
 
-export default function CustomerJourneyCard({ customer, defaultOpen = false }) {
+export default function CustomerJourneyCard({ customer, partnerName = '', defaultOpen = false }) {
   const [open, setOpen] = useState(defaultOpen);
   const [entries, setEntries] = useState([]);
   const [loaded, setLoaded] = useState(false);
@@ -85,7 +85,8 @@ export default function CustomerJourneyCard({ customer, defaultOpen = false }) {
             <InfoRow label="EMAIL CONSENT" value={customer.email_consent ? 'Yes' : 'No'} />
             <InfoRow label="LIFETIME REVENUE" value={`$${(customer.lifetime_revenue || 0).toLocaleString()}`} />
             <InfoRow label="TOTAL JOBS" value={customer.total_jobs || 0} />
-            <InfoRow label="REFERRAL SOURCE" value={customer.referral_source} />
+            <InfoRow label="REFERRAL SOURCE" value={customer.referral_source || (partnerName ? 'Partner Referral' : '')} />
+            <InfoRow label="REFERRED BY PARTNER" value={partnerName || (customer.referred_by_partner_id ? customer.referred_by_partner_id : '')} />
             <InfoRow label="BILLING ADDRESS" value={customer.billing_address} />
             <InfoRow label="CREATED" value={fmtDate(customer.created_date)} />
           </div>

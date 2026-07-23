@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { CheckCircle, CreditCard, AlertCircle, Loader2, Gem } from 'lucide-react';
+import { getPartnerRef } from '@/lib/partnerRef';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
 import GoldShimmer from '../components/vds/GoldShimmer';
@@ -75,9 +76,12 @@ export default function VdsGoldSignup() {
         return;
       }
 
-      // Create Stripe checkout session
-      const response = await base44.functions.invoke('createGoldCheckoutSession', { 
-        vehicleIds: selectedVehicles 
+      // Create Stripe checkout session. The partner referral code (persisted from the
+      // partner link that brought the visitor here) is passed through so the Gold signup
+      // is attributed to the referring partner when the Stripe checkout completes.
+      const response = await base44.functions.invoke('createGoldCheckoutSession', {
+        vehicleIds: selectedVehicles,
+        partnerRef: getPartnerRef() || '',
       });
 
       if (response.data?.url) {

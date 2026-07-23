@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 import Stripe from 'npm:stripe@17.0.0';
 import { onInvoicePaid } from '../../shared/invoicePaid.ts';
+import { creditPartnerGoldSignup } from '../../shared/partnerIncentive.ts';
 
 // Stripe webhook — provisions VDS Gold memberships and keeps VehicleSubscription
 // records in sync with Stripe lifecycle events. GoHighLevel has been fully removed;
@@ -88,6 +89,26 @@ Deno.serve(async (req) => {
       }
 
       console.log(`Gold subscriptions created for user ${userId}, vehicles: ${vehicleIds.join(', ')}`);
+
+      // ── Partner Network: attribute a Gold signup to the referring partner ──
+      // The partner referral code rides along in the checkout metadata (persisted from
+      // the partner link the visitor used). On checkout completion the partner earns the
+      // one-time $30 initial_detail incentive (same pot as a first paid detail — idempotent
+      // per client) and their gold_members_generated counter increments.
+      try {
+        const partnerRef = session.metadata?.partner_referral_code;
+        if (partnerRef) {
+          // Resolve the member's name/email so a Customer record can be created for a
+          // member who signed up for Gold before ever booking a detail.
+          let goldEmail = null, goldName = null;
+          try {
+            const u = await base44.asServiceRole.entities.User.get(userId).catch(() => null);
+            goldEmail = u?.email || null; goldName = u?.full_name || '';
+          } catch (e) { /* non-blocking */ }
+          const r = await creditPartnerGoldSignup(base44, { userId, partnerRefCode: partnerRef, email: goldEmail, fullName: goldName });
+          console.log('Partner Gold signup attribution:', JSON.stringify(r));
+        }
+      } catch (e) { console.error('Partner Gold attribution failed:', e.message); }
     }
 
     // Handle subscription updates / deletion — sync status to every VehicleSubscription

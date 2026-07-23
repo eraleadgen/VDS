@@ -130,6 +130,7 @@ Deno.serve(async (req) => {
       service_type, vehicle_type, vehicle_info, vehicle_classification,
       vehicle_details, notes,
       preferred_date, preferred_time, sms_consent, quote_id, partner_referral_code,
+      referral_source,
     } = await req.json();
 
     if (!name || !phone || !address || !service_type) {
@@ -255,13 +256,19 @@ Deno.serve(async (req) => {
       console.error('Failed to create Job:', err.message);
     }
 
-    // ── Partner Network: capture referral attribution ──
+    // ── Partner Network: capture referral attribution + acquisition source ──
     // The customer is tagged with the referring partner the FIRST time they book via a partner
     // link. Attribution lives on the Customer record, so any later job for the same customer —
     // including a ceramic-coating purchase made after a consultation — automatically credits the
-    // partner when its invoice is paid (see adminUpdateInvoice).
+    // partner when its invoice is paid (see adminUpdateInvoice). The acquisition source
+    // (Google, Partner Referral, etc.) is stamped first-touch on Customer.referral_source so
+    // admins can see where each client came from in the Client Journey tab.
     try {
       const refCode = (partner_referral_code || '').trim();
+      const source = refCode ? 'Partner Referral' : (referral_source || 'Website');
+      if (customer && !customer.referral_source) {
+        await base44.asServiceRole.entities.Customer.update(customer.id, { referral_source: source });
+      }
       if (refCode && customer) {
         const partners = await base44.asServiceRole.entities.Partner.filter({ referral_code: refCode });
         const partner = partners && partners[0];

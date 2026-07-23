@@ -1,13 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { capturePartnerRef } from '@/lib/partnerRef';
 
 // Vanity referral link redirect: /CODE → /book?ref=CODE
 // Partner referral links are short (domain/CODE). This catches any unmatched
 // single-segment path and forwards it to the booking flow with attribution.
+// The code is also persisted to localStorage so it survives later navigation
+// (e.g. clicking "VDS Gold") and still attributes a Gold signup to the partner.
 export default function PartnerRedirect() {
   const { code } = useParams();
   const navigate = useNavigate();
   useEffect(() => {
+    capturePartnerRef();
     navigate(`/book?ref=${encodeURIComponent(code || '')}`, { replace: true });
   }, [code, navigate]);
   return (

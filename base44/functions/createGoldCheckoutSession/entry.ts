@@ -7,10 +7,11 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { vehicleIds } = await req.json();
+    const { vehicleIds, partnerRef } = await req.json();
     if (!vehicleIds || vehicleIds.length === 0) {
       return Response.json({ error: 'No vehicles selected' }, { status: 400 });
     }
+    const partnerReferralCode = (typeof partnerRef === 'string' ? partnerRef : '').trim();
 
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
 
@@ -62,7 +63,8 @@ Deno.serve(async (req) => {
       metadata: {
         base44_app_id: Deno.env.get('BASE44_APP_ID'),
         user_id: user.id,
-        vehicle_ids: JSON.stringify(vehicleIds)
+        vehicle_ids: JSON.stringify(vehicleIds),
+        partner_referral_code: partnerReferralCode || ''
       }
     });
 
