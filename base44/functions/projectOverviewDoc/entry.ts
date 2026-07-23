@@ -92,7 +92,7 @@ function buildDocHtml() {
   <div class="brand">ERA SYSTEMS LLC <span class="sep">·</span> PROJECT ARCHIVE</div>
   <h1 class="title">ERA Core 1.0 + VDS Mobile<br>Project Overview &amp; Technical Architecture</h1>
   <p class="subtitle">An in-depth record of the modular, event-driven business operating system and its first production vertical — the mobile auto-detailing platform VDS Mobile — including how the two layers connect and communicate.</p>
-  <div class="author">Authored &amp; Built by <span>Noah Grove</span></div>
+  <div class="author">Authored &amp; Built by <span>Noah Grove &amp; Shane Muenkel</span> — Owners of ERA &amp; VDS</div>
   <div class="meta">VERSION 1.0 &nbsp;·&nbsp; JULY 2026 &nbsp;·&nbsp; CONFIDENTIAL — INTERNAL PROJECT RECORD</div>
   <div class="badge">PROOF OF WORK</div>
 </header>
@@ -391,7 +391,7 @@ Invoice paid (detail OR coating)
 </div>
 <footer>
   <div class="gold">ERA SYSTEMS LLC</div>
-  <p>Authored &amp; built by <strong>Noah Grove</strong> · ERA Core 1.0 · VDS Mobile · July 2026.<br>Confidential — internal project record. For a tailored vertical-onboarding walkthrough, contact your ERA partner.</p>
+  <p>Authored &amp; built by <strong>Noah Grove &amp; Shane Muenkel</strong> — Owners of ERA &amp; VDS · ERA Core 1.0 · VDS Mobile · July 2026.<br>Confidential — internal project record. For a tailored vertical-onboarding walkthrough, contact your ERA partner.</p>
 </footer>
 </body>
 </html>`;
