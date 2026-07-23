@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Plus, Pencil, Trash2, Star, Copy, Check, Mail } from 'lucide-react';
+import { Plus, Pencil, Trash2, Copy, Check, Mail } from 'lucide-react';
 import ExpandableCard from '@/components/portal/ExpandableCard';
 import PartnerModal from '@/components/admin/PartnerModal';
 
@@ -119,11 +119,6 @@ export default function PartnersTab() {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <h3 className="text-sm font-grotesk font-bold text-vapor truncate">{p.name}</h3>
-                        {p.is_founding_partner && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-mono-tech tracking-widest text-gold border border-gold/40 bg-gold/10 px-1.5 py-0.5 rounded-sm">
-                            <Star size={9} className="fill-gold" /> FOUNDING
-                          </span>
-                        )}
                       </div>
                       <p className="text-xs text-vapor/50 font-mono-tech truncate">{p.dealership || TYPE_LABEL[p.partner_type]}</p>
                     </div>

@@ -48,7 +48,7 @@ export default function BusinessDevTab() {
     return {
       activeCount: active.length, newThisMonth: newThisMonth.length, followUpsDue: followUpsDue.length,
       totalReferrals, totalConversions, lifetimeRevenue, gold, coatings, corrections, conversionRate, totalIncentives,
-      topDealerships, topPartners, foundingCount: partners.filter(p => p.is_founding_partner).length,
+      topDealerships, topPartners,
     };
   }, [partners]);
 
@@ -58,7 +58,7 @@ export default function BusinessDevTab() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-grotesk font-bold text-vapor">Business Development</h1>
-        <span className="text-xs font-mono-tech tracking-widest text-vapor/40">{m.foundingCount} FOUNDING · {m.activeCount} ACTIVE</span>
+        <span className="text-xs font-mono-tech tracking-widest text-vapor/40">{m.activeCount} ACTIVE</span>
       </div>
 
       <div className="glass-panel border border-gold/25 rounded-sm p-5 flex items-center gap-4 bg-gold/[0.03]">

@@ -19,16 +19,6 @@ export default function PartnerOverview({ partner }) {
         <p className="text-sm text-vapor/50 font-mono-tech mt-1">Welcome, {partner.first_name || partner.name?.split(' ')[0] || 'Partner'}.</p>
       </div>
 
-      {partner.is_founding_partner && (
-        <div className="glass-panel border border-gold/40 bg-gold/[0.06] rounded-sm p-5 flex items-start gap-4">
-          <Star size={24} className="text-gold fill-gold shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-grotesk font-bold text-gold tracking-wide">FOUNDING PARTNER</p>
-            <p className="text-xs text-vapor/60 font-mono-tech mt-1 leading-relaxed">You're helping build something larger than a referral program. Founding Partners receive priority communication from VDS, early access to future features, and recognition across the Partner Network.</p>
-          </div>
-        </div>
-      )}
-
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Stat icon={Users} label="REFERRALS" value={partner.referral_count || 0} />
         <Stat icon={TrendingUp} label="CONVERSIONS" value={partner.conversions_count || 0} />

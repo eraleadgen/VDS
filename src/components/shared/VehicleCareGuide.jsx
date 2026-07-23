@@ -59,13 +59,13 @@ const SECTIONS = [
   },
   {
     icon: Calendar,
-    title: 'VDS Gold Maintenance Cadence',
-    intro: 'Gold members follow a rhythm that keeps vehicles in showroom condition year-round.',
+    title: 'VDS Gold Membership',
+    intro: 'VDS Gold is our recurring membership that keeps your vehicle in showroom condition all year.',
     bullets: [
-      'Bi-weekly express exterior washes (included with Gold) prevent contaminant buildup.',
-      'Quarterly full interior + exterior details reset the vehicle to baseline.',
+      'Unlimited exterior details (ceramic sealant included) and one full detail per month.',
+      '$250/month for sedans and coupes · $300/month for trucks and SUVs.',
+      'Bi-weekly express exterior washes prevent contaminant buildup between details.',
       'Annual ceramic coating inspection and maintenance top-up.',
-      'Check for bird droppings and sap weekly and remove promptly before they etch the paint.',
     ],
   },
   {
