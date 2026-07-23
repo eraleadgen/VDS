@@ -124,12 +124,17 @@ const GOLD_CTA_HTML = `
     <a href="https://vdsmobile.com/vds-gold" style="display:inline-block;background:#D4AF37;color:#0A0B0D;text-decoration:none;font-family:'Space Mono',monospace;font-size:12px;letter-spacing:2px;padding:12px 22px;border-radius:4px;">◆ EXPLORE VDS GOLD</a>
   </div>`;
 
-function buildEmailHtml(guide, firstName) {
+function buildEmailHtml(guide, firstName, guideKey) {
   const sections = guide.sections.map((s) => `
     <h2 style="color:#D4AF37;font-size:16px;margin:24px 0 10px;">${s.title}</h2>
     <ul style="padding-left:20px;margin:0;">
       ${s.bullets.map((b) => `<li style="color:#E2E8F0;font-size:14px;line-height:1.6;margin-bottom:8px;">${b}</li>`).join('')}
     </ul>`).join('');
+  const buttons = `
+    <div style="margin-top:24px;display:flex;flex-wrap:wrap;gap:12px;">
+      <a href="https://vdsmobile.com/member-dashboard" style="display:inline-block;background:#D4AF37;color:#0A0B0D;text-decoration:none;font-family:'Space Mono',monospace;font-size:12px;letter-spacing:2px;padding:12px 22px;border-radius:4px;">◆ VIEW ON YOUR ACCOUNT</a>
+      <a href="https://vdsmobile.com/care-guide/${guideKey}" style="display:inline-block;border:1px solid rgba(212,175,55,0.5);color:#D4AF37;text-decoration:none;font-family:'Space Mono',monospace;font-size:12px;letter-spacing:2px;padding:12px 22px;border-radius:4px;">⤓ DOWNLOAD GUIDE</a>
+    </div>`;
   return `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;background:#0A0B0D;font-family:'Space Grotesk',system-ui,sans-serif;">
   <div style="max-width:640px;margin:0 auto;padding:32px 20px;">
     <p style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:3px;color:#D4AF37;text-transform:uppercase;margin:0 0 8px;">VDS MOBILE · CLIENT CARE GUIDE</p>
@@ -137,6 +142,7 @@ function buildEmailHtml(guide, firstName) {
     <p style="color:#E2E8F0;font-size:15px;line-height:1.6;">Hi ${firstName}, thank you for choosing VDS Mobile. ${guide.intro}</p>
     ${sections}
     ${GOLD_CTA_HTML}
+    ${buttons}
     <p style="margin-top:28px;padding-top:18px;border-top:1px solid rgba(212,175,55,0.25);font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;color:#E2E8F0;opacity:0.5;text-align:center;text-transform:uppercase;">Valet Detailing Service LLC · (470) 412-8986 · vdsmobile.com</p>
   </div></body></html>`;
 }
@@ -162,7 +168,7 @@ export async function sendCareGuideEmail(base44, { guideKey, to, customerName, c
   if (!to) return { sent: false, reason: 'no_email' };
   const guide = GUIDES[guideKey] || GUIDES.detailing;
   const firstName = (customerName || '').split(' ')[0] || 'there';
-  const body = buildEmailHtml(guide, firstName);
+  const body = buildEmailHtml(guide, firstName, guideKey);
   try {
     await base44.asServiceRole.integrations.Core.SendEmail({
       to, subject: guide.subject, body,

@@ -37,6 +37,7 @@ import PartnerPortal from './pages/PartnerPortal';
 import PartnerLogin from './pages/PartnerLogin';
 import PartnerSetup from './pages/PartnerSetup';
 import PartnerRedirect from './pages/PartnerRedirect';
+import CareGuide from './pages/CareGuide';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -93,6 +94,7 @@ const AuthenticatedApp = () => {
       <Route path="/partner-portal" element={<PartnerPortal />} />
       <Route path="/partner-login" element={<PartnerLogin />} />
       <Route path="/partner-setup" element={<PartnerSetup />} />
+      <Route path="/care-guide/:key" element={<CareGuide />} />
       <Route path="/:code" element={<PartnerRedirect />} />
       <Route path="/era-doc" element={<EraDocDownload />} />
       <Route path="/project-overview" element={<ProjectOverview />} />

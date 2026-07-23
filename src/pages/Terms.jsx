@@ -70,16 +70,26 @@ const SECTIONS = [
   },
   {
     num: '14.',
+    title: 'Client Care Guides',
+    content: 'Upon completion of a detailing service, and upon payment for a ceramic coating, paint correction, or VDS Gold membership, Valet Detailing Service LLC will automatically deliver a corresponding Client Care Guide to the email address associated with the client account. Each guide contains the aftercare instructions specific to the service performed and is also accessible at any time from the client\'s Member Dashboard, where it may be viewed or downloaded/printed as a PDF. The care guides are provided for informational purposes and describe recommended maintenance methods; the client\'s adherence to these methods is the client\'s responsibility as set out in the Post-Service Maintenance Responsibility section below.',
+  },
+  {
+    num: '15.',
+    title: 'Partner Network & Referral Incentives',
+    content: 'The VDS Partner Network allows dealerships, salespersons, and strategic partners to refer clients to Valet Detailing Service LLC in exchange for incentive payouts. Incentive amounts are as follows: a one-time $30 payout for the referred client\'s initial detailing service, paid once per referred client (not per job and not for the lifetime of the client relationship); a $100 payout for each qualifying ceramic coating service converted; and a $100 payout for each qualifying paint correction service converted. A $30 payout is also issued when a referred client registers for a VDS Gold membership using the partner\'s referral link, subject to the same one-time-per-client limitation as the initial-detail incentive. Add-on services, including ceramic sealant, are expressly excluded from incentive calculations; only the job\'s primary service package is evaluated. Incentive payouts are credited to the referring partner\'s account when the associated invoice is marked paid, and are tracked within the Partner Portal. Valet Detailing Service LLC reserves the right to modify incentive amounts, eligibility criteria, or to suspend the Partner Network program at any time. Partners are treated equally; no founding or tiered status confers additional compensation.',
+  },
+  {
+    num: '16.',
     title: 'Governing Law',
     content: 'These Terms and Conditions shall be governed by and construed in accordance with the laws of the State of Georgia.',
   },
   {
-    num: '15.',
+    num: '17.',
     title: 'Changes to Terms',
     content: 'Valet Detailing Service LLC reserves the right to modify these Terms and Conditions at any time. The most current version will always be posted on our website. Your continued use of our services after any changes constitutes your acceptance of the new terms.',
   },
   {
-    num: '16.',
+    num: '18.',
     title: 'Contact Us',
     content: 'If you have any questions about these Terms and Conditions, please contact us through the official channels listed on our website at vdsmobile.com or via email at Valetdetailingservice@gmail.com.',
   },
@@ -92,7 +102,7 @@ export default function Terms() {
       <section className="pt-36 pb-20 max-w-4xl mx-auto px-6">
         <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">LEGAL</p>
         <h1 className="text-5xl font-grotesk font-bold text-vapor mb-3">TERMS & CONDITIONS</h1>
-        <p className="text-xs font-mono-tech text-vapor/30 mb-16 tracking-widest">VALET DETAILING SERVICE LLC · LAST UPDATED: JULY 22, 2026</p>
+        <p className="text-xs font-mono-tech text-vapor/30 mb-16 tracking-widest">VALET DETAILING SERVICE LLC · LAST UPDATED: JULY 23, 2026</p>
 
         <div className="space-y-10">
           {SECTIONS.map(sec => (

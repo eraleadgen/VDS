@@ -7,6 +7,7 @@ import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
 import GoldShimmer from '../components/vds/GoldShimmer';
 import VehicleGarageSection from '../components/member/VehicleGarageSection';
+import CareGuides from '../components/shared/CareGuides';
 import AccountDetailsForm from '../components/member/AccountDetailsForm';
 import AppointmentCard from '../components/member/AppointmentCard';
 import VehicleSubscriptionModal from '../components/member/VehicleSubscriptionModal';
@@ -358,6 +359,12 @@ export default function MemberDashboard() {
             </div>
           </div>
         )}
+
+        {/* Client Care Guides */}
+        <div className="mb-8 md:mb-12">
+          <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40 mb-4">CARE GUIDES</p>
+          <CareGuides />
+        </div>
 
         {/* Account Details */}
         <div className="mb-8 md:mb-12">
