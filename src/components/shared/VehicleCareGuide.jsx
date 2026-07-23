@@ -11,12 +11,14 @@ const SECTIONS = [
     intro: 'Your ceramic coating needs a brief cure period and gentle maintenance to perform for years.',
     bullets: [
       'Do not wash the vehicle for the first 48 hours — the coating is curing and bonding to the paint during this window.',
-      'Avoid parking under trees, near sprinklers, or in heavy rain during the 48-hour cure window.',
+      'Keep the vehicle in a covered area — your garage or a parking deck — during the entire 48-hour cure. As a mobile service, the car must be sheltered away from rain and the elements until the coating has cured.',
       'After curing, wash every 2–4 weeks using a pH-neutral, coating-safe shampoo — never dish soap or degreasers.',
       'Use the two-bucket method (one rinse, one wash) with a clean microfiber mitt to prevent swirl marks.',
       "Top up the coating's hydrophobic behavior with a ceramic sealant every 6 months.",
       'Dry with a leaf blower — it is the most effective method with a ceramic coating because there is less contact with the paint.',
       'Have the coating inspected annually by a VDS specialist to check for worn or compromised areas.',
+      'Once cured, do not park under trees or near sprinklers — tree sap, bird droppings, and hard-water spots will etch and stain the coating if left untreated.',
+      'VDS Mobile is not responsible for damage caused by improper care or mistreatment of a ceramic-coated vehicle. Follow these guidelines to protect your investment.',
     ],
   },
   {
