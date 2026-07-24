@@ -539,6 +539,7 @@ export async function partnerMyReferrals(base44) {
       incentive_type: r.incentive_type || 'none', incentive_amount: r.incentive_amount || 0,
       service_package: r.service_package || '',
       job_id: r.job_id || null,
+      customer_id: r.customer_id || '',
       consultation_status: job?.consultation_status || null,
       job_service_label: job?.service_label || '',
       appointment_date: job?.appointment_date || '',
