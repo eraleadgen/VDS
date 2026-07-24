@@ -10,7 +10,7 @@
 // fallback content. To enable live reviews, set VDS_PLACE_ID and the lookup below will use it
 // directly instead of searching.
 
-const VDS_PLACE_ID = ""; // e.g. "ChIJ..." — paste the exact Place ID here to go live.
+const VDS_PLACE_ID = "ChIJzdzDrpzR9y8RyZ2fOz9rfTk";
 
 Deno.serve(async () => {
   try {
