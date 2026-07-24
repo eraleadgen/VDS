@@ -5,7 +5,6 @@ import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
 import GoldShimmer from '../components/vds/GoldShimmer';
 import GoldParticles from '../components/vds/GoldParticles';
-import GoldPromoCard from '../components/vds/GoldPromoCard';
 import ReviewsCarousel from '../components/vds/ReviewsCarousel';
 
 const STATS = [
@@ -125,13 +124,6 @@ export default function Home() {
 
       {/* ── GOOGLE REVIEWS CAROUSEL ─────────────────── */}
       <ReviewsCarousel />
-
-      {/* ── VDS GOLD BANNER ──────────────────────────── */}
-      <section className="py-16 md:py-20">
-        <div className="max-w-7xl mx-auto px-6">
-          <GoldPromoCard />
-        </div>
-      </section>
 
       {/* ── SERVICES ─────────────────────────────────── */}
       <section className="py-16 md:py-24 max-w-7xl mx-auto px-6">
