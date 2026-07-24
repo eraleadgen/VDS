@@ -213,7 +213,7 @@ export const CARE_GUIDES = [
         bullets: [
           'Unlimited exterior details (ceramic sealant included).',
           'One full detail per month.',
-          'Annual ceramic coating inspection and maintenance top-up.',
+          'Priority scheduling — lock in your preferred slots ahead of other clients.',
           '$250/month for sedans and coupes · $300/month for trucks and SUVs.',
         ],
       },
