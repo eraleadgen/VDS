@@ -226,11 +226,13 @@ export const CARE_GUIDES = [
         ],
       },
       {
-        title: 'Between Visits',
+        title: 'How to Sign Up',
         bullets: [
-          'Use the two-bucket method for any at-home washes; never use dish soap or automated brush washes.',
-          'Remove bird droppings and sap promptly to protect your coating.',
-          'Dry with a leaf blower or plush microfiber to minimize paint contact.',
+          'Visit vdsmobile.com/vds-gold-signup to start your VDS Gold enrollment.',
+          'Select your vehicle — pricing is automatically set to $250/mo for sedans & coupes and $300/mo for trucks & SUVs.',
+          'Add your vehicle details (year, make, model, color) and create your member account.',
+          'Complete checkout through our secure Stripe payment to activate your membership.',
+          'Once enrolled, manage your vehicle, schedule details, and track usage from your Member Dashboard at vdsmobile.com/member-dashboard.',
         ],
       },
     ],
