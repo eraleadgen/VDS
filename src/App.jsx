@@ -1,6 +1,7 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
+import { useEffect, useRef, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
@@ -46,6 +47,15 @@ const AuthenticatedApp = () => {
   const location = useLocation();
   const authLoaded = !isLoadingAuth && !isLoadingPublicSettings;
 
+  // The page only swaps once the transition overlay has fully closed. While closing we keep
+  // rendering the previous route (committedLocation) so the old page stays put until the
+  // overlay covers the screen; then we swap to the new route under the closed overlay, and the
+  // overlay opens to reveal it. This applies to every in-app navigation site-wide.
+  const [committedLocation, setCommittedLocation] = useState(location);
+  const latestLocation = useRef(location);
+  useEffect(() => { latestLocation.current = location; }, [location]);
+  const handleCloseComplete = () => setCommittedLocation(latestLocation.current);
+
   // The branded transition overlay is always rendered (even during the auth loading
   // gate) so it replaces the loading circle and only opens once the page is ready.
   let content;
@@ -62,7 +72,7 @@ const AuthenticatedApp = () => {
       window.location.href = '/member-login';
     }
     content = (
-      <Routes>
+      <Routes location={committedLocation}>
         <Route element={<PageTransition />}>
           <Route path="/" element={<Home />} />
           <Route path="/services" element={<Services />} />
@@ -103,7 +113,7 @@ const AuthenticatedApp = () => {
 
   return (
     <>
-      <VdsTransitionOverlay authLoaded={authLoaded} pathKey={location.pathname} />
+      <VdsTransitionOverlay authLoaded={authLoaded} pathKey={location.pathname} onCloseComplete={handleCloseComplete} />
       {content}
     </>
   );

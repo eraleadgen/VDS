@@ -22,7 +22,9 @@ const LOGO_URL =
 //
 // phase: 'hold' (closed, waiting to open) → 'opening' (reveal) → 'done' (unmounted);
 //        on nav: 'closing' (circle shrinks to center) → 'hold' → 'opening' → 'done'.
-export default function VdsTransitionOverlay({ pathKey, authLoaded }) {
+export default function VdsTransitionOverlay({ pathKey, authLoaded, onCloseComplete }) {
+  const onCloseCompleteRef = useRef(onCloseComplete);
+  useEffect(() => { onCloseCompleteRef.current = onCloseComplete; }, [onCloseComplete]);
   const [phase, setPhase] = useState('hold');
   const [size, setSize] = useState(() =>
     typeof window !== 'undefined' ? { w: window.innerWidth, h: window.innerHeight } : { w: 1280, h: 800 }
@@ -50,7 +52,7 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded }) {
   // to the hold/opening logic (which waits for the page to be ready).
   useEffect(() => {
     if (phase !== 'closing') return;
-    const t = setTimeout(() => setPhase('hold'), 0.45 * 1000);
+    const t = setTimeout(() => { setPhase('hold'); onCloseCompleteRef.current?.(); }, 0.45 * 1000);
     return () => clearTimeout(t);
   }, [phase]);
 

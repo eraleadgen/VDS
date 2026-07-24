@@ -1,24 +1,9 @@
-import { useLocation, Outlet } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import { Outlet } from 'react-router-dom';
 
-// App-wide page transition layout route. Wraps the page swap in a quick fade that runs
-// underneath the VdsTransitionOverlay (rendered at the App level). The overlay covers the
-// swap and only opens once the next page is finished loading, so the hand-off is never seen.
+// App-wide page-transition layout route. The branded VdsTransitionOverlay (rendered at the
+// App level) now owns the page swap: it closes over the current page, swaps the route under
+// the closed overlay (via the committedLocation passed to <Routes>), then opens to reveal it.
+// This wrapper is a passthrough that renders the matched child route.
 export default function PageTransition() {
-  const location = useLocation();
-
-  return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={location.pathname}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.4, ease: 'easeInOut' }}
-        className="relative"
-      >
-        <Outlet />
-      </motion.div>
-    </AnimatePresence>
-  );
+  return <Outlet />;
 }
