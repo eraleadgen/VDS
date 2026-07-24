@@ -139,22 +139,19 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded, onCloseCompl
         <div className="relative flex items-center justify-center w-[200px] h-[200px]">
           <motion.div
             aria-hidden
-            className="absolute inset-0 rounded-full"
+            className="absolute inset-0 rounded-full vds-spin"
             style={{ border: '2px solid rgba(212,175,55,0.12)', borderTopColor: '#D4AF37' }}
-            initial={{ opacity: phase === 'closing' ? 0 : 1 }}
-            animate={{ opacity: phase === 'opening' ? 0 : 1, rotate: 360 }}
-            transition={{
-              opacity: { duration: phase === 'opening' ? 0.95 : phase === 'closing' ? 0.65 : 0, ease: 'easeOut' },
-              rotate: { duration: 1.1, ease: 'linear', repeat: Infinity },
-            }}
+            initial={{ opacity: 1 }}
+            animate={{ opacity: phase === 'opening' ? 0 : 1 }}
+            transition={{ duration: phase === 'opening' ? 0.95 : 0, ease: 'easeOut' }}
           />
           <motion.img
             src={LOGO_URL}
             alt="VDS"
             draggable={false}
-            initial={{ opacity: phase === 'closing' ? 0 : 1, filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.6)) blur(0px)' }}
+            initial={{ opacity: 1, filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.6)) blur(0px)' }}
             animate={{ opacity: phase === 'opening' ? 0 : 1, filter: `drop-shadow(0 4px 24px rgba(0,0,0,0.6)) blur(${phase === 'opening' ? 14 : 0}px)` }}
-            transition={{ duration: phase === 'opening' ? 0.95 : phase === 'closing' ? 0.65 : 0, ease: 'easeOut', delay: phase === 'opening' ? 0.05 : 0 }}
+            transition={{ duration: phase === 'opening' ? 0.95 : 0, ease: 'easeOut', delay: phase === 'opening' ? 0.05 : 0 }}
             className="relative max-w-[140px] max-h-[140px] w-auto h-auto object-contain select-none"
           />
         </div>

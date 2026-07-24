@@ -82,6 +82,13 @@
   animation: rotateBorderGlow 4s linear infinite;
 }
 
+@keyframes vdsSpin {
+  to { transform: rotate(360deg); }
+}
+.vds-spin {
+  animation: vdsSpin 1.1s linear infinite;
+}
+
 .gold-shine-text {
   background-image: linear-gradient(105deg, #A08020 0%, #A08020 30%, #C9921A 40%, #D4AF37 45%, #FFFDE0 50%, #D4AF37 55%, #C9921A 60%, #A08020 70%, #A08020 100%);
   background-size: 600% 100%;
