@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { LogOut, Calendar, Star, ClipboardList, CheckCircle, X, RotateCcw, User } from 'lucide-react';
 import { format, startOfMonth } from 'date-fns';
@@ -16,6 +16,7 @@ import VehicleSubscriptionModal from '../components/member/VehicleSubscriptionMo
 const BOOKING_LINK = 'https://book.vdsmobile.com';
 
 export default function MemberDashboard() {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [vehicles, setVehicles] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]); // VehicleSubscription records
@@ -128,7 +129,7 @@ export default function MemberDashboard() {
   const handleModalConfirm = async () => {
     if (!selectedVehicle) return;
     if (modalAction === 'enroll') {
-      window.location.href = '/vds-gold-signup';
+      navigate('/vds-gold-signup');
     } else if (modalAction === 'cancel') {
       try {
         const response = await base44.functions.invoke('cancelGoldSubscription', { vehicle_id: selectedVehicle.id });

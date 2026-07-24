@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { LayoutDashboard, Briefcase, CalendarDays, UserCircle, Library } from 'lucide-react';
@@ -57,7 +58,7 @@ export default function SpecialistPortal() {
   }, [user, load]);
 
   if (!authChecked || isLoadingAuth) return <div className="min-h-screen bg-obsidian flex items-center justify-center"><div className="w-8 h-8 border-2 border-gold/20 border-t-gold rounded-full animate-spin" /></div>;
-  if (error && !profile) return <div className="min-h-screen bg-obsidian flex items-center justify-center p-6 text-center"><div><p className="text-red-400 text-sm font-mono-tech mb-4">{error}</p><a href="/specialist-login" className="text-gold text-xs font-mono-tech tracking-widest">← BACK TO LOGIN</a></div></div>;
+  if (error && !profile) return <div className="min-h-screen bg-obsidian flex items-center justify-center p-6 text-center"><div><p className="text-red-400 text-sm font-mono-tech mb-4">{error}</p><Link to="/specialist-login" className="text-gold text-xs font-mono-tech tracking-widest">← BACK TO LOGIN</Link></div></div>;
 
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
   const todaysJobs = jobs.filter(j => j.appointment_date === today && j.status !== 'completed' && j.status !== 'cancelled');

@@ -131,9 +131,9 @@ export default function CareGuides({ compact = false, onAction, from = 'member' 
       <div className="glass-panel border border-gold/30 rounded-sm p-5 bg-gold/5">
         <h3 className="text-base font-grotesk font-semibold text-gold mb-2">{guide.goldCta.title}</h3>
         <p className="text-sm text-vapor/70 leading-relaxed mb-4">{guide.goldCta.body}</p>
-        <a href={guide.goldCta.link} className="inline-block vds-gold-btn px-5 py-3 text-xs font-mono-tech tracking-widest rounded-sm">
+        <Link to={guide.goldCta.link} className="inline-block vds-gold-btn px-5 py-3 text-xs font-mono-tech tracking-widest rounded-sm">
           ◆ {guide.goldCta.linkLabel.toUpperCase()}
-        </a>
+        </Link>
       </div>
     </div>
   );

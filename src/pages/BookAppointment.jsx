@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { CheckCircle, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -311,8 +311,8 @@ export default function BookAppointment() {
                 <p className="text-xs font-mono-tech tracking-widest text-gold mb-2">MEMBER ACCOUNT</p>
                 <p className="text-vapor/50 font-mono-tech text-xs mb-5">Sign in to use saved vehicles, auto-fill details, and track service history.</p>
                 <div className="flex gap-3">
-                  <a href="/member-login" className="flex-1 text-center border border-gold bg-gold text-obsidian px-4 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold-light transition-colors">SIGN IN</a>
-                  <a href="/gold-signup" className="flex-1 text-center border border-gold/40 text-gold px-4 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold/10 transition-colors">CREATE ACCOUNT</a>
+                  <Link to="/member-login" className="flex-1 text-center border border-gold bg-gold text-obsidian px-4 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold-light transition-colors">SIGN IN</Link>
+                  <Link to="/gold-signup" className="flex-1 text-center border border-gold/40 text-gold px-4 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold/10 transition-colors">CREATE ACCOUNT</Link>
                 </div>
               </div>
               <div className="relative flex items-center gap-4">
@@ -345,9 +345,9 @@ export default function BookAppointment() {
             </p>
             <div className="flex flex-col gap-3">
               {user ? (
-                <a href="/member-dashboard" className="border border-gold bg-gold text-obsidian px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold-light transition-colors text-center">VIEW APPOINTMENT →</a>
+                <Link to="/member-dashboard" className="border border-gold bg-gold text-obsidian px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold-light transition-colors text-center">VIEW APPOINTMENT →</Link>
               ) : (
-                <a href="/member-login" className="border border-gold/40 text-gold px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold/10 transition-colors text-center">CREATE ACCOUNT TO TRACK →</a>
+                <Link to="/member-login" className="border border-gold/40 text-gold px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold/10 transition-colors text-center">CREATE ACCOUNT TO TRACK →</Link>
               )}
               <button onClick={() => { setSubmitted(false); setForm(DEFAULT_FORM); setSelectedDay(null); setGuestVehicle(DEFAULT_GUEST_VEHICLE); setSelected([]); setAddOns([]); setConsultations([]); setCondition('light'); setPaintProtection('none'); setSmsConsent(false); setExistingQuoteId(null); navigate('/book', { replace: true }); }}
                 className="border border-vapor/20 text-vapor/60 px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm hover:border-vapor/50 hover:text-vapor transition-colors">BOOK ANOTHER</button>

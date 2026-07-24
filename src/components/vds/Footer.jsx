@@ -44,7 +44,6 @@ export default function Footer() {
               <Link to="/specialist-login" className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">Specialist Login</Link>
               <Link to="/partner-login" className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">Partner Login</Link>
               <Link to="/admin-login" className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">Admin Login</Link>
-              <Link to="/project-overview" className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">Project Overview</Link>
             </div>
           </div>
 

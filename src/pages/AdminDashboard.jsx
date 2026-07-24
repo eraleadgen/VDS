@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { LayoutDashboard, Users, CalendarRange, MessageSquare, DollarSign, Route, FileText, Network, LineChart, Library } from 'lucide-react';
@@ -37,7 +38,7 @@ export default function AdminDashboard() {
   useEffect(() => { if (authChecked && user?.role === 'admin') loadMetrics(); }, [authChecked, user, loadMetrics]);
 
   if (!authChecked || isLoadingAuth) return <div className="min-h-screen bg-obsidian flex items-center justify-center"><div className="w-8 h-8 border-2 border-gold/20 border-t-gold rounded-full animate-spin" /></div>;
-  if (error && !metrics) return <div className="min-h-screen bg-obsidian flex items-center justify-center p-6 text-center"><div><p className="text-red-400 text-sm font-mono-tech mb-4">{error}</p><a href="/admin-login" className="text-gold text-xs font-mono-tech tracking-widest">← BACK TO LOGIN</a></div></div>;
+  if (error && !metrics) return <div className="min-h-screen bg-obsidian flex items-center justify-center p-6 text-center"><div><p className="text-red-400 text-sm font-mono-tech mb-4">{error}</p><Link to="/admin-login" className="text-gold text-xs font-mono-tech tracking-widest">← BACK TO LOGIN</Link></div></div>;
 
   const navItems = [
     { key: 'overview', label: 'OVERVIEW', icon: LayoutDashboard },

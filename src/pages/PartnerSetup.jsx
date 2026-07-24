@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Eye, EyeOff, ArrowRight, CheckCircle2 } from 'lucide-react';
 import Navbar from '@/components/vds/Navbar';
@@ -120,7 +121,7 @@ export default function PartnerSetup() {
             {stage === 'invalid' && (
               <div className="text-center py-6">
                 <p className="text-red-400 text-sm font-mono-tech mb-6">{error}</p>
-                <a href="/admin-login" className="text-gold text-xs font-mono-tech tracking-widest">← BACK TO LOGIN</a>
+                <Link to="/admin-login" className="text-gold text-xs font-mono-tech tracking-widest">← BACK TO LOGIN</Link>
               </div>
             )}
 
