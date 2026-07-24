@@ -141,10 +141,10 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded, onCloseCompl
             aria-hidden
             className="absolute inset-0 rounded-full"
             style={{ border: '2px solid rgba(212,175,55,0.12)', borderTopColor: '#D4AF37' }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: isOpen ? 0 : 1, rotate: 360 }}
+            initial={{ opacity: phase === 'closing' ? 0 : 1 }}
+            animate={{ opacity: phase === 'opening' ? 0 : 1, rotate: 360 }}
             transition={{
-              opacity: { duration: 0.4, ease: 'easeOut' },
+              opacity: { duration: phase === 'opening' ? 0.95 : phase === 'closing' ? 0.45 : 0, ease: 'easeOut' },
               rotate: { duration: 1.1, ease: 'linear', repeat: Infinity },
             }}
           />
@@ -152,9 +152,9 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded, onCloseCompl
             src={LOGO_URL}
             alt="VDS"
             draggable={false}
-            initial={{ opacity: 1, scale: 1, filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.6)) blur(0px)' }}
-            animate={{ opacity: isOpen ? 0 : 1, scale: isOpen ? 1.18 : 1, filter: `drop-shadow(0 4px 24px rgba(0,0,0,0.6)) blur(${isOpen ? 14 : 0}px)` }}
-            transition={{ duration: isOpen ? 1.05 : 0, ease: 'easeOut', delay: isOpen ? 0.05 : 0 }}
+            initial={{ opacity: phase === 'closing' ? 0 : 1, scale: 1, filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.6)) blur(0px)' }}
+            animate={{ opacity: phase === 'opening' ? 0 : 1, scale: phase === 'opening' ? 1.18 : 1, filter: `drop-shadow(0 4px 24px rgba(0,0,0,0.6)) blur(${phase === 'opening' ? 14 : 0}px)` }}
+            transition={{ duration: phase === 'opening' ? 0.95 : phase === 'closing' ? 0.45 : 0, ease: 'easeOut', delay: phase === 'opening' ? 0.05 : 0 }}
             className="relative max-w-[140px] max-h-[140px] w-auto h-auto object-contain select-none"
           />
         </div>
