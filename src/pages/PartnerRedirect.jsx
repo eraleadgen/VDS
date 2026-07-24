@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { capturePartnerRef } from '@/lib/partnerRef';
+import { capturePartnerRef, setPartnerRef } from '@/lib/partnerRef';
 
 // Vanity referral link redirect: /CODE → /book?ref=CODE
 // Partner referral links are short (domain/CODE). This catches any unmatched
@@ -11,6 +11,10 @@ export default function PartnerRedirect() {
   const { code } = useParams();
   const navigate = useNavigate();
   useEffect(() => {
+    // Store the vanity path code directly so attribution persists even if the visitor
+    // navigates away before the /book redirect lands. capturePartnerRef() also runs to
+    // pick up any ?ref= present after the redirect.
+    setPartnerRef(code);
     capturePartnerRef();
     navigate(`/book?ref=${encodeURIComponent(code || '')}`, { replace: true });
   }, [code, navigate]);

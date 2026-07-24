@@ -48,6 +48,19 @@ export function getPartnerRef() {
   } catch { return null; }
 }
 
+// Explicitly store a partner referral code (e.g. from a vanity /CODE path link) into
+// localStorage so it persists across all page navigation, even if the visitor never
+// lands on a ?ref= URL. This guarantees attribution survives no matter which page
+// the visitor browses after clicking the partner link.
+export function setPartnerRef(code) {
+  const store = readStore();
+  if (!store || !code) return;
+  try {
+    store.setItem(KEY, String(code).trim());
+    store.setItem(TS_KEY, String(Date.now()));
+  } catch {}
+}
+
 export function clearPartnerRef() {
   const store = readStore();
   if (!store) return;

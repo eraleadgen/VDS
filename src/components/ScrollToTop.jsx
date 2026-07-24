@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useLocation, useNavigationType } from "react-router-dom";
+import { capturePartnerRef } from "@/lib/partnerRef";
 
 const getHashId = (hash) => {
   const rawId = hash.slice(1);
@@ -12,10 +13,14 @@ const getHashId = (hash) => {
 };
 
 export default function ScrollToTop() {
-  const { pathname, hash } = useLocation();
+  const { pathname, hash, search } = useLocation();
   const navigationType = useNavigationType();
 
   useEffect(() => {
+    // Capture any ?ref= partner code on every navigation so it survives across all
+    // pages — a referred visitor keeps attribution no matter which page they browse.
+    capturePartnerRef();
+
     if (navigationType === "POP") return;
 
     if (hash) {
@@ -27,7 +32,7 @@ export default function ScrollToTop() {
     }
 
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-  }, [pathname, hash, navigationType]);
+  }, [pathname, hash, search, navigationType]);
 
   return null;
 }

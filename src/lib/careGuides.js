@@ -278,7 +278,7 @@ export const CARE_GUIDES = [
         bullets: [
           'Your customers just made a significant investment in their vehicle — referring them to VDS ensures that investment is taken care of by professionals.',
           'Recommending a trusted, high-end detailing partner makes you a more valuable, professional resource to your clients — not just a salesperson.',
-          'We are fully mobile, so we come to your customers wherever they are — at the dealership, at home, or at work. It is the most convenient detailing option available, and it reflects well on the person who recommended it.',
+          'We are fully mobile, so we come to your customers wherever they are — at the dealership, at home, or at work, and it reflects well on the person who recommended it.',
           'You do not have to be a detail expert: we handle the service, the quality, and the follow-up — your role is simply the introduction.',
         ],
       },
