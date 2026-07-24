@@ -12,9 +12,11 @@ import printHtml from '@/components/shared/printHtml';
 // `compact` mode (used on the Member Dashboard) renders only the selector plus View and
 // Download buttons — no expanded accordion content — to keep the dashboard short.
 export default function CareGuides({ compact = false, onAction, from = 'member' }) {
-  const [active, setActive] = useState(CARE_GUIDES[0].key);
+  // The Partner Network guide is internal — only shown to admin, specialist, and partner portals.
+  const guides = from === 'member' ? CARE_GUIDES.filter((g) => g.key !== 'partner_network') : CARE_GUIDES;
+  const [active, setActive] = useState(guides[0].key);
   const [open, setOpen] = useState(0);
-  const guide = CARE_GUIDES.find((g) => g.key === active) || CARE_GUIDES[0];
+  const guide = guides.find((g) => g.key === active) || guides[0];
 
   const onPick = (key) => { setActive(key); setOpen(0); };
 
@@ -30,7 +32,7 @@ export default function CareGuides({ compact = false, onAction, from = 'member' 
             onChange={(e) => onPick(e.target.value)}
             className="bg-asphalt border border-gold/30 text-vapor text-sm font-mono-tech px-4 py-2.5 rounded-sm outline-none focus:border-gold/60 transition-colors flex-1"
           >
-            {CARE_GUIDES.map((g) => (
+            {guides.map((g) => (
               <option key={g.key} value={g.key}>{g.title}</option>
             ))}
           </select>
@@ -73,7 +75,7 @@ export default function CareGuides({ compact = false, onAction, from = 'member' 
           onChange={(e) => onPick(e.target.value)}
           className="bg-asphalt border border-gold/30 text-vapor text-sm font-mono-tech px-4 py-2.5 rounded-sm outline-none focus:border-gold/60 transition-colors"
         >
-          {CARE_GUIDES.map((g) => (
+          {guides.map((g) => (
             <option key={g.key} value={g.key}>{g.title}</option>
           ))}
         </select>
