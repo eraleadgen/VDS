@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Download, FileText, Lock, Loader2 } from 'lucide-react';
+import { Download, Eye, FileText, Lock, Loader2 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
 const DOC_FILENAME = 'ERA-Core-1.0-VDS-Mobile-Project-Overview.html';
@@ -104,12 +104,14 @@ export default function ProjectOverview() {
           An in-depth record of the platform built so far — architecture, data model, engines, portals, integrations, and how ERA Core &amp; VDS connect and communicate.
         </p>
         <p className="text-xs font-mono-tech text-gold/70 mb-7">Authored &amp; built by Noah Grove &amp; Shane Muenkel, Owners of ERA &amp; VDS · v1.0 · July 2026</p>
-        <button onClick={handleDownload} className="w-full inline-flex items-center justify-center gap-2 bg-gold text-obsidian font-bold tracking-wider text-sm py-3.5 rounded-md hover:bg-gold-light transition-colors">
-          <Download size={16} /> Download Document (.html)
-        </button>
-        <button onClick={handleView} className="w-full mt-3 text-xs text-vapor/50 hover:text-gold transition-colors font-mono-tech py-2">
-          preview the formatted document in a new tab
-        </button>
+        <div className="flex gap-3">
+          <button onClick={handleDownload} className="flex-1 inline-flex items-center justify-center gap-2 bg-gold text-obsidian font-bold tracking-wider text-sm py-3.5 rounded-md hover:bg-gold-light transition-colors">
+            <Download size={16} /> Download
+          </button>
+          <button onClick={handleView} className="flex-1 inline-flex items-center justify-center gap-2 border border-gold/40 text-gold font-bold tracking-wider text-sm py-3.5 rounded-md hover:bg-gold/10 transition-colors">
+            <Eye size={16} /> View
+          </button>
+        </div>
         {status && <p className="mt-5 text-xs text-vapor/50 font-mono-tech min-h-[18px]">{status}</p>}
         {error && <p className="mt-3 text-xs text-red-400/80 font-mono-tech min-h-[18px]">{error}</p>}
       </div>
