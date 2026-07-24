@@ -87,26 +87,40 @@ export const CARE_GUIDES = [
       {
         title: 'Protect Corrected Paint Immediately',
         bullets: [
-          'Apply a sealant, ceramic coating, or PPF as soon as possible — corrected paint has no protective layer until you do.',
+          'We encourage our clients to apply a Ceramic Coating, Ceramic Sealant, or PPF as soon as possible after the paint correction to help prevent future damage to the paint.',
           'Until protected, treat the paint as freshly polished: minimal contact, gentle washing only.',
         ],
       },
       {
-        title: 'Safe Washing',
+        title: 'Tips for Regular Maintenance — Washing the Coating',
         bullets: [
-          'Wash using the two-bucket method with plush microfiber towels only.',
-          'Never wipe the paint dry — always use a detail spray or pre-rinse to lift dirt first.',
-          'Blot dry with a clean microfiber towel instead of wiping in circles.',
-          'Avoid drive-through brush washes entirely; they will re-introduce swirl marks.',
+          'Wipe the microfiber mitt in horizontal strokes along the aerodynamics of the vehicle. Do not wipe in circular motions.',
+          'Bucket Method: Use the two-bucket method with grit guards. Fill one bucket with soapy water and the other with clean water. Dip your wash mitt into the soapy water, wash a section of the car, then rinse the mitt in the clean water before re-soaping.',
+          "Wash Mitt: Use a high-quality wash mitt to clean the car's surface gently. Avoid using sponges or brushes that can cause scratches.",
+          "pH-Neutral Shampoo: Choose a pH-neutral shampoo designed to work with ceramic coatings. This helps maintain the coating's hydrophobic properties and ensures a thorough cleaning.",
+          'Foam Cannon: Use a foam cannon to apply a foam layer to the entire vehicle. This helps loosen dirt and grime without scratching the surface.',
         ],
       },
       {
-        title: 'Hazards to Avoid',
+        title: 'Drying the Coated Surface',
         bullets: [
-          'Do not wipe paint with a dry towel or your hand (even "just dusting").',
-          'Parking under trees — sap and bird droppings etch paint within hours.',
-          'Parking in sprinkler range — sprinklers cause hard-water spots that can stain the finish.',
-          'Letting bird droppings or sap sit for more than a day.',
+          'Proper drying techniques will help you avoid swirl marks and water spots. After washing, use a microfiber towel to dry the vehicle. Microfiber towels are gentle on the surface and highly absorbent, making them ideal for this task.',
+          'For an even more careful approach, you can use a leaf blower to blow dry the vehicle to ensure no water remains on the surface.',
+        ],
+      },
+      {
+        title: 'Protection from Environmental Factors',
+        bullets: [
+          'Parking in the shade is crucial to avoid the harmful effects of direct sunlight, which can degrade the ceramic coating over time. Park your car in a garage or under a carport to keep it out of the sun when possible.',
+          "For quick touch-ups between washes, use a detail spray or ceramic boosters. These products help maintain the coating's hydrophobic properties and provide a quick shine.",
+        ],
+      },
+      {
+        title: 'Dealing with Specific Contaminants',
+        bullets: [
+          'Bird Droppings: Use a quick detailer spray and a microfiber towel to gently remove bird droppings. Avoid scrubbing, as this can damage the coating.',
+          'Brake Dust: Brake dust can accumulate on wheels and lower body panels. Use a wheel cleaner safe for ceramic-coated surfaces and a soft brush to clean these areas.',
+          'Water Spots: To remove water spots, use a dedicated water spot remover or a vinegar solution. Apply it to the affected area and gently wipe it away with a microfiber cloth.',
         ],
       },
     ],
