@@ -1,51 +1,50 @@
-// Public: fetches the business's live Google reviews via the Places API so the home-page
-// reviews carousel stays in sync with real reviews and auto-includes new ones over time.
-// No auth — Google review data is public. The API key is the app's GOOGLE_MAPS_API_KEY.
+// Public: fetches the business's live Google reviews via the Places API (New) so the
+// home-page reviews carousel stays in sync with real reviews and auto-includes new ones
+// over time. No auth — Google review data is public. Uses GOOGLE_PLACES_API_KEY (New API).
+// Docs: https://developers.google.com/maps/documentation/places/web-service
 
 Deno.serve(async () => {
   try {
-    const key = Deno.env.get("GOOGLE_MAPS_API_KEY");
+    const key = Deno.env.get("GOOGLE_PLACES_API_KEY") || Deno.env.get("GOOGLE_MAPS_API_KEY");
     if (!key) return Response.json({ error: "Google API key not configured." }, { status: 500 });
 
-    // Resolve the place — try the business phone first, then a name/area text query.
-    const phone = encodeURIComponent("+14704128986");
-    const findUrl = `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${phone}&inputtype=phonenumber&fields=place_id&key=${key}`;
-    let findData = await (await fetch(findUrl)).json();
-    let placeId = findData?.candidates?.[0]?.place_id;
-    let findSource = "phone";
+    const baseHeaders = { "X-Goog-Api-Key": key };
 
+    // 1) Text Search (New) to resolve the place by name + area.
+    const searchRes = await fetch("https://places.googleapis.com/v1/places:searchText", {
+      method: "POST",
+      headers: {
+        ...baseHeaders,
+        "Content-Type": "application/json",
+        "X-Goog-FieldMask": "places.id,places.displayName,places.rating,places.userRatingCount",
+      },
+      body: JSON.stringify({ textQuery: "Valet Detailing Service Alpharetta GA", languageCode: "en" }),
+    });
+    const searchData = await searchRes.json();
+    const placeId = searchData?.places?.[0]?.id;
     if (!placeId) {
-      const q = encodeURIComponent("Valet Detailing Service Alpharetta GA");
-      const findUrl2 = `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${q}&inputtype=textquery&fields=place_id&key=${key}`;
-      findData = await (await fetch(findUrl2)).json();
-      placeId = findData?.candidates?.[0]?.place_id;
-      findSource = "text";
+      return Response.json({ name: null, rating: null, total: null, reviews: [] });
     }
 
-    if (!placeId) {
-      return Response.json({
-        name: null, rating: null, total: null, reviews: [],
-        debug: { findSource, status: findData?.status, error: findData?.error_message },
-      });
-    }
+    // 2) Place Details (New) to fetch reviews.
+    const detailsRes = await fetch(`https://places.googleapis.com/v1/places/${placeId}`, {
+      headers: { ...baseHeaders, "X-Goog-FieldMask": "id,displayName,rating,userRatingCount,reviews" },
+    });
+    const details = await detailsRes.json();
 
-    const detailsUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=name,rating,user_ratings_total,reviews&key=${key}`;
-    const details = await (await fetch(detailsUrl)).json();
-    const result = details?.result || {};
-
-    const reviews = (result.reviews || []).map((r) => ({
-      author: r.author_name,
-      rating: r.rating,
-      text: r.text,
-      time: r.time,
-      relative_time: r.relative_time_description,
-      profile_photo: r.profile_photo_url,
+    const reviews = (details?.reviews || []).map((r) => ({
+      author: r?.authorAttribution?.displayName,
+      rating: r?.rating,
+      text: r?.text?.text,
+      publishTime: r?.publishTime,
+      relative_time: r?.relativePublishTimeDescription,
+      profile_photo: r?.authorAttribution?.photoUri,
     }));
 
     return Response.json({
-      name: result.name,
-      rating: result.rating,
-      total: result.user_ratings_total,
+      name: details?.displayName?.text,
+      rating: details?.rating,
+      total: details?.userRatingCount,
       reviews,
     });
   } catch (error) {
