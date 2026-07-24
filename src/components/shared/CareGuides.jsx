@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Printer, Library, Eye, Download, ChevronDown } from 'lucide-react';
 import { CARE_GUIDES, buildGuidePrintHtml } from '@/lib/careGuides';
 import printHtml from '@/components/shared/printHtml';
+import { base44 } from '@/api/base44Client';
 
 // Client Care Guides — a separate, printable guide per service (Ceramic Coating,
 // Paint Correction, Detailing, VDS Gold). Shown in the Resource Center of every portal
@@ -13,12 +14,48 @@ import printHtml from '@/components/shared/printHtml';
 // Download buttons — no expanded accordion content — to keep the dashboard short.
 export default function CareGuides({ compact = false, onAction, from = 'member' }) {
   // The Partner Network guide is internal — only shown to admin, specialist, and partner portals.
-  const guides = from === 'member' ? CARE_GUIDES.filter((g) => g.key !== 'partner_network') : CARE_GUIDES;
+  const baseGuides = from === 'member' ? CARE_GUIDES.filter((g) => g.key !== 'partner_network') : CARE_GUIDES;
+  // Admin-only: the ERA Core + VDS Mobile Project Overview appears as a selectable resource
+  // option in the admin portal's Resource Center, alongside the care guides.
+  const projectOverviewOption = { key: 'project_overview', title: 'Project Overview' };
+  const guides = compact && from === 'admin' ? [...baseGuides, projectOverviewOption] : baseGuides;
   const [active, setActive] = useState(guides[0].key);
   const [open, setOpen] = useState(0);
-  const guide = guides.find((g) => g.key === active) || guides[0];
+  const [poStatus, setPoStatus] = useState('');
+  const [poError, setPoError] = useState('');
+  const guide = guides.find((g) => g.key === active) || baseGuides[0];
+  const isProjectOverview = active === 'project_overview';
 
-  const onPick = (key) => { setActive(key); setOpen(0); };
+  const onPick = (key) => { setActive(key); setOpen(0); setPoStatus(''); setPoError(''); };
+
+  const fetchProjectOverviewHtml = async () => {
+    const res = await base44.functions.invoke('projectOverviewDoc', {});
+    const html = res?.data?.html;
+    if (!html) throw new Error('Document content unavailable.');
+    return html;
+  };
+  const viewProjectOverview = async () => {
+    setPoError(''); setPoStatus('Opening preview…');
+    try {
+      const html = await fetchProjectOverviewHtml();
+      const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+      setPoStatus('');
+    } catch (e) { setPoStatus(''); setPoError('Error: ' + (e?.message || 'Unable to preview the document.')); }
+  };
+  const downloadProjectOverview = async () => {
+    setPoError(''); setPoStatus('Preparing…');
+    try {
+      const html = await fetchProjectOverviewHtml();
+      const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
+      const a = document.createElement('a');
+      a.href = url; a.download = 'ERA-Core-1.0-VDS-Mobile-Project-Overview.html';
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 2000);
+      setPoStatus('Download started ✓');
+    } catch (e) { setPoStatus(''); setPoError('Error: ' + (e?.message || 'Unable to download the document.')); }
+  };
 
   if (compact) {
     return (
@@ -38,20 +75,42 @@ export default function CareGuides({ compact = false, onAction, from = 'member' 
           </select>
         </div>
         <div className="flex flex-wrap gap-2 mt-4">
-          <Link
-            to={`/care-guide/${guide.key}?from=${from}`}
-            onClick={() => onAction && onAction()}
-            className="flex items-center gap-2 text-xs font-mono-tech text-gold border border-gold/30 bg-gold/10 hover:bg-gold/20 px-4 py-2.5 rounded-sm transition-colors"
-          >
-            <Eye size={13} /> VIEW GUIDE
-          </Link>
-          <button
-            onClick={() => { onAction && onAction(); printHtml(guide.title, buildGuidePrintHtml(guide)); }}
-            className="flex items-center gap-2 text-xs font-mono-tech text-vapor/70 border border-vapor/20 hover:border-gold/40 hover:text-gold px-4 py-2.5 rounded-sm transition-colors"
-          >
-            <Download size={13} /> DOWNLOAD
-          </button>
+          {isProjectOverview ? (
+            <>
+              <button
+                onClick={() => { onAction && onAction(); viewProjectOverview(); }}
+                className="flex items-center gap-2 text-xs font-mono-tech text-gold border border-gold/30 bg-gold/10 hover:bg-gold/20 px-4 py-2.5 rounded-sm transition-colors"
+              >
+                <Eye size={13} /> VIEW PROJECT OVERVIEW
+              </button>
+              <button
+                onClick={() => { onAction && onAction(); downloadProjectOverview(); }}
+                className="flex items-center gap-2 text-xs font-mono-tech text-vapor/70 border border-vapor/20 hover:border-gold/40 hover:text-gold px-4 py-2.5 rounded-sm transition-colors"
+              >
+                <Download size={13} /> DOWNLOAD
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                to={`/care-guide/${guide.key}?from=${from}`}
+                onClick={() => onAction && onAction()}
+                className="flex items-center gap-2 text-xs font-mono-tech text-gold border border-gold/30 bg-gold/10 hover:bg-gold/20 px-4 py-2.5 rounded-sm transition-colors"
+              >
+                <Eye size={13} /> VIEW GUIDE
+              </Link>
+              <button
+                onClick={() => { onAction && onAction(); printHtml(guide.title, buildGuidePrintHtml(guide)); }}
+                className="flex items-center gap-2 text-xs font-mono-tech text-vapor/70 border border-vapor/20 hover:border-gold/40 hover:text-gold px-4 py-2.5 rounded-sm transition-colors"
+              >
+                <Download size={13} /> DOWNLOAD
+              </button>
+            </>
+          )}
         </div>
+        {(poStatus || poError) && (
+          <p className={`mt-3 text-xs font-mono-tech ${poError ? 'text-red-400/80' : 'text-vapor/50'}`}>{poError || poStatus}</p>
+        )}
       </div>
     );
   }

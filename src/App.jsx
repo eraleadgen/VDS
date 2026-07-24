@@ -35,7 +35,6 @@ import SpecialistSetup from './pages/SpecialistSetup';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import EraDocDownload from './pages/EraDocDownload';
-import ProjectOverview from './pages/ProjectOverview';
 import PartnerPortal from './pages/PartnerPortal';
 import PartnerLogin from './pages/PartnerLogin';
 import PartnerSetup from './pages/PartnerSetup';
@@ -104,7 +103,6 @@ const AuthenticatedApp = () => {
           <Route path="/care-guide/:key" element={<CareGuide />} />
           <Route path="/:code" element={<PartnerRedirect />} />
           <Route path="/era-doc" element={<EraDocDownload />} />
-          <Route path="/project-overview" element={<ProjectOverview />} />
           <Route path="*" element={<PageNotFound />} />
         </Route>
       </Routes>
