@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import GoldParticles from '@/components/vds/GoldParticles';
 
@@ -63,39 +63,57 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded }) {
 
   if (phase === 'done') return null;
   const isOpen = phase === 'open';
+  const boot = bootRef.current;
 
-  // On a cold boot start already covered (no slide-in revealing the boot spinner);
-  // on later navigations the panels sweep in from the edges.
-  const leftInitial = bootRef.current ? '0%' : '-100%';
-  const rightInitial = bootRef.current ? '0%' : '100%';
+  // 5 stacked rectangles per side. Together the 10 bars cover the full screen. On open the
+  // left bars slide out to the left and the right bars to the right, with a center-out
+  // staggered delay so the part ripples outward from the middle split like a wave. On later
+  // navigations the bars sweep back in from the edges (reverse stagger) to re-cover.
+  const BARS = 5;
+  const waveDelay = (i) => Math.abs(i - (BARS - 1) / 2) * 0.07; // center bar first, edges last
+  const enterDelay = (i) => ((BARS - 1) - i) * 0.03;            // edges sweep in first
 
-  const panelTransition = {
-    duration: isOpen ? 1.0 : 0.5,
-    ease: isOpen ? [0.7, 0, 0.3, 1] : [0.16, 1, 0.3, 1],
-  };
+  const bars = Array.from({ length: BARS }, (_, i) => {
+    const h = 100 / BARS;
+    const top = i * h;
+    const dur = isOpen ? 0.9 : 0.5;
+    const ease = isOpen ? [0.7, 0, 0.3, 1] : [0.16, 1, 0.3, 1];
+    const delay = isOpen ? waveDelay(i) : enterDelay(i);
+    return (
+      <Fragment key={`bar-${i}`}>
+        <motion.div
+          aria-hidden
+          initial={{ x: boot ? '0%' : '-102%' }}
+          animate={{ x: isOpen ? '-102%' : '0%' }}
+          transition={{ duration: dur, ease, delay }}
+          className="absolute left-0 w-1/2 overflow-hidden"
+          style={{ top: `${top}%`, height: `${h}%`, background: '#0A0B0D' }}
+        />
+        <motion.div
+          aria-hidden
+          initial={{ x: boot ? '0%' : '102%' }}
+          animate={{ x: isOpen ? '102%' : '0%' }}
+          transition={{ duration: dur, ease, delay }}
+          className="absolute right-0 w-1/2 overflow-hidden"
+          style={{ top: `${top}%`, height: `${h}%`, background: '#0A0B0D' }}
+        />
+      </Fragment>
+    );
+  });
 
   return (
     <div className="fixed inset-0 z-[100] pointer-events-none overflow-hidden">
-      {/* Left black panel with gold-flake particles — slides in to cover, then parts back out left */}
-      <motion.div
-        aria-hidden
-        initial={{ x: leftInitial }}
-        animate={{ x: isOpen ? '-101%' : '0%' }}
-        transition={panelTransition}
-        className="absolute top-0 left-0 h-full w-1/2 overflow-hidden"
-        style={{ background: '#0A0B0D' }}
-      >
-        <GoldParticles count={32} />
-      </motion.div>
+      {/* The 5-per-side wave bars */}
+      {bars}
 
-      {/* Right black panel — mirrors the left */}
+      {/* Gold-flake particle field over the black — fades out quickly as the bars part so
+          no flakes linger over the revealed page */}
       <motion.div
         aria-hidden
-        initial={{ x: rightInitial }}
-        animate={{ x: isOpen ? '101%' : '0%' }}
-        transition={panelTransition}
-        className="absolute top-0 right-0 h-full w-1/2 overflow-hidden"
-        style={{ background: '#0A0B0D' }}
+        className="absolute inset-0"
+        initial={{ opacity: 1 }}
+        animate={{ opacity: isOpen ? 0 : 1 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
       >
         <GoldParticles count={32} />
       </motion.div>
