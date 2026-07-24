@@ -75,13 +75,12 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded }) {
   if (phase === 'done') return null;
   const isOpen = phase === 'open';
 
-  // Pinch reveal: two circular openings grow from the middle of the left edge (0, h/2) and
-  // the middle of the right edge (w, h/2). Each grows to half the screen diagonal so their
-  // union eventually uncovers the whole page. Implemented as an SVG mask — white keeps the
-  // black field, black circles erase it (reveal the page). Keyed by pathKey so it remounts
-  // already closed on every navigation (no re-cover animation flash).
+  // Pinch reveal: a single circular opening grows outward from the center of the screen
+  // (around the VDS logo / loading ring) until the whole page is uncovered. Implemented as
+  // an SVG mask — white keeps the black field, the black circle erases it (reveals the
+  // page). Keyed by pathKey so it remounts already closed on every navigation.
   const { w, h } = size;
-  const maxR = Math.sqrt((w / 4) ** 2 + (h / 2) ** 2);
+  const maxR = Math.sqrt((w / 2) ** 2 + (h / 2) ** 2);
   const partEase = [0.7, 0, 0.3, 1];
 
   return (
@@ -92,14 +91,7 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded }) {
           <mask id="vdsPinchReveal">
             <rect x={0} y={0} width={w} height={h} fill="white" />
             <motion.circle
-              cx={w / 4} cy={h / 2}
-              initial={{ r: 0 }}
-              animate={{ r: isOpen ? maxR : 0 }}
-              transition={{ duration: 0.95, ease: partEase }}
-              fill="black"
-            />
-            <motion.circle
-              cx={(3 * w) / 4} cy={h / 2}
+              cx={w / 2} cy={h / 2}
               initial={{ r: 0 }}
               animate={{ r: isOpen ? maxR : 0 }}
               transition={{ duration: 0.95, ease: partEase }}
