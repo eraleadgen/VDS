@@ -22,7 +22,7 @@ export default function ResourceCenter({ variant }) {
         </div>
       </div>
 
-      <CareGuides compact onAction={() => setRevealed(true)} />
+      <CareGuides compact from={variant} onAction={() => setRevealed(true)} />
 
       {revealed ? (
         <WelcomePacket variant={variant} />

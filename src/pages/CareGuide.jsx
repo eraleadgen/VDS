@@ -1,21 +1,30 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import { Printer, ArrowLeft } from 'lucide-react';
 import { CARE_GUIDES, buildGuidePrintHtml } from '@/lib/careGuides';
 import printHtml from '@/components/shared/printHtml';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
 
+const FROM_PORTALS = {
+  admin: '/admin',
+  specialist: '/specialist-portal',
+  partner: '/partner-portal',
+  member: '/member-dashboard',
+};
+
 // Public single-guide page — linked from the auto-delivered care-guide email so any
 // client (registered or guest) can view and download/print their guide.
 export default function CareGuide() {
   const { key } = useParams();
+  const [params] = useSearchParams();
   const guide = CARE_GUIDES.find((g) => g.key === key) || CARE_GUIDES[0];
+  const backTo = FROM_PORTALS[params.get('from')] || '/member-dashboard';
 
   return (
     <div className="bg-obsidian min-h-screen flex flex-col">
       <Navbar />
       <main className="flex-1 max-w-3xl mx-auto w-full px-5 sm:px-6 pt-28 md:pt-36 pb-16">
-        <Link to="/member-dashboard" className="inline-flex items-center gap-2 text-xs font-mono-tech tracking-widest text-vapor/50 hover:text-vapor mb-8">
+        <Link to={backTo} className="inline-flex items-center gap-2 text-xs font-mono-tech tracking-widest text-vapor/50 hover:text-vapor mb-8">
           <ArrowLeft size={13} /> BACK TO ACCOUNT
         </Link>
 

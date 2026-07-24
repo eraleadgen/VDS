@@ -11,7 +11,7 @@ import printHtml from '@/components/shared/printHtml';
 //
 // `compact` mode (used on the Member Dashboard) renders only the selector plus View and
 // Download buttons — no expanded accordion content — to keep the dashboard short.
-export default function CareGuides({ compact = false, onAction }) {
+export default function CareGuides({ compact = false, onAction, from = 'member' }) {
   const [active, setActive] = useState(CARE_GUIDES[0].key);
   const [open, setOpen] = useState(0);
   const guide = CARE_GUIDES.find((g) => g.key === active) || CARE_GUIDES[0];
@@ -37,7 +37,7 @@ export default function CareGuides({ compact = false, onAction }) {
         </div>
         <div className="flex flex-wrap gap-2 mt-4">
           <Link
-            to={`/care-guide/${guide.key}`}
+            to={`/care-guide/${guide.key}?from=${from}`}
             onClick={() => onAction && onAction()}
             className="flex items-center gap-2 text-xs font-mono-tech text-gold border border-gold/30 bg-gold/10 hover:bg-gold/20 px-4 py-2.5 rounded-sm transition-colors"
           >
