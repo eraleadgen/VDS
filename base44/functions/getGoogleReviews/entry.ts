@@ -10,7 +10,9 @@ Deno.serve(async () => {
 
     const baseHeaders = { "X-Goog-Api-Key": key };
 
-    // 1) Text Search (New) to resolve the place by name + area.
+    // 1) Text Search (New) to resolve the place. The API ranks by prominence, so a smaller
+    // listing can lose to larger competitors — fetch a page of results and pick the one whose
+    // name matches "Valet Detailing Service" exactly (case-insensitive contains).
     const searchRes = await fetch("https://places.googleapis.com/v1/places:searchText", {
       method: "POST",
       headers: {
@@ -18,10 +20,14 @@ Deno.serve(async () => {
         "Content-Type": "application/json",
         "X-Goog-FieldMask": "places.id,places.displayName,places.rating,places.userRatingCount",
       },
-      body: JSON.stringify({ textQuery: "Valet Detailing Service Alpharetta GA", languageCode: "en" }),
+      body: JSON.stringify({ textQuery: "Valet Detailing Service Atlanta", languageCode: "en", pageSize: 20 }),
     });
     const searchData = await searchRes.json();
-    const placeId = searchData?.places?.[0]?.id;
+    const places = searchData?.places || [];
+    const match = places.find((p) =>
+      (p?.displayName?.text || "").toLowerCase().includes("valet detailing service")
+    );
+    const placeId = (match || places[0])?.id;
     if (!placeId) {
       return Response.json({ name: null, rating: null, total: null, reviews: [] });
     }
