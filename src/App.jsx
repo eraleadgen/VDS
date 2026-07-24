@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from '@/components/ScrollToTop';
 import RouteSeo from '@/components/vds/RouteSeo';
+import PageTransition from '@/components/vds/PageTransition';
 
 // Page imports
 import Home from './pages/Home';
@@ -67,38 +68,40 @@ const AuthenticatedApp = () => {
 
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/services" element={<Services />} />
-      <Route path="/vds-gold" element={<VdsGold />} />
+      <Route element={<PageTransition />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/services" element={<Services />} />
+        <Route path="/vds-gold" element={<VdsGold />} />
 
-      <Route path="/faq" element={<FAQ />} />
-      <Route path="/pricing" element={<Pricing />} />
+        <Route path="/faq" element={<FAQ />} />
+        <Route path="/pricing" element={<Pricing />} />
 
-      <Route path="/terms" element={<Terms />} />
-      <Route path="/privacy" element={<Privacy />} />
-      <Route path="/cookies" element={<Cookies />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      <Route path="/member-login" element={<MemberLogin />} />
-      <Route path="/member-dashboard" element={<MemberDashboard />} />
-      <Route path="/member-signup" element={<GoldSignup />} />
-      <Route path="/vds-gold-signup" element={<VdsGoldSignup />} />
-      <Route path="/gallery" element={<Gallery />} />
-      <Route path="/book" element={<BookAppointment />} />
-      <Route path="/gold-booking" element={<GoldBooking />} />
-      <Route path="/specialist-login" element={<SpecialistLogin />} />
-      <Route path="/specialist-portal" element={<SpecialistPortal />} />
-      <Route path="/specialist-setup" element={<SpecialistSetup />} />
-      <Route path="/admin-login" element={<AdminLogin />} />
-      <Route path="/admin" element={<AdminDashboard />} />
-      <Route path="/partner-portal" element={<PartnerPortal />} />
-      <Route path="/partner-login" element={<PartnerLogin />} />
-      <Route path="/partner-setup" element={<PartnerSetup />} />
-      <Route path="/care-guide/:key" element={<CareGuide />} />
-      <Route path="/:code" element={<PartnerRedirect />} />
-      <Route path="/era-doc" element={<EraDocDownload />} />
-      <Route path="/project-overview" element={<ProjectOverview />} />
-      <Route path="*" element={<PageNotFound />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/cookies" element={<Cookies />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/member-login" element={<MemberLogin />} />
+        <Route path="/member-dashboard" element={<MemberDashboard />} />
+        <Route path="/member-signup" element={<GoldSignup />} />
+        <Route path="/vds-gold-signup" element={<VdsGoldSignup />} />
+        <Route path="/gallery" element={<Gallery />} />
+        <Route path="/book" element={<BookAppointment />} />
+        <Route path="/gold-booking" element={<GoldBooking />} />
+        <Route path="/specialist-login" element={<SpecialistLogin />} />
+        <Route path="/specialist-portal" element={<SpecialistPortal />} />
+        <Route path="/specialist-setup" element={<SpecialistSetup />} />
+        <Route path="/admin-login" element={<AdminLogin />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/partner-portal" element={<PartnerPortal />} />
+        <Route path="/partner-login" element={<PartnerLogin />} />
+        <Route path="/partner-setup" element={<PartnerSetup />} />
+        <Route path="/care-guide/:key" element={<CareGuide />} />
+        <Route path="/:code" element={<PartnerRedirect />} />
+        <Route path="/era-doc" element={<EraDocDownload />} />
+        <Route path="/project-overview" element={<ProjectOverview />} />
+        <Route path="*" element={<PageNotFound />} />
+      </Route>
     </Routes>
   );
 };
