@@ -1,5 +1,5 @@
-import { Fragment, useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { useEffect, useRef, useState } from 'react';
+import { motion, useAnimationFrame } from 'framer-motion';
 import GoldParticles from '@/components/vds/GoldParticles';
 
 // Same logo asset used in the site navbar (top-left).
@@ -7,26 +7,30 @@ const LOGO_URL =
   'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/6a27779cd_1773368635248-a065bd31-ddf6-4b1c-87dc-3a6080dc60f8.png';
 
 // Full-screen branded page-transition overlay that replaces the loading circle. Two black
-// panels close together down the middle (over a gold-flake particle field), the VDS logo
-// fades in and stays centered & still, and the overlay stays closed until the app is
-// ready — auth loaded AND the destination page has no visible loading spinner (`.animate-spin`)
-// — plus a short branded hold. Then the two halves open from the middle while the logo fades
-// out, revealing the finished page. A max wait guarantees the overlay always opens.
+// halves meet along a smooth sine-wave seam down the middle (the line ripples every frame,
+// giving the "wave"). The overlay covers the screen instantly on every route change and
+// stays closed until the app is ready — auth loaded AND the destination page has no visible
+// loading spinner (`.animate-spin`) — plus a short branded hold. Then the two halves part
+// outward along the wavy line while the VDS logo evaporates (fade + scale up + blur),
+// revealing the finished page. A max wait guarantees the overlay always opens.
 //
 //   authLoaded: true once auth + public settings have loaded (passed from AuthenticatedApp)
 //   pathKey:    location.pathname — re-covers on every route change
 //
-// phase: 'cover' (panels closed) → 'open' (panels part + logo out) → 'done' (unmounted).
+// phase: 'cover' (halves together) → 'open' (halves part + logo evaporates) → 'done' (unmounted).
 export default function VdsTransitionOverlay({ pathKey, authLoaded }) {
   const [phase, setPhase] = useState('cover');
+  const [wavePhase, setWavePhase] = useState(0);
   const startRef = useRef(typeof performance !== 'undefined' ? performance.now() : 0);
-  const bootRef = useRef(true);
+  const prevPath = useRef(pathKey);
 
-  // (re)cover on every new route target
-  useEffect(() => {
-    setPhase('cover');
+  // Re-cover SYNCHRONOUSLY during render on route change, so the overlay covers the new page
+  // in the same commit — no flash of the page loading underneath before it covers.
+  if (prevPath.current !== pathKey) {
+    prevPath.current = pathKey;
     startRef.current = performance.now();
-  }, [pathKey]);
+    setPhase('cover');
+  }
 
   // cover -> open: wait until authLoaded and the page has no loading spinner, with a min
   // branded hold and a max fallback so the overlay never gets stuck closed.
@@ -49,7 +53,7 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded }) {
     };
     tick();
     return () => { cancelled = true; clearTimeout(maxTimer); };
-  }, [phase, authLoaded, pathKey]);
+  }, [phase, authLoaded]);
 
   // open -> done
   useEffect(() => {
@@ -58,55 +62,61 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded }) {
     return () => clearTimeout(t);
   }, [phase]);
 
-  // After the first render, allow the panels to slide in on subsequent covers.
-  useEffect(() => { bootRef.current = false; }, []);
+  // Advance the wavy seam phase every frame so the smooth split line ripples like a wave.
+  useAnimationFrame((t) => setWavePhase((t / 1000) * 1.4));
 
   if (phase === 'done') return null;
   const isOpen = phase === 'open';
-  const boot = bootRef.current;
 
-  // 5 stacked rectangles per side. Together the 10 bars cover the full screen. On open the
-  // left bars slide out to the left and the right bars to the right, with a center-out
-  // staggered delay so the part ripples outward from the middle split like a wave. On later
-  // navigations the bars sweep back in from the edges (reverse stagger) to re-cover.
-  const BARS = 5;
-  const waveDelay = (i) => Math.abs(i - (BARS - 1) / 2) * 0.07; // center bar first, edges last
-  const enterDelay = (i) => ((BARS - 1) - i) * 0.03;            // edges sweep in first
+  // Smooth wavy seam down the middle. Two black halves share this exact sine polyline, so
+  // they tile the screen with no gap/overlap. Each half lives on its own full-screen SVG
+  // inside a motion.div so the part uses a reliable CSS % translate (not an SVG transform).
+  const A = 2.6;  // seam amplitude (viewBox units)
+  const F = 2;    // full waves down the screen
+  const N = 24;   // seam samples
+  const pts = [];
+  for (let i = 0; i <= N; i++) {
+    const y = (i / N) * 100;
+    const x = 50 + A * Math.sin((y / 100) * Math.PI * 2 * F + wavePhase);
+    pts.push(`${x.toFixed(3)},${y.toFixed(3)}`);
+  }
+  const leftPath = `M0,0 L${pts.join(' L')} L0,100 Z`;
+  const rightPath = `M100,0 L${pts.join(' L')} L100,100 Z`;
 
-  const bars = Array.from({ length: BARS }, (_, i) => {
-    const h = 100 / BARS;
-    const top = i * h;
-    const dur = isOpen ? 0.9 : 0.5;
-    const ease = isOpen ? [0.7, 0, 0.3, 1] : [0.16, 1, 0.3, 1];
-    const delay = isOpen ? waveDelay(i) : enterDelay(i);
-    return (
-      <Fragment key={`bar-${i}`}>
-        <motion.div
-          aria-hidden
-          initial={{ x: boot ? '0%' : '-102%' }}
-          animate={{ x: isOpen ? '-102%' : '0%' }}
-          transition={{ duration: dur, ease, delay }}
-          className="absolute left-0 w-1/2 overflow-hidden"
-          style={{ top: `${top}%`, height: `${h}%`, background: '#0A0B0D' }}
-        />
-        <motion.div
-          aria-hidden
-          initial={{ x: boot ? '0%' : '102%' }}
-          animate={{ x: isOpen ? '102%' : '0%' }}
-          transition={{ duration: dur, ease, delay }}
-          className="absolute right-0 w-1/2 overflow-hidden"
-          style={{ top: `${top}%`, height: `${h}%`, background: '#0A0B0D' }}
-        />
-      </Fragment>
-    );
-  });
+  const partEase = [0.7, 0, 0.3, 1];
 
   return (
     <div className="fixed inset-0 z-[100] pointer-events-none overflow-hidden">
-      {/* The 5-per-side wave bars */}
-      {bars}
+      {/* Left black half — draws everything left of the wavy seam; slides out left on open.
+          Keyed by pathKey so it remounts already covering on every navigation (no sweep-in). */}
+      <motion.div
+        key={`L-${pathKey}`}
+        aria-hidden
+        className="absolute inset-0"
+        initial={{ x: '0%' }}
+        animate={{ x: isOpen ? '-102%' : '0%' }}
+        transition={{ duration: 0.95, ease: partEase }}
+      >
+        <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <path d={leftPath} fill="#0A0B0D" />
+        </svg>
+      </motion.div>
 
-      {/* Gold-flake particle field over the black — fades out quickly as the bars part so
+      {/* Right black half — mirrors the left, slides out right on open */}
+      <motion.div
+        key={`R-${pathKey}`}
+        aria-hidden
+        className="absolute inset-0"
+        initial={{ x: '0%' }}
+        animate={{ x: isOpen ? '102%' : '0%' }}
+        transition={{ duration: 0.95, ease: partEase }}
+      >
+        <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <path d={rightPath} fill="#0A0B0D" />
+        </svg>
+      </motion.div>
+
+      {/* Gold-flake particle field over the black — fades out quickly as the halves part so
           no flakes linger over the revealed page */}
       <motion.div
         aria-hidden
@@ -128,17 +138,16 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded }) {
         style={{ background: 'radial-gradient(ellipse 50% 55% at 50% 50%, rgba(212,175,55,0.16), transparent 70%)' }}
       />
 
-      {/* VDS logo — stays centered & still; fades in, then fades out as the screen opens */}
+      {/* VDS logo — fades in, then evaporates (fade + scale up + blur) as the screen opens */}
       <div className="absolute inset-0 flex items-center justify-center px-6">
         <motion.img
           src={LOGO_URL}
           alt="VDS"
           draggable={false}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: isOpen ? 0 : 1 }}
-          transition={{ duration: isOpen ? 0.85 : 0.55, ease: 'easeInOut', delay: isOpen ? 0.1 : 0.4 }}
+          initial={{ opacity: 0, scale: 1, filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.6)) blur(0px)' }}
+          animate={{ opacity: isOpen ? 0 : 1, scale: isOpen ? 1.18 : 1, filter: `drop-shadow(0 4px 24px rgba(0,0,0,0.6)) blur(${isOpen ? 14 : 0}px)` }}
+          transition={{ duration: isOpen ? 1.05 : 0.55, ease: 'easeOut', delay: isOpen ? 0.05 : 0.4 }}
           className="relative h-72 sm:h-80 lg:h-96 w-auto max-w-[92vw] object-contain select-none"
-          style={{ filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.6))' }}
         />
       </div>
     </div>
