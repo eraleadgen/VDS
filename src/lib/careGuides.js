@@ -19,8 +19,14 @@ export const CARE_GUIDES = [
     icon: Shield,
     title: 'Ceramic Coating Care Guide',
     eyebrow: 'VDS Mobile · Ceramic Coating Aftercare',
-    intro: 'Your ceramic coating needs a brief cure period and gentle maintenance to perform for years. Follow these steps to protect your investment.',
+    intro: "Ceramic coating is a semi-permanent auto detailing product applied to a vehicle's paint to guard against environmental damage and keep it looking shiny. Maintaining ceramic coating involves regular washing, proper drying, and using products to maintain its properties. Routine maintenance helps keep the ceramic coating effective and ensures your vehicle stays sleek and protected.",
     sections: [
+      {
+        title: 'How does Ceramic help protect against swirl marks and paint damage?',
+        bullets: [
+          "Once cured, the coating forms a strong, slick surface that minimizes friction and reduces the likelihood of swirl marks caused by washing or contact with debris. It acts as a sacrificial barrier that absorbs minor abrasion instead of your clear coat. This protection helps preserve the paint's depth and clarity for years.",
+        ],
+      },
       {
         title: 'The 48-Hour Cure',
         bullets: [
@@ -30,21 +36,42 @@ export const CARE_GUIDES = [
         ],
       },
       {
-        title: 'Ongoing Maintenance',
+        title: 'Tips for Regular Maintenance — Washing the Coating',
         bullets: [
-          'After curing, wash every 2–4 weeks using a pH-neutral, coating-safe shampoo — never dish soap or degreasers.',
-          'Use the two-bucket method (one rinse, one wash) with a clean microfiber mitt to prevent swirl marks.',
-          "Top up the coating's hydrophobic behavior with a ceramic sealant every 6 months.",
-          'Dry with a leaf blower — it is the most effective method with a ceramic coating because there is less contact with the paint.',
-          'Have the coating inspected annually by a VDS specialist to check for worn or compromised areas.',
+          'Wipe the microfiber mitt in horizontal strokes along the aerodynamics of the vehicle. Do not wipe in circular motions.',
+          'Bucket Method: Use the two-bucket method with grit guards. Fill one bucket with soapy water and the other with clean water. Dip your wash mitt into the soapy water, wash a section of the car, then rinse the mitt in the clean water before re-soaping.',
+          "Wash Mitt: Use a high-quality wash mitt to clean the car's surface gently. Avoid using sponges or brushes that can cause scratches.",
+          "pH-Neutral Shampoo: Choose a pH-neutral shampoo designed to work with ceramic coatings. This helps maintain the coating's hydrophobic properties and ensures a thorough cleaning.",
+          'Foam Cannon: Use a foam cannon to apply a foam layer to the entire vehicle. This helps loosen dirt and grime without scratching the surface.',
         ],
       },
       {
-        title: 'Hazards to Avoid',
+        title: 'Drying the Coated Surface',
         bullets: [
-          'Once cured, do not park under trees or near sprinklers — tree sap, bird droppings, and hard-water spots will etch and stain the coating if left untreated.',
-          'Remove bird droppings and sap promptly: soften with a damp microfiber, then gently lift off. Never scrape dry.',
-          'VDS Mobile is not responsible for damage caused by improper care or mistreatment of a ceramic-coated vehicle. Follow these guidelines to protect your investment.',
+          'Proper drying techniques will help you avoid swirl marks and water spots. After washing, use a microfiber towel to dry the vehicle. Microfiber towels are gentle on the surface and highly absorbent, making them ideal for this task.',
+          'For an even more careful approach, you can use a leaf blower to blow dry the vehicle to ensure no water remains on the surface.',
+        ],
+      },
+      {
+        title: 'Protection from Environmental Factors',
+        bullets: [
+          'Parking in the shade is crucial to avoid the harmful effects of direct sunlight, which can degrade the ceramic coating over time. Park your car in a garage or under a carport to keep it out of the sun when possible.',
+          "For quick touch-ups between washes, use a detail spray or ceramic boosters. These products help maintain the coating's hydrophobic properties and provide a quick shine.",
+        ],
+      },
+      {
+        title: 'Dealing with Specific Contaminants',
+        bullets: [
+          'Bird Droppings: Use a quick detailer spray and a microfiber towel to gently remove bird droppings. Avoid scrubbing, as this can damage the coating.',
+          'Brake Dust: Brake dust can accumulate on wheels and lower body panels. Use a wheel cleaner safe for ceramic-coated surfaces and a soft brush to clean these areas.',
+          'Water Spots: To remove water spots, use a dedicated water spot remover or a vinegar solution. Apply it to the affected area and gently wipe it away with a microfiber cloth.',
+        ],
+      },
+      {
+        title: 'Routine Inspection and Professional Maintenance',
+        bullets: [
+          'Regularly inspect your ceramic coating for any signs of damage or wear. Look for areas where the hydrophobic properties might have diminished, indicating the need for a maintenance booster.',
+          'If you notice significant wear or damage, consider consulting a professional detailer. A professional can correct the paint to address any scratches or imperfections and reapply the ceramic coating if necessary.',
         ],
       },
     ],
