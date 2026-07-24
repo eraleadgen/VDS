@@ -222,7 +222,7 @@ export const CARE_GUIDES = [
         bullets: [
           'Bi-weekly express exterior washes prevent contaminant buildup between details.',
           'Schedule your monthly full detail through your Member Dashboard to lock in your preferred slot.',
-          'Keep your vehicle information up to date (paint protection, mileage) so we tailor every visit.',
+          'Avoid automated brush car washes between visits — hand wash or touchless only to protect your finish.',
         ],
       },
       {
