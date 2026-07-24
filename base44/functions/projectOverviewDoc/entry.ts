@@ -3,9 +3,7 @@
 // shipped in the public client bundle. Author/owner: Noah Grove.
 //
 // POST /functions/projectOverviewDoc
-// Auth: requires an authenticated admin session (base44.auth.me().role === 'admin').
-
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
+// Public — no auth. Serves the document HTML for the shareable /project-overview route.
 
 export const DOC_FILENAME = 'ERA-Core-1.0-VDS-Mobile-Project-Overview.html';
 
@@ -397,17 +395,8 @@ Invoice paid (detail OR coating)
 </html>`;
 }
 
-Deno.serve(async (req) => {
+Deno.serve(async () => {
   try {
-    const base44 = createClientFromRequest(req);
-
-    // Server-side admin verification — the only trust boundary for this document.
-    let me;
-    try { me = await base44.auth.me(); } catch { me = null; }
-    if (!me || me.role !== 'admin') {
-      return Response.json({ error: 'Admin access required.' }, { status: 403 });
-    }
-
     return Response.json({
       success: true,
       html: buildDocHtml(),

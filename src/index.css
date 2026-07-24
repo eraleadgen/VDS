@@ -166,3 +166,7 @@ body { overflow-x: hidden; }
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: #0A0B0D; }
 ::-webkit-scrollbar-thumb { background: #D4AF37; border-radius: 2px; }
+
+/* Infinite reviews marquee */
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.reviews-track:hover { animation-play-state: paused; }

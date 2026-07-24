@@ -6,6 +6,7 @@ import Footer from '../components/vds/Footer';
 import GoldShimmer from '../components/vds/GoldShimmer';
 import GoldParticles from '../components/vds/GoldParticles';
 import GoldPromoCard from '../components/vds/GoldPromoCard';
+import ReviewsCarousel from '../components/vds/ReviewsCarousel';
 
 const STATS = [
   { value: '500+', label: 'VEHICLES DETAILED' },
@@ -121,6 +122,9 @@ export default function Home() {
           <ChevronDown size={18} className="text-gold" />
         </div>
       </section>
+
+      {/* ── GOOGLE REVIEWS CAROUSEL ─────────────────── */}
+      <ReviewsCarousel />
 
       {/* ── VDS GOLD BANNER ──────────────────────────── */}
       <section className="py-16 md:py-20">
