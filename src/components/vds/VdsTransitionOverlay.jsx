@@ -102,11 +102,15 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded }) {
         <rect x={0} y={0} width={w} height={h} fill="#0A0B0D" mask="url(#vdsPinchReveal)" />
       </svg>
 
-      {/* Gold-flake particle field over the black — fades out quickly as it opens so no flakes
-          linger over the revealed page */}
+      {/* Gold-flake particles — only OUTSIDE the loading ring. Masked out of the ring's
+          interior so that stays pure black. Fades out quickly on open. */}
       <motion.div
         aria-hidden
         className="absolute inset-0"
+        style={{
+          maskImage: 'radial-gradient(circle at 50% 50%, transparent 0, transparent 100px, #000 101px)',
+          WebkitMaskImage: 'radial-gradient(circle at 50% 50%, transparent 0, transparent 100px, #000 101px)',
+        }}
         initial={{ opacity: 1 }}
         animate={{ opacity: isOpen ? 0 : 1 }}
         transition={{ duration: 0.35, ease: 'easeOut' }}
@@ -114,20 +118,11 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded }) {
         <GoldParticles count={32} />
       </motion.div>
 
-      {/* Soft gold glow behind the logo on the black field */}
-      <motion.div
-        aria-hidden
-        initial={{ opacity: 0 }}
-        animate={{ opacity: isOpen ? 0 : 0.85 }}
-        transition={{ duration: 0.5 }}
-        className="absolute inset-0"
-        style={{ background: 'radial-gradient(ellipse 50% 55% at 50% 50%, rgba(212,175,55,0.16), transparent 70%)' }}
-      />
-
-      {/* VDS logo centered on a rotating gold loading ring (the ring sits behind the logo).
-          On open the logo evaporates (fade + scale up + blur) and the ring fades out. */}
-      <div className="absolute inset-0 flex items-center justify-center px-6">
-        <div className="relative flex items-center justify-center w-80 h-80 sm:w-96 sm:h-96 lg:w-[28rem] lg:h-[28rem]">
+      {/* VDS logo centered inside a perfectly-centered 200px rotating gold loading ring.
+          The ring's interior shows the black field (no particles inside). On open the logo
+          evaporates (fade + scale up + blur) and the ring fades out. */}
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="relative flex items-center justify-center w-[200px] h-[200px]">
           <motion.div
             aria-hidden
             className="absolute inset-0 rounded-full"
@@ -146,7 +141,7 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded }) {
             initial={{ opacity: 0, scale: 1, filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.6)) blur(0px)' }}
             animate={{ opacity: isOpen ? 0 : 1, scale: isOpen ? 1.18 : 1, filter: `drop-shadow(0 4px 24px rgba(0,0,0,0.6)) blur(${isOpen ? 14 : 0}px)` }}
             transition={{ duration: isOpen ? 1.05 : 0.55, ease: 'easeOut', delay: isOpen ? 0.05 : 0.4 }}
-            className="relative h-72 sm:h-80 lg:h-96 w-auto max-w-[92vw] object-contain select-none"
+            className="relative max-w-[140px] max-h-[140px] w-auto h-auto object-contain select-none"
           />
         </div>
       </div>
