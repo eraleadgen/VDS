@@ -1,0 +1,56 @@
+{
+  "name": "GoogleReview",
+  "type": "object",
+  "description": "Cached Google business reviews fetched via the Places API. The Places API only surfaces up to 5 reviews per request, so each getGoogleReviews call upserts whatever it returns here and replies with the FULL accumulated set \u2014 letting the home-page carousel cycle all stored reviews (21+) instead of only the latest 5. Maintained by the getGoogleReviews backend function via the service role.",
+  "properties": {
+    "author": {
+      "type": "string"
+    },
+    "rating": {
+      "type": "number"
+    },
+    "text": {
+      "type": "string"
+    },
+    "publish_time": {
+      "type": "string",
+      "description": "ISO 8601 publish timestamp from Google"
+    },
+    "relative_time": {
+      "type": "string"
+    },
+    "profile_photo": {
+      "type": "string"
+    },
+    "review_key": {
+      "type": "string",
+      "description": "Dedup key: author + publish_time. Prevents duplicate cache entries across fetches."
+    }
+  },
+  "required": [
+    "author",
+    "review_key"
+  ],
+  "rls": {
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

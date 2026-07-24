@@ -70,7 +70,7 @@ export default function ReviewsCarousel() {
 
         <div
           className="reviews-track flex gap-5 w-max"
-          style={{ animation: 'marquee 50s linear infinite' }}
+          style={{ animation: `marquee ${Math.max(reviews.length * 10, 50)}s linear infinite` }}
         >
           {loop.map((r, i) => (
             <div
