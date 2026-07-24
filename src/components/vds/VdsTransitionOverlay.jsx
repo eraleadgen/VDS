@@ -81,7 +81,7 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded }) {
   // black field, black circles erase it (reveal the page). Keyed by pathKey so it remounts
   // already closed on every navigation (no re-cover animation flash).
   const { w, h } = size;
-  const maxR = Math.sqrt((w / 2) ** 2 + (h / 2) ** 2);
+  const maxR = Math.sqrt((w / 4) ** 2 + (h / 2) ** 2);
   const partEase = [0.7, 0, 0.3, 1];
 
   return (
@@ -92,14 +92,14 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded }) {
           <mask id="vdsPinchReveal">
             <rect x={0} y={0} width={w} height={h} fill="white" />
             <motion.circle
-              cx={0} cy={h / 2}
+              cx={w / 4} cy={h / 2}
               initial={{ r: 0 }}
               animate={{ r: isOpen ? maxR : 0 }}
               transition={{ duration: 0.95, ease: partEase }}
               fill="black"
             />
             <motion.circle
-              cx={w} cy={h / 2}
+              cx={(3 * w) / 4} cy={h / 2}
               initial={{ r: 0 }}
               animate={{ r: isOpen ? maxR : 0 }}
               transition={{ duration: 0.95, ease: partEase }}
