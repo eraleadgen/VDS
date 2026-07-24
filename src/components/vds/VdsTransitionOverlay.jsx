@@ -1,26 +1,29 @@
 import { useEffect, useRef, useState } from 'react';
-import { motion, useAnimationFrame } from 'framer-motion';
+import { motion } from 'framer-motion';
 import GoldParticles from '@/components/vds/GoldParticles';
 
 // Same logo asset used in the site navbar (top-left).
 const LOGO_URL =
   'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/6a27779cd_1773368635248-a065bd31-ddf6-4b1c-87dc-3a6080dc60f8.png';
 
-// Full-screen branded page-transition overlay that replaces the loading circle. Two black
-// halves meet along a smooth sine-wave seam down the middle (the line ripples every frame,
-// giving the "wave"). The overlay covers the screen instantly on every route change and
-// stays closed until the app is ready — auth loaded AND the destination page has no visible
-// loading spinner (`.animate-spin`) — plus a short branded hold. Then the two halves part
-// outward along the wavy line while the VDS logo evaporates (fade + scale up + blur),
-// revealing the finished page. A max wait guarantees the overlay always opens.
+// Full-screen branded page-transition overlay that replaces the loading circle. A solid
+// black field covers the screen; a rotating gold loading ring sits behind the VDS logo
+// while the app readies. The overlay covers instantly on every route change and stays
+// closed until ready — auth loaded AND the destination page has no visible loading spinner
+// (`.animate-spin`) — plus a short branded hold. Then the black is "pinched" open from the
+// center of each side: two openings grow from the middle of the left edge and the middle of
+// the right edge and expand until the page is revealed, while the logo evaporates
+// (fade + scale up + blur). A max wait guarantees the overlay always opens.
 //
 //   authLoaded: true once auth + public settings have loaded (passed from AuthenticatedApp)
 //   pathKey:    location.pathname — re-covers on every route change
 //
-// phase: 'cover' (halves together) → 'open' (halves part + logo evaporates) → 'done' (unmounted).
+// phase: 'cover' (black field closed) → 'open' (pinch reveal + logo evaporates) → 'done'.
 export default function VdsTransitionOverlay({ pathKey, authLoaded }) {
   const [phase, setPhase] = useState('cover');
-  const [wavePhase, setWavePhase] = useState(0);
+  const [size, setSize] = useState(() =>
+    typeof window !== 'undefined' ? { w: window.innerWidth, h: window.innerHeight } : { w: 1280, h: 800 }
+  );
   const startRef = useRef(typeof performance !== 'undefined' ? performance.now() : 0);
   const prevPath = useRef(pathKey);
 
@@ -31,6 +34,13 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded }) {
     startRef.current = performance.now();
     setPhase('cover');
   }
+
+  // Track viewport size so the pinch circles stay round on any screen.
+  useEffect(() => {
+    const onResize = () => setSize({ w: window.innerWidth, h: window.innerHeight });
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   // cover -> open: wait until authLoaded and the page has no loading spinner, with a min
   // branded hold and a max fallback so the overlay never gets stuck closed.
@@ -62,62 +72,46 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded }) {
     return () => clearTimeout(t);
   }, [phase]);
 
-  // Advance the wavy seam phase every frame so the smooth split line ripples like a wave.
-  useAnimationFrame((t) => setWavePhase((t / 1000) * 1.4));
-
   if (phase === 'done') return null;
   const isOpen = phase === 'open';
 
-  // Smooth wavy seam down the middle. Two black halves share this exact sine polyline, so
-  // they tile the screen with no gap/overlap. Each half lives on its own full-screen SVG
-  // inside a motion.div so the part uses a reliable CSS % translate (not an SVG transform).
-  const A = 2.6;  // seam amplitude (viewBox units)
-  const F = 2;    // full waves down the screen
-  const N = 24;   // seam samples
-  const pts = [];
-  for (let i = 0; i <= N; i++) {
-    const y = (i / N) * 100;
-    const x = 50 + A * Math.sin((y / 100) * Math.PI * 2 * F + wavePhase);
-    pts.push(`${x.toFixed(3)},${y.toFixed(3)}`);
-  }
-  const leftPath = `M0,0 L${pts.join(' L')} L0,100 Z`;
-  const rightPath = `M100,0 L${pts.join(' L')} L100,100 Z`;
-
+  // Pinch reveal: two circular openings grow from the middle of the left edge (0, h/2) and
+  // the middle of the right edge (w, h/2). Each grows to half the screen diagonal so their
+  // union eventually uncovers the whole page. Implemented as an SVG mask — white keeps the
+  // black field, black circles erase it (reveal the page). Keyed by pathKey so it remounts
+  // already closed on every navigation (no re-cover animation flash).
+  const { w, h } = size;
+  const maxR = Math.sqrt((w / 2) ** 2 + (h / 2) ** 2);
   const partEase = [0.7, 0, 0.3, 1];
 
   return (
     <div className="fixed inset-0 z-[100] pointer-events-none overflow-hidden">
-      {/* Left black half — draws everything left of the wavy seam; slides out left on open.
-          Keyed by pathKey so it remounts already covering on every navigation (no sweep-in). */}
-      <motion.div
-        key={`L-${pathKey}`}
-        aria-hidden
-        className="absolute inset-0"
-        initial={{ x: '0%' }}
-        animate={{ x: isOpen ? '-102%' : '0%' }}
-        transition={{ duration: 0.95, ease: partEase }}
-      >
-        <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <path d={leftPath} fill="#0A0B0D" />
-        </svg>
-      </motion.div>
+      {/* Black field, erased by the two growing pinch circles */}
+      <svg key={`reveal-${pathKey}`} className="absolute inset-0" width={w} height={h} aria-hidden>
+        <defs>
+          <mask id="vdsPinchReveal">
+            <rect x={0} y={0} width={w} height={h} fill="white" />
+            <motion.circle
+              cx={0} cy={h / 2}
+              initial={{ r: 0 }}
+              animate={{ r: isOpen ? maxR : 0 }}
+              transition={{ duration: 0.95, ease: partEase }}
+              fill="black"
+            />
+            <motion.circle
+              cx={w} cy={h / 2}
+              initial={{ r: 0 }}
+              animate={{ r: isOpen ? maxR : 0 }}
+              transition={{ duration: 0.95, ease: partEase }}
+              fill="black"
+            />
+          </mask>
+        </defs>
+        <rect x={0} y={0} width={w} height={h} fill="#0A0B0D" mask="url(#vdsPinchReveal)" />
+      </svg>
 
-      {/* Right black half — mirrors the left, slides out right on open */}
-      <motion.div
-        key={`R-${pathKey}`}
-        aria-hidden
-        className="absolute inset-0"
-        initial={{ x: '0%' }}
-        animate={{ x: isOpen ? '102%' : '0%' }}
-        transition={{ duration: 0.95, ease: partEase }}
-      >
-        <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <path d={rightPath} fill="#0A0B0D" />
-        </svg>
-      </motion.div>
-
-      {/* Gold-flake particle field over the black — fades out quickly as the halves part so
-          no flakes linger over the revealed page */}
+      {/* Gold-flake particle field over the black — fades out quickly as it opens so no flakes
+          linger over the revealed page */}
       <motion.div
         aria-hidden
         className="absolute inset-0"
@@ -138,17 +132,31 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded }) {
         style={{ background: 'radial-gradient(ellipse 50% 55% at 50% 50%, rgba(212,175,55,0.16), transparent 70%)' }}
       />
 
-      {/* VDS logo — fades in, then evaporates (fade + scale up + blur) as the screen opens */}
+      {/* VDS logo centered on a rotating gold loading ring (the ring sits behind the logo).
+          On open the logo evaporates (fade + scale up + blur) and the ring fades out. */}
       <div className="absolute inset-0 flex items-center justify-center px-6">
-        <motion.img
-          src={LOGO_URL}
-          alt="VDS"
-          draggable={false}
-          initial={{ opacity: 0, scale: 1, filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.6)) blur(0px)' }}
-          animate={{ opacity: isOpen ? 0 : 1, scale: isOpen ? 1.18 : 1, filter: `drop-shadow(0 4px 24px rgba(0,0,0,0.6)) blur(${isOpen ? 14 : 0}px)` }}
-          transition={{ duration: isOpen ? 1.05 : 0.55, ease: 'easeOut', delay: isOpen ? 0.05 : 0.4 }}
-          className="relative h-72 sm:h-80 lg:h-96 w-auto max-w-[92vw] object-contain select-none"
-        />
+        <div className="relative flex items-center justify-center w-80 h-80 sm:w-96 sm:h-96 lg:w-[28rem] lg:h-[28rem]">
+          <motion.div
+            aria-hidden
+            className="absolute inset-0 rounded-full"
+            style={{ border: '2px solid rgba(212,175,55,0.12)', borderTopColor: '#D4AF37' }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: isOpen ? 0 : 1, rotate: 360 }}
+            transition={{
+              opacity: { duration: 0.4, ease: 'easeOut' },
+              rotate: { duration: 1.1, ease: 'linear', repeat: Infinity },
+            }}
+          />
+          <motion.img
+            src={LOGO_URL}
+            alt="VDS"
+            draggable={false}
+            initial={{ opacity: 0, scale: 1, filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.6)) blur(0px)' }}
+            animate={{ opacity: isOpen ? 0 : 1, scale: isOpen ? 1.18 : 1, filter: `drop-shadow(0 4px 24px rgba(0,0,0,0.6)) blur(${isOpen ? 14 : 0}px)` }}
+            transition={{ duration: isOpen ? 1.05 : 0.55, ease: 'easeOut', delay: isOpen ? 0.05 : 0.4 }}
+            className="relative h-72 sm:h-80 lg:h-96 w-auto max-w-[92vw] object-contain select-none"
+          />
+        </div>
       </div>
     </div>
   );
