@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { useAuth } from '@/lib/AuthContext';
-import { ArrowLeft, Download, Loader2 } from 'lucide-react';
+import { Download, Loader2 } from 'lucide-react';
 
 // Public view of the ERA Core 1.0 + VDS Mobile Project Overview document — a shareable
 // showcase link (e.g. for external reviewers). The document HTML is generated server-side
@@ -10,7 +8,6 @@ import { ArrowLeft, Download, Loader2 } from 'lucide-react';
 // bundle. Rendered in an isolated iframe so the document's own styles don't collide with
 // the app. Route is noindexed (RouteSeo). Admins still reach it via the Resource Center.
 export default function ProjectOverview() {
-  const { user } = useAuth();
   const [html, setHtml] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -42,19 +39,9 @@ export default function ProjectOverview() {
     setTimeout(() => URL.revokeObjectURL(url), 2000);
   };
 
-  const isAdmin = user?.role === 'admin';
-  const backTo = isAdmin ? '/admin' : '/';
-  const backLabel = isAdmin ? 'BACK TO ADMIN' : 'BACK TO SITE';
-
   return (
     <div className="min-h-screen bg-obsidian flex flex-col">
-      <div className="glass-header sticky top-0 z-10 px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
-        <Link
-          to={backTo}
-          className="flex items-center gap-2 text-xs font-mono-tech tracking-widest text-vapor/60 hover:text-gold transition-colors"
-        >
-          <ArrowLeft size={14} /> {backLabel}
-        </Link>
+      <div className="glass-header sticky top-0 z-10 px-4 sm:px-6 py-3 flex items-center justify-end gap-3">
         <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 hidden sm:block">
           PROJECT OVERVIEW
         </p>
