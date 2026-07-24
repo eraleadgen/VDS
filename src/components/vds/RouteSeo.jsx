@@ -51,7 +51,7 @@ const PAGE_META = {
 const NOINDEX = new Set([
   '/member-login', '/member-dashboard', '/member-signup', '/gold-booking',
   '/specialist-login', '/specialist-portal', '/specialist-setup',
-  '/admin-login', '/admin',
+  '/admin-login', '/admin', '/project-overview',
   '/forgot-password', '/reset-password',
 ]);
 

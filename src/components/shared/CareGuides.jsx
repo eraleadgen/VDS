@@ -34,16 +34,6 @@ export default function CareGuides({ compact = false, onAction, from = 'member' 
     if (!html) throw new Error('Document content unavailable.');
     return html;
   };
-  const viewProjectOverview = async () => {
-    setPoError(''); setPoStatus('Opening preview…');
-    try {
-      const html = await fetchProjectOverviewHtml();
-      const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }));
-      window.open(url, '_blank');
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
-      setPoStatus('');
-    } catch (e) { setPoStatus(''); setPoError('Error: ' + (e?.message || 'Unable to preview the document.')); }
-  };
   const downloadProjectOverview = async () => {
     setPoError(''); setPoStatus('Preparing…');
     try {
@@ -77,12 +67,13 @@ export default function CareGuides({ compact = false, onAction, from = 'member' 
         <div className="flex flex-wrap gap-2 mt-4">
           {isProjectOverview ? (
             <>
-              <button
-                onClick={() => { onAction && onAction(); viewProjectOverview(); }}
+              <Link
+                to="/project-overview"
+                onClick={() => onAction && onAction()}
                 className="flex items-center gap-2 text-xs font-mono-tech text-gold border border-gold/30 bg-gold/10 hover:bg-gold/20 px-4 py-2.5 rounded-sm transition-colors"
               >
                 <Eye size={13} /> VIEW PROJECT OVERVIEW
-              </button>
+              </Link>
               <button
                 onClick={() => { onAction && onAction(); downloadProjectOverview(); }}
                 className="flex items-center gap-2 text-xs font-mono-tech text-vapor/70 border border-vapor/20 hover:border-gold/40 hover:text-gold px-4 py-2.5 rounded-sm transition-colors"
