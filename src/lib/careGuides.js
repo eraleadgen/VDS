@@ -250,24 +250,26 @@ export const CARE_GUIDES = [
         bullets: [
           'Your unique referral code is shown in the Partner Portal under "Referral Link." Share it as a short link (domain/CODE) or the QR code.',
           'When a customer visits your link, they are sent to the booking flow with attribution automatically applied to their account.',
-          'Attribution is permanent — once a customer is referred by you, every future job (including a later ceramic coating or paint correction) is credited to you.',
+          'Attribution applies to the client\'s first booked job only — that initial booking is what earns your referral payout. Any details the client books afterward are not credited to you.',
         ],
       },
       {
         title: 'How Referrals Are Tracked',
         bullets: [
           'A referral is created the moment a customer books through your link.',
-          'It converts when the customer\'s invoice is paid — at that point your conversion count and revenue are updated automatically.',
+          'It converts when that initial job\'s invoice is paid — at that point your conversion count and revenue are updated automatically.',
+          'Your Partner Portal shows the initial booked job only; subsequent details the referred client books are not displayed or credited to you.',
           'Track status, service type, and earnings in the Partner Portal Overview and Referrals tabs in real time.',
         ],
       },
       {
         title: 'Incentive Earnings',
         bullets: [
-          'Initial Detail: $30 one-time payout the first time a referred client completes a detail (paid once per referred client).',
-          'Ceramic Coating: $100 payout per ceramic coating job converted.',
-          'Paint Correction: $100 payout per paint correction job converted.',
-          'VDS Gold Signup: $30 one-time compensation when a referred client registers for VDS Gold using your link.',
+          'You earn one payout per referred client, based on the service type of their first booked job:',
+          'Initial Detail: $30 one-time payout when the client\'s first booking is a standard detail.',
+          'Ceramic Coating: $100 one-time payout when the client\'s first booking is a ceramic coating.',
+          'Paint Correction: $100 one-time payout when the client\'s first booking is a paint correction.',
+          'VDS Gold Signup: $30 one-time compensation when a referred client registers for VDS Gold using your link (separate from the initial-job payout).',
           'Incentives apply to primary service packages only; add-ons (such as ceramic sealant) are excluded from payout calculations.',
         ],
       },
