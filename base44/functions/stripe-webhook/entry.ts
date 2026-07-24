@@ -56,6 +56,17 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'No subscription found' }, { status: 400 });
       }
 
+      // Idempotency: if Stripe redelivers this checkout.session.completed event, the
+      // VehicleSubscription records already exist for this subscription id — no-op to
+      // avoid duplicate provisioning (double partner credit, double care-guide email).
+      const alreadyProvisioned = await base44.asServiceRole.entities.VehicleSubscription.filter({
+        stripe_subscription_id: subId,
+      });
+      if (alreadyProvisioned && alreadyProvisioned.length > 0) {
+        console.log(`Duplicate checkout.session.completed for ${subId} — already provisioned, skipping`);
+        return Response.json({ received: true });
+      }
+
       // Expand the subscription items so each vehicle maps to its own line-item id.
       const fullSub = await stripe.subscriptions.retrieve(subId, { expand: ['items.data'] });
       const items = (fullSub.items && fullSub.items.data) || [];
@@ -170,14 +181,26 @@ Deno.serve(async (req) => {
             invoice = byRef && byRef[0];
           }
           if (invoice && invoice.payment_status !== 'paid') {
-            await base44.asServiceRole.entities.Invoice.update(invoice.id, {
-              payment_status: 'paid',
-              payment_method: 'stripe',
-              stripe_payment_reference: inv.id,
-              paid_date: new Date().toISOString().split('T')[0],
-            });
-            await onInvoicePaid(base44, invoice.id);
-            console.log(`Stripe invoice ${inv.id} paid → Base44 invoice ${invoice.id} marked paid + partner attributed`);
+            // Guard: if the linked job was cancelled after this invoice was issued, a late
+            // Stripe retry must NOT mark it paid or run revenue / partner side effects.
+            let skipDueToCancellation = false;
+            if (invoice.job_id) {
+              const linkedJob = await base44.asServiceRole.entities.Job.get(invoice.job_id).catch(() => null);
+              if (linkedJob && linkedJob.status === 'cancelled') {
+                skipDueToCancellation = true;
+                console.log(`Stripe invoice ${inv.id} paid but linked job ${linkedJob.id} is cancelled — skipping side effects`);
+              }
+            }
+            if (!skipDueToCancellation) {
+              await base44.asServiceRole.entities.Invoice.update(invoice.id, {
+                payment_status: 'paid',
+                payment_method: 'stripe',
+                stripe_payment_reference: inv.id,
+                paid_date: new Date().toISOString().split('T')[0],
+              });
+              await onInvoicePaid(base44, invoice.id);
+              console.log(`Stripe invoice ${inv.id} paid → Base44 invoice ${invoice.id} marked paid + partner attributed`);
+            }
           }
         } catch (e) { console.error('One-time invoice paid handler error:', e.message); }
       }
