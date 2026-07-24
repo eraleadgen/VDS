@@ -20,14 +20,26 @@ Deno.serve(async () => {
         "Content-Type": "application/json",
         "X-Goog-FieldMask": "places.id,places.displayName,places.rating,places.userRatingCount",
       },
-      body: JSON.stringify({ textQuery: "Valet Detailing Service Atlanta", languageCode: "en", pageSize: 20 }),
+      body: JSON.stringify({
+        textQuery: "Valet Detailing Service",
+        languageCode: "en",
+        pageSize: 20,
+        // Bias the search to the business's pinned location (from its Google Maps embed) so the
+        // API returns the exact listing instead of higher-prominence competitors.
+        locationBias: {
+          circle: {
+            center: { latitude: 33.94295408989637, longitude: -84.65289852567126 },
+            radius: 2000,
+          },
+        },
+      }),
     });
     const searchData = await searchRes.json();
     const places = searchData?.places || [];
     const match = places.find((p) =>
       (p?.displayName?.text || "").toLowerCase().includes("valet detailing service")
     );
-    const placeId = (match || places[0])?.id;
+    const placeId = match?.id;
     if (!placeId) {
       return Response.json({ name: null, rating: null, total: null, reviews: [] });
     }
