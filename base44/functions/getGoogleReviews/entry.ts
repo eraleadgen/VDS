@@ -24,8 +24,6 @@ Deno.serve(async () => {
         textQuery: "Valet Detailing Service",
         languageCode: "en",
         pageSize: 20,
-        // Bias the search to the business's pinned location (from its Google Maps embed) so the
-        // API returns the exact listing instead of higher-prominence competitors.
         locationBias: {
           circle: {
             center: { latitude: 33.94295408989637, longitude: -84.65289852567126 },
