@@ -24,6 +24,7 @@ export const CARE_GUIDES = [
       {
         title: 'The 48-Hour Cure',
         bullets: [
+          'Do not get the vehicle wet for the first 48 hours and do not wash for the first week from when the coating is applied.',
           'Do not wash the vehicle for the first 48 hours — the coating is curing and bonding to the paint during this window.',
           'Keep the vehicle in a covered area — your garage or a parking deck — during the entire 48-hour cure. As a mobile service, the car must be sheltered away from rain and the elements until the coating has cured.',
         ],
