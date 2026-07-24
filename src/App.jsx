@@ -1,13 +1,14 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from '@/components/ScrollToTop';
 import RouteSeo from '@/components/vds/RouteSeo';
 import PageTransition from '@/components/vds/PageTransition';
+import VdsTransitionOverlay from '@/components/vds/VdsTransitionOverlay';
 
 // Page imports
 import Home from './pages/Home';
@@ -41,68 +42,70 @@ import PartnerRedirect from './pages/PartnerRedirect';
 import CareGuide from './pages/CareGuide';
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
+  const location = useLocation();
+  const authLoaded = !isLoadingAuth && !isLoadingPublicSettings;
 
-  if (isLoadingPublicSettings || isLoadingAuth) {
-    return (
+  // The branded transition overlay is always rendered (even during the auth loading
+  // gate) so it replaces the loading circle and only opens once the page is ready.
+  let content;
+  if (!authLoaded) {
+    content = (
       <div className="fixed inset-0 flex items-center justify-center bg-obsidian">
         <div className="w-8 h-8 border-2 border-gold/20 border-t-gold rounded-full animate-spin"></div>
       </div>
     );
-  }
-
-  if (authError) {
-    if (authError.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      // Only redirect if a token was present but is invalid/expired
-      // Don't redirect unauthenticated users on a public app
-      if (typeof window !== 'undefined' && window.location.pathname === '/member-dashboard') {
-        window.location.href = '/member-login';
-        return null;
-      }
-      // For all other pages, just render normally
+  } else if (authError && authError.type === 'user_not_registered') {
+    content = <UserNotRegisteredError />;
+  } else {
+    if (authError && authError.type === 'auth_required' && typeof window !== 'undefined' && window.location.pathname === '/member-dashboard') {
+      window.location.href = '/member-login';
     }
-    // For unknown errors, still render the app rather than blocking
+    content = (
+      <Routes>
+        <Route element={<PageTransition />}>
+          <Route path="/" element={<Home />} />
+          <Route path="/services" element={<Services />} />
+          <Route path="/vds-gold" element={<VdsGold />} />
+
+          <Route path="/faq" element={<FAQ />} />
+          <Route path="/pricing" element={<Pricing />} />
+
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/cookies" element={<Cookies />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/member-login" element={<MemberLogin />} />
+          <Route path="/member-dashboard" element={<MemberDashboard />} />
+          <Route path="/member-signup" element={<GoldSignup />} />
+          <Route path="/vds-gold-signup" element={<VdsGoldSignup />} />
+          <Route path="/gallery" element={<Gallery />} />
+          <Route path="/book" element={<BookAppointment />} />
+          <Route path="/gold-booking" element={<GoldBooking />} />
+          <Route path="/specialist-login" element={<SpecialistLogin />} />
+          <Route path="/specialist-portal" element={<SpecialistPortal />} />
+          <Route path="/specialist-setup" element={<SpecialistSetup />} />
+          <Route path="/admin-login" element={<AdminLogin />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/partner-portal" element={<PartnerPortal />} />
+          <Route path="/partner-login" element={<PartnerLogin />} />
+          <Route path="/partner-setup" element={<PartnerSetup />} />
+          <Route path="/care-guide/:key" element={<CareGuide />} />
+          <Route path="/:code" element={<PartnerRedirect />} />
+          <Route path="/era-doc" element={<EraDocDownload />} />
+          <Route path="/project-overview" element={<ProjectOverview />} />
+          <Route path="*" element={<PageNotFound />} />
+        </Route>
+      </Routes>
+    );
   }
 
   return (
-    <Routes>
-      <Route element={<PageTransition />}>
-        <Route path="/" element={<Home />} />
-        <Route path="/services" element={<Services />} />
-        <Route path="/vds-gold" element={<VdsGold />} />
-
-        <Route path="/faq" element={<FAQ />} />
-        <Route path="/pricing" element={<Pricing />} />
-
-        <Route path="/terms" element={<Terms />} />
-        <Route path="/privacy" element={<Privacy />} />
-        <Route path="/cookies" element={<Cookies />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/member-login" element={<MemberLogin />} />
-        <Route path="/member-dashboard" element={<MemberDashboard />} />
-        <Route path="/member-signup" element={<GoldSignup />} />
-        <Route path="/vds-gold-signup" element={<VdsGoldSignup />} />
-        <Route path="/gallery" element={<Gallery />} />
-        <Route path="/book" element={<BookAppointment />} />
-        <Route path="/gold-booking" element={<GoldBooking />} />
-        <Route path="/specialist-login" element={<SpecialistLogin />} />
-        <Route path="/specialist-portal" element={<SpecialistPortal />} />
-        <Route path="/specialist-setup" element={<SpecialistSetup />} />
-        <Route path="/admin-login" element={<AdminLogin />} />
-        <Route path="/admin" element={<AdminDashboard />} />
-        <Route path="/partner-portal" element={<PartnerPortal />} />
-        <Route path="/partner-login" element={<PartnerLogin />} />
-        <Route path="/partner-setup" element={<PartnerSetup />} />
-        <Route path="/care-guide/:key" element={<CareGuide />} />
-        <Route path="/:code" element={<PartnerRedirect />} />
-        <Route path="/era-doc" element={<EraDocDownload />} />
-        <Route path="/project-overview" element={<ProjectOverview />} />
-        <Route path="*" element={<PageNotFound />} />
-      </Route>
-    </Routes>
+    <>
+      <VdsTransitionOverlay authLoaded={authLoaded} pathKey={location.pathname} />
+      {content}
+    </>
   );
 };
 
