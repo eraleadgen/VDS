@@ -8,50 +8,62 @@ const LOGO_URL =
 
 // Full-screen branded page-transition overlay that replaces the loading circle. A solid
 // black field covers the screen; a rotating gold loading ring sits behind the VDS logo
-// while the app readies. The overlay covers instantly on every route change and stays
-// closed until ready — auth loaded AND the destination page has no visible loading spinner
-// (`.animate-spin`) — plus a short branded hold. Then the black is "pinched" open from the
-// center of each side: two openings grow from the middle of the left edge and the middle of
-// the right edge and expand until the page is revealed, while the logo evaporates
-// (fade + scale up + blur). A max wait guarantees the overlay always opens.
+// while the app readies. The overlay stays closed until ready — auth loaded AND the
+// destination page has no visible loading spinner (`.animate-spin`) — plus a short branded
+// hold. Then a single circular opening grows outward from the center (around the logo /
+// loading ring) to reveal the page, while the logo evaporates (fade + scale up + blur).
+//
+// Entering a transition is REVERSED: on navigation the overlay first CLOSES (the reveal
+// circle shrinks back to the center, black sweeps in) and only then OPENS to the new page.
+// A max wait guarantees the overlay always opens.
 //
 //   authLoaded: true once auth + public settings have loaded (passed from AuthenticatedApp)
-//   pathKey:    location.pathname — re-covers on every route change
+//   pathKey:    location.pathname — re-triggers the close→open cycle on every route change
 //
-// phase: 'cover' (black field closed) → 'open' (pinch reveal + logo evaporates) → 'done'.
+// phase: 'hold' (closed, waiting to open) → 'opening' (reveal) → 'done' (unmounted);
+//        on nav: 'closing' (circle shrinks to center) → 'hold' → 'opening' → 'done'.
 export default function VdsTransitionOverlay({ pathKey, authLoaded }) {
-  const [phase, setPhase] = useState('cover');
+  const [phase, setPhase] = useState('hold');
   const [size, setSize] = useState(() =>
     typeof window !== 'undefined' ? { w: window.innerWidth, h: window.innerHeight } : { w: 1280, h: 800 }
   );
   const startRef = useRef(typeof performance !== 'undefined' ? performance.now() : 0);
   const prevPath = useRef(pathKey);
 
-  // Re-cover SYNCHRONOUSLY during render on route change, so the overlay covers the new page
-  // in the same commit — no flash of the page loading underneath before it covers.
+  // On route change, start the CLOSE (reverse) phase so the overlay closes over the current
+  // view before opening to the new page. Runs synchronously during render so the overlay
+  // begins closing in the same commit.
   if (prevPath.current !== pathKey) {
     prevPath.current = pathKey;
     startRef.current = performance.now();
-    setPhase('cover');
+    setPhase('closing');
   }
 
-  // Track viewport size so the pinch circles stay round on any screen.
+  // Track viewport size so the reveal circle stays round on any screen.
   useEffect(() => {
     const onResize = () => setSize({ w: window.innerWidth, h: window.innerHeight });
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // cover -> open: wait until authLoaded and the page has no loading spinner, with a min
+  // closing -> hold: once the close animation finishes the overlay is fully closed; hand off
+  // to the hold/opening logic (which waits for the page to be ready).
+  useEffect(() => {
+    if (phase !== 'closing') return;
+    const t = setTimeout(() => setPhase('hold'), 0.45 * 1000);
+    return () => clearTimeout(t);
+  }, [phase]);
+
+  // hold -> opening: wait until authLoaded and the page has no loading spinner, with a min
   // branded hold and a max fallback so the overlay never gets stuck closed.
   useEffect(() => {
-    if (phase !== 'cover') return;
+    if (phase !== 'hold') return;
     if (!authLoaded) return;
     let cancelled = false;
     let clearChecks = 0;
     const MIN_HOLD = 650;
     const MAX_WAIT = 3000;
-    const openNow = () => { if (!cancelled) setPhase('open'); };
+    const openNow = () => { if (!cancelled) setPhase('opening'); };
     const maxTimer = setTimeout(openNow, MAX_WAIT);
     const tick = () => {
       if (cancelled) return;
@@ -65,36 +77,36 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded }) {
     return () => { cancelled = true; clearTimeout(maxTimer); };
   }, [phase, authLoaded]);
 
-  // open -> done
+  // opening -> done
   useEffect(() => {
-    if (phase !== 'open') return;
+    if (phase !== 'opening') return;
     const t = setTimeout(() => setPhase('done'), 1000);
     return () => clearTimeout(t);
   }, [phase]);
 
   if (phase === 'done') return null;
-  const isOpen = phase === 'open';
+  const isOpen = phase === 'opening';
 
-  // Pinch reveal: a single circular opening grows outward from the center of the screen
-  // (around the VDS logo / loading ring) until the whole page is uncovered. Implemented as
-  // an SVG mask — white keeps the black field, the black circle erases it (reveals the
-  // page). Keyed by pathKey so it remounts already closed on every navigation.
+  // Reveal circle: grows outward from the center of the screen (around the VDS logo /
+  // loading ring) until the whole page is uncovered. Implemented as an SVG mask — white
+  // keeps the black field, the black circle erases it (reveals the page). On navigation it
+  // first shrinks back to center (close) before growing again (open).
   const { w, h } = size;
   const maxR = Math.sqrt((w / 2) ** 2 + (h / 2) ** 2);
   const partEase = [0.7, 0, 0.3, 1];
 
   return (
     <div className="fixed inset-0 z-[100] pointer-events-none overflow-hidden">
-      {/* Black field, erased by the two growing pinch circles */}
-      <svg key={`reveal-${pathKey}`} className="absolute inset-0" width={w} height={h} aria-hidden>
+      {/* Black field, erased by the single growing/shrinking reveal circle */}
+      <svg className="absolute inset-0" width={w} height={h} aria-hidden>
         <defs>
           <mask id="vdsPinchReveal">
             <rect x={0} y={0} width={w} height={h} fill="white" />
             <motion.circle
               cx={w / 2} cy={h / 2}
-              initial={{ r: 0 }}
-              animate={{ r: isOpen ? maxR : 0 }}
-              transition={{ duration: 0.95, ease: partEase }}
+              initial={{ r: phase === 'closing' ? maxR : 0 }}
+              animate={{ r: phase === 'opening' ? maxR : 0 }}
+              transition={{ duration: phase === 'opening' ? 0.95 : phase === 'closing' ? 0.45 : 0, ease: phase === 'opening' ? partEase : 'easeInOut' }}
               fill="black"
             />
           </mask>
