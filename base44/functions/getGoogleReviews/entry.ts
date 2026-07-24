@@ -2,6 +2,15 @@
 // home-page reviews carousel stays in sync with real reviews and auto-includes new ones
 // over time. No auth — Google review data is public. Uses GOOGLE_PLACES_API_KEY (New API).
 // Docs: https://developers.google.com/maps/documentation/places/web-service
+//
+// NOTE: "Valet Detailing Service" is a service-area business and is NOT currently returned
+// by the (New) Places Text Search (it has no surfaced map pin), and the legacy Find Place
+// From Text (phonenumber) API is disabled on this project. Until an exact Place ID (ChIJ...)
+// is obtained and hardcoded below, this returns an empty list and the carousel shows its
+// fallback content. To enable live reviews, set VDS_PLACE_ID and the lookup below will use it
+// directly instead of searching.
+
+const VDS_PLACE_ID = ""; // e.g. "ChIJ..." — paste the exact Place ID here to go live.
 
 Deno.serve(async () => {
   try {
@@ -10,39 +19,41 @@ Deno.serve(async () => {
 
     const baseHeaders = { "X-Goog-Api-Key": key };
 
-    // 1) Text Search (New) to resolve the place. The API ranks by prominence, so a smaller
-    // listing can lose to larger competitors — fetch a page of results and pick the one whose
-    // name matches "Valet Detailing Service" exactly (case-insensitive contains).
-    const searchRes = await fetch("https://places.googleapis.com/v1/places:searchText", {
-      method: "POST",
-      headers: {
-        ...baseHeaders,
-        "Content-Type": "application/json",
-        "X-Goog-FieldMask": "places.id,places.displayName,places.rating,places.userRatingCount",
-      },
-      body: JSON.stringify({
-        textQuery: "Valet Detailing Service",
-        languageCode: "en",
-        pageSize: 20,
-        locationBias: {
-          circle: {
-            center: { latitude: 33.94295408989637, longitude: -84.65289852567126 },
-            radius: 2000,
-          },
+    // Resolve the place: prefer the hardcoded Place ID; otherwise search by name near the
+    // business location. Service-area listings often aren't surfaced by search.
+    let placeId = VDS_PLACE_ID;
+    if (!placeId) {
+      const searchRes = await fetch("https://places.googleapis.com/v1/places:searchText", {
+        method: "POST",
+        headers: {
+          ...baseHeaders,
+          "Content-Type": "application/json",
+          "X-Goog-FieldMask": "places.id,places.displayName",
         },
-      }),
-    });
-    const searchData = await searchRes.json();
-    const places = searchData?.places || [];
-    const match = places.find((p) =>
-      (p?.displayName?.text || "").toLowerCase().includes("valet detailing service")
-    );
-    const placeId = match?.id;
+        body: JSON.stringify({
+          textQuery: "Valet Detailing Service",
+          languageCode: "en",
+          pageSize: 20,
+          locationBias: {
+            circle: {
+              center: { latitude: 33.94295408989637, longitude: -84.65289852567126 },
+              radius: 2000,
+            },
+          },
+        }),
+      });
+      const searchData = await searchRes.json();
+      const places = searchData?.places || [];
+      placeId = places.find((p) =>
+        (p?.displayName?.text || "").toLowerCase().includes("valet detailing service")
+      )?.id;
+    }
+
     if (!placeId) {
       return Response.json({ name: null, rating: null, total: null, reviews: [] });
     }
 
-    // 2) Place Details (New) to fetch reviews.
+    // Place Details (New) to fetch reviews.
     const detailsRes = await fetch(`https://places.googleapis.com/v1/places/${placeId}`, {
       headers: { ...baseHeaders, "X-Goog-FieldMask": "id,displayName,rating,userRatingCount,reviews" },
     });
