@@ -148,6 +148,24 @@ export default function BookAppointment() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.state, config]);
 
+  // Preselect a service when arriving from a featured marketing card (Home/Services) via
+  // state.preselect_service. Runs once — deps don't change on user interaction — and only
+  // fills an empty selection so it never overrides a saved-quote prefill or a later choice.
+  useEffect(() => {
+    const key = location.state?.preselect_service;
+    if (!key || !config) return;
+    const svc = (config.services || []).find(s => s.key === key);
+    if (!svc) return;
+    if (svc.requires_consultation) {
+      setConsultations(prev => (prev.includes(key) ? prev : [...prev, key]));
+    } else if (svc.category === 'addon') {
+      setAddOns(prev => (prev.includes(key) ? prev : [...prev, key]));
+    } else {
+      setSelected(prev => (prev.length ? prev : [key]));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state, config]);
+
   const handleAddVehicleSave = async (vehicleForm) => {
     const saved = await base44.entities.MemberVehicle.create(vehicleForm);
     setVehicles(v => [...v, saved]);
