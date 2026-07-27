@@ -4,6 +4,7 @@
 // Auth: SCHEDULER_TOKEN (internal) or admin session.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
+import { sendCustomerEmail } from '../../shared/customerEmail.ts';
 
 const FONT = "'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 const MONO = "'Space Mono','Courier New',monospace";
@@ -161,18 +162,21 @@ Deno.serve(async (req) => {
       results.sms = await sendTwilioSms(base44, appt.customer_phone, msg, appt.customer_name, 'booking_confirmation');
     }
 
-    // 2. Customer email confirmation (registered users only — SendEmail limitation)
+    // 2. Customer email confirmation — hybrid delivery: registered recipients go through
+    //    the platform's SendEmail, guests go through the external ESP (Resend) so a
+    //    non-member booker actually receives their confirmation independent of Twilio SMS.
     if (appt.customer_email) {
       try {
         const html = buildCustomerEmail(firstName, appt);
-        await base44.asServiceRole.integrations.Core.SendEmail({
+        const r = await sendCustomerEmail(base44, {
           to: appt.customer_email,
           subject: `Your VDS Mobile Appointment is Confirmed — ${appt.preferred_date} at ${appt.preferred_time}`,
-          body: html,
-          from_name: 'VDS Mobile',
+          html,
+          fromName: 'VDS Mobile',
         });
-        results.email = true;
-      } catch (e) { console.error('Customer confirmation email failed (may not be a registered user):', e.message); }
+        results.email = r.sent;
+        if (!r.sent) console.error('Customer confirmation email failed:', r.error);
+      } catch (e) { console.error('Customer confirmation email failed:', e.message); }
     }
 
     // 3. Internal notification email
