@@ -17,6 +17,10 @@
       "type": "string",
       "default": "VDS Mobile"
     },
+    "legal_name": {
+      "type": "string",
+      "description": "Legal entity name for copyright lines, footer legal notices, and contracts. May differ from the brand display name (business_name); e.g. VDS brand is 'VDS Mobile' but legal entity is 'Valet Detailing Service LLC'. Generic tenants often set legal_name = business_name."
+    },
     "logo_url": {
       "type": "string"
     },
@@ -330,6 +334,10 @@
           },
           "label": {
             "type": "string"
+          },
+          "short_label": {
+            "type": "string",
+            "description": "Short brand form for nav links and compact CTAs (e.g. 'VDS Gold'), distinct from the full marketing label (e.g. 'VDS Gold Membership'). Falls back to label when unset."
           },
           "stripe_product_id": {
             "type": "string",

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Download, Loader2 } from 'lucide-react';
+import { useBusinessName } from '@/lib/BusinessConfigContext';
 
 // Public view of the ERA Core 1.0 + VDS Mobile Project Overview document — a shareable
 // showcase link (e.g. for external reviewers). The document HTML is generated server-side
@@ -8,6 +9,7 @@ import { Download, Loader2 } from 'lucide-react';
 // bundle. Rendered in an isolated iframe so the document's own styles don't collide with
 // the app. Route is noindexed (RouteSeo). Admins still reach it via the Resource Center.
 export default function ProjectOverview() {
+  const businessName = useBusinessName();
   const [html, setHtml] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -32,7 +34,7 @@ export default function ProjectOverview() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'ERA-Core-1.0-VDS-Mobile-Project-Overview.html';
+    a.download = `ERA-Core-1.0-${businessName.replace(/\s+/g, '-')}-Project-Overview.html`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -65,7 +67,7 @@ export default function ProjectOverview() {
       ) : (
         <iframe
           srcDoc={html}
-          title="ERA Core 1.0 + VDS Mobile — Project Overview"
+          title={`ERA Core 1.0 + ${businessName} — Project Overview`}
           className="flex-1 w-full border-0"
           style={{ minHeight: 'calc(100vh - 49px)' }}
         />

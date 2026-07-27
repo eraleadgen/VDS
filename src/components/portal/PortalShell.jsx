@@ -1,11 +1,13 @@
 import { LogOut } from 'lucide-react';
+import { useBusinessName } from '@/lib/BusinessConfigContext';
 
 export default function PortalShell({ title, navItems, active, onNavigate, userLabel, onLogout, children }) {
+  const businessName = useBusinessName();
   return (
     <div className="min-h-screen bg-obsidian flex flex-col md:flex-row">
       <aside className="md:w-64 md:flex-col md:border-r border-vapor/10 bg-asphalt/40 flex md:min-h-screen">
         <div className="p-6 border-b border-vapor/10 flex-1 md:flex-none">
-          <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70">VDS MOBILE</p>
+          <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70">{businessName.toUpperCase()}</p>
           <h2 className="text-lg font-grotesk font-bold text-vapor mt-1">{title}</h2>
         </div>
         <nav className="hidden md:flex flex-col p-4 space-y-1">

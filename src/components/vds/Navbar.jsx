@@ -2,23 +2,27 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, UserCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { useBusinessName, useBusinessConfig, useMembershipPlan } from '@/lib/BusinessConfigContext';
 
 const LOGO = "https://media.base44.com/images/public/6a191df337222815cd0b1f5e/6a27779cd_1773368635248-a065bd31-ddf6-4b1c-87dc-3a6080dc60f8.png";
-
-const navLinks = [
-  { label: 'HOME', path: '/' },
-  { label: 'SERVICES', path: '/services' },
-  { label: 'QUOTE & BOOK', path: '/book' },
-  { label: 'GALLERY', path: '/gallery' },
-  { label: 'FAQ', path: '/faq' },
-  { label: 'VDS GOLD', path: '/vds-gold', gold: true },
-];
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const location = useLocation();
+  const businessName = useBusinessName();
+  const config = useBusinessConfig();
+  const plan = useMembershipPlan();
+
+  const navLinks = [
+    { label: 'HOME', path: '/' },
+    { label: 'SERVICES', path: '/services' },
+    { label: 'QUOTE & BOOK', path: '/book' },
+    { label: 'GALLERY', path: '/gallery' },
+    { label: 'FAQ', path: '/faq' },
+    { label: (plan.short_label || 'VDS Gold').toUpperCase(), path: '/vds-gold', gold: true },
+  ];
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -41,7 +45,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
-          <img src={LOGO} alt="VDS Mobile" className="h-12 w-auto" />
+          <img src={config?.logo_url || LOGO} alt={businessName} className="h-12 w-auto" />
         </Link>
 
         {/* Desktop Nav */}

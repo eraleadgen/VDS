@@ -6,9 +6,11 @@ import Navbar from '@/components/vds/Navbar';
 import Footer from '@/components/vds/Footer';
 import GoldShimmer from '@/components/vds/GoldShimmer';
 import RememberDevice from '@/components/vds/RememberDevice';
+import { useBusinessName } from '@/lib/BusinessConfigContext';
 import { applyRememberDevice } from '../lib/remember-device';
 
 export default function AdminLogin() {
+  const businessName = useBusinessName();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
@@ -40,7 +42,7 @@ export default function AdminLogin() {
       <div className="flex-1 flex items-center justify-center px-6 pt-32 pb-16">
         <div className="w-full max-w-md">
           <div className="text-center mb-10">
-            <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">VDS MOBILE · ADMIN</p>
+            <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">{businessName.toUpperCase()} · ADMIN</p>
             <h1 className="text-4xl font-grotesk font-bold text-vapor mb-3">
               ADMIN <GoldShimmer>LOGIN</GoldShimmer>
             </h1>

@@ -6,9 +6,11 @@ import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
 import GoldShimmer from '../components/vds/GoldShimmer';
 import RememberDevice from '../components/vds/RememberDevice';
+import { useMembershipPlan } from '@/lib/BusinessConfigContext';
 import { applyRememberDevice } from '../lib/remember-device';
 
 export default function MemberLogin() {
+  const plan = useMembershipPlan();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPass, setShowPass] = useState(false);
@@ -38,7 +40,7 @@ export default function MemberLogin() {
       <div className="flex-1 flex items-center justify-center px-6 pt-32 pb-16">
         <div className="w-full max-w-md">
           <div className="text-center mb-10">
-            <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">VDS GOLD MEMBER PORTAL</p>
+            <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">{plan.short_label.toUpperCase()} MEMBER PORTAL</p>
             <h1 className="text-4xl font-grotesk font-bold text-vapor mb-3">
               MEMBER <GoldShimmer>LOGIN</GoldShimmer>
             </h1>

@@ -77,3 +77,17 @@ export function useBusinessName() {
   const ctx = useContext(BusinessConfigContext);
   return ctx?.config?.business_name || 'Valet Detailing Service';
 }
+
+// The first (primary) membership plan, with safe fallbacks so components can read
+// label / short_label / benefits / pricing_by_group before the config resolves.
+export function useMembershipPlan() {
+  const ctx = useContext(BusinessConfigContext);
+  const plan = ctx?.config?.membership_plans?.[0];
+  const fallback = { label: 'VDS Gold Membership', short_label: 'VDS Gold', benefits: [], pricing_by_group: [] };
+  if (!plan) return fallback;
+  return {
+    ...fallback,
+    ...plan,
+    short_label: plan.short_label || plan.label || fallback.short_label,
+  };
+}
