@@ -21,8 +21,14 @@ Deno.serve(async (req) => {
         return Response.json({ models: [] });
       }
       const data = await resp.json();
+      // VPIC matches the make name by substring, so a loose name like "Mini" also returns
+      // trailer/LLC manufacturers ("Mobile Mini Inc.", "My Mini Trailer LLC."). Keep only
+      // results whose Make_Name exactly matches the requested make (case-insensitive) so the
+      // dropdown shows only the real brand's models.
+      const makeUpper = make.toUpperCase();
       const models = [...new Set(
         (data.Results || [])
+          .filter(r => r.Make_Name && r.Make_Name.toUpperCase() === makeUpper)
           .map(r => r.Model_Name)
           .filter(Boolean)
       )].sort((a, b) => a.localeCompare(b));
