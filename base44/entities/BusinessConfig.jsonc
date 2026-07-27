@@ -1,7 +1,7 @@
 {
   "name": "BusinessConfig",
   "type": "object",
-  "description": "Single source of truth for all business configuration \u2014 vehicle classifications, pricing groups, services, pricing rules, memberships, hours, scheduling rules, feature flags, branding, domain dictionary, and AI concierge persona. Designed multi-tenant (business_id) for the ERA Systems future. Business behavior is configurable here, not hardcoded. VDS Mobile is a configuration layer over ERA Core.",
+  "description": "Single source of truth for all business configuration \u2014 vehicle classifications, pricing groups, services, pricing rules, memberships, hours, scheduling rules, feature flags, branding, domain dictionary, AI concierge persona, SEO copy, and FAQ content. Designed multi-tenant (business_id) for the ERA Systems future. Business behavior is configurable here, not hardcoded. VDS Mobile is a configuration layer over ERA Core.",
   "properties": {
     "business_id": {
       "type": "string",
@@ -20,6 +20,10 @@
     "legal_name": {
       "type": "string",
       "description": "Legal entity name for copyright lines, footer legal notices, and contracts. May differ from the brand display name (business_name); e.g. VDS brand is 'VDS Mobile' but legal entity is 'Valet Detailing Service LLC'. Generic tenants often set legal_name = business_name."
+    },
+    "legal_jurisdiction": {
+      "type": "string",
+      "description": "State/region where the business is legally registered (e.g. 'Georgia'). Used in legal notices, Terms jurisdiction clauses, and 'registered LLC in {legal_jurisdiction}' phrasing. Populated by the onboarding wizard."
     },
     "logo_url": {
       "type": "string"
@@ -54,7 +58,20 @@
       "type": "string"
     },
     "business_address": {
-      "type": "string"
+      "type": "string",
+      "description": "Free-text display address (e.g. 'Metro Atlanta, GA'). For structured needs (JSON-LD PostalAddress, legal jurisdiction) use address_locality / address_region / address_country."
+    },
+    "address_locality": {
+      "type": "string",
+      "description": "Structured locality/city for JSON-LD PostalAddress (e.g. 'Alpharetta'). Populated by the onboarding wizard."
+    },
+    "address_region": {
+      "type": "string",
+      "description": "Structured state/region for JSON-LD PostalAddress (e.g. 'GA')."
+    },
+    "address_country": {
+      "type": "string",
+      "description": "ISO country code for JSON-LD PostalAddress (e.g. 'US')."
     },
     "service_areas": {
       "type": "array",
@@ -457,6 +474,40 @@
         },
         "tiktok": {
           "type": "string"
+        }
+      }
+    },
+    "seo": {
+      "type": "array",
+      "description": "Per-route SEO meta entries (page title + meta description), keyed by route path. Populated by the onboarding wizard \u2014 this is marketing copy, not auto-generated. RouteSeo finds the entry whose route matches the current path; routes without an entry are treated as noindex.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "route": {
+            "type": "string",
+            "description": "Route path (e.g. '/', '/services')"
+          },
+          "title": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "faq": {
+      "type": "array",
+      "description": "FAQ entries (question + answer) shown on the FAQ page and emitted as FAQPage JSON-LD structured data. Populated by the onboarding wizard \u2014 this is content, not auto-generated.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "question": {
+            "type": "string"
+          },
+          "answer": {
+            "type": "string"
+          }
         }
       }
     },

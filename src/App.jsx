@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
-import { BusinessConfigProvider } from '@/lib/BusinessConfigContext';
+import { BusinessConfigProvider, useBusinessConfigLoading } from '@/lib/BusinessConfigContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from '@/components/ScrollToTop';
 import RouteSeo from '@/components/vds/RouteSeo';
@@ -45,7 +45,10 @@ import CareGuide from './pages/CareGuide';
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
   const location = useLocation();
-  const authLoaded = !isLoadingAuth && !isLoadingPublicSettings;
+  const configLoading = useBusinessConfigLoading();
+  // The branded reveal also waits for BusinessConfig to load so the first paint of every
+  // page already has the tenant's real name/area/prices — no flash of hardcoded defaults.
+  const authLoaded = !isLoadingAuth && !isLoadingPublicSettings && !configLoading;
 
   // The page only swaps once the transition overlay has fully closed. While closing we keep
   // rendering the previous route (committedLocation) so the old page stays put until the
