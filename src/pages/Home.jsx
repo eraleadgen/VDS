@@ -6,6 +6,7 @@ import Footer from '../components/vds/Footer';
 import GoldShimmer from '../components/vds/GoldShimmer';
 import GoldParticles from '../components/vds/GoldParticles';
 import ReviewsCarousel from '../components/vds/ReviewsCarousel';
+import { useMembershipPlan } from '@/lib/BusinessConfigContext';
 
 const STATS = [
   { value: '500+', label: 'VEHICLES DETAILED' },
@@ -57,6 +58,10 @@ const FAQS = [
 
 export default function Home() {
   const [openFaq, setOpenFaq] = useState(null);
+  const plan = useMembershipPlan();
+  const minPrice = (plan.pricing_by_group || []).length
+    ? Math.min(...(plan.pricing_by_group || []).map(g => g.price_monthly))
+    : 250;
 
   return (
     <div className="bg-obsidian min-h-screen">
@@ -153,7 +158,7 @@ export default function Home() {
                       <>
                         <p className="text-xs font-mono-tech text-gold/70 tracking-widest mb-2">◆ INCLUDED IN</p>
                         <Link to="/vds-gold" className="text-lg font-grotesk font-bold text-gold">VDS GOLD MEMBERSHIP</Link>
-                        <p className="text-vapor/50 text-xs font-mono-tech mt-2">From $250/mo per vehicle</p>
+                        <p className="text-vapor/50 text-xs font-mono-tech mt-2">{`From $${minPrice}/mo per vehicle`}</p>
                       </>
                     )}
                   </div>

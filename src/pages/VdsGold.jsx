@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, ArrowRight } from 'lucide-react';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
 import GoldShimmer from '../components/vds/GoldShimmer';
 import GoldParticles from '../components/vds/GoldParticles';
+import { useMembershipPlan, useBusinessConfig } from '@/lib/BusinessConfigContext';
 
 const EXTERIOR_SPECS = [
   'HAND WASH — Rims & Wheel Barrels',
@@ -27,16 +27,33 @@ const INTERIOR_SPECS = [
   '1× PER MONTH — Included in Membership',
 ];
 
-const MEMBERSHIP_VALUE = [
-  { service: 'Exterior Detail (×4/mo)', value: '$400+' },
-  { service: 'Interior Deep Clean (×1/mo)', value: '$125+' },
-  { service: 'Ceramic Sealant (×4/mo)', value: '$200+' },
-  { service: 'Total Retail Value', value: '$700+' },
-  { service: 'VDS GOLD — SEDAN/COUPE', value: '$250' },
-  { service: 'VDS GOLD — TRUCK/SUV', value: '$300' },
-];
-
 export default function VdsGold() {
+  const plan = useMembershipPlan();
+  const config = useBusinessConfig();
+
+  // Membership prices and pricing-group labels come from BusinessConfig — never hardcoded.
+  const priceFor = (key) => plan.pricing_by_group.find(g => g.pricing_group === key)?.price_monthly;
+  const sedanPrice = priceFor('sedan_coupe') || 250;
+  const truckPrice = priceFor('truck_suv') || 300;
+  const groupLabel = (key) => {
+    const found = (config?.pricing_groups || []).find(g => g.key === key);
+    return found?.label || (key === 'truck_suv' ? 'Truck/SUV' : 'Sedan/Coupe');
+  };
+  const sedanLabel = groupLabel('sedan_coupe');
+  const truckLabel = groupLabel('truck_suv');
+  const planShort = plan.short_label;
+
+  // Value breakdown — retail-value rows are marketing copy; the two membership rows are
+  // config-driven. Row indices are fixed (retail total at 3, membership at 4–5) for styling.
+  const MEMBERSHIP_VALUE = [
+    { service: 'Exterior Detail (×4/mo)', value: '$400+' },
+    { service: 'Interior Deep Clean (×1/mo)', value: '$125+' },
+    { service: 'Ceramic Sealant (×4/mo)', value: '$200+' },
+    { service: 'Total Retail Value', value: '$700+' },
+    { service: `${planShort.toUpperCase()} — ${sedanLabel.toUpperCase()}`, value: `$${sedanPrice}` },
+    { service: `${planShort.toUpperCase()} — ${truckLabel.toUpperCase()}`, value: `$${truckPrice}` },
+  ];
+
   return (
     <div className="min-h-screen bg-obsidian">
       <Navbar />
@@ -78,8 +95,8 @@ export default function VdsGold() {
             <div className="flex flex-wrap items-end gap-6 sm:gap-8 mb-12 justify-center md:justify-start">
               <div>
                 <p className="text-xs font-mono-tech text-gold/60 tracking-widest mb-1">MEMBERSHIP PRICE</p>
-                <p className="text-4xl sm:text-5xl font-grotesk font-bold text-gold leading-none">$250<span className="text-xl sm:text-2xl font-mono-tech text-vapor/50"> SEDAN/COUPE</span></p>
-                <p className="text-4xl sm:text-5xl font-grotesk font-bold text-gold leading-none mt-2">$300<span className="text-xl sm:text-2xl font-mono-tech text-vapor/50"> TRUCK/SUV</span></p>
+                <p className="text-4xl sm:text-5xl font-grotesk font-bold text-gold leading-none">${sedanPrice}<span className="text-xl sm:text-2xl font-mono-tech text-vapor/50"> {sedanLabel.toUpperCase()}</span></p>
+                <p className="text-4xl sm:text-5xl font-grotesk font-bold text-gold leading-none mt-2">${truckPrice}<span className="text-xl sm:text-2xl font-mono-tech text-vapor/50"> {truckLabel.toUpperCase()}</span></p>
                 <p className="text-xs font-mono-tech text-vapor/40 tracking-widest mt-2">PER VEHICLE / MONTH</p>
               </div>
               <div className="pb-2 text-vapor/30 font-mono-tech text-xs">
@@ -224,24 +241,24 @@ export default function VdsGold() {
 
         <div className="relative max-w-2xl mx-auto px-6 text-center">
           <div className="vds-gold-btn inline-block px-4 py-2 text-xs font-mono-tech tracking-widest mb-8 rounded-sm">
-            ◆ VDS GOLD MEMBERSHIP
+            ◆ {planShort.toUpperCase()} MEMBERSHIP
           </div>
           <h2 className="text-4xl sm:text-5xl md:text-6xl font-grotesk font-bold text-vapor mb-6">
             JOIN<br /><GoldShimmer>THE CIRCLE.</GoldShimmer>
           </h2>
           <p className="text-vapor/50 leading-relaxed mb-12">
-            Stop thinking about your car's condition. With VDS Gold, your vehicle is always appointment-ready, always immaculate. Starting at $250/mo — unlimited exterior details, 1 interior detail monthly, ceramic sealant included every detail.
+            Stop thinking about your car's condition. With {planShort}, your vehicle is always appointment-ready, always immaculate. Starting at ${sedanPrice}/mo — unlimited exterior details, 1 interior detail monthly, ceramic sealant included every detail.
           </p>
 
           <div className="glass-panel p-10 rounded-sm border border-gold/20 text-left">
             <div className="flex items-center justify-between mb-8 pb-8 border-b border-vapor/10">
               <div>
                 <p className="text-xs font-mono-tech text-gold/70 tracking-widest mb-2">MONTHLY MEMBERSHIP</p>
-                <p className="text-3xl font-grotesk font-bold text-vapor">VDS Gold</p>
+                <p className="text-3xl font-grotesk font-bold text-vapor">{planShort}</p>
               </div>
               <div className="text-right">
-                <p className="text-2xl font-grotesk font-bold text-gold">$250 <span className="text-sm font-mono-tech text-vapor/50">sedan/coupe</span></p>
-                <p className="text-2xl font-grotesk font-bold text-gold">$300 <span className="text-sm font-mono-tech text-vapor/50">truck/suv</span></p>
+                <p className="text-2xl font-grotesk font-bold text-gold">${sedanPrice} <span className="text-sm font-mono-tech text-vapor/50">{sedanLabel.toLowerCase()}</span></p>
+                <p className="text-2xl font-grotesk font-bold text-gold">${truckPrice} <span className="text-sm font-mono-tech text-vapor/50">{truckLabel.toLowerCase()}</span></p>
                 <p className="text-xs font-mono-tech text-vapor/40">/mo per vehicle</p>
               </div>
             </div>
