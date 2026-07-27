@@ -1,7 +1,7 @@
 {
   "name": "BusinessConfig",
   "type": "object",
-  "description": "Single source of truth for all business configuration \u2014 vehicle classifications, pricing groups, services, pricing rules, memberships, hours, scheduling rules, feature flags, and branding. Designed multi-tenant (business_id) for the ERA Systems future. Business behavior is configurable here, not hardcoded. VDS Mobile is a configuration layer over ERA Core.",
+  "description": "Single source of truth for all business configuration \u2014 vehicle classifications, pricing groups, services, pricing rules, memberships, hours, scheduling rules, feature flags, branding, domain dictionary, and AI concierge persona. Designed multi-tenant (business_id) for the ERA Systems future. Business behavior is configurable here, not hardcoded. VDS Mobile is a configuration layer over ERA Core.",
   "properties": {
     "business_id": {
       "type": "string",
@@ -451,6 +451,81 @@
           "type": "string"
         }
       }
+    },
+    "dictionary": {
+      "type": "object",
+      "description": "White-label domain vocabulary for UI copy. Lets a non-automotive tenant rebrand surface language ('vehicle' -> 'item', 'classification' -> 'category', 'detail' -> 'service') without renaming entities or service keys, which remain stable literals. Components read these via useDictionary(); defaults keep the VDS automotive voice.",
+      "properties": {
+        "item_noun": {
+          "type": "string",
+          "default": "Vehicle",
+          "description": "Singular noun for the serviced thing (a MemberVehicle). 'Vehicle' for VDS; 'Item' generically."
+        },
+        "item_plural": {
+          "type": "string",
+          "default": "Vehicles"
+        },
+        "item_category_noun": {
+          "type": "string",
+          "default": "Classification",
+          "description": "Noun for vehicle_classification. 'Classification' for VDS; 'Category' generically."
+        },
+        "item_category_label": {
+          "type": "string",
+          "default": "Vehicle Classification",
+          "description": "Human-facing label for the classification selector and display headings."
+        },
+        "service_noun": {
+          "type": "string",
+          "default": "Detail",
+          "description": "Noun for a single service instance. 'Detail' for VDS; 'Service' generically."
+        },
+        "service_verb": {
+          "type": "string",
+          "default": "detail",
+          "description": "Verb for performing the service ('detail the vehicle' / 'service the item')."
+        },
+        "service_area_noun": {
+          "type": "string",
+          "default": "Service Area"
+        },
+        "before_photo_label": {
+          "type": "string",
+          "default": "Before"
+        },
+        "after_photo_label": {
+          "type": "string",
+          "default": "After"
+        },
+        "appointment_noun": {
+          "type": "string",
+          "default": "Appointment",
+          "description": "Noun for a scheduled visit ('Appointment' / 'Visit')."
+        }
+      }
+    },
+    "concierge": {
+      "type": "object",
+      "description": "AI concierge persona and branding. The valerie backend function builds its system prompt from these fields instead of hardcoded 'Valerie' literals. Display name also appears in admin messaging UI and customer-facing message attribution.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "default": "Valerie",
+          "description": "Concierge display name."
+        },
+        "persona": {
+          "type": "string",
+          "description": "Short personality description injected into the LLM system prompt."
+        },
+        "business_summary": {
+          "type": "string",
+          "description": "One-paragraph business context so the concierge speaks correctly about services, pricing, and policies."
+        },
+        "greeting": {
+          "type": "string",
+          "description": "Default opening line for new conversations."
+        }
+      }
     }
   },
   "required": [
@@ -460,6 +535,11 @@
   ],
   "rls": {
     "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "read": {
       "user_condition": {
         "role": "admin"
       }
