@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
+import { BusinessConfigProvider } from '@/lib/BusinessConfigContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from '@/components/ScrollToTop';
 import RouteSeo from '@/components/vds/RouteSeo';
@@ -121,11 +122,13 @@ function App() {
   return (
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <ScrollToTop />
-          <RouteSeo />
-          <AuthenticatedApp />
-        </Router>
+        <BusinessConfigProvider>
+          <Router>
+            <ScrollToTop />
+            <RouteSeo />
+            <AuthenticatedApp />
+          </Router>
+        </BusinessConfigProvider>
         <Toaster />
       </QueryClientProvider>
     </AuthProvider>
