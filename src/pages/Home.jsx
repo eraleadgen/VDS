@@ -6,39 +6,14 @@ import Footer from '../components/vds/Footer';
 import GoldShimmer from '../components/vds/GoldShimmer';
 import GoldParticles from '../components/vds/GoldParticles';
 import ReviewsCarousel from '../components/vds/ReviewsCarousel';
-import { useMembershipPlan } from '@/lib/BusinessConfigContext';
+import { useMembershipPlan, useBusinessConfig } from '@/lib/BusinessConfigContext';
+import { resolveFeaturedCards } from '@/lib/featuredServices';
 
 const STATS = [
   { value: '500+', label: 'VEHICLES DETAILED' },
   { value: '5.0', label: 'GOOGLE RATING' },
   { value: '4+', label: 'YEARS IN ATLANTA' },
   { value: '100%', label: 'SATISFACTION GUARANTEED' },
-];
-
-const SERVICES = [
-  {
-    title: 'FULL DETAIL',
-    subtitle: 'Interior & Exterior Restoration',
-    specs: ['Interior & Exterior Restoration', 'Odor & Stain Removal', 'Professional Products', 'Ceramic Sealant'],
-    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/322538cef_IMG_3881.jpg',
-    bookingId: 'full_detail',
-  },
-  {
-    title: 'CERAMIC COATINGS',
-    subtitle: 'Long-Term Paint Protection',
-    specs: ['2–7 Year Coatings', 'Professional-Grade Coatings', 'Hydrophobic Surface Protection', 'UV & Chemical Resistance'],
-    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/3a80c18b3_ceramic-coating-being-professionally-applied-to-car-paint-for-long-term-protection.webp',
-    bookingId: 'ceramic_coating',
-    notInGold: true,
-  },
-  {
-    title: 'PAINT CORRECTION',
-    subtitle: 'Swirl & Scratch Removal',
-    specs: ['Swirl Mark Elimination', 'Scratch & Buffer Trail Removal', 'Flawless Paint Quality', 'Coating Recommended'],
-    img: 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/2e390daf5_ChatGPTImageFeb17202611_00_33PM.png',
-    bookingId: 'paint_correction',
-    notInGold: true,
-  },
 ];
 
 const FAQS = [
@@ -59,9 +34,11 @@ const FAQS = [
 export default function Home() {
   const [openFaq, setOpenFaq] = useState(null);
   const plan = useMembershipPlan();
+  const bcfg = useBusinessConfig();
   const minPrice = (plan.pricing_by_group || []).length
     ? Math.min(...(plan.pricing_by_group || []).map(g => g.price_monthly))
     : 250;
+  const featured = resolveFeaturedCards(bcfg?.featured_services, bcfg?.services);
 
   return (
     <div className="bg-obsidian min-h-screen">
@@ -138,58 +115,67 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-0.5 bg-vapor/5">
-          {SERVICES.map((svc) => (
-            <div key={svc.title} className="bg-obsidian border border-vapor/5 rounded-sm md:rounded-none group relative overflow-hidden vds-card-hover">
-              <div className="relative h-64 overflow-hidden">
-                <img src={svc.img} alt={svc.title}
-                  className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105" />
-                <div className="absolute inset-0 bg-gradient-to-t from-obsidian to-transparent" />
+          {featured.map((svc) => {
+            const preselectState = svc._stale ? {} : { state: { preselect_service: svc._preselect } };
+            return (
+              <div key={svc.service_key} className="bg-obsidian border border-vapor/5 rounded-sm md:rounded-none group relative overflow-hidden vds-card-hover">
+                <div className="relative h-64 overflow-hidden">
+                  <img src={svc.image_url} alt={svc.title}
+                    className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-obsidian to-transparent" />
 
-                {/* Gold upsell on hover */}
-                <div className="absolute inset-0 bg-obsidian/90 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-6">
-                  <div className="text-center">
-                    {svc.notInGold ? (
-                      <>
-                        <p className="text-lg font-grotesk font-bold text-vapor">{svc.title}</p>
-                        <p className="text-vapor/40 text-xs font-mono-tech mt-2">Not included in VDS Gold</p>
-                        <Link to="/book" state={{ preselect_service: svc.bookingId }} className="inline-block mt-4 text-xs font-mono-tech tracking-widest text-gold border border-gold/40 px-4 py-2 hover:bg-gold hover:text-obsidian transition-colors duration-200">BOOK NOW</Link>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-xs font-mono-tech text-gold/70 tracking-widest mb-2">◆ INCLUDED IN</p>
-                        <Link to="/vds-gold" className="text-lg font-grotesk font-bold text-gold">VDS GOLD MEMBERSHIP</Link>
-                        <p className="text-vapor/50 text-xs font-mono-tech mt-2">{`From $${minPrice}/mo per vehicle`}</p>
-                      </>
-                    )}
+                  {svc._stale && (
+                    <div className="absolute top-3 left-3 z-10 text-[10px] font-mono-tech tracking-widest text-red-400 border border-red-400/40 bg-obsidian/80 px-2 py-1 rounded-sm">
+                      ⚠ SERVICE UNAVAILABLE
+                    </div>
+                  )}
+
+                  {/* Gold upsell on hover */}
+                  <div className="absolute inset-0 bg-obsidian/90 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-6">
+                    <div className="text-center">
+                      {svc.not_in_membership ? (
+                        <>
+                          <p className="text-lg font-grotesk font-bold text-vapor">{svc.title}</p>
+                          <p className="text-vapor/40 text-xs font-mono-tech mt-2">Not included in VDS Gold</p>
+                          <Link to="/book" {...preselectState} className="inline-block mt-4 text-xs font-mono-tech tracking-widest text-gold border border-gold/40 px-4 py-2 hover:bg-gold hover:text-obsidian transition-colors duration-200">BOOK NOW</Link>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-xs font-mono-tech text-gold/70 tracking-widest mb-2">◆ INCLUDED IN</p>
+                          <Link to="/vds-gold" className="text-lg font-grotesk font-bold text-gold">VDS GOLD MEMBERSHIP</Link>
+                          <p className="text-vapor/50 text-xs font-mono-tech mt-2">{`From $${minPrice}/mo per vehicle`}</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-8 border border-vapor/5 border-t-0">
+                  <h3 className="text-xl font-grotesk font-bold text-vapor mb-1">{svc.title}</h3>
+                  <p className="text-xs font-mono-tech text-vapor/40 tracking-widest mb-6">{svc.subtitle}</p>
+                  <ul className="space-y-2 mb-8">
+                    {svc.specs.map(spec => (
+                      <li key={spec} className="flex items-center gap-3 text-sm text-vapor/60 font-mono-tech">
+                        <span className="text-gold text-xs">◆</span> {spec}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="flex gap-3">
+                    <Link
+                      to="/book"
+                      {...preselectState}
+                      className="flex-1 text-center py-3 text-xs font-mono-tech tracking-widest bg-vapor text-obsidian hover:bg-gold transition-colors duration-200 rounded-sm">
+                      BOOK NOW
+                    </Link>
+                    <Link to="/services"
+                      className="px-4 py-3 border border-vapor/20 text-vapor/50 hover:border-vapor hover:text-vapor transition-colors duration-200 rounded-sm">
+                      <ArrowRight size={14} />
+                    </Link>
                   </div>
                 </div>
               </div>
-
-              <div className="p-8 border border-vapor/5 border-t-0">
-                <h3 className="text-xl font-grotesk font-bold text-vapor mb-1">{svc.title}</h3>
-                <p className="text-xs font-mono-tech text-vapor/40 tracking-widest mb-6">{svc.subtitle}</p>
-                <ul className="space-y-2 mb-8">
-                  {svc.specs.map(spec => (
-                    <li key={spec} className="flex items-center gap-3 text-sm text-vapor/60 font-mono-tech">
-                      <span className="text-gold text-xs">◆</span> {spec}
-                    </li>
-                  ))}
-                </ul>
-                <div className="flex gap-3">
-                  <Link
-                    to="/book"
-                    state={{ preselect_service: svc.bookingId }}
-                    className="flex-1 text-center py-3 text-xs font-mono-tech tracking-widest bg-vapor text-obsidian hover:bg-gold transition-colors duration-200 rounded-sm">
-                    BOOK NOW
-                  </Link>
-                  <Link to="/services"
-                    className="px-4 py-3 border border-vapor/20 text-vapor/50 hover:border-vapor hover:text-vapor transition-colors duration-200 rounded-sm">
-                    <ArrowRight size={14} />
-                  </Link>
-                </div>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 

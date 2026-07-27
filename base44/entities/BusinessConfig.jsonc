@@ -182,8 +182,10 @@
             "enum": [
               "coupe",
               "sedan",
+              "hatchback",
               "mid_size_suv",
-              "truck_3_row_suv"
+              "truck_3_row_suv",
+              "other"
             ]
           },
           "label": {
@@ -217,7 +219,7 @@
     },
     "classification_to_pricing_group": {
       "type": "object",
-      "description": "Mapping from vehicle classification to pricing group. Configurable through the Administration Module \u2014 not hardcoded.",
+      "description": "Mapping from vehicle classification to pricing group. Configurable through the Administration Module \u2014 not hardcoded. hatchback maps to sedan_coupe (priced same as coupe); other maps to sedan_coupe as a base default (adjust per business).",
       "properties": {
         "coupe": {
           "type": "string",
@@ -233,6 +235,13 @@
             "truck_suv"
           ]
         },
+        "hatchback": {
+          "type": "string",
+          "enum": [
+            "sedan_coupe",
+            "truck_suv"
+          ]
+        },
         "mid_size_suv": {
           "type": "string",
           "enum": [
@@ -241,6 +250,13 @@
           ]
         },
         "truck_3_row_suv": {
+          "type": "string",
+          "enum": [
+            "sedan_coupe",
+            "truck_suv"
+          ]
+        },
+        "other": {
           "type": "string",
           "enum": [
             "sedan_coupe",
@@ -338,6 +354,50 @@
             }
           }
         }
+      }
+    },
+    "featured_services": {
+      "type": "array",
+      "description": "Curated marketing service cards shown on the Home and Services pages. Each card references an operational service (service_key) and an optional booking preselect key, plus display-only fields (title, subtitle, image, spec list, not-in-membership flag). The onboarding wizard authors these; the operational `services` catalog drives pricing/booking. Components validate that service_key/booking_preselect still exist in the services catalog and flag stale references instead of silently breaking the booking preselect.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "service_key": {
+            "type": "string",
+            "description": "Operational service key this card represents (validated against the services catalog)."
+          },
+          "title": {
+            "type": "string"
+          },
+          "subtitle": {
+            "type": "string"
+          },
+          "image_url": {
+            "type": "string"
+          },
+          "specs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "not_in_membership": {
+            "type": "boolean",
+            "default": false,
+            "description": "True if this service is not included in the membership (Home card shows the 'Not included' upsell instead of the membership CTA)."
+          },
+          "booking_preselect": {
+            "type": "string",
+            "description": "Service key passed to the booking page as preselect_service. Defaults to service_key if unset. Validated against the services catalog."
+          },
+          "display_order": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "service_key",
+          "title"
+        ]
       }
     },
     "membership_plans": {

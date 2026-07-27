@@ -32,8 +32,10 @@
       "enum": [
         "coupe",
         "sedan",
+        "hatchback",
         "mid_size_suv",
-        "truck_3_row_suv"
+        "truck_3_row_suv",
+        "other"
       ],
       "description": "Operational vehicle classification (independent of pricing group)"
     },

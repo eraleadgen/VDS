@@ -1,7 +1,7 @@
 {
   "name": "MemberVehicle",
   "type": "object",
-  "description": "Vehicle Module. Operational record for a customer's vehicle. Vehicle classification is independent from pricing group \u2014 classification is operational data (4 types), pricing group is resolved via BusinessConfig mapping and drives pricing. A vehicle belongs to exactly one Customer and may have one active VDS Gold membership.",
+  "description": "Vehicle Module. Operational record for a customer's vehicle. Vehicle classification is independent from pricing group \u2014 classification is operational data, pricing group is resolved via BusinessConfig mapping and drives pricing. A vehicle belongs to exactly one Customer and may have one active VDS Gold membership.",
   "properties": {
     "customer_id": {
       "type": "string",
@@ -40,8 +40,10 @@
       "enum": [
         "coupe",
         "sedan",
+        "hatchback",
         "mid_size_suv",
-        "truck_3_row_suv"
+        "truck_3_row_suv",
+        "other"
       ],
       "description": "Operational vehicle classification. Independent from pricing group. Drives scheduling and specialist matching."
     },

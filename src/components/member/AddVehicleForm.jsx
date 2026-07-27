@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Save, X, Loader2 } from 'lucide-react';
+import { Plus, Save, X, Loader2, ChevronDown } from 'lucide-react';
 import VehicleYearMakeModel from '../vds/VehicleYearMakeModel';
 import { classifyVehicle4, CLASSIFICATION_LABEL, defaultPricingGroupFor } from '@/lib/vehicleClassification';
+import { useBusinessConfig } from '@/lib/BusinessConfigContext';
 
 const inputClass = 'w-full bg-asphalt border border-vapor/10 focus:border-gold/50 outline-none text-vapor px-4 py-3 text-sm font-mono-tech rounded-sm transition-colors duration-200';
 const labelClass = 'block text-xs font-mono-tech tracking-widest text-vapor/50 mb-2';
@@ -17,6 +18,16 @@ export default function AddVehicleForm({ onAdd, onCancel, initialData = null }) 
   const initialised = useRef(false);
 
   const isEdit = !!initialData;
+
+  // Classification options come from BusinessConfig (hatchback + other included); 'Other' is
+  // always selectable even before the config classifications are seeded.
+  const config = useBusinessConfig();
+  const baseClassifications = config?.vehicle_classifications || [];
+  const classifications = baseClassifications.some(c => c.key === 'other')
+    ? baseClassifications
+    : [...baseClassifications, { key: 'other', label: 'Other' }];
+  const mapping = config?.classification_to_pricing_group || {};
+  const pricingGroupFor = (cls) => mapping[cls] || defaultPricingGroupFor(cls) || '';
 
   // Debounced auto-classification into the 4 operational classifications
   useEffect(() => {
@@ -78,6 +89,28 @@ export default function AddVehicleForm({ onAdd, onCancel, initialData = null }) 
             <span className="text-xs font-mono-tech text-gold tracking-widest">AUTO-CLASSIFIED: {classificationLabel.toUpperCase()}</span>
           </>
         ) : null}
+      </div>
+
+      {/* Manual classification override (auto-classification sets the default; user can change,
+          including selecting 'Other' for vehicles that don't fit a standard class). */}
+      <div>
+        <label className={labelClass}>VEHICLE CLASSIFICATION</label>
+        <div className="relative">
+          <select
+            value={form.vehicle_classification}
+            onChange={e => {
+              const cls = e.target.value;
+              setForm(f => ({ ...f, vehicle_classification: cls, vehicle_type: pricingGroupFor(cls) }));
+            }}
+            className={`${inputClass} appearance-none cursor-pointer pr-10`}
+          >
+            <option value="">Select classification</option>
+            {classifications.map(c => (
+              <option key={c.key} value={c.key}>{c.label}</option>
+            ))}
+          </select>
+          <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-vapor/40" />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">

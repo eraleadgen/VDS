@@ -17,8 +17,10 @@
       "enum": [
         "coupe",
         "sedan",
+        "hatchback",
         "mid_size_suv",
-        "truck_3_row_suv"
+        "truck_3_row_suv",
+        "other"
       ],
       "description": "Vehicle classification selected on the pricing page"
     },

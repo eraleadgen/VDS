@@ -27,8 +27,10 @@ export function formatDuration(mins) {
 export const CLASSIFICATION_LABEL = {
   coupe: 'Coupe',
   sedan: 'Sedan',
+  hatchback: 'Hatchback',
   mid_size_suv: 'Mid Size SUV',
   truck_3_row_suv: 'Truck / 3-Row SUV',
+  other: 'Other',
 };
 
 export const CATEGORY_LABEL = {
