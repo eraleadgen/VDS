@@ -25,8 +25,8 @@ export function defaultPricingGroupFor(classification) {
   return DEFAULT_CLASSIFICATION_TO_PRICING_GROUP[classification] || null;
 }
 
-// LLM-based auto-classification into the operational vehicle classifications (hatchback is
-// its own class; 'other' is a manual-only fallback the LLM never returns).
+// LLM-based auto-classification into the operational vehicle classifications, including
+// hatchback and 'other' (returned when a vehicle doesn't fit a standard class).
 export async function classifyVehicle4(year, make, model) {
   if (!year || !make || !model) return null;
   try {
@@ -38,6 +38,7 @@ export async function classifyVehicle4(year, make, model) {
 - hatchback: 3- or 5-door hatchbacks, compact hatchbacks, hot hatches (e.g. Mini Cooper, VW Golf / GTI, Honda Civic Hatchback, Toyota Corolla Hatchback, Subaru Impreza Hatchback)
 - mid_size_suv: compact SUVs, crossovers, mid-size SUVs, wagons, minivans (e.g. Toyota RAV4, Honda CR-V, Subaru Outback, Subaru Forester, Ford Explorer, Kia Telluride, Honda Odyssey)
 - truck_3_row_suv: pickup trucks, full-size SUVs, 3-row SUVs, large vans (e.g. Ford F-150, Chevrolet Silverado, Chevrolet Tahoe, GMC Yukon, Subaru Ascent, Ram 1500, Toyota Tundra)
+- other: any vehicle that does not clearly fit one of the above (e.g. motorcycle, RV, trailer, commercial truck, or unusual body style)
 
 Vehicle: ${year} ${make} ${model}
 
@@ -45,7 +46,7 @@ Respond with ONLY the category key.`,
       response_json_schema: {
         type: 'object',
         properties: {
-          classification: { type: 'string', enum: ['coupe', 'sedan', 'hatchback', 'mid_size_suv', 'truck_3_row_suv'] },
+          classification: { type: 'string', enum: ['coupe', 'sedan', 'hatchback', 'mid_size_suv', 'truck_3_row_suv', 'other'] },
         },
       },
     });
