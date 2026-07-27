@@ -11,12 +11,16 @@ import CareGuides from '../components/shared/CareGuides';
 import AccountDetailsForm from '../components/member/AccountDetailsForm';
 import AppointmentCard from '../components/member/AppointmentCard';
 import VehicleSubscriptionModal from '../components/member/VehicleSubscriptionModal';
+import { useMembershipPlan, useBusinessConfig } from '@/lib/BusinessConfigContext';
+import { getGoldMonthlyPrice, getPricingGroupLabel } from '@/lib/goldPricing';
 
 // v3
 const BOOKING_LINK = 'https://book.vdsmobile.com';
 
 export default function MemberDashboard() {
   const navigate = useNavigate();
+  const plan = useMembershipPlan();
+  const config = useBusinessConfig();
   const [user, setUser] = useState(null);
   const [vehicles, setVehicles] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]); // VehicleSubscription records
@@ -202,7 +206,7 @@ export default function MemberDashboard() {
           <div className="mb-6 border border-gold/30 bg-gold/10 rounded-sm p-5 flex items-center gap-4">
             <CheckCircle size={24} className="text-gold shrink-0" />
             <div>
-              <p className="text-gold font-grotesk font-semibold">Welcome to VDS Gold!</p>
+              <p className="text-gold font-grotesk font-semibold">Welcome to {plan.short_label}!</p>
               <p className="text-vapor/50 font-mono-tech text-xs">Your membership is active. Enjoy unlimited exterior details and 1 interior detail per month.</p>
             </div>
             <button onClick={() => setShowGoldSuccess(false)} className="ml-auto text-vapor/30 hover:text-vapor">
@@ -214,7 +218,7 @@ export default function MemberDashboard() {
         {/* Header */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8 md:mb-12">
           <div>
-            <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-2">{subscriptions.length > 0 ? 'VDS GOLD MEMBER PORTAL' : 'MEMBER PORTAL'}</p>
+            <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-2">{subscriptions.length > 0 ? `${plan.short_label.toUpperCase()} MEMBER PORTAL` : 'MEMBER PORTAL'}</p>
             <h1 className="text-3xl md:text-4xl font-grotesk font-bold text-vapor">
               WELCOME, <GoldShimmer>{(user?.first_name || (user?.full_name?.includes('@') ? '' : user?.full_name?.split(' ')[0]) || 'MEMBER').toUpperCase()}</GoldShimmer>
             </h1>
@@ -272,14 +276,14 @@ export default function MemberDashboard() {
         {/* VDS Gold Quick Booking — Gold members only */}
         {subscriptions.length > 0 && (
           <div className="mb-8">
-            <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40 mb-4">VDS GOLD BOOKING</p>
+            <p className="text-xs font-mono-tech tracking-[0.3em] text-vapor/40 mb-4">{plan.short_label.toUpperCase()} BOOKING</p>
             <div className="glass-panel border border-gold/20 rounded-sm p-6">
               <div className="flex items-center gap-3 mb-5">
                 <Star size={14} className="text-gold" />
                 <p className="text-vapor font-grotesk font-semibold">Book Your Gold Services</p>
               </div>
               <p className="text-vapor/40 font-mono-tech text-xs leading-relaxed mb-6">
-                As a VDS Gold member, you have access to unlimited exterior details and 1 interior detail per month — all with ceramic sealant included. Rates: $250/mo (sedan/coupe) or $300/mo (truck/SUV) per vehicle.
+                As a {plan.short_label} member, you have access to unlimited exterior details and 1 interior detail per month — all with ceramic sealant included. Rates: {(plan.pricing_by_group.length ? plan.pricing_by_group.map(g => `$${g.price_monthly}/mo (${getPricingGroupLabel(config, g.pricing_group)})`).join(' or ') : `$${getGoldMonthlyPrice(plan, 'sedan_coupe')}/mo`)} per vehicle.
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Link
@@ -309,13 +313,13 @@ export default function MemberDashboard() {
               <div className="flex items-center gap-4">
                 <div className="w-2 h-2 rounded-full bg-gold animate-pulse" />
                 <div>
-                  <p className="text-vapor font-grotesk font-semibold">VDS Gold — Active</p>
-                  <p className="text-vapor/40 text-xs font-mono-tech mt-0.5">Unlimited Exterior + 1 Interior / Month · Ceramic Sealant Included</p>
+                  <p className="text-vapor font-grotesk font-semibold">{plan.short_label} — Active</p>
+                  <p className="text-vapor/40 text-xs font-mono-tech mt-0.5">{plan.benefits.length ? plan.benefits.join(' · ') : 'Unlimited Exterior + 1 Interior / Month · Ceramic Sealant Included'}</p>
                 </div>
               </div>
               <div className="flex flex-col items-end gap-2">
                 <p className="text-gold font-mono-tech text-xs tracking-widest">
-                  ${subscriptions.reduce((sum, sub) => sum + ((sub.pricing_group || sub.tier) === 'truck_suv' ? 300 : 250), 0)} / MO
+                  ${subscriptions.reduce((sum, sub) => sum + getGoldMonthlyPrice(plan, sub.pricing_group || sub.tier || 'sedan_coupe'), 0)} / MO
                 </p>
                 <p className="text-vapor/30 text-xs font-mono-tech">
                   {subscriptions.length} Gold vehicle{subscriptions.length > 1 ? 's' : ''} · Billed via Stripe
@@ -337,11 +341,11 @@ export default function MemberDashboard() {
                 <div className="w-2 h-2 rounded-full bg-vapor/20" />
                 <div>
                   <p className="text-vapor/60 font-grotesk font-semibold">No Active Membership</p>
-                  <p className="text-vapor/30 text-xs font-mono-tech mt-0.5">Join VDS Gold for unlimited exterior + interior details each month</p>
+                  <p className="text-vapor/30 text-xs font-mono-tech mt-0.5">Join {plan.short_label} for unlimited exterior + interior details each month</p>
                 </div>
               </div>
               <Link to="/vds-gold" className="vds-gold-btn px-5 py-2.5 text-xs font-mono-tech tracking-widest rounded-sm whitespace-nowrap">
-                ◆ JOIN VDS GOLD
+                ◆ JOIN {plan.short_label.toUpperCase()}
               </Link>
             </div>
           )}

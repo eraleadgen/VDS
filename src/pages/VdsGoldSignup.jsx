@@ -7,14 +7,13 @@ import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
 import GoldShimmer from '../components/vds/GoldShimmer';
 import SmsConsent from '../components/vds/SmsConsent';
-
-const PRICING = {
-  sedan_coupe: 250,
-  truck_suv: 300,
-};
+import { useMembershipPlan, useBusinessConfig } from '@/lib/BusinessConfigContext';
+import { getGoldMonthlyPrice, getPricingGroupLabel } from '@/lib/goldPricing';
 
 export default function VdsGoldSignup() {
   const navigate = useNavigate();
+  const plan = useMembershipPlan();
+  const config = useBusinessConfig();
   const [user, setUser] = useState(null);
   const [vehicles, setVehicles] = useState([]);
   const [enrolledVehicleIds, setEnrolledVehicleIds] = useState([]);
@@ -55,7 +54,7 @@ export default function VdsGoldSignup() {
   const calculateTotal = () => {
     return selectedVehicles.reduce((sum, id) => {
       const v = vehicles.find(veh => veh.id === id);
-      return sum + (PRICING[v?.vehicle_type || 'sedan_coupe']);
+      return sum + getGoldMonthlyPrice(plan, v?.vehicle_type || 'sedan_coupe');
     }, 0);
   };
 
@@ -118,7 +117,7 @@ export default function VdsGoldSignup() {
           <div className="text-center max-w-md">
             <CheckCircle size={48} className="text-gold mx-auto mb-6" />
             <h2 className="text-3xl font-grotesk font-bold text-vapor mb-3">
-              Welcome to <GoldShimmer>VDS Gold</GoldShimmer>!
+              Welcome to <GoldShimmer>{plan.short_label}</GoldShimmer>!
             </h2>
             <p className="text-vapor/50 font-mono-tech text-sm leading-relaxed mb-8">
               Your membership is active. All selected vehicles are now enrolled with unlimited exterior details and 1 interior detail per month.
@@ -144,10 +143,10 @@ export default function VdsGoldSignup() {
             <div className="w-8 h-px bg-gold" />
           </div>
           <h1 className="text-4xl md:text-5xl font-grotesk font-bold text-vapor mb-3">
-            JOIN <GoldShimmer>VDS GOLD</GoldShimmer>
+            JOIN <GoldShimmer>{plan.short_label.toUpperCase()}</GoldShimmer>
           </h1>
           <p className="text-vapor/40 font-mono-tech text-sm">
-            Unlimited Exterior + 1 Interior Detail Per Month · Ceramic Sealant Included
+            {plan.benefits.length ? plan.benefits.join(' · ') : 'Unlimited Exterior + 1 Interior Detail Per Month · Ceramic Sealant Included'}
           </p>
         </div>
 
@@ -188,7 +187,7 @@ export default function VdsGoldSignup() {
               {vehicles.map(v => {
                 const isEnrolled = enrolledVehicleIds.includes(v.id);
                 const checked = selectedVehicles.includes(v.id);
-                const monthlyRate = PRICING[v.vehicle_type || 'sedan_coupe'];
+                const monthlyRate = getGoldMonthlyPrice(plan, v.vehicle_type || 'sedan_coupe');
                 return (
                   <div
                     key={v.id}
@@ -206,10 +205,10 @@ export default function VdsGoldSignup() {
                         {v.year} {v.make} {v.model}{v.color ? `, ${v.color}` : ''}
                       </span>
                       <span className="text-xs font-mono-tech text-vapor/40 mt-0.5 block">
-                        {v.vehicle_type === 'truck_suv' ? 'Truck/SUV' : 'Sedan/Coupe'} · ${monthlyRate}/mo
+                        {getPricingGroupLabel(config, v.vehicle_type || 'sedan_coupe')} · ${monthlyRate}/mo
                       </span>
                       {isEnrolled && (
-                        <span className="text-xs font-mono-tech text-gold mt-1 block tracking-widest">◆ ALREADY ENROLLED IN VDS GOLD</span>
+                        <span className="text-xs font-mono-tech text-gold mt-1 block tracking-widest">◆ ALREADY ENROLLED IN {plan.short_label.toUpperCase()}</span>
                       )}
                     </div>
                     <div className="flex items-center gap-3">

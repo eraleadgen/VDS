@@ -7,6 +7,8 @@ import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
 import GoldShimmer from '../components/vds/GoldShimmer';
 import SmsConsent from '../components/vds/SmsConsent';
+import { useMembershipPlan, useBusinessConfig } from '@/lib/BusinessConfigContext';
+import { getGoldMonthlyPrice, getPricingGroupLabel } from '@/lib/goldPricing';
 
 const GOLD_SERVICES = [
   { id: 'vds_gold_exterior', label: 'Exterior Detail', sub: 'Unlimited / Month · Ceramic sealant included', duration: '~1 hr' },
@@ -15,12 +17,6 @@ const GOLD_SERVICES = [
 
 const TIME_SLOTS = ['9:00 AM', '10:00 AM', '11:00 AM', '12:00 PM', '1:00 PM', '2:00 PM', '3:00 PM', '4:00 PM', '5:00 PM'];
 
-// Gold pricing per vehicle type
-const GOLD_PRICING = {
-  sedan_coupe: 250,
-  truck_suv: 300,
-};
-
 const DEFAULT_FORM = {
   name: '', phone: '', email: '', address: '',
   service_type: '', vehicle_type: '', vehicle_info: '', notes: '',
@@ -28,6 +24,8 @@ const DEFAULT_FORM = {
 };
 
 export default function GoldBooking() {
+  const plan = useMembershipPlan();
+  const config = useBusinessConfig();
   const [user, setUser] = useState(null);
   const [vehicles, setVehicles] = useState([]);
   const [goldVehicles, setGoldVehicles] = useState([]); // Vehicles with active subscriptions
@@ -124,9 +122,9 @@ export default function GoldBooking() {
         <main className="flex-1 flex items-center justify-center px-6 py-32">
           <div className="text-center max-w-md">
             <p className="text-4xl mb-4">◆</p>
-            <h2 className="text-2xl font-grotesk font-bold text-vapor mb-3">VDS Gold Members Only</h2>
+            <h2 className="text-2xl font-grotesk font-bold text-vapor mb-3">{plan.short_label} Members Only</h2>
             <p className="text-vapor/50 font-mono-tech text-sm leading-relaxed mb-8">
-              This booking calendar is exclusive to VDS Gold members. Enroll at least one vehicle to access priority scheduling.
+              This booking calendar is exclusive to {plan.short_label} members. Enroll at least one vehicle to access priority scheduling.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link to="/vds-gold-signup" className="vds-gold-btn px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm text-center">
@@ -176,7 +174,7 @@ export default function GoldBooking() {
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4 justify-center md:justify-start">
             <div className="w-8 h-px bg-gold" />
-            <p className="text-xs font-mono-tech tracking-[0.4em] text-gold">VDS GOLD — PRIORITY SCHEDULING</p>
+            <p className="text-xs font-mono-tech tracking-[0.4em] text-gold">{plan.short_label.toUpperCase()} — PRIORITY SCHEDULING</p>
           </div>
           <h1 className="text-4xl md:text-5xl font-grotesk font-bold text-vapor text-center md:text-left">
             BOOK YOUR <GoldShimmer>GOLD SERVICE</GoldShimmer>
@@ -228,7 +226,7 @@ export default function GoldBooking() {
                   const label = `${v.year} ${v.make} ${v.model}${v.color ? ', ' + v.color : ''}`;
                   const checked = selectedVehicles.includes(label);
                   const vehicleType = v.vehicle_type || 'sedan_coupe';
-                  const monthlyRate = GOLD_PRICING[vehicleType] || GOLD_PRICING.sedan_coupe;
+                  const monthlyRate = getGoldMonthlyPrice(plan, vehicleType);
                   return (
                     <button
                       key={v.id}
@@ -241,7 +239,7 @@ export default function GoldBooking() {
                       <div>
                         <span className="font-mono-tech text-sm text-vapor block">{label}</span>
                         <span className="text-xs font-mono-tech text-vapor/40 mt-0.5 block">
-                          {vehicleType === 'sedan_coupe' ? 'Sedan/Coupe' : 'Truck/SUV'} · ${monthlyRate}/mo
+                          {getPricingGroupLabel(config, vehicleType)} · ${monthlyRate}/mo
                         </span>
                       </div>
                       {checked && <X size={13} className="text-gold shrink-0" />}
@@ -262,7 +260,7 @@ export default function GoldBooking() {
                       ${selectedVehicles.reduce((sum, label) => {
                         const v = vehicles.find(veh => `${veh.year} ${veh.make} ${veh.model}${veh.color ? ', ' + veh.color : ''}` === label);
                         const vt = v?.vehicle_type || 'sedan_coupe';
-                        return sum + (GOLD_PRICING[vt] || GOLD_PRICING.sedan_coupe);
+                        return sum + getGoldMonthlyPrice(plan, vt);
                       }, 0)}+
                     </p>
                   </div>
