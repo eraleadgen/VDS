@@ -215,7 +215,7 @@ export default function BookAppointment() {
 
   const canShowCalendar = !!classification && (selected.length > 0 || consultations.length > 0);
   const canSubmit = !loading && !!classification && (selected.length > 0 || consultations.length > 0)
-    && !!form.preferred_date && !!form.preferred_time && !!form.firstName && !!form.phone && !!form.address && smsConsent;
+    && !!form.preferred_date && !!form.preferred_time && !!form.firstName && !!form.phone && !!form.address;
 
   const handleDayClick = async (day) => {
     setSelectedDay(day);

@@ -44,10 +44,6 @@ export default function GoldSignup() {
       setError('Password must be at least 8 characters.');
       return;
     }
-    if (!smsConsent) {
-      setError('Please provide SMS consent to continue.');
-      return;
-    }
     setLoading(true);
     try {
       await base44.auth.register({ email, password, full_name: `${firstName.trim()} ${lastName.trim()}` });
@@ -72,6 +68,19 @@ export default function GoldSignup() {
         last_name: lastName.trim(),
         phone: phone.trim(),
       });
+      // Create/link the Customer CRM record and tag it with the member's SMS consent
+      // choice (unchecked = sms_consent:false, so the Communication Rules Engine won't
+      // SMS them). Dupe-safe: reuses findOrCreateCustomer so a prior guest booking record
+      // is linked to this new user instead of duplicated.
+      try {
+        await base44.functions.invoke('account', {
+          action: 'initCustomer',
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          phone: phone.trim(),
+          smsConsent,
+        });
+      } catch (_) {}
       // Send themed member welcome email (non-blocking; failure shouldn't block login)
       try {
         await base44.functions.invoke('sendMemberWelcomeEmail', { firstName: firstName.trim() });
@@ -193,7 +202,7 @@ export default function GoldSignup() {
 
                 <button
                   type="submit"
-                  disabled={loading || !smsConsent}
+                  disabled={loading}
                   className="w-full bg-gold text-obsidian py-4 text-sm font-mono-tech tracking-widest hover:bg-gold-light transition-colors duration-200 rounded-sm flex items-center justify-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed font-bold mt-2"
                 >
                   {loading ? 'CREATING ACCOUNT...' : <>CREATE ACCOUNT <ArrowRight size={14} /></>}

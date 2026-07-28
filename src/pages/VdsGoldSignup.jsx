@@ -297,7 +297,7 @@ export default function VdsGoldSignup() {
         {/* Submit Button */}
         <button
           onClick={handleUpgradeToGold}
-          disabled={processing || selectedVehicles.length === 0 || !policyAgreed || !smsConsent}
+          disabled={processing || selectedVehicles.length === 0 || !policyAgreed}
           className="w-full flex items-center justify-center gap-3 bg-gold hover:bg-gold-light text-obsidian font-mono-tech text-sm tracking-widest py-4 rounded-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
           {processing ? (

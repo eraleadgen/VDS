@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
+import { findOrCreateCustomer } from '../../shared/customer.ts';
 
 // Account profile self-service.
 // The built-in full_name is platform-managed and immutable; first_name / last_name /
@@ -43,6 +44,23 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.User.update(me.id, allowed);
       const u = await base44.asServiceRole.entities.User.get(me.id);
       return Response.json({ success: true, account: project(u) });
+    }
+
+    if (action === 'initCustomer') {
+      // Create/link the member's CRM Customer record at signup and tag it with their SMS
+      // consent choice. Dupe-safe: reuses findOrCreateCustomer so a prior guest booking
+      // record (linked_user_id null, matched by phone/email) is linked to this new user
+      // instead of duplicated. Consent is upgrade-only on an existing record (never revoked
+      // by a later signup) — revocation happens via STOP reply or account settings.
+      const customer = await findOrCreateCustomer(base44, {
+        linkedUserId: me.id,
+        phone: typeof body.phone === 'string' ? body.phone : '',
+        firstName: typeof body.firstName === 'string' ? body.firstName : '',
+        lastName: typeof body.lastName === 'string' ? body.lastName : '',
+        email: me.email,
+        smsConsent: body.smsConsent === true,
+      });
+      return Response.json({ success: true, customer_id: customer.id, sms_consent: customer.sms_consent });
     }
 
     return Response.json({ error: `Unknown action: ${action}` }, { status: 400 });
