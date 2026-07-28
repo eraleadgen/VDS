@@ -30,24 +30,6 @@ function bullet(items) {
   ).join('');
 }
 
-// Static "glowing gold particles" field — emulates the VDS Gold page canvas in email.
-// Absolute-positioned gold dots with a soft glow (box-shadow) over a black + radial-glow backdrop.
-// Degrades gracefully: Outlook shows black + text only.
-function goldParticles(count) {
-  const GOLDS = ['#D4AF37', '#F5E17A', '#C9A028', '#E8CC60', '#B8860B', '#FFD700'];
-  let dots = '';
-  for (let i = 0; i < count; i++) {
-    const size = (Math.random() * 2.4 + 0.8).toFixed(1);
-    const x = (Math.random() * 100).toFixed(2);
-    const y = (Math.random() * 100).toFixed(2);
-    const alpha = (Math.random() * 0.45 + 0.25).toFixed(2);
-    const color = GOLDS[Math.floor(Math.random() * GOLDS.length)];
-    const blur = (parseFloat(size) * 3.5).toFixed(1);
-    dots += `<div style="position:absolute;left:${x}%;top:${y}%;width:${size}px;height:${size}px;border-radius:50%;background:${color};opacity:${alpha};box-shadow:0 0 ${blur}px ${color};"></div>`;
-  }
-  return dots;
-}
-
 function buildHtml(firstName, hasGold) {
   const memberItems = [
     'Book detailing appointments in seconds',
@@ -81,16 +63,18 @@ function buildHtml(firstName, hasGold) {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="color-scheme" content="light dark">
+<meta name="supported-color-schemes" content="light dark">
 <title>${SUBJECT}</title>
 </head>
-<body style="margin:0;padding:0;background-color:#000000;font-family:${FONT};color:#E2E8F0;-webkit-font-smoothing:antialiased;">
+<body style="margin:0;padding:0;background-color:#000000;font-family:${FONT};color:#E2E8F0;-webkit-font-smoothing:antialiased;" bgcolor="#000000">
 
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Your VDS Mobile member account is ready &mdash; start booking premium detailing services.</div>
 
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#000000;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#000000;" bgcolor="#000000">
 <tr><td align="center" style="padding:32px 16px;">
 
-<table role="presentation" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#14161A;border-radius:14px;overflow:hidden;border:1px solid rgba(212,175,55,0.15);box-shadow:0 8px 30px rgba(0,0,0,0.5);">
+<table role="presentation" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#14161A;border-radius:14px;overflow:hidden;border:1px solid rgba(212,175,55,0.15);box-shadow:0 8px 30px rgba(0,0,0,0.5);" bgcolor="#14161A">
 
 <!-- Header -->
 <tr><td style="background-color:#000000;padding:26px 32px;border-bottom:2px solid #D4AF37;">
@@ -101,13 +85,10 @@ function buildHtml(firstName, hasGold) {
 </td></tr>
 
 <!-- Hero with glowing gold particles -->
-<tr><td style="padding:0;background-color:#000000;">
-  <div style="position:relative;background-color:#000000;background-image:radial-gradient(ellipse 70% 60% at 50% 0%, rgba(212,175,55,0.14) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 85% 70%, rgba(180,140,20,0.10) 0%, transparent 55%);padding:48px 32px 30px 32px;overflow:hidden;">
-    ${goldParticles(45)}
-    <div style="position:relative;z-index:2;">
-      <p style="margin:0 0 6px 0;font-family:${MONO};font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#D4AF37;font-weight:700;">Welcome</p>
-      <h1 style="margin:0;font-size:27px;line-height:34px;color:#E2E8F0;font-weight:700;">Hi ${firstName},</h1>
-    </div>
+<tr><td style="padding:0;background-color:#000000;" bgcolor="#000000">
+  <div style="background-color:#000000;background-image:radial-gradient(ellipse 70% 60% at 50% 0%, rgba(212,175,55,0.14) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 85% 70%, rgba(180,140,20,0.10) 0%, transparent 55%);padding:48px 32px 30px 32px;" bgcolor="#000000">
+    <p style="margin:0 0 6px 0;font-family:${MONO};font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#D4AF37;font-weight:700;">Welcome</p>
+    <h1 style="margin:0;font-size:27px;line-height:34px;color:#E2E8F0;font-weight:700;">Hi ${firstName},</h1>
   </div>
 </td></tr>
 
