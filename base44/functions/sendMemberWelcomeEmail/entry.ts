@@ -143,6 +143,9 @@ Deno.serve(async (req) => {
     const email = me.email;
     if (!email) return Response.json({ error: 'No email on account.' }, { status: 400 });
 
+    // Optional recipient override for admin test sends (defaults to the caller's own email).
+    const to = typeof body.to === 'string' && body.to.includes('@') ? body.to : email;
+
     const rawFirstName = (body.firstName || (me.full_name || '').split(' ')[0] || 'there').trim() || 'there';
     // Escape user-supplied input before interpolating into the HTML email template
     // to prevent HTML injection / email content spoofing (CWE-79).
@@ -158,13 +161,13 @@ Deno.serve(async (req) => {
     const html = buildHtml(firstName, hasGold);
 
     await base44.asServiceRole.integrations.Core.SendEmail({
-      to: email,
+      to,
       subject: SUBJECT,
       body: html,
       from_name: 'VDS Mobile',
     });
 
-    return Response.json({ success: true, sent_to: email, has_gold: hasGold });
+    return Response.json({ success: true, sent_to: to, has_gold: hasGold });
   } catch (error) {
     console.error('sendMemberWelcomeEmail error:', error.message);
     return Response.json({ error: error.message }, { status: 500 });
