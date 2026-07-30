@@ -239,7 +239,10 @@ Deno.serve(async (req) => {
         const name = tc.function.name;
         let args = {};
         try { args = JSON.parse(tc.function.arguments || '{}'); } catch {}
-        if (!args.phone) args.phone = e164;
+        // Always force the caller's verified E.164 phone — never trust an LLM-generated
+        // or request-supplied `phone` argument. valerieTools validates ownership against
+        // this value, so it must be the authenticated caller's real number.
+        args.phone = e164;
         const result = await executeTool(base44, name, args);
         messages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) });
       }
