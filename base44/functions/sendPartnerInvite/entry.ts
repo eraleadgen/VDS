@@ -10,7 +10,7 @@ const SUBJECT = "You're Invited — Set Up Your VDS Partner Network Account";
 const FONT = "'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 const MONO = "'Space Mono','Courier New',monospace";
 
-function buildHtml(firstName, setupUrl) {
+function buildHtml(firstName, setupUrl, contact) {
   const steps = [
     'Click the button below to open your private setup page — your name, phone, and email are pre-filled.',
     'Create your account password.',
@@ -73,7 +73,7 @@ function buildHtml(firstName, setupUrl) {
 
 <tr><td style="background-color:#0A0B0D;padding:28px 32px;border-top:2px solid #D4AF37;">
   <p style="margin:0 0 6px 0;font-size:15px;line-height:24px;color:#E2E8F0;font-weight:600;">&mdash; The VDS Mobile Team</p>
-  <p style="margin:0 0 4px 0;font-family:${MONO};font-size:13px;line-height:22px;color:#94A3B8;"><a href="mailto:support@vdsmobile.com" style="color:#D4AF37;text-decoration:none;">support@vdsmobile.com</a></p>
+  <p style="margin:0 0 4px 0;font-family:${MONO};font-size:13px;line-height:22px;color:#94A3B8;"><a href="mailto:${contact.email}" style="color:#D4AF37;text-decoration:none;">${contact.email}</a> &nbsp;|&nbsp; Call/Text <a href="tel:${contact.phoneTel}" style="color:#D4AF37;text-decoration:none;">${contact.phone}</a></p>
   <p style="margin:0;font-family:${MONO};font-size:11px;line-height:18px;color:#64748B;letter-spacing:0.5px;">&copy; ${new Date().getUTCFullYear()} VALET DETAILING SERVICE LLC. ALL RIGHTS RESERVED.</p>
 </td></tr>
 

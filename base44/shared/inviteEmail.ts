@@ -3,6 +3,7 @@
 // invite endpoint only owns its subject + themed HTML body.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
+import { loadBusinessContact } from './businessContact.ts';
 
 // Resolve the setup URL from the active BusinessConfig booking_url origin, falling back to
 // the public domain. `pathSegment` is 'specialist-setup' or 'partner-setup'.
@@ -42,7 +43,8 @@ export async function runInviteEndpoint(req, opts) {
     if (!inviteToken) return Response.json({ error: 'invite_token is required.' }, { status: 400 });
 
     const setupUrl = await resolveSetupUrl(base44, inviteToken, pathSegment, (body.setupUrl || '').trim() || null);
-    const html = buildHtml(firstName, setupUrl);
+    const contact = await loadBusinessContact(base44);
+    const html = buildHtml(firstName, setupUrl, contact);
 
     await base44.asServiceRole.integrations.Core.SendEmail({
       to: email,

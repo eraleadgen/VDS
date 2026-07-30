@@ -6,6 +6,7 @@
 // Theme matches the site: obsidian (#0A0B0D), asphalt (#14161A), gold (#D4AF37), vapor (#E2E8F0).
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
+import { loadBusinessContact } from '../../shared/businessContact.ts';
 
 const SUBJECT = 'Welcome to VDS Mobile — Your Contractor Account is Ready';
 const FONT = "'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
@@ -29,7 +30,7 @@ function workflowStep(n, label, last) {
   </tr>`;
 }
 
-function buildHtml(firstName, portalUrl) {
+function buildHtml(firstName, portalUrl, contact) {
   const workflow = [
     'New Assignment', 'Accept Job', 'Drive to Customer', 'Arrived',
     'Service In Progress', 'Upload Before Photos', 'Complete Detail',
@@ -143,8 +144,9 @@ function buildHtml(firstName, portalUrl) {
 <!-- Footer -->
 <tr><td style="background-color:#0A0B0D;padding:28px 32px;border-top:2px solid #D4AF37;">
   <p style="margin:0 0 6px 0;font-size:15px;line-height:24px;color:#E2E8F0;font-weight:600;">&mdash; The VDS Mobile Team</p>
-  <p style="margin:0 0 4px 0;font-family:${MONO};font-size:13px;line-height:22px;color:#94A3B8;"><a href="mailto:support@vdsmobile.com" style="color:#D4AF37;text-decoration:none;">support@vdsmobile.com</a></p>
-  <p style="margin:0;font-family:${MONO};font-size:13px;line-height:22px;color:#94A3B8;"><a href="https://vdsmobile.com" style="color:#D4AF37;text-decoration:none;">https://vdsmobile.com</a></p>
+  <p style="margin:0 0 4px 0;font-family:${MONO};font-size:13px;line-height:22px;color:#94A3B8;"><a href="mailto:${contact.email}" style="color:#D4AF37;text-decoration:none;">${contact.email}</a></p>
+  <p style="margin:0 0 4px 0;font-family:${MONO};font-size:13px;line-height:22px;color:#94A3B8;">Call/Text: <a href="tel:${contact.phoneTel}" style="color:#D4AF37;text-decoration:none;">${contact.phone}</a></p>
+  <p style="margin:0;font-family:${MONO};font-size:13px;line-height:22px;color:#94A3B8;"><a href="${contact.website}" style="color:#D4AF37;text-decoration:none;">${contact.website}</a></p>
   <p style="margin:16px 0 0 0;font-family:${MONO};font-size:11px;line-height:18px;color:#64748B;letter-spacing:0.5px;">&copy; ${new Date().getUTCFullYear()} VALET DETAILING SERVICE LLC. ALL RIGHTS RESERVED.</p>
 </td></tr>
 
@@ -191,7 +193,8 @@ Deno.serve(async (req) => {
 
     const firstName = (body.firstName || 'there').trim() || 'there';
     const portalUrl = await resolvePortalUrl(base44, (body.contractorPortalUrl || '').trim() || null);
-    const html = buildHtml(firstName, portalUrl);
+    const contact = await loadBusinessContact(base44);
+    const html = buildHtml(firstName, portalUrl, contact);
 
     await base44.asServiceRole.integrations.Core.SendEmail({
       to: email,

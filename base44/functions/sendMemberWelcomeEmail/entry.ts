@@ -7,11 +7,11 @@
 // Theme: obsidian (#0A0B0D), asphalt (#14161A), gold (#D4AF37), vapor (#E2E8F0).
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
+import { loadBusinessContact } from '../../shared/businessContact.ts';
 
 const SUBJECT = 'Welcome to VDS Mobile';
 const FONT = "'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 const MONO = "'Space Mono','Courier New',monospace";
-const GOLD_URL = 'https://vdsmobile.com/vds-gold';
 
 function escapeHtml(str) {
   return String(str)
@@ -30,7 +30,7 @@ function bullet(items) {
   ).join('');
 }
 
-function buildHtml(firstName, hasGold) {
+function buildHtml(firstName, hasGold, contact) {
   const memberItems = [
     'Book detailing appointments in seconds',
     'Manage your vehicle garage and service history',
@@ -53,7 +53,7 @@ function buildHtml(firstName, hasGold) {
   <p style="margin:0 0 14px 0;font-size:15px;line-height:25px;color:#CBD5E1;">You're not yet enrolled in <strong style="color:#D4AF37;">VDS Gold</strong> &mdash; our premium membership that keeps your vehicle in showroom condition all year long.</p>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px 0;">${bullet(goldBenefits)}</table>
   <table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="padding:0 0 4px 0;">
-    <a href="${GOLD_URL}" style="display:inline-block;background-color:#D4AF37;color:#0A0B0D;font-size:15px;font-weight:700;text-decoration:none;padding:15px 32px;border-radius:6px;font-family:${FONT};letter-spacing:0.5px;">Explore VDS Gold &rarr;</a>
+    <a href="${contact.goldSignupUrl}" style="display:inline-block;background-color:#D4AF37;color:#0A0B0D;font-size:15px;font-weight:700;text-decoration:none;padding:15px 32px;border-radius:6px;font-family:${FONT};letter-spacing:0.5px;">Explore VDS Gold &rarr;</a>
   </td></tr></table>
 </td></tr>`;
 
@@ -117,8 +117,9 @@ ${goldSection}
 <!-- Footer -->
 <tr><td style="background-color:#000000;padding:28px 32px;border-top:2px solid #D4AF37;">
   <p style="margin:0 0 6px 0;font-size:15px;line-height:24px;color:#E2E8F0;font-weight:600;">&mdash; The VDS Mobile Team</p>
-  <p style="margin:0 0 4px 0;font-family:${MONO};font-size:13px;line-height:22px;color:#94A3B8;"><a href="mailto:Valetdetailingservice@gmail.com" style="color:#D4AF37;text-decoration:none;">Valetdetailingservice@gmail.com</a></p>
-  <p style="margin:0;font-family:${MONO};font-size:13px;line-height:22px;color:#94A3B8;"><a href="https://vdsmobile.com" style="color:#D4AF37;text-decoration:none;">https://vdsmobile.com</a></p>
+  <p style="margin:0 0 4px 0;font-family:${MONO};font-size:13px;line-height:22px;color:#94A3B8;"><a href="mailto:${contact.email}" style="color:#D4AF37;text-decoration:none;">${contact.email}</a></p>
+  <p style="margin:0 0 4px 0;font-family:${MONO};font-size:13px;line-height:22px;color:#94A3B8;">Call/Text: <a href="tel:${contact.phoneTel}" style="color:#D4AF37;text-decoration:none;">${contact.phone}</a></p>
+  <p style="margin:0;font-family:${MONO};font-size:13px;line-height:22px;color:#94A3B8;"><a href="${contact.website}" style="color:#D4AF37;text-decoration:none;">${contact.website}</a></p>
   <p style="margin:16px 0 0 0;font-family:${MONO};font-size:11px;line-height:18px;color:#64748B;letter-spacing:0.5px;">&copy; ${new Date().getUTCFullYear()} VALET DETAILING SERVICE LLC. ALL RIGHTS RESERVED.</p>
 </td></tr>
 
@@ -158,7 +159,8 @@ Deno.serve(async (req) => {
       hasGold = (subs || []).some(s => s.created_by_id === me.id);
     } catch (e) { console.error('gold status check error:', e.message); }
 
-    const html = buildHtml(firstName, hasGold);
+    const contact = await loadBusinessContact(base44);
+    const html = buildHtml(firstName, hasGold, contact);
 
     await base44.asServiceRole.integrations.Core.SendEmail({
       to,

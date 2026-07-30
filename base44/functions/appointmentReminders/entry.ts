@@ -9,10 +9,10 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 import { jobStartMs } from '../../shared/timezone.ts';
 import { requireAdminOrSchedulerToken } from '../../shared/authGate.ts';
+import { loadBusinessContact } from '../../shared/businessContact.ts';
 
 const FONT = "'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 const MONO = "'Space Mono','Courier New',monospace";
-const BUSINESS_PHONE = '(470) 412-8986';
 const WINDOW_24H = 24 * 3600000;
 const WINDOW_1H = 1 * 3600000;
 
@@ -49,7 +49,7 @@ function fieldRow(label, value) {
   return value ? `<tr><td style="padding:4px 0;"><span style="font-family:${MONO};font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#94A3B8;">${label}</span><br><span style="font-size:15px;color:#E2E8F0;font-weight:500;">${esc(value)}</span></td></tr>` : '';
 }
 
-function buildReminderEmail(firstName, job) {
+function buildReminderEmail(firstName, job, contact) {
   return `<!DOCTYPE html>
 <html lang="en" style="margin:0;padding:0;">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -81,12 +81,13 @@ function buildReminderEmail(firstName, job) {
   </td></tr>
   <tr><td style="padding:20px 28px 8px 28px;">
     <p style="margin:0 0 8px 0;font-size:15px;line-height:25px;color:#CBD5E1;">Please ensure your vehicle is accessible and a water source is available if needed.</p>
-    <p style="margin:0;font-size:15px;line-height:25px;color:#CBD5E1;">Need to make changes? Call or text us at <strong style="color:#D4AF37;">${BUSINESS_PHONE}</strong>.</p>
+    <p style="margin:0;font-size:15px;line-height:25px;color:#CBD5E1;">Need to make changes? Call or text us at <strong style="color:#D4AF37;">${contact.phone}</strong>.</p>
   </td></tr>
   <tr><td style="background-color:#0A0B0D;padding:22px 28px;border-top:2px solid #D4AF37;">
     <p style="margin:0 0 6px 0;font-size:15px;color:#E2E8F0;font-weight:600;">&mdash; The VDS Mobile Team</p>
-    <p style="margin:0 0 4px 0;font-family:${MONO};font-size:13px;line-height:22px;color:#94A3B8;"><a href="mailto:support@vdsmobile.com" style="color:#D4AF37;text-decoration:none;">support@vdsmobile.com</a></p>
-    <p style="margin:0 0 12px 0;font-family:${MONO};font-size:13px;line-height:22px;color:#94A3B8;"><a href="https://vdsmobile.com" style="color:#D4AF37;text-decoration:none;">https://vdsmobile.com</a></p>
+    <p style="margin:0 0 4px 0;font-family:${MONO};font-size:13px;line-height:22px;color:#94A3B8;"><a href="mailto:${contact.email}" style="color:#D4AF37;text-decoration:none;">${contact.email}</a></p>
+    <p style="margin:0 0 4px 0;font-family:${MONO};font-size:13px;line-height:22px;color:#94A3B8;">Call/Text: <a href="tel:${contact.phoneTel}" style="color:#D4AF37;text-decoration:none;">${contact.phone}</a></p>
+    <p style="margin:0 0 12px 0;font-family:${MONO};font-size:13px;line-height:22px;color:#94A3B8;"><a href="${contact.website}" style="color:#D4AF37;text-decoration:none;">${contact.website}</a></p>
     <p style="margin:0;font-family:${MONO};font-size:11px;color:#64748B;letter-spacing:0.5px;">&copy; ${new Date().getUTCFullYear()} VALET DETAILING SERVICE LLC. ALL RIGHTS RESERVED.</p>
   </td></tr>
 </table>
@@ -103,12 +104,9 @@ Deno.serve(async (req) => {
     const gate = await requireAdminOrSchedulerToken(base44, req);
     if (gate) return gate;
 
-    // Load business config for timezone
-    let tz = 'America/New_York';
-    try {
-      const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
-      if (configs && configs[0] && configs[0].timezone) tz = configs[0].timezone;
-    } catch (e) { console.error('Config load error:', e.message); }
+    // Load business config for timezone + live contact info (phone/email/website).
+    const contact = await loadBusinessContact(base44);
+    const tz = (contact.cfg && contact.cfg.timezone) || 'America/New_York';
 
     // Phase 8: read from the Job entity (source of truth). Fetch all recent jobs and
     // filter for upcoming confirmed statuses client-side (filter() takes exact matches).
@@ -130,7 +128,7 @@ Deno.serve(async (req) => {
         if (job.customer_email) {
           try {
             const firstName = (job.customer_name || '').split(' ')[0] || 'there';
-            const html = buildReminderEmail(firstName, job);
+            const html = buildReminderEmail(firstName, job, contact);
             await base44.asServiceRole.integrations.Core.SendEmail({
               to: job.customer_email,
               subject: `Reminder: Your VDS Mobile Appointment — ${job.appointment_date} at ${job.appointment_time}`,
@@ -148,7 +146,7 @@ Deno.serve(async (req) => {
         const firstName = (job.customer_name || '').split(' ')[0] || 'there';
         // SMS consent given → send via SMS
         if (job.sms_consent !== false && job.customer_phone) {
-          const msg = `Hi ${firstName}, your VDS Mobile detailing appointment starts in about 1 hour at ${job.appointment_time}.${job.address ? ' Service address: ' + job.address : ''} Please ensure your vehicle is accessible. Questions? Call/text ${BUSINESS_PHONE}. — VDS Mobile`;
+          const msg = `Hi ${firstName}, your VDS Mobile detailing appointment starts in about 1 hour at ${job.appointment_time}.${job.address ? ' Service address: ' + job.address : ''} Please ensure your vehicle is accessible. Questions? Call/text ${contact.phone}. — VDS Mobile`;
           const sent = await sendTwilioSms(base44, job.customer_phone, msg, job.customer_name, 'reminder_1h');
           if (sent) {
             await base44.asServiceRole.entities.Job.update(job.id, { reminder_1h_sent: true });
@@ -158,7 +156,7 @@ Deno.serve(async (req) => {
         // No SMS consent → send 1h reminder via email instead
         else if (job.sms_consent === false && job.customer_email) {
           try {
-            const html = buildReminderEmail(firstName, job);
+            const html = buildReminderEmail(firstName, job, contact);
             await base44.asServiceRole.integrations.Core.SendEmail({
               to: job.customer_email,
               subject: `Reminder: Your VDS Mobile appointment starts soon — ${job.appointment_date} at ${job.appointment_time}`,

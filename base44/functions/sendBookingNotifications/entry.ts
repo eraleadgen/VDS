@@ -5,11 +5,11 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 import { sendCustomerEmail } from '../../shared/customerEmail.ts';
+import { loadBusinessContact } from '../../shared/businessContact.ts';
 
 const FONT = "'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 const MONO = "'Space Mono','Courier New',monospace";
 const INTERNAL_EMAIL = 'support@eraleadgen.com';
-const BUSINESS_PHONE = '(470) 412-8986';
 
 // Send an outbound SMS — routed through sendMessage → Communication Rules Engine.
 async function sendTwilioSms(base44, to, body, customerName, messageType) {
@@ -40,7 +40,7 @@ function fieldRow(label, value) {
   return value ? `<tr><td style="padding:4px 0;"><span style="font-family:${MONO};font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#94A3B8;">${label}</span><br><span style="font-size:15px;color:#E2E8F0;font-weight:500;">${esc(value)}</span></td></tr>` : '';
 }
 
-function buildCustomerEmail(firstName, appt) {
+function buildCustomerEmail(firstName, appt, contact) {
   return `<!DOCTYPE html>
 <html lang="en" style="margin:0;padding:0;">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"></head>
@@ -73,7 +73,7 @@ function buildCustomerEmail(firstName, appt) {
   </td></tr>
   <tr><td style="padding:20px 28px 8px 28px;">
     <p style="margin:0 0 8px 0;font-size:15px;line-height:25px;color:#CBD5E1;">Please ensure your vehicle is accessible and a water source is available if needed.</p>
-    <p style="margin:0;font-size:15px;line-height:25px;color:#CBD5E1;">Need to make changes? Call or text us at <strong style="color:#D4AF37;">${BUSINESS_PHONE}</strong>.</p>
+    <p style="margin:0;font-size:15px;line-height:25px;color:#CBD5E1;">Need to make changes? Call or text us at <strong style="color:#D4AF37;">${contact.phone}</strong>.</p>
   </td></tr>
   <tr><td style="background-color:#0A0B0D;padding:22px 28px;border-top:2px solid #D4AF37;">
     <p style="margin:0 0 6px 0;font-size:15px;color:#E2E8F0;font-weight:600;">&mdash; The VDS Mobile Team</p>
@@ -154,11 +154,12 @@ Deno.serve(async (req) => {
     if (!appt) return Response.json({ error: 'Appointment not found.' }, { status: 404 });
 
     const firstName = (appt.customer_name || '').split(' ')[0] || 'there';
+    const contact = await loadBusinessContact(base44);
     const results = { sms: false, email: false, internal: false };
 
     // 1. Customer SMS confirmation (only if SMS consent given; otherwise email confirmation below suffices)
     if (appt.customer_phone && appt.sms_consent !== false) {
-      const msg = `Hi ${firstName}, your VDS Mobile appointment is confirmed for ${appt.preferred_date} at ${appt.preferred_time}. Service: ${appt.service_label || 'Detailing'}. We'll come to you${appt.service_address ? ' at ' + appt.service_address : ''}. Questions? Call/text ${BUSINESS_PHONE}. — VDS Mobile`;
+      const msg = `Hi ${firstName}, your VDS Mobile appointment is confirmed for ${appt.preferred_date} at ${appt.preferred_time}. Service: ${appt.service_label || 'Detailing'}. We'll come to you${appt.service_address ? ' at ' + appt.service_address : ''}. Questions? Call/text ${contact.phone}. — VDS Mobile`;
       results.sms = await sendTwilioSms(base44, appt.customer_phone, msg, appt.customer_name, 'booking_confirmation');
     }
 
@@ -167,7 +168,7 @@ Deno.serve(async (req) => {
     //    non-member booker actually receives their confirmation independent of Twilio SMS.
     if (appt.customer_email) {
       try {
-        const html = buildCustomerEmail(firstName, appt);
+        const html = buildCustomerEmail(firstName, appt, contact);
         const r = await sendCustomerEmail(base44, {
           to: appt.customer_email,
           subject: `Your VDS Mobile Appointment is Confirmed — ${appt.preferred_date} at ${appt.preferred_time}`,

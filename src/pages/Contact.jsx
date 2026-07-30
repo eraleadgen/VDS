@@ -3,6 +3,7 @@ import { Phone, Mail, MapPin, Check, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
+import { useBusinessConfig } from '@/lib/BusinessConfigContext';
 
 const SERVICE_TYPES = [
   'Full Detail',
@@ -38,6 +39,10 @@ export default function Contact() {
     consentService: false,
   });
   const [submitted, setSubmitted] = useState(false);
+  const config = useBusinessConfig();
+  const phone = config?.business_phone || '(470) 944-6485';
+  const phoneDigits = phone.replace(/\D/g, '');
+  const phoneTel = phoneDigits.length === 10 ? '+1' + phoneDigits : '+' + phoneDigits;
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -73,18 +78,18 @@ export default function Contact() {
               <div className="space-y-8">
                 <div>
                   <p className="text-xs font-mono-tech text-vapor/30 tracking-widest mb-3">PHONE</p>
-                  <a href="sms:+14704128986"
+                  <a href={`sms:${phoneTel}`}
                     className="flex items-center gap-3 text-vapor hover:text-gold transition-colors font-grotesk font-semibold text-lg">
                     <Phone size={16} className="text-gold" />
-                    (470) 412-8986
+                    {phone}
                   </a>
                 </div>
                 <div>
                   <p className="text-xs font-mono-tech text-vapor/30 tracking-widest mb-3">TEXT / SMS</p>
-                  <a href="sms:+14704128986"
+                  <a href={`sms:${phoneTel}`}
                     className="flex items-center gap-3 text-vapor hover:text-gold transition-colors font-grotesk font-semibold text-lg">
                     <span className="text-gold text-sm">✉</span>
-                    (470) 412-8986
+                    {phone}
                   </a>
                 </div>
                 <div>
@@ -142,9 +147,9 @@ export default function Contact() {
                     We've received your request and will reach out shortly. For immediate assistance, call or text us directly.
                   </p>
                   <div className="flex flex-col gap-3">
-                    <a href="sms:+14704128986"
+                    <a href={`sms:${phoneTel}`}
                       className="bg-vapor text-obsidian py-3 text-sm font-mono-tech tracking-widest text-center hover:bg-gold transition-colors rounded-sm">
-                      TEXT (470) 412-8986
+                      TEXT {phone}
                     </a>
                     <button onClick={() => setSubmitted(false)}
                       className="border border-vapor/20 text-vapor/50 py-3 text-sm font-mono-tech tracking-widest hover:border-vapor transition-colors rounded-sm">
