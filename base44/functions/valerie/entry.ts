@@ -74,23 +74,29 @@ async function loadConfig(base44) {
 }
 
 // Format the service catalog for the system prompt. Shows each service with its
-// starting price (min across tiers) and price range when tiers differ by vehicle
-// classification. This matches what the pricing engine computes — Valerie never
+// per-classification or per-group prices so Valerie can quote accurately without
+// calling a tool. This matches what the pricing engine computes — Valerie never
 // invents prices.
 function formatCatalog(cfg) {
+  const classLabels = {
+    coupe: 'Coupe', sedan: 'Sedan', hatchback: 'Hatchback', mid_size_suv: 'Mid-Size SUV',
+    truck_3_row_suv: 'Truck/3-Row SUV', other: 'Other',
+    sedan_coupe: 'Sedan/Coupe', truck_suv: 'Truck/SUV',
+  };
   const lines = [];
   for (const svc of (cfg.services || [])) {
     if (svc.category === 'membership') continue; // membership shown separately
-    const prices = (svc.tiers || []).map(t => t.price).filter(p => p != null);
-    if (!prices.length) {
+    const tiers = svc.tiers || [];
+    if (!tiers.length || tiers.every(t => t.price == null)) {
       lines.push('  - ' + svc.label + ': Consultation' + (svc.requires_consultation ? ' (consultation required)' : ''));
       continue;
     }
-    const min = Math.min(...prices);
-    const max = Math.max(...prices);
-    const priceText = min === max ? '$' + min : '$' + min + '–$' + max;
+    // Show per-tier prices with their classification/group labels.
+    const priceParts = tiers
+      .filter(t => t.price != null)
+      .map(t => (classLabels[t.tier] || t.tier) + ' $' + t.price);
     const consult = svc.requires_consultation ? ' (consultation required)' : '';
-    lines.push('  - ' + svc.label + ': starting at ' + priceText + consult);
+    lines.push('  - ' + svc.label + ': ' + priceParts.join(', ') + consult);
   }
   return lines.join('\n');
 }
@@ -158,10 +164,10 @@ function buildSystemPrompt(cfg, customerCtx) {
     '- If a customer wants to book, direct them to that booking page rather than completing the entire booking over SMS. You may still check availability and walk them through a conversational quote using get_services / create_quote.',
     '',
     'TOOL RULES (CRITICAL):',
-    '- NEVER state prices from memory. Always use create_quote or get_services to pull live pricing.',
+    '- PRICING: The SERVICES & STARTING PRICES section above lists the exact per-classification and per-group prices from our live catalog. Use those prices directly when quoting — match the price to the customer vehicle classification (Coupe, Sedan, Hatchback, Mid-Size SUV, Truck/3-Row SUV). You do NOT need to call create_quote just to get a price.',
+    '- QUOTES & BOOKING: Always direct customers to the booking page (' + ((cfg.website_links && cfg.website_links.booking_url) || 'https://vdsmobile.com/book') + ') for a formal quote and instant booking. That page captures full vehicle details (year/make/model, condition, add-ons) and computes the exact custom quote. Do NOT call create_quote or send_quote — just share the booking link.',
     '- NEVER invent time slots. Always use check_availability, then book_appointment.',
     '- To recognize returning customers, use lookup_customer. The phone is already known to the system — never ask the customer for it.',
-    '- Quote flow: confirm vehicle type + year/make/model -> create_quote -> offer to text it -> send_quote.',
     '- For custom/complex requests (specialty coatings, heavy correction), use specialist_followup.',
     '- Execute all required tools FIRST, then write your final plain-text reply to the customer.',
     '',
@@ -174,9 +180,6 @@ function buildSystemPrompt(cfg, customerCtx) {
 // ── Tool definitions (OpenAI function-calling) ─────────────────────────
 const TOOLS = [
   { type: 'function', function: { name: 'lookup_customer', description: 'Look up an existing customer by phone. Returns name, vehicles, VDS Gold status, and visit history.', parameters: { type: 'object', properties: { phone: { type: 'string' } }, required: ['phone'] } } },
-  { type: 'function', function: { name: 'get_services', description: 'Get the full service catalog with current pricing and durations.', parameters: { type: 'object', properties: {} } } },
-  { type: 'function', function: { name: 'create_quote', description: 'Create a price quote for a service on the customer vehicle. Returns the starting price and quote ID. Pass vehicleClassification when known (coupe/sedan/hatchback/mid_size_suv/truck_3_row_suv/other) for accurate per-classification pricing (e.g. Full Detail). Otherwise pass vehicleType (sedan_coupe or truck_suv).', parameters: { type: 'object', properties: { phone: { type: 'string' }, service: { type: 'string' }, vehicleType: { type: 'string', enum: ['sedan_coupe', 'truck_suv'] }, vehicleClassification: { type: 'string', enum: ['coupe', 'sedan', 'hatchback', 'mid_size_suv', 'truck_3_row_suv', 'other'] }, vehicleYear: { type: 'string' }, vehicleMake: { type: 'string' }, vehicleModel: { type: 'string' }, vehicleCount: { type: 'number' } }, required: ['service'] } } },
-  { type: 'function', function: { name: 'send_quote', description: 'Text the most recent pending quote to the customer. Returns the SMS text to deliver.', parameters: { type: 'object', properties: { phone: { type: 'string' } }, required: ['phone'] } } },
   { type: 'function', function: { name: 'check_gold_status', description: "Check the customer's VDS Gold membership status and remaining monthly benefits.", parameters: { type: 'object', properties: { phone: { type: 'string' } }, required: ['phone'] } } },
   { type: 'function', function: { name: 'check_availability', description: 'Get available appointment time slots for a given date and service.', parameters: { type: 'object', properties: { date: { type: 'string', description: 'YYYY-MM-DD' }, service: { type: 'string' }, vehicleType: { type: 'string', enum: ['sedan_coupe', 'truck_suv'] } }, required: ['date'] } } },
   { type: 'function', function: { name: 'book_appointment', description: 'Book an appointment at a chosen time slot. Use the startUtc returned by check_availability.', parameters: { type: 'object', properties: { date: { type: 'string' }, startUtc: { type: 'string' }, service: { type: 'string' }, vehicleType: { type: 'string', enum: ['sedan_coupe', 'truck_suv'] }, customerName: { type: 'string' }, phone: { type: 'string' }, email: { type: 'string' }, vehicleYear: { type: 'string' }, vehicleMake: { type: 'string' }, vehicleModel: { type: 'string' }, serviceAddress: { type: 'string' }, notes: { type: 'string' } }, required: ['date', 'startUtc', 'service'] } } },

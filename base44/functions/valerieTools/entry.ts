@@ -267,6 +267,7 @@ function actGetServices(config) {
 // ── Main Handler ────────────────────────────────────────────────────────
 Deno.serve(async (req) => {
   const t0 = Date.now();
+  console.log('valerieTools v3 invoked');
   try {
     const base44 = createClientFromRequest(req);
     const body = await req.json();
@@ -315,10 +316,6 @@ Deno.serve(async (req) => {
       }
       case 'reschedule_appointment':
       case 'cancel_appointment': {
-        // Verify the requested appointment actually belongs to the customer whose phone
-        // initiated this SMS conversation (data.phone). Without this check, the trusted
-        // SCHEDULER_TOKEN would let an anonymous SMS caller cancel/reschedule any
-        // customer's appointment by guessing the ID (IDOR / CWE-639).
         if (!data.appointmentId) {
           result = { error: 'No appointment specified.' }; outcome = 'error'; break;
         }
@@ -356,7 +353,6 @@ Deno.serve(async (req) => {
         result = { error: `Unknown action: ${action}` }; outcome = 'error';
     }
 
-    // Log every tool execution for auditability.
     try {
       await base44.asServiceRole.entities.AILog.create({
         action, customer_phone: normalizePhone(data.phone || ''), customer_name: data.customerName || '',
