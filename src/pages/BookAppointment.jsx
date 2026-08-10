@@ -16,6 +16,7 @@ import BookingCalendar from '../components/booking/BookingCalendar';
 import SavedVehiclePicker from '../components/booking/SavedVehiclePicker';
 import { computeQuote, deriveClassification, classificationToPricingGroup, CLASSIFICATION_LABEL } from '@/lib/quoteCalc';
 import { capturePartnerRef, getPartnerRef, deriveReferralSource } from '@/lib/partnerRef';
+import { useBusinessConfig } from '@/lib/BusinessConfigContext';
 
 const DEFAULT_FORM = {
   firstName: '', lastName: '', phone: '', email: '', address: '', notes: '',
@@ -28,7 +29,7 @@ export default function BookAppointment() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
-  const [config, setConfig] = useState(null);
+  const config = useBusinessConfig();
   const [vehicles, setVehicles] = useState([]);
   const [goldVehicles, setGoldVehicles] = useState({});
   const [savedAddresses, setSavedAddresses] = useState([]);
@@ -92,11 +93,6 @@ export default function BookAppointment() {
   // Init: auth, config, member data, quote prefill
   useEffect(() => {
     (async () => {
-      try {
-        const list = await base44.entities.BusinessConfig.filter({ is_active: true });
-        if (list && list[0]) setConfig(list[0]);
-      } catch (e) { console.error('Config load error:', e); }
-
       const isAuth = await base44.auth.isAuthenticated();
       if (isAuth) {
         const me = await base44.auth.me();
