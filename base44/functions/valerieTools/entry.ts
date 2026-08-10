@@ -1,10 +1,14 @@
-// Valerie Tools — ERA Core Phase 3
+// Valerie Tools — ERA Core Phase 3 (v3 — classification-aware pricing + accurate catalog)
 // POST /functions/valerieTools
 // Internal tool executor for Valerie's OpenAI function-calling loop. All pricing,
 // services, scheduling, and CRM logic lives here — Valerie (the LLM) contains none.
 // Reads from BusinessConfig + Customer/Job/Quote/Appointment entities (ERA Core schema).
 // Quote delivery routes through sendMessage → Communication Rules Engine.
 // Protected by SCHEDULER_TOKEN — called only by the valerie function.
+//
+// PRICING: Tier resolution matches the pricingEngine exactly — classification key
+// first, then pricing group, then first available. This ensures Valerie's quotes
+// always match the website's custom pricing engine UI.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 
@@ -39,18 +43,22 @@ async function loadConfig(base44) {
   const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
   const cfg = configs && configs[0];
   if (!cfg) return null;
-  const pricing = {};
-  for (const svc of (cfg.services || [])) {
-    for (const tier of (svc.tiers || [])) {
-      if (!pricing[tier.tier]) pricing[tier.tier] = {};
-      pricing[tier.tier][svc.key] = {
-        price: tier.price, duration: tier.duration_minutes, label: svc.label,
-        requiresConsultation: svc.requires_consultation || false,
-      };
-    }
-  }
   const bookingUrl = (cfg.website_links && cfg.website_links.booking_url) || 'https://vdsmobile.com/book';
-  return { cfg, pricing, bookingUrl };
+  return { cfg, services: cfg.services || [], classMap: cfg.classification_to_pricing_group || {}, bookingUrl };
+}
+
+// Resolve a service tier: classification key first, then pricing group, then first available.
+// Matches the pricingEngine logic exactly so Valerie's quotes always match the website.
+function resolveTier(svc, classification, pricingGroup) {
+  return (svc.tiers || []).find(t => t.tier === classification)
+    || (svc.tiers || []).find(t => t.tier === pricingGroup)
+    || (svc.tiers || [])[0];
+}
+
+// Map a pricing group back to a default classification (for tier lookup when the
+// LLM only provides vehicleType=sedan_coupe|truck_suv, not a specific classification).
+function defaultClassification(pricingGroup) {
+  return pricingGroup === 'truck_suv' ? 'truck_3_row_suv' : 'sedan';
 }
 
 // Find a Customer by phone (E.164 exact, then last-10-digit match) or by email.
@@ -121,19 +129,25 @@ async function actLookupCustomer(base44, data) {
 }
 
 async function actCreateQuote(base44, data, config) {
-  const { phone, service, vehicleType, vehicleYear, vehicleMake, vehicleModel, vehicleCount = 1 } = data;
+  const { phone, service, vehicleType, vehicleClassification, vehicleYear, vehicleMake, vehicleModel, vehicleCount = 1 } = data;
   if (!phone) return { error: 'phone is required.' };
   if (!service) return { error: 'service is required.' };
 
-  const tier = vehicleTier(vehicleType);
+  const pricingGroup = vehicleTier(vehicleType);
+  // Use the specific classification if provided (per-classification pricing like Full Detail);
+  // otherwise fall back to a default classification for the pricing group.
+  const classification = vehicleClassification || defaultClassification(pricingGroup);
   const svcKey = serviceKey(service);
-  const entry = (config.pricing[tier] && config.pricing[tier][svcKey]) || (config.pricing['sedan_coupe'] && config.pricing['sedan_coupe'][svcKey]);
-  if (!entry) return { error: `Service '${service}' is not in the catalog.` };
+  const svc = config.services.find(s => s.key === svcKey);
+  if (!svc) return { error: `Service '${service}' is not in the catalog.` };
+
+  const tier = resolveTier(svc, classification, pricingGroup);
+  if (!tier || tier.price == null) return { error: `No pricing found for ${svc.label} on this vehicle type.` };
 
   const count = Math.max(1, Number(vehicleCount) || 1);
-  const startingPrice = entry.price != null ? entry.price * count : null;
-  const vehicleDesc = [vehicleYear, vehicleMake, vehicleModel].filter(Boolean).join(' ') || (tier === 'truck_suv' ? 'SUV/Truck' : 'Sedan/Coupe');
-  const quoteSummary = `${entry.label} — ${tier === 'truck_suv' ? 'SUV/Truck' : 'Sedan/Coupe'}`;
+  const startingPrice = tier.price != null ? tier.price * count : null;
+  const vehicleDesc = [vehicleYear, vehicleMake, vehicleModel].filter(Boolean).join(' ') || (pricingGroup === 'truck_suv' ? 'SUV/Truck' : 'Sedan/Coupe');
+  const quoteSummary = `${svc.label} — ${pricingGroup === 'truck_suv' ? 'SUV/Truck' : 'Sedan/Coupe'}`;
 
   const customer = await findCustomer(base44, phone);
   const customerName = customer ? customerFullName(customer) : 'Unknown';
@@ -144,17 +158,15 @@ async function actCreateQuote(base44, data, config) {
   const quote = await base44.asServiceRole.entities.Quote.create({
     customer_name: customerName, customer_phone: toE164(phone), customer_email: customerEmail,
     vehicle_year: String(vehicleYear || ''), vehicle_make: vehicleMake || '', vehicle_model: vehicleModel || '',
-    vehicle_type: tier, requested_services: [svcKey],
+    vehicle_type: pricingGroup, requested_services: [svcKey],
     starting_price: startingPrice ?? 0, final_price: startingPrice ?? 0,
     quote_summary: quoteSummary, booking_url: config.bookingUrl,
     expiration_date: expiration, status: 'pending', sms_consent: smsConsent,
   });
 
-  const speech = entry.requiresConsultation
-    ? `For a ${entry.label} on your ${vehicleDesc}, pricing starts at $${startingPrice}, though the final quote and scheduling need a quick specialist consultation. Would you like me to text you this quote with a booking link?`
-    : (startingPrice != null
-      ? `For a ${entry.label} on your ${vehicleDesc}, pricing starts at $${startingPrice}. Would you like me to text you this quote with a link to book?`
-      : `A ${entry.label} for your ${vehicleDesc} needs a specialist consultation. Would you like me to connect you with our team?`);
+  const speech = svc.requires_consultation
+    ? `For a ${svc.label} on your ${vehicleDesc}, pricing starts at $${startingPrice}, though the final quote and scheduling need a quick specialist consultation. Would you like me to text you this quote with a booking link?`
+    : `For a ${svc.label} on your ${vehicleDesc}, pricing starts at $${startingPrice}. Would you like me to text you this quote with a link to book?`;
 
   return { success: true, quoteId: quote.id, startingPrice, quoteSummary, bookingUrl: config.bookingUrl, speech };
 }
@@ -240,17 +252,16 @@ async function actSpecialistFollowup(base44, data) {
 }
 
 function actGetServices(config) {
-  const catalog = [];
-  for (const [tier, services] of Object.entries(config.pricing)) {
-    for (const [key, info] of Object.entries(services)) {
-      catalog.push({
-        key, label: info.label, vehicleType: tier,
-        price: info.price, durationMinutes: info.duration,
-        requiresConsultation: info.requiresConsultation,
-      });
-    }
-  }
-  return { success: true, services: catalog };
+  const catalog = config.services
+    .filter(s => s.category !== 'membership')
+    .map(svc => ({
+      key: svc.key,
+      label: svc.label,
+      category: svc.category,
+      requiresConsultation: svc.requires_consultation || false,
+      tiers: (svc.tiers || []).map(t => ({ tier: t.tier, price: t.price, durationMinutes: t.duration_minutes })),
+    }));
+  return { success: true, services: catalog, classificationToPricingGroup: config.classMap };
 }
 
 // ── Main Handler ────────────────────────────────────────────────────────
