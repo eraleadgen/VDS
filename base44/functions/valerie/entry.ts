@@ -225,14 +225,19 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
-    // Parse body — JSON (internal/testing) or form-urlencoded (Twilio webhook)
+    // Parse body — JSON (internal/testing) or form-urlencoded (Twilio webhook).
+    // Use req.text() + URLSearchParams instead of req.formData() — Deno's formData()
+    // parser can decode certain values differently, which breaks Twilio signature
+    // validation (the signature is computed over decoded parameter values).
     const contentType = req.headers.get('content-type') || '';
     let body;
+    let rawBody = '';
     if (contentType.includes('application/json')) {
       body = await req.json().catch(() => ({}));
     } else {
-      const form = await req.formData().catch(() => new FormData());
-      body = Object.fromEntries(form.entries());
+      rawBody = await req.text().catch(() => '');
+      const params = new URLSearchParams(rawBody);
+      body = Object.fromEntries(params.entries());
     }
 
     // DIAGNOSTIC: log every incoming request to SystemEventLog so we can see
@@ -251,6 +256,7 @@ Deno.serve(async (req) => {
           from: fromNum, body_keys: Object.keys(body).join(','),
           host: req.headers.get('host'),
           fwd_host: req.headers.get('x-forwarded-host'),
+          raw_body: rawBody.slice(0, 500),
         },
       });
     } catch (e) { console.error('diag log error:', e.message); }
