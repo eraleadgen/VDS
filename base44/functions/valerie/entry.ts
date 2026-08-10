@@ -16,6 +16,39 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 
+// ── Twilio webhook signature validation ────────────────────────────────
+// Twilio signs every inbound webhook with HMAC-SHA256 using TWILIO_AUTH_TOKEN.
+// We validate that signature so the webhook URL needs no shared secret in the
+// query string — just https://<domain>/functions/valerie. This is the standard
+// Twilio security model and avoids exposing SCHEDULER_TOKEN in Twilio's console.
+async function validateTwilioSignature(req, body) {
+  const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+  if (!authToken) return false;
+  const sig = req.headers.get('X-Twilio-Signature') || req.headers.get('x-twilio-signature');
+  if (!sig) return false;
+  const u = new URL(req.url);
+  const fwdProto = req.headers.get('x-forwarded-proto');
+  const fwdHost = req.headers.get('x-forwarded-host');
+  // The signature is computed against the exact URL Twilio called. Behind a proxy
+  // the internal req.url may differ, so try several candidates (external forwarded
+  // URL, req.url as-is, forced https) and accept any that matches.
+  const candidates = new Set([req.url, `${u.protocol.replace(':', '')}://${u.host}${u.pathname}${u.search}`]);
+  if (fwdHost) {
+    candidates.add(`https://${fwdHost}${u.pathname}${u.search}`);
+    if (fwdProto) candidates.add(`${fwdProto}://${fwdHost}${u.pathname}${u.search}`);
+  }
+  // Sorted form params concatenated as key+value pairs (Twilio's spec).
+  const params = Object.keys(body).sort().map(k => `${k}${body[k] == null ? '' : body[k]}`).join('');
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(authToken), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  for (const fullUrl of candidates) {
+    const data = new TextEncoder().encode(fullUrl + params);
+    const sigBuf = await crypto.subtle.sign('HMAC', key, data);
+    const computed = btoa(String.fromCharCode(...new Uint8Array(sigBuf)));
+    if (computed === sig) return true;
+  }
+  return false;
+}
+
 // ── Config / prompt builders ───────────────────────────────────────────
 async function loadConfig(base44) {
   const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
@@ -184,7 +217,8 @@ Deno.serve(async (req) => {
       body = Object.fromEntries(form.entries());
     }
 
-    // Auth: SCHEDULER_TOKEN (body or query param), or authenticated base44 user.
+    // Auth: SCHEDULER_TOKEN (body or query param), authenticated base44 user,
+    // OR a valid Twilio webhook signature (inbound SMS from Twilio).
     const SCHEDULER_TOKEN = Deno.env.get('SCHEDULER_TOKEN');
     const url = new URL(req.url);
     const queryToken = url.searchParams.get('scheduler_token') || url.searchParams.get('token');
@@ -194,7 +228,11 @@ Deno.serve(async (req) => {
     if (!tokenOk) {
       try { authedOk = await base44.auth.isAuthenticated(); } catch {}
     }
+    let twilioOk = false;
     if (!tokenOk && !authedOk) {
+      twilioOk = await validateTwilioSignature(req, body);
+    }
+    if (!tokenOk && !authedOk && !twilioOk) {
       return Response.json({ error: 'Unauthorized.' }, { status: 401 });
     }
     if (body.scheduler_token) delete body.scheduler_token;
