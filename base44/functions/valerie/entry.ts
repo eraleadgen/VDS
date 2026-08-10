@@ -21,9 +21,9 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 // Twilio security model and avoids exposing SCHEDULER_TOKEN in Twilio's console.
 async function validateTwilioSignature(req, body, knownUrl) {
   const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
-  if (!authToken) return false;
+  if (!authToken) return { ok: false, diag: { reason: 'no_auth_token' } };
   const sig = req.headers.get('X-Twilio-Signature') || req.headers.get('x-twilio-signature');
-  if (!sig) return false;
+  if (!sig) return { ok: false, diag: { reason: 'no_sig_header' } };
   const u = new URL(req.url);
   const fwdProto = req.headers.get('x-forwarded-proto');
   const fwdHost = req.headers.get('x-forwarded-host');
@@ -42,13 +42,28 @@ async function validateTwilioSignature(req, body, knownUrl) {
   // Sorted form params concatenated as key+value pairs (Twilio's spec).
   const params = Object.keys(body).sort().map(k => `${k}${body[k] == null ? '' : body[k]}`).join('');
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(authToken), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const diag = {
+    reason: 'no_match',
+    received_sig: sig,
+    knownUrl,
+    req_url: req.url,
+    host: hostHeader,
+    fwd_host: fwdHost,
+    fwd_proto: fwdProto,
+    params_preview: params.slice(0, 200),
+    params_len: params.length,
+    body_keys: Object.keys(body).sort().join(','),
+    candidates: [...candidates],
+    computed_sigs: {},
+  };
   for (const fullUrl of candidates) {
     const data = new TextEncoder().encode(fullUrl + params);
     const sigBuf = await crypto.subtle.sign('HMAC', key, data);
     const computed = btoa(String.fromCharCode(...new Uint8Array(sigBuf)));
-    if (computed === sig) return true;
+    diag.computed_sigs[fullUrl] = computed;
+    if (computed === sig) return { ok: true };
   }
-  return false;
+  return { ok: false, diag };
 }
 
 // ── Config / prompt builders ───────────────────────────────────────────
@@ -264,10 +279,22 @@ Deno.serve(async (req) => {
       try { authedOk = await base44.auth.isAuthenticated(); } catch {}
     }
     let twilioOk = false;
+    let twilioDiag = null;
     if (!tokenOk && !authedOk) {
-      twilioOk = await validateTwilioSignature(req, body, knownUrl);
+      const twilioResult = await validateTwilioSignature(req, body, knownUrl);
+      twilioOk = twilioResult.ok;
+      if (!twilioOk) twilioDiag = twilioResult.diag;
     }
     if (!tokenOk && !authedOk && !twilioOk) {
+      // Log the signature validation failure details for debugging.
+      try {
+        await base44.asServiceRole.entities.SystemEventLog.create({
+          event_type: 'valerie_auth_failed',
+          entity_type: 'valerie',
+          description: 'Twilio signature validation failed',
+          metadata: twilioDiag || { reason: 'unknown' },
+        });
+      } catch (e) { console.error('auth fail log error:', e.message); }
       // Temporary debug — capture what URL/headers the function sees behind the proxy.
       const u = new URL(req.url);
       console.error('valerie auth fail debug:', JSON.stringify({
