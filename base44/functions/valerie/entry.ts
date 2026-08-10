@@ -220,6 +220,26 @@ Deno.serve(async (req) => {
       body = Object.fromEntries(form.entries());
     }
 
+    // DIAGNOSTIC: log every incoming request to SystemEventLog so we can see
+    // whether Twilio's real webhook calls are reaching the function at all.
+    try {
+      const u = new URL(req.url);
+      const hasSig = !!(req.headers.get('X-Twilio-Signature') || req.headers.get('x-twilio-signature'));
+      const fromNum = body.From || body.phone || '';
+      await base44.asServiceRole.entities.SystemEventLog.create({
+        event_type: 'valerie_webhook_received',
+        entity_type: 'valerie',
+        description: 'Inbound request to /functions/valerie',
+        metadata: {
+          method: req.method, path: u.pathname,
+          content_type: contentType, has_twilio_sig: hasSig,
+          from: fromNum, body_keys: Object.keys(body).join(','),
+          host: req.headers.get('host'),
+          fwd_host: req.headers.get('x-forwarded-host'),
+        },
+      });
+    } catch (e) { console.error('diag log error:', e.message); }
+
     // Load config early so we can derive the exact external webhook URL for Twilio
     // signature validation (the signature is computed against the URL Twilio called,
     // which is the published domain — not the internal proxy URL).
