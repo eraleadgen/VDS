@@ -41,7 +41,8 @@ async function validateTwilioSignature(req, body, knownUrl) {
   if (knownUrl) candidates.add(knownUrl);
   // Sorted form params concatenated as key+value pairs (Twilio's spec).
   const params = Object.keys(body).sort().map(k => `${k}${body[k] == null ? '' : body[k]}`).join('');
-  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(authToken), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  // Twilio uses HMAC-SHA1 (NOT SHA-256) for webhook signature validation.
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(authToken), { name: 'HMAC', hash: 'SHA-1' }, false, ['sign']);
   const diag = {
     reason: 'no_match',
     received_sig: sig,
@@ -220,6 +221,32 @@ async function getCustomerContext(base44, phone) {
   }
 }
 
+// ── API-based webhook verification (fallback) ──────────────────────────
+// When the Twilio Account Auth Token is not available (e.g. only an API Key
+// is configured), signature validation cannot work — Twilio only signs
+// webhooks with the Account Auth Token, not API Keys. As a secure fallback,
+// we verify the inbound MessageSid by fetching it from the Twilio API using
+// the configured API Key credentials. If the message exists and the From/Body
+// match the webhook payload, the request is authentic.
+async function verifyMessageViaApi(body) {
+  const apiKeySid = Deno.env.get('TWILIO_ACCOUNT_SID');
+  const apiKeySecret = Deno.env.get('TWILIO_AUTH_TOKEN');
+  const accountSid = body.AccountSid;
+  const messageSid = body.MessageSid || body.SmsSid;
+  if (!apiKeySid || !apiKeySecret || !accountSid || !messageSid) return false;
+  const auth = btoa(apiKeySid + ':' + apiKeySecret);
+  try {
+    const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages/${messageSid}.json`, {
+      headers: { Authorization: 'Basic ' + auth },
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    return data.from === body.From && data.body === body.Body;
+  } catch {
+    return false;
+  }
+}
+
 // ── Main ───────────────────────────────────────────────────────────────
 Deno.serve(async (req) => {
   try {
@@ -239,27 +266,6 @@ Deno.serve(async (req) => {
       const params = new URLSearchParams(rawBody);
       body = Object.fromEntries(params.entries());
     }
-
-    // DIAGNOSTIC: log every incoming request to SystemEventLog so we can see
-    // whether Twilio's real webhook calls are reaching the function at all.
-    try {
-      const u = new URL(req.url);
-      const hasSig = !!(req.headers.get('X-Twilio-Signature') || req.headers.get('x-twilio-signature'));
-      const fromNum = body.From || body.phone || '';
-      await base44.asServiceRole.entities.SystemEventLog.create({
-        event_type: 'valerie_webhook_received',
-        entity_type: 'valerie',
-        description: 'Inbound request to /functions/valerie',
-        metadata: {
-          method: req.method, path: u.pathname,
-          content_type: contentType, has_twilio_sig: hasSig,
-          from: fromNum, body_keys: Object.keys(body).join(','),
-          host: req.headers.get('host'),
-          fwd_host: req.headers.get('x-forwarded-host'),
-          raw_body: rawBody.slice(0, 500),
-        },
-      });
-    } catch (e) { console.error('diag log error:', e.message); }
 
     // Load config early so we can derive the exact external webhook URL for Twilio
     // signature validation (the signature is computed against the URL Twilio called,
@@ -286,33 +292,34 @@ Deno.serve(async (req) => {
     }
     let twilioOk = false;
     let twilioDiag = null;
+    let authMethod = 'none';
     if (!tokenOk && !authedOk) {
       const twilioResult = await validateTwilioSignature(req, body, knownUrl);
       twilioOk = twilioResult.ok;
-      if (!twilioOk) twilioDiag = twilioResult.diag;
+      if (twilioOk) {
+        authMethod = 'twilio_signature';
+      } else {
+        twilioDiag = twilioResult.diag;
+        // Fallback: verify the MessageSid via the Twilio API. This is needed
+        // because the configured TWILIO_AUTH_TOKEN is an API Key Secret (not
+        // the Account Auth Token), which cannot validate webhook signatures.
+        const apiVerified = await verifyMessageViaApi(body);
+        if (apiVerified) {
+          twilioOk = true;
+          authMethod = 'twilio_api_verify';
+        }
+      }
     }
     if (!tokenOk && !authedOk && !twilioOk) {
-      // Log the signature validation failure details for debugging.
       try {
         await base44.asServiceRole.entities.SystemEventLog.create({
           event_type: 'valerie_auth_failed',
           entity_type: 'valerie',
-          description: 'Twilio signature validation failed',
+          description: 'Twilio webhook authentication failed (signature + API verify)',
           metadata: twilioDiag || { reason: 'unknown' },
         });
       } catch (e) { console.error('auth fail log error:', e.message); }
-      // Temporary debug — capture what URL/headers the function sees behind the proxy.
-      const u = new URL(req.url);
-      console.error('valerie auth fail debug:', JSON.stringify({
-        req_url: req.url, knownUrl, host: req.headers.get('host'),
-        fwd_host: req.headers.get('x-forwarded-host'), fwd_proto: req.headers.get('x-forwarded-proto'),
-        path: u.pathname, has_twilio_sig: !!req.headers.get('X-Twilio-Signature'),
-      }));
-      return Response.json({
-        error: 'Unauthorized.', v: 3,
-        debug: { req_url: req.url, knownUrl, host: req.headers.get('host'),
-          fwd_host: req.headers.get('x-forwarded-host'), fwd_proto: req.headers.get('x-forwarded-proto') },
-      }, { status: 401 });
+      return Response.json({ error: 'Unauthorized.' }, { status: 401 });
     }
     if (body.scheduler_token) delete body.scheduler_token;
     if (body._internal_token) delete body._internal_token;
