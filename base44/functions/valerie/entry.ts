@@ -121,11 +121,15 @@ function formatGold(cfg) {
 }
 
 function buildSystemPrompt(cfg, customerCtx) {
+  const c = cfg.concierge || {};
+  const name = c.name || 'Valerie';
+  const persona = c.persona || 'Warm, professional, concise.';
+  const summary = c.business_summary || ('SMS concierge for ' + cfg.business_name + '.');
   return [
-    'You are Valerie, the SMS concierge for ' + cfg.business_name + '.' + (cfg.tagline ? ' ' + cfg.tagline : ''),
-    'You assist customers with detailing quotes, booking appointments, VDS Gold membership questions, and general inquiries.',
+    'You are ' + name + ', the SMS concierge for ' + cfg.business_name + '.' + (cfg.tagline ? ' ' + cfg.tagline : ''),
+    'ROLE: ' + summary,
     '',
-    'PERSONA & FORMAT: Warm, professional, concise. This is SMS. Reply in plain text only — no markdown, no bullet lists, no headers. Keep messages short and natural (usually 1-3 sentences). Use a single emoji sparingly only if it feels natural. Never invent information.',
+    'PERSONA & FORMAT: ' + persona + ' This is SMS. Reply in plain text only — no markdown, no bullet lists, no headers. Keep messages short and natural (usually 1-3 sentences). Use a single emoji sparingly only if it feels natural. Never invent information.',
     '',
     'BUSINESS INFO:',
     '- Phone: ' + (cfg.business_phone || 'n/a'),
@@ -149,24 +153,25 @@ function buildSystemPrompt(cfg, customerCtx) {
     '- Add-ons are priced at face value (not multiplied by condition).',
     '- The final custom quote = base services × condition multiplier + add-ons − paint protection discount.',
     '',
-    'SCHEDULING RULES:',
+    'SCHEDULING RULES (informational — you do NOT book over SMS):',
     '- Booking buffer: ' + (cfg.scheduling_rules && cfg.scheduling_rules.booking_buffer_hours != null ? cfg.scheduling_rules.booking_buffer_hours : 24) + 'h',
     '- Minimum notice: ' + (cfg.scheduling_rules && cfg.scheduling_rules.min_notice_hours != null ? cfg.scheduling_rules.min_notice_hours : 24) + 'h',
     '- Slot interval: ' + (cfg.scheduling_rules && cfg.scheduling_rules.slot_interval_minutes != null ? cfg.scheduling_rules.slot_interval_minutes : 60) + ' min',
     '- Max bookings/day: ' + (cfg.scheduling_rules && cfg.scheduling_rules.max_bookings_per_day != null ? cfg.scheduling_rules.max_bookings_per_day : 4),
-    '- To book: prefer directing the customer to the booking page (see BOOKING) for the fastest experience. If they prefer to book over SMS, call check_availability for a date, present the open slots naturally, then call book_appointment once they pick one.',
+    '- You do NOT book, reschedule, or cancel appointments over SMS. Always direct the customer to the booking page (see BOOKING & QUOTES).',
     '',
     'VDS GOLD MEMBERSHIP:',
     formatGold(cfg),
+    '- To sign up for VDS Gold, direct customers to ' + ((cfg.website_links && cfg.website_links.gold_signup_url) || 'https://vdsmobile.com/vds-gold') + '. You do NOT sign customers up over SMS.',
     '',
-    'BOOKING:',
-    '- For the fastest, most accurate quote and instant booking, point customers to ' + ((cfg.website_links && cfg.website_links.booking_url) || 'https://vdsmobile.com/book') + ' — that page captures full vehicle details (year/make/model, condition, add-ons).',
-    '- If a customer wants to book, direct them to that booking page rather than completing the entire booking over SMS. You may still check availability and walk them through a conversational quote using get_services / create_quote.',
+    'BOOKING & QUOTES:',
+    '- For quotes and booking, always direct customers to ' + ((cfg.website_links && cfg.website_links.booking_url) || 'https://vdsmobile.com/book') + '. That page captures full vehicle details (year/make/model, condition, add-ons) and computes the exact custom quote.',
+    '- You do NOT book, reschedule, or cancel appointments over SMS — always send the booking link.',
     '',
     'TOOL RULES (CRITICAL):',
-    '- PRICING: The SERVICES & STARTING PRICES section above lists the exact per-classification and per-group prices from our live catalog. Use those prices directly when quoting — match the price to the customer vehicle classification (Coupe, Sedan, Hatchback, Mid-Size SUV, Truck/3-Row SUV). You do NOT need to call create_quote just to get a price.',
-    '- QUOTES & BOOKING: Always direct customers to the booking page (' + ((cfg.website_links && cfg.website_links.booking_url) || 'https://vdsmobile.com/book') + ') for a formal quote and instant booking. That page captures full vehicle details (year/make/model, condition, add-ons) and computes the exact custom quote. Do NOT call create_quote or send_quote — just share the booking link.',
-    '- NEVER invent time slots. Always use check_availability, then book_appointment.',
+    '- PRICING: The SERVICES & STARTING PRICES section above lists the exact per-classification and per-group prices from our live catalog. Use those prices directly when quoting — match the price to the customer vehicle classification (Coupe, Sedan, Hatchback, Mid-Size SUV, Truck/3-Row SUV).',
+    '- QUOTES & BOOKING: You do NOT book or quote over SMS. Always direct customers to the booking page (' + ((cfg.website_links && cfg.website_links.booking_url) || 'https://vdsmobile.com/book') + ') for quotes and booking.',
+    '- VDS GOLD: You do NOT sign customers up over SMS. Direct them to the signup page (' + ((cfg.website_links && cfg.website_links.gold_signup_url) || 'https://vdsmobile.com/vds-gold') + ').',
     '- To recognize returning customers, use lookup_customer. The phone is already known to the system — never ask the customer for it.',
     '- For custom/complex requests (specialty coatings, heavy correction), use specialist_followup.',
     '- Execute all required tools FIRST, then write your final plain-text reply to the customer.',
@@ -181,10 +186,6 @@ function buildSystemPrompt(cfg, customerCtx) {
 const TOOLS = [
   { type: 'function', function: { name: 'lookup_customer', description: 'Look up an existing customer by phone. Returns name, vehicles, VDS Gold status, and visit history.', parameters: { type: 'object', properties: { phone: { type: 'string' } }, required: ['phone'] } } },
   { type: 'function', function: { name: 'check_gold_status', description: "Check the customer's VDS Gold membership status and remaining monthly benefits.", parameters: { type: 'object', properties: { phone: { type: 'string' } }, required: ['phone'] } } },
-  { type: 'function', function: { name: 'check_availability', description: 'Get available appointment time slots for a given date and service.', parameters: { type: 'object', properties: { date: { type: 'string', description: 'YYYY-MM-DD' }, service: { type: 'string' }, vehicleType: { type: 'string', enum: ['sedan_coupe', 'truck_suv'] } }, required: ['date'] } } },
-  { type: 'function', function: { name: 'book_appointment', description: 'Book an appointment at a chosen time slot. Use the startUtc returned by check_availability.', parameters: { type: 'object', properties: { date: { type: 'string' }, startUtc: { type: 'string' }, service: { type: 'string' }, vehicleType: { type: 'string', enum: ['sedan_coupe', 'truck_suv'] }, customerName: { type: 'string' }, phone: { type: 'string' }, email: { type: 'string' }, vehicleYear: { type: 'string' }, vehicleMake: { type: 'string' }, vehicleModel: { type: 'string' }, serviceAddress: { type: 'string' }, notes: { type: 'string' } }, required: ['date', 'startUtc', 'service'] } } },
-  { type: 'function', function: { name: 'reschedule_appointment', description: 'Reschedule an existing appointment to a new time.', parameters: { type: 'object', properties: { appointmentId: { type: 'string' }, newStartUtc: { type: 'string' }, newDate: { type: 'string' }, phone: { type: 'string' } }, required: ['appointmentId', 'newStartUtc'] } } },
-  { type: 'function', function: { name: 'cancel_appointment', description: 'Cancel an existing appointment.', parameters: { type: 'object', properties: { appointmentId: { type: 'string' }, phone: { type: 'string' } }, required: ['appointmentId'] } } },
   { type: 'function', function: { name: 'specialist_followup', description: 'Flag a request for specialist follow-up (custom work, complex corrections).', parameters: { type: 'object', properties: { phone: { type: 'string' }, reason: { type: 'string' }, notes: { type: 'string' } }, required: ['reason'] } } },
 ];
 
