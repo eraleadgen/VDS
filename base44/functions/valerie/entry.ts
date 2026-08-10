@@ -19,7 +19,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 // We validate that signature so the webhook URL needs no shared secret in the
 // query string — just https://<domain>/functions/valerie. This is the standard
 // Twilio security model and avoids exposing SCHEDULER_TOKEN in Twilio's console.
-async function validateTwilioSignature(req, body) {
+async function validateTwilioSignature(req, body, knownUrl) {
   const authToken = Deno.env.get('TWILIO_AUTH_TOKEN');
   if (!authToken) return false;
   const sig = req.headers.get('X-Twilio-Signature') || req.headers.get('x-twilio-signature');
@@ -30,13 +30,15 @@ async function validateTwilioSignature(req, body) {
   const hostHeader = req.headers.get('host');
   // The signature is computed against the exact URL Twilio called. Behind a proxy
   // the internal req.url may differ, so try several candidates (req.url as-is,
-  // Host header, x-forwarded-host, forced https) and accept any that matches.
+  // Host header, x-forwarded-host, forced https, and the known external URL derived
+  // from BusinessConfig) and accept any that matches.
   const candidates = new Set([req.url, `${u.protocol.replace(':', '')}://${u.host}${u.pathname}${u.search}`]);
   if (hostHeader) candidates.add(`https://${hostHeader}${u.pathname}${u.search}`);
   if (fwdHost) {
     candidates.add(`https://${fwdHost}${u.pathname}${u.search}`);
     if (fwdProto) candidates.add(`${fwdProto}://${fwdHost}${u.pathname}${u.search}`);
   }
+  if (knownUrl) candidates.add(knownUrl);
   // Sorted form params concatenated as key+value pairs (Twilio's spec).
   const params = Object.keys(body).sort().map(k => `${k}${body[k] == null ? '' : body[k]}`).join('');
   const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(authToken), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
@@ -217,6 +219,18 @@ Deno.serve(async (req) => {
       body = Object.fromEntries(form.entries());
     }
 
+    // Load config early so we can derive the exact external webhook URL for Twilio
+    // signature validation (the signature is computed against the URL Twilio called,
+    // which is the published domain — not the internal proxy URL).
+    const cfg = await loadConfig(base44);
+    let knownUrl = null;
+    if (cfg && cfg.website_links && cfg.website_links.booking_url) {
+      try {
+        const bUrl = new URL(cfg.website_links.booking_url);
+        knownUrl = `${bUrl.protocol}//${bUrl.host}/functions/valerie`;
+      } catch {}
+    }
+
     // Auth: SCHEDULER_TOKEN (body or query param), authenticated base44 user,
     // OR a valid Twilio webhook signature (inbound SMS from Twilio).
     const SCHEDULER_TOKEN = Deno.env.get('SCHEDULER_TOKEN');
@@ -230,10 +244,21 @@ Deno.serve(async (req) => {
     }
     let twilioOk = false;
     if (!tokenOk && !authedOk) {
-      twilioOk = await validateTwilioSignature(req, body);
+      twilioOk = await validateTwilioSignature(req, body, knownUrl);
     }
     if (!tokenOk && !authedOk && !twilioOk) {
-      return Response.json({ error: 'Unauthorized.' }, { status: 401 });
+      // Temporary debug — capture what URL/headers the function sees behind the proxy.
+      const u = new URL(req.url);
+      console.error('valerie auth fail debug:', JSON.stringify({
+        req_url: req.url, knownUrl, host: req.headers.get('host'),
+        fwd_host: req.headers.get('x-forwarded-host'), fwd_proto: req.headers.get('x-forwarded-proto'),
+        path: u.pathname, has_twilio_sig: !!req.headers.get('X-Twilio-Signature'),
+      }));
+      return Response.json({
+        error: 'Unauthorized.', v: 3,
+        debug: { req_url: req.url, knownUrl, host: req.headers.get('host'),
+          fwd_host: req.headers.get('x-forwarded-host'), fwd_proto: req.headers.get('x-forwarded-proto') },
+      }, { status: 401 });
     }
     if (body.scheduler_token) delete body.scheduler_token;
     if (body._internal_token) delete body._internal_token;
@@ -244,7 +269,6 @@ Deno.serve(async (req) => {
     if (!phone) return Response.json({ error: 'phone is required.' }, { status: 400 });
     if (!message) return Response.json({ error: 'message is required.' }, { status: 400 });
 
-    const cfg = await loadConfig(base44);
     if (!cfg) return Response.json({ error: 'BusinessConfig not found.' }, { status: 500 });
 
     // Normalize to E.164 for consistent conversation history keys.
