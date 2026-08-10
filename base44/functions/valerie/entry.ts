@@ -6,13 +6,11 @@
 // - Outbound replies routed through sendMessage → Communication Rules Engine.
 // - Customer lookups use the Customer entity (ERA Core CRM), not the built-in User.
 //
-// Auth: SCHEDULER_TOKEN (body or query param — used for internal calls AND the Twilio
-// webhook URL, which will include ?scheduler_token=xxx when wired), or an authenticated
-// base44 user (for in-app testing).
-//
-// Until A2P 10DLC is approved (twilio_sms_enabled = false), replies are stored in
-// conversation history but not delivered via SMS. The Twilio inbound webhook is wired
-// when the verified number is provisioned — that is the final step of Phase 3.
+// Auth: SCHEDULER_TOKEN (body or query param — for internal calls), an authenticated
+// base44 user (for in-app testing), OR a valid Twilio webhook signature (inbound SMS).
+// The Twilio inbound webhook URL is https://<domain>/functions/valerie with no secret
+// in the query string — Twilio signs each request with TWILIO_AUTH_TOKEN and we
+// validate that signature (validateTwilioSignature below).
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 
@@ -29,10 +27,12 @@ async function validateTwilioSignature(req, body) {
   const u = new URL(req.url);
   const fwdProto = req.headers.get('x-forwarded-proto');
   const fwdHost = req.headers.get('x-forwarded-host');
+  const hostHeader = req.headers.get('host');
   // The signature is computed against the exact URL Twilio called. Behind a proxy
-  // the internal req.url may differ, so try several candidates (external forwarded
-  // URL, req.url as-is, forced https) and accept any that matches.
+  // the internal req.url may differ, so try several candidates (req.url as-is,
+  // Host header, x-forwarded-host, forced https) and accept any that matches.
   const candidates = new Set([req.url, `${u.protocol.replace(':', '')}://${u.host}${u.pathname}${u.search}`]);
+  if (hostHeader) candidates.add(`https://${hostHeader}${u.pathname}${u.search}`);
   if (fwdHost) {
     candidates.add(`https://${fwdHost}${u.pathname}${u.search}`);
     if (fwdProto) candidates.add(`${fwdProto}://${fwdHost}${u.pathname}${u.search}`);
