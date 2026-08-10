@@ -146,9 +146,10 @@ const TOOLS = [
 async function callOpenAI(messages) {
   const KEY = Deno.env.get('OpenAI_Valerie');
   if (!KEY) throw new Error('OpenAI_Valerie secret is not set.');
-  // GPT-5.5 is a reasoning model and only supports the default temperature (1);
-  // sending a custom temperature is rejected by the API, so we omit it.
-  const payload = { model: 'gpt-5.5', messages, tools: TOOLS, tool_choice: 'auto' };
+  // Fast conversational model for real-time SMS. GPT-5.5 (reasoning model) took ~3 min
+  // per reply; gpt-4o-mini responds in 2-4 seconds and handles SMS concierge tool-calling
+  // with lower latency and cost.
+  const payload = { model: 'gpt-4o-mini', temperature: 0.7, messages, tools: TOOLS, tool_choice: 'auto' };
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'Authorization': 'Bearer ' + KEY, 'Content-Type': 'application/json' },
