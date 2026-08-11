@@ -162,7 +162,7 @@ const TOOLS = [
 // OpenAI call imported from shared/conciergeHelpers.ts
 
 // ── Tool execution ────────────────────────────────────────────────────
-async function executeTool(base44, cfg, name, args) {
+async function executeTool(base44, cfg, businessId, name, args) {
   const SCHEDULER_TOKEN = Deno.env.get('SCHEDULER_TOKEN');
   switch (name) {
     case 'lookup_pricing': {
@@ -184,6 +184,7 @@ async function executeTool(base44, cfg, name, args) {
     case 'check_availability': {
       const res = await base44.asServiceRole.functions.invoke('scheduler', {
         action: 'check_availability',
+        business_id: businessId,
         service: args.service_type || 'full_detail',
         vehicle_type: args.vehicle_type || 'sedan_coupe',
         date: args.date,
@@ -195,6 +196,7 @@ async function executeTool(base44, cfg, name, args) {
     case 'create_quote': {
       const res = await base44.asServiceRole.functions.invoke('pricingEngine', {
         scheduler_token: SCHEDULER_TOKEN,
+        business_id: businessId,
         services: args.services,
         vehicle_classification: args.vehicle_classification,
         condition: args.condition,
@@ -204,6 +206,7 @@ async function executeTool(base44, cfg, name, args) {
       const data = res?.data || res;
       if (data.error) return { error: data.error };
       const quote = await base44.asServiceRole.entities.Quote.create({
+        business_id: businessId,
         requested_services: args.services,
         vehicle_classification: args.vehicle_classification,
         condition: args.condition || null,
@@ -228,6 +231,7 @@ async function executeTool(base44, cfg, name, args) {
     case 'book_appointment': {
       const res = await base44.asServiceRole.functions.invoke('submitBooking', {
         scheduler_token: SCHEDULER_TOKEN,
+        business_id: businessId,
         name: args.name,
         phone: args.phone,
         email: args.email || '',
@@ -246,7 +250,7 @@ async function executeTool(base44, cfg, name, args) {
     }
     case 'request_consultation': {
       try {
-        const contact = await loadBusinessContact(base44);
+        const contact = await loadBusinessContact(base44, businessId);
         const serviceLabels = { ceramic_coating: 'Ceramic Coating', paint_correction: 'Paint Correction', speak_to_team: 'Speak to a Team Member' };
         const interestLabel = serviceLabels[args.service_interest] || args.service_interest;
         const subject = 'Consultation Request — ' + interestLabel + ' — ' + args.name;
@@ -297,6 +301,10 @@ Deno.serve(async (req) => {
     const cfg = await loadConfig(base44);
     if (!cfg) return Response.json({ error: 'BusinessConfig not found.' }, { status: 500 });
 
+    // Single-tenant stopgap: derive business_id from the active BusinessConfig.
+    // Phase 4: replace with origin → BusinessConfig resolution.
+    const businessId = cfg.business_id || 'vds';
+
     // Respect the feature flag — admins can disable the widget from BusinessConfig.
     if (cfg.feature_flags && cfg.feature_flags.web_chat_enabled === false) {
       return Response.json({ error: 'Web chat is not available.' }, { status: 403 });
@@ -306,7 +314,7 @@ Deno.serve(async (req) => {
 
     // Load conversation history (last 20 exchanges), order chronologically.
     const history = await base44.asServiceRole.entities.ConversationHistory.filter(
-      { customer_phone: sessionKey }, '-created_date', 20
+      { business_id: businessId, customer_phone: sessionKey }, '-created_date', 20
     ).catch(() => []);
     const ordered = history.slice().reverse();
 
@@ -329,7 +337,7 @@ Deno.serve(async (req) => {
         const toolName = tc.function.name;
         let toolArgs = {};
         try { toolArgs = JSON.parse(tc.function.arguments || '{}'); } catch {}
-        const result = await executeTool(base44, cfg, toolName, toolArgs);
+        const result = await executeTool(base44, cfg, businessId, toolName, toolArgs);
         if (toolName === 'create_quote' && result && result.quote_id) lastQuote = result;
         messages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) });
       }
@@ -341,8 +349,8 @@ Deno.serve(async (req) => {
     // Persist conversation history.
     try {
       await base44.asServiceRole.entities.ConversationHistory.bulkCreate([
-        { customer_phone: sessionKey, role: 'user', content: message },
-        { customer_phone: sessionKey, role: 'assistant', content: finalText },
+        { business_id: businessId, customer_phone: sessionKey, role: 'user', content: message },
+        { business_id: businessId, customer_phone: sessionKey, role: 'assistant', content: finalText },
       ]);
     } catch (e) { console.error('History save error:', e.message); }
 

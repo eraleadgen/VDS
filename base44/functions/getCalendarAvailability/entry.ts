@@ -29,6 +29,14 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const { service_type, vehicle_type, date } = await req.json();
 
+    // Single-tenant stopgap: derive business_id from the active BusinessConfig.
+    // Phase 4: replace with origin → BusinessConfig resolution.
+    let businessId = 'vds';
+    try {
+      const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
+      if (configs && configs[0]) businessId = configs[0].business_id || 'vds';
+    } catch {}
+
     if (!service_type || !date) {
       return Response.json({ error: 'Missing service_type or date' }, { status: 400 });
     }
@@ -38,6 +46,7 @@ Deno.serve(async (req) => {
     // overlapping multi-hour events are correctly excluded — preventing double bookings).
     const res = await base44.asServiceRole.functions.invoke('scheduler', {
       action: 'check_availability',
+      business_id: businessId,
       service: service_type,
       vehicle_type: vehicle_type || 'sedan_coupe',
       date,

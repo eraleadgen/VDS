@@ -12,6 +12,14 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
+    // Single-tenant stopgap: derive business_id from the active BusinessConfig.
+    // Phase 4: replace with origin → BusinessConfig resolution.
+    let businessId = 'vds';
+    try {
+      const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
+      if (configs && configs[0]) businessId = configs[0].business_id || 'vds';
+    } catch {}
+
     const key = Deno.env.get("GOOGLE_PLACES_API_KEY") || Deno.env.get("GOOGLE_MAPS_API_KEY");
     if (!key) return Response.json({ error: "Google API key not configured." }, { status: 500 });
 
@@ -75,9 +83,9 @@ Deno.serve(async (req) => {
     for (const rv of fetched) {
       if (!rv.review_key || rv.review_key.endsWith("__")) continue;
       try {
-        const existing = await base44.asServiceRole.entities.GoogleReview.filter({ review_key: rv.review_key });
+        const existing = await base44.asServiceRole.entities.GoogleReview.filter({ business_id: businessId, review_key: rv.review_key });
         if (!existing || existing.length === 0) {
-          await base44.asServiceRole.entities.GoogleReview.create(rv);
+          await base44.asServiceRole.entities.GoogleReview.create({ ...rv, business_id: businessId });
         }
       } catch (e) {
         console.error("GoogleReview upsert error:", e.message, rv.review_key);
@@ -85,7 +93,7 @@ Deno.serve(async (req) => {
     }
 
     // Return the full cached set (all accumulated reviews), newest first.
-    const cached = await base44.asServiceRole.entities.GoogleReview.list("-publish_time", 100);
+    const cached = await base44.asServiceRole.entities.GoogleReview.filter({ business_id: businessId }, "-publish_time", 100);
     const reviews = (cached || []).map((r) => ({
       author: r.author,
       rating: r.rating,

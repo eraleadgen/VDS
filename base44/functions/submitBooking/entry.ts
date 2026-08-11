@@ -84,13 +84,17 @@ async function logEvent(base44, event) {
 // When a quote_id is supplied, use the quote's final_price (quotes are priced server-side by
 // saveQuote, so the value is trusted). Otherwise compute the starting price for the service +
 // pricing group from the active BusinessConfig catalog.
-async function computeJobPrice(base44, serviceType, pricingGroup, quoteId) {
+async function computeJobPrice(base44, serviceType, pricingGroup, quoteId, businessId) {
   try {
     if (quoteId) {
       const q = await base44.asServiceRole.entities.Quote.get(quoteId).catch(() => null);
-      if (q && q.final_price != null) return q.final_price;
+      if (q && q.final_price != null) {
+        // Tenant guard: asServiceRole bypasses RLS — reject cross-tenant quote lookups.
+        if (q.business_id && q.business_id !== businessId) return null;
+        return q.final_price;
+      }
     }
-    const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
+    const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ business_id: businessId, is_active: true });
     const cfg = configs && configs[0];
     if (!cfg) return null;
     const svc = (cfg.services || []).find(s => s.key === serviceType);
@@ -119,6 +123,10 @@ Deno.serve(async (req) => {
       const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
       cfg = configs && configs[0];
     } catch (e) { console.error('Config load failed:', e.message); }
+
+    // Single-tenant stopgap: derive business_id from the active BusinessConfig.
+    // Phase 4: replace with origin → BusinessConfig resolution.
+    const businessId = cfg?.business_id || 'vds';
 
     // Public endpoint (guests book without login) — strict origin allowlist.
     // Internal calls (webChat via scheduler_token) bypass the origin check and rate limit.
@@ -174,7 +182,7 @@ Deno.serve(async (req) => {
     // ── Duplicate booking check — same customer phone + same date, non-cancelled job ──
     if (preferred_date) {
       try {
-        const dayJobs = await base44.asServiceRole.entities.Job.filter({ appointment_date: preferred_date });
+        const dayJobs = await base44.asServiceRole.entities.Job.filter({ business_id: businessId, appointment_date: preferred_date });
         const dup = (dayJobs || []).find(j => j.status !== 'cancelled' &&
           (j.customer_phone || '').replace(/\D/g, '').slice(-10) === phoneDigits.slice(-10));
         if (dup) {
@@ -206,12 +214,14 @@ Deno.serve(async (req) => {
         linkedUserId: user ? user.id : null,
         address,
         smsConsent: sms_consent !== false,
+        businessId,
       });
       customer = result.customer;
       customerCreated = result.created;
       if (customerCreated) {
         await logEvent(base44, {
           event_type: 'customer_created',
+          business_id: businessId,
           entity_type: 'customer',
           entity_id: customer.id,
           customer_id: customer.id,
@@ -242,9 +252,10 @@ Deno.serve(async (req) => {
 
       // Compute the estimated price server-side from BusinessConfig (or the linked quote) —
       // never trust client-supplied pricing (prevents $0 / forged-price bookings).
-      const estimatedPrice = await computeJobPrice(base44, service_type, pricingGroup, quote_id);
+      const estimatedPrice = await computeJobPrice(base44, service_type, pricingGroup, quote_id, businessId);
 
       job = await base44.asServiceRole.entities.Job.create({
+        business_id: businessId,
         customer_id: customer ? customer.id : null,
         customer_name: name,
         customer_phone: phone,
@@ -267,6 +278,7 @@ Deno.serve(async (req) => {
 
       await logEvent(base44, {
         event_type: 'job_created',
+        business_id: businessId,
         entity_type: 'job',
         entity_id: job.id,
         customer_id: customer ? customer.id : null,
@@ -276,6 +288,7 @@ Deno.serve(async (req) => {
 
       await logEvent(base44, {
         event_type: 'appointment_scheduled',
+        business_id: businessId,
         entity_type: 'job',
         entity_id: job.id,
         customer_id: customer ? customer.id : null,
@@ -300,7 +313,7 @@ Deno.serve(async (req) => {
         await base44.asServiceRole.entities.Customer.update(customer.id, { referral_source: source });
       }
       if (refCode && customer) {
-        const partners = await base44.asServiceRole.entities.Partner.filter({ referral_code: refCode });
+        const partners = await base44.asServiceRole.entities.Partner.filter({ business_id: businessId, referral_code: refCode });
         const partner = partners && partners[0];
         if (partner) {
           if (!customer.referred_by_partner_id) {
@@ -308,9 +321,10 @@ Deno.serve(async (req) => {
             await base44.asServiceRole.entities.Partner.update(partner.id, { referral_count: (partner.referral_count || 0) + 1 });
           }
           if (job) {
-            const existing = await base44.asServiceRole.entities.PartnerReferral.filter({ job_id: job.id }).catch(() => []);
+            const existing = await base44.asServiceRole.entities.PartnerReferral.filter({ business_id: businessId, job_id: job.id }).catch(() => []);
             if (!existing || !existing.length) {
               await base44.asServiceRole.entities.PartnerReferral.create({
+                business_id: businessId,
                 partner_id: partner.id, customer_id: customer.id, job_id: job.id,
                 service_package: job.service_package || '', status: 'referred', revenue: 0, attributed: false,
               });
@@ -324,7 +338,8 @@ Deno.serve(async (req) => {
     if (quote_id) {
       try {
         const q = await base44.asServiceRole.entities.Quote.get(quote_id).catch(() => null);
-        if (q) {
+        // Tenant guard: asServiceRole bypasses RLS — only link quotes from the same tenant.
+        if (q && (!q.business_id || q.business_id === businessId)) {
           await base44.asServiceRole.entities.Quote.update(q.id, {
             status: 'booked',
             customer_name: name,
@@ -351,6 +366,7 @@ Deno.serve(async (req) => {
         : notes || '';
 
       appt = await base44.asServiceRole.entities.Appointment.create({
+        business_id: businessId,
         service_type,
         service_label: serviceLabel,
         vehicle_info: vehicle_info || 'TBD',
@@ -449,7 +465,7 @@ Deno.serve(async (req) => {
     // ── Auto-assign specialist via scheduler ──────────────────────────────
     if (appt) {
       try {
-        const r = await base44.functions.invoke('scheduler', { action: 'auto_assign', appointment_id: appt.id, scheduler_token: Deno.env.get('SCHEDULER_TOKEN') });
+        const r = await base44.functions.invoke('scheduler', { action: 'auto_assign', business_id: businessId, appointment_id: appt.id, scheduler_token: Deno.env.get('SCHEDULER_TOKEN') });
         console.log('Auto-assign result:', JSON.stringify(r?.data || r));
 
         // Sync specialist info from the updated Appointment to the Job
@@ -466,6 +482,7 @@ Deno.serve(async (req) => {
               await base44.asServiceRole.entities.Job.update(job.id, jobUpdates);
               await logEvent(base44, {
                 event_type: 'job_assigned',
+                business_id: businessId,
                 entity_type: 'job',
                 entity_id: job.id,
                 customer_id: customer ? customer.id : null,
@@ -483,6 +500,7 @@ Deno.serve(async (req) => {
       try {
         await base44.functions.invoke('sendBookingNotifications', {
           appointment_id: appt.id,
+          business_id: businessId,
           scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
         });
       } catch (e) { console.error('Booking notifications failed:', e.message); }

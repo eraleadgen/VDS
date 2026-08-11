@@ -20,11 +20,26 @@ function resolvePricingGroup(cfg, classification, legacyType) {
 
 Deno.serve(async (req) => {
   try {
-    // Origin allowlist (same as submitBooking — public endpoint)
+    const base44 = createClientFromRequest(req);
+    const body = await req.json().catch(() => ({}));
+
+    // Load active BusinessConfig early — drives the origin allowlist (dynamic for multi-tenant).
+    const cfg = await loadConfig(base44);
+    // Single-tenant stopgap: derive business_id from the active BusinessConfig.
+    // Phase 4: replace with origin → BusinessConfig resolution.
+    const businessId = cfg?.business_id || 'vds';
+
+    // Origin allowlist — tenant domains derived from BusinessConfig website_links.
     const originHeader = req.headers.get('Origin') || req.headers.get('Referer') || '';
     let originHost = '';
     try { originHost = new URL(originHeader).host.toLowerCase(); } catch {}
-    const allowed = ['vdsmobile.com', 'www.vdsmobile.com'].includes(originHost)
+    const tenantHosts = [];
+    if (cfg && cfg.website_links) {
+      for (const url of Object.values(cfg.website_links)) {
+        if (url) { try { tenantHosts.push(new URL(url).host.toLowerCase()); } catch {} }
+      }
+    }
+    const allowed = tenantHosts.includes(originHost)
       || originHost === 'localhost'
       || originHost.endsWith('.localhost')
       || originHost.endsWith('.base44.app')
@@ -32,9 +47,6 @@ Deno.serve(async (req) => {
     if (!allowed) {
       return Response.json({ error: 'Forbidden — invalid origin.' }, { status: 403 });
     }
-
-    const base44 = createClientFromRequest(req);
-    const body = await req.json().catch(() => ({}));
 
     const {
       vehicle_classification, vehicle_year, vehicle_make, vehicle_model,
@@ -51,7 +63,6 @@ Deno.serve(async (req) => {
     let user = null;
     try { user = await base44.auth.me(); } catch {}
 
-    const cfg = await loadConfig(base44);
     const pricingGroup = cfg ? resolvePricingGroup(cfg, vehicle_classification) : 'sedan_coupe';
     const bookingUrl = (cfg && cfg.website_links && cfg.website_links.booking_url) || 'https://vdsmobile.com/book';
 
@@ -89,6 +100,7 @@ Deno.serve(async (req) => {
     const expiration = new Date(Date.now() + 7 * 24 * 3600 * 1000).toISOString().split('T')[0];
 
     const quote = await base44.asServiceRole.entities.Quote.create({
+      business_id: businessId,
       customer_name: customer_name || (user ? (user.full_name || '') : ''),
       customer_phone: customer_phone || '',
       customer_email: customer_email || (user ? (user.email || '') : ''),
