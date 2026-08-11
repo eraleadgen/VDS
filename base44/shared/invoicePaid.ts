@@ -12,7 +12,7 @@
 
 import { sendCareGuideEmail, guideKeyForService } from './careGuideEmail.ts';
 
-export async function onInvoicePaid(base44, invoice_id) {
+export async function onInvoicePaid(base44, invoice_id, businessId = 'vds') {
   if (!invoice_id) return;
   try {
     const invoice = await base44.asServiceRole.entities.Invoice.get(invoice_id).catch(() => null);
@@ -43,7 +43,7 @@ export async function onInvoicePaid(base44, invoice_id) {
           const revenue = invoice.final_amount || invoice.amount || 0;
           let referral = null;
           if (invoice.job_id) {
-            const existing = await base44.asServiceRole.entities.PartnerReferral.filter({ job_id: invoice.job_id }).catch(() => []);
+            const existing = await base44.asServiceRole.entities.PartnerReferral.filter({ business_id: businessId, job_id: invoice.job_id }).catch(() => []);
             referral = existing && existing[0];
           }
           // $30 initial detail (one-time per client), $100 ceramic coating / paint correction.
@@ -54,7 +54,7 @@ export async function onInvoicePaid(base44, invoice_id) {
           else if (svcLower.includes('paint correction') || svcLower.includes('correction')) incentiveType = 'paint_correction';
           let incentiveAmount = 0;
           try {
-            const cfgs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
+            const cfgs = await base44.asServiceRole.entities.BusinessConfig.filter({ business_id: businessId, is_active: true });
             const incentives = (cfgs && cfgs[0]?.referral_program?.incentives) || {};
             incentiveAmount = Number(incentives[incentiveType] ?? (incentiveType === 'initial_detail' ? 30 : 100)) || 0;
           } catch (e) { incentiveAmount = incentiveType === 'initial_detail' ? 30 : 100; }
@@ -62,7 +62,7 @@ export async function onInvoicePaid(base44, invoice_id) {
           if (incentiveType === 'initial_detail' && invoice.customer_id) {
             try {
               const prior = await base44.asServiceRole.entities.PartnerReferral.filter({
-                partner_id: partnerId, customer_id: invoice.customer_id, incentive_type: 'initial_detail'
+                business_id: businessId, partner_id: partnerId, customer_id: invoice.customer_id, incentive_type: 'initial_detail'
               });
               const priorCredited = (prior || []).some(r => r.attributed && r.job_id !== invoice.job_id);
               if (priorCredited) incentiveAmount = 0;
@@ -73,6 +73,7 @@ export async function onInvoicePaid(base44, invoice_id) {
           let credit = false;
           if (!referral) {
             await base44.asServiceRole.entities.PartnerReferral.create({
+              business_id: businessId,
               partner_id: partnerId, customer_id: invoice.customer_id, job_id: invoice.job_id || null,
               service_package: job?.service_package || '', status: 'converted', revenue, attributed: true,
               incentive_type: incentiveType, incentive_amount: incentiveAmount,
@@ -141,7 +142,7 @@ export async function onInvoicePaid(base44, invoice_id) {
             guideKey: gk, to: invoice.customer_id
               ? (await base44.asServiceRole.entities.Customer.get(invoice.customer_id).catch(() => null))?.email || paidJob.customer_email
               : paidJob.customer_email,
-            customerName: paidJob.customer_name, customerId: invoice.customer_id,
+            customerName: paidJob.customer_name, customerId: invoice.customer_id, businessId,
           });
         }
       }

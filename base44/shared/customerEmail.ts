@@ -12,13 +12,13 @@
 // Returns { channel: 'platform'|'esp'|'none', sent: boolean, error?: string } so callers
 // can log outcomes to the System Event Log without parsing exceptions.
 
-export async function sendCustomerEmail(base44, { to, subject, html, fromName }) {
+export async function sendCustomerEmail(base44, { to, subject, html, fromName, businessId = 'vds' }) {
   if (!to) return { channel: 'none', sent: false, error: 'no recipient' };
 
   // 1) Registered app user → platform SendEmail (reaches the member's inbox, no ESP quota used).
   let registered = false;
   try {
-    const users = await base44.asServiceRole.entities.User.filter({ email: to });
+    const users = await base44.asServiceRole.entities.User.filter({ email: to, business_id: businessId });
     registered = !!(users && users.length > 0);
   } catch (_e) {
     // If the User lookup fails, treat as guest and fall through to the ESP path so the

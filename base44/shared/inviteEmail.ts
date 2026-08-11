@@ -7,10 +7,10 @@ import { loadBusinessContact } from './businessContact.ts';
 
 // Resolve the setup URL from the active BusinessConfig booking_url origin, falling back to
 // the public domain. `pathSegment` is 'specialist-setup' or 'partner-setup'.
-export async function resolveSetupUrl(base44, token, pathSegment, explicit) {
+export async function resolveSetupUrl(base44, token, pathSegment, explicit, businessId = 'vds') {
   if (explicit) return explicit;
   try {
-    const cfgs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
+    const cfgs = await base44.asServiceRole.entities.BusinessConfig.filter({ business_id: businessId, is_active: true });
     const cfg = cfgs && cfgs[0];
     const booking = cfg && cfg.website_links && cfg.website_links.booking_url;
     if (booking) {
@@ -42,8 +42,9 @@ export async function runInviteEndpoint(req, opts) {
     const inviteToken = (body.invite_token || '').trim();
     if (!inviteToken) return Response.json({ error: 'invite_token is required.' }, { status: 400 });
 
-    const setupUrl = await resolveSetupUrl(base44, inviteToken, pathSegment, (body.setupUrl || '').trim() || null);
-    const contact = await loadBusinessContact(base44);
+    const businessId = body.business_id || 'vds';
+    const setupUrl = await resolveSetupUrl(base44, inviteToken, pathSegment, (body.setupUrl || '').trim() || null, businessId);
+    const contact = await loadBusinessContact(base44, businessId);
     const subjectText = typeof subject === 'function' ? subject(contact.businessName) : subject;
     const html = buildHtml(firstName, setupUrl, contact);
 

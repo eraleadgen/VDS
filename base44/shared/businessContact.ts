@@ -4,10 +4,10 @@
 // hardcoded copies that drift out of sync. The fallbacks keep messages deliverable
 // even if a field is missing from config.
 
-export async function loadBusinessContact(base44) {
+export async function loadBusinessContact(base44, businessId = 'vds') {
   let cfg = null;
   try {
-    const cfgs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
+    const cfgs = await base44.asServiceRole.entities.BusinessConfig.filter({ business_id: businessId, is_active: true });
     cfg = cfgs && cfgs[0] ? cfgs[0] : null;
   } catch (e) { console.error('BusinessConfig load error:', e.message); }
 

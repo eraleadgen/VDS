@@ -4,8 +4,8 @@
 // of truth for all pricing, services, hours, and persona data.
 
 // Load the active BusinessConfig (single-tenant today; multi-tenant ready).
-export async function loadConfig(base44) {
-  const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
+export async function loadConfig(base44, businessId = 'vds') {
+  const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ business_id: businessId, is_active: true });
   return configs && configs[0] ? configs[0] : null;
 }
 

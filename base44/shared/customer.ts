@@ -14,14 +14,14 @@ export function toE164(phone) {
 }
 
 // Find an existing Customer by phone (E.164 exact, then last-10-digit fallback) or email.
-export async function findCustomer(base44, phone, email) {
+export async function findCustomer(base44, phone, email, businessId = 'vds') {
   if (phone) {
     const e164 = toE164(phone);
-    let customers = await base44.asServiceRole.entities.Customer.filter({ phone: e164 }).catch(() => []);
+    let customers = await base44.asServiceRole.entities.Customer.filter({ business_id: businessId, phone: e164 }).catch(() => []);
     if (!customers.length) {
       const d = phone.replace(/\D/g, '');
       if (d.length >= 10) {
-        const all = await base44.asServiceRole.entities.Customer.list().catch(() => []);
+        const all = await base44.asServiceRole.entities.Customer.filter({ business_id: businessId }).catch(() => []);
         customers = (all || []).filter(c => (c.phone || '').replace(/\D/g, '').slice(-10) === d.slice(-10));
       }
     }
@@ -29,7 +29,7 @@ export async function findCustomer(base44, phone, email) {
   }
   if (email) {
     const e = email.toLowerCase();
-    const all = await base44.asServiceRole.entities.Customer.list().catch(() => []);
+    const all = await base44.asServiceRole.entities.Customer.filter({ business_id: businessId }).catch(() => []);
     const found = (all || []).find(c => c.email && c.email.toLowerCase() === e);
     if (found) return found;
   }
@@ -41,23 +41,23 @@ export async function findCustomer(base44, phone, email) {
 export async function findOrCreateCustomer(base44, opts) {
   const {
     phone, firstName, lastName, email, linkedUserId, address,
-    smsConsent = true,
+    smsConsent = true, businessId = 'vds',
   } = opts || {};
 
   let customer = null;
 
   // 1) Strongest match — authenticated user link
   if (linkedUserId) {
-    const byUser = await base44.asServiceRole.entities.Customer.filter({ linked_user_id: linkedUserId }).catch(() => []);
+    const byUser = await base44.asServiceRole.entities.Customer.filter({ business_id: businessId, linked_user_id: linkedUserId }).catch(() => []);
     if (byUser && byUser.length > 0) customer = byUser[0];
   }
   // 2) Phone match (E.164 exact, then last-10-digit fallback)
   if (!customer && phone) {
-    customer = await findCustomer(base44, phone, null);
+    customer = await findCustomer(base44, phone, null, businessId);
   }
   // 3) Email match
   if (!customer && email) {
-    customer = await findCustomer(base44, null, email);
+    customer = await findCustomer(base44, null, email, businessId);
   }
 
   if (customer) {
@@ -75,6 +75,7 @@ export async function findOrCreateCustomer(base44, opts) {
   }
 
   customer = await base44.asServiceRole.entities.Customer.create({
+    business_id: businessId,
     linked_user_id: linkedUserId || null,
     first_name: firstName || '',
     last_name: lastName || '',

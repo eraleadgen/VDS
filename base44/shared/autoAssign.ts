@@ -25,8 +25,8 @@ export function serviceToSkill(serviceKey) {
   return null;
 }
 
-export async function loadConfig(base44) {
-  const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
+export async function loadConfig(base44, businessId = 'vds') {
+  const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ business_id: businessId, is_active: true });
   return configs && configs[0] ? configs[0] : null;
 }
 
@@ -65,15 +65,16 @@ export async function autoAssign(base44, cfg, dateStr, serviceKey, slotStart, sl
   const tz = cfg.timezone || 'America/New_York';
   const bufferMs = ((cfg.scheduling_rules && cfg.scheduling_rules.booking_buffer_hours) || 0) * 3600000;
 
-  const allActive = await base44.asServiceRole.entities.Contractor.filter({ status: 'active' });
+  const bizId = cfg.business_id || 'vds';
+  const allActive = await base44.asServiceRole.entities.Contractor.filter({ business_id: bizId, status: 'active' });
   const pool = (allActive || []).filter(c => c.is_enabled !== false);
   if (!pool.length) return null;
 
-  const dayAppts = await base44.asServiceRole.entities.Appointment.filter({ preferred_date: dateStr });
+  const dayAppts = await base44.asServiceRole.entities.Appointment.filter({ business_id: bizId, preferred_date: dateStr });
 
   // Equal-distribution metric: total upcoming (non-cancelled, non-completed) jobs per specialist.
   let upcomingJobs = [];
-  try { upcomingJobs = await base44.asServiceRole.entities.Job.list('-updated_date', 500); } catch {}
+  try { upcomingJobs = await base44.asServiceRole.entities.Job.filter({ business_id: bizId }, '-updated_date', 500); } catch {}
   const loadByContractor = {};
   for (const j of (upcomingJobs || [])) {
     if (!j.specialist_id || j.status === 'cancelled' || j.status === 'completed') continue;

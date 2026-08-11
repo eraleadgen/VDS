@@ -150,6 +150,7 @@ function buildEmailHtml(guide, firstName, guideKey) {
 async function logCareGuideEvent(base44, { guideKey, customerId, to, sent, reason }) {
   try {
     await base44.asServiceRole.entities.SystemEventLog.create({
+      business_id: businessId,
       event_type: sent ? 'care_guide_sent' : 'care_guide_suppressed',
       entity_type: 'customer',
       entity_id: customerId || null,
@@ -164,7 +165,7 @@ async function logCareGuideEvent(base44, { guideKey, customerId, to, sent, reaso
 }
 
 // Send the matching care-guide email to a customer. Returns { sent, reason }.
-export async function sendCareGuideEmail(base44, { guideKey, to, customerName, customerId }) {
+export async function sendCareGuideEmail(base44, { guideKey, to, customerName, customerId, businessId = 'vds' }) {
   if (!to) return { sent: false, reason: 'no_email' };
   const guide = GUIDES[guideKey] || GUIDES.detailing;
   const firstName = (customerName || '').split(' ')[0] || 'there';
