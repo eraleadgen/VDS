@@ -43,6 +43,27 @@ export function BusinessConfigProvider({ children }) {
     return () => { mounted = false; };
   }, []);
 
+  // Inject brand colors as CSS variables at runtime for white-label theming.
+  useEffect(() => {
+    if (config?.brand_colors) {
+      const root = document.documentElement;
+      const bc = config.brand_colors;
+      const hexToRgb = (hex) => {
+        const h = (hex || '').replace('#', '');
+        if (h.length !== 6) return null;
+        const r = parseInt(h.slice(0, 2), 16);
+        const g = parseInt(h.slice(2, 4), 16);
+        const b = parseInt(h.slice(4, 6), 16);
+        return `${r} ${g} ${b}`;
+      };
+      if (bc.primary) { const v = hexToRgb(bc.primary); if (v) root.style.setProperty('--gold', v); }
+      if (bc.secondary) { const v = hexToRgb(bc.secondary); if (v) root.style.setProperty('--gold-light', v); }
+      if (bc.background) { const v = hexToRgb(bc.background); if (v) root.style.setProperty('--obsidian', v); }
+      if (bc.surface) { const v = hexToRgb(bc.surface); if (v) root.style.setProperty('--asphalt', v); }
+      if (bc.text) { const v = hexToRgb(bc.text); if (v) root.style.setProperty('--vapor', v); }
+    }
+  }, [config]);
+
   return (
     <BusinessConfigContext.Provider value={{ config, loading }}>
       {children}

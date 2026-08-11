@@ -26,10 +26,12 @@
     --input: 220 13% 15%;
     --ring: 43 62% 52%;
     --radius: 0.25rem;
-    --gold: #D4AF37;
-    --obsidian: #0A0B0D;
-    --asphalt: #14161A;
-    --vapor: #E2E8F0;
+    --gold: 212 175 55;
+    --gold-light: 245 225 122;
+    --gold-dark: 160 128 32;
+    --obsidian: 10 11 13;
+    --asphalt: 20 22 26;
+    --vapor: 226 232 240;
   }
 }
 
@@ -40,8 +42,8 @@
   body {
     @apply bg-background text-foreground;
     font-family: 'Space Grotesk', sans-serif;
-    background-color: #0A0B0D;
-    color: #E2E8F0;
+    background-color: rgb(var(--obsidian));
+    color: rgb(var(--vapor));
   }
 }
 
@@ -144,14 +146,14 @@ body { overflow-x: hidden; }
 }
 
 .vds-gold-btn {
-  border: 1px solid #D4AF37;
-  color: #D4AF37;
+  border: 1px solid rgb(var(--gold));
+  color: rgb(var(--gold));
   animation: goldPulse 3s ease-in-out infinite;
   transition: all 0.3s ease;
 }
 .vds-gold-btn:hover {
-  background: #D4AF37;
-  color: #0A0B0D;
+  background: rgb(var(--gold));
+  color: rgb(var(--obsidian));
 }
 
 .hero-gradient {
@@ -165,7 +167,7 @@ body { overflow-x: hidden; }
 /* Scrollbar */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-track { background: #0A0B0D; }
-::-webkit-scrollbar-thumb { background: #D4AF37; border-radius: 2px; }
+::-webkit-scrollbar-thumb { background: rgb(var(--gold)); border-radius: 2px; }
 
 /* Infinite reviews marquee */
 @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }

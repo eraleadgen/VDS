@@ -9,7 +9,6 @@ import { loadBusinessContact } from '../../shared/businessContact.ts';
 
 const FONT = "'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 const MONO = "'Space Mono','Courier New',monospace";
-const INTERNAL_EMAIL = 'support@eraleadgen.com';
 
 // Send an outbound SMS — routed through sendMessage → Communication Rules Engine.
 async function sendTwilioSms(base44, to, body, customerName, messageType) {
@@ -37,32 +36,33 @@ function esc(s) {
 }
 
 function fieldRow(label, value) {
-  return value ? `<tr><td style="padding:4px 0;"><span style="font-family:${MONO};font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#94A3B8;">${label}</span><br><span style="font-size:15px;color:#E2E8F0;font-weight:500;">${esc(value)}</span></td></tr>` : '';
+  return value ? `<tr><td style="padding:4px 0;"><span style="font-family:${MONO};font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#94A3B8;">${label}</span><br><span style="font-size:15px;color:${vapor};font-weight:500;">${esc(value)}</span></td></tr>` : '';
 }
 
 function buildCustomerEmail(firstName, appt, contact) {
+  const { gold, obsidian, asphalt, vapor } = contact.theme;
   return `<!DOCTYPE html>
 <html lang="en" style="margin:0;padding:0;">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"></head>
-<body style="margin:0;padding:0;background-color:#0A0B0D;color-scheme:dark;font-family:${FONT};color:#E2E8F0;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0A0B0D;">
+<body style="margin:0;padding:0;background-color:${obsidian};color-scheme:dark;font-family:${FONT};color:${vapor};">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${obsidian};">
 <tr><td align="center" style="padding:32px 16px;">
-<table role="presentation" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#14161A;border-radius:14px;overflow:hidden;border:1px solid rgba(212,175,55,0.15);box-shadow:0 8px 30px rgba(0,0,0,0.5);">
-  <tr><td style="background-color:#0A0B0D;padding:22px 28px;border-bottom:2px solid #D4AF37;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:${asphalt};border-radius:14px;overflow:hidden;border:1px solid rgba(212,175,55,0.15);box-shadow:0 8px 30px rgba(0,0,0,0.5);">
+  <tr><td style="background-color:${obsidian};padding:22px 28px;border-bottom:2px solid ${gold};">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-      <td style="font-size:18px;font-weight:700;letter-spacing:3px;color:#FFFFFF;">VDS&nbsp;MOBILE</td>
-      <td align="right" style="font-family:${MONO};font-size:11px;letter-spacing:2px;color:#D4AF37;font-weight:700;text-transform:uppercase;">Confirmed</td>
+      <td style="font-size:18px;font-weight:700;letter-spacing:3px;color:#FFFFFF;">${contact.businessNameHeader}</td>
+      <td align="right" style="font-family:${MONO};font-size:11px;letter-spacing:2px;color:${gold};font-weight:700;text-transform:uppercase;">Confirmed</td>
     </tr></table>
   </td></tr>
   <tr><td style="padding:28px 28px 6px 28px;">
-    <p style="margin:0 0 6px 0;font-family:${MONO};font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#D4AF37;font-weight:700;">Appointment Confirmed</p>
-    <h1 style="margin:0;font-size:24px;line-height:32px;color:#E2E8F0;font-weight:700;">Hi ${esc(firstName)},</h1>
+    <p style="margin:0 0 6px 0;font-family:${MONO};font-size:12px;letter-spacing:2px;text-transform:uppercase;color:${gold};font-weight:700;">Appointment Confirmed</p>
+    <h1 style="margin:0;font-size:24px;line-height:32px;color:${vapor};font-weight:700;">Hi ${esc(firstName)},</h1>
   </td></tr>
   <tr><td style="padding:14px 28px 0 28px;">
-    <p style="margin:0 0 16px 0;font-size:15px;line-height:25px;color:#CBD5E1;">Your VDS Mobile detailing appointment is confirmed. Our specialist will come to you at the scheduled time.</p>
+    <p style="margin:0 0 16px 0;font-size:15px;line-height:25px;color:#CBD5E1;">Your ${contact.businessName} detailing appointment is confirmed. Our specialist will come to you at the scheduled time.</p>
   </td></tr>
   <tr><td style="padding:16px 28px 8px 28px;background-color:#0F1115;">
-    <p style="margin:0 0 12px 0;padding-top:14px;font-family:${MONO};font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#D4AF37;">Appointment Details</p>
+    <p style="margin:0 0 12px 0;padding-top:14px;font-family:${MONO};font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${gold};">Appointment Details</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
       ${fieldRow('Date', appt.preferred_date)}
       ${fieldRow('Time', appt.preferred_time)}
@@ -73,40 +73,41 @@ function buildCustomerEmail(firstName, appt, contact) {
   </td></tr>
   <tr><td style="padding:20px 28px 8px 28px;">
     <p style="margin:0 0 8px 0;font-size:15px;line-height:25px;color:#CBD5E1;">Please ensure your vehicle is accessible and a water source is available if needed.</p>
-    <p style="margin:0;font-size:15px;line-height:25px;color:#CBD5E1;">Need to make changes? Call or text us at <strong style="color:#D4AF37;">${contact.phone}</strong>.</p>
+    <p style="margin:0;font-size:15px;line-height:25px;color:#CBD5E1;">Need to make changes? Call or text us at <strong style="color:${gold};">${contact.phone}</strong>.</p>
   </td></tr>
-  <tr><td style="background-color:#0A0B0D;padding:22px 28px;border-top:2px solid #D4AF37;">
-    <p style="margin:0 0 6px 0;font-size:15px;color:#E2E8F0;font-weight:600;">&mdash; The VDS Mobile Team</p>
-    <p style="margin:0;font-family:${MONO};font-size:11px;color:#64748B;letter-spacing:0.5px;">&copy; ${new Date().getUTCFullYear()} VALET DETAILING SERVICE LLC. ALL RIGHTS RESERVED.</p>
+  <tr><td style="background-color:${obsidian};padding:22px 28px;border-top:2px solid ${gold};">
+    <p style="margin:0 0 6px 0;font-size:15px;color:${vapor};font-weight:600;">&mdash; The ${contact.businessName} Team</p>
+    <p style="margin:0;font-family:${MONO};font-size:11px;color:#64748B;letter-spacing:0.5px;">&copy; ${new Date().getUTCFullYear()} ${contact.legalName.toUpperCase()}. ALL RIGHTS RESERVED.</p>
   </td></tr>
 </table>
 </td></tr></table>
 </body></html>`;
 }
 
-function buildInternalEmail(appt) {
+function buildInternalEmail(appt, contact) {
+  const { gold, obsidian, asphalt, vapor } = contact.theme;
   const notesHtml = appt.notes
     ? `<tr><td style="padding:16px 28px 8px 28px;background-color:#0F1115;">
-    <p style="margin:0 0 10px 0;padding-top:14px;font-family:${MONO};font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#D4AF37;">Vehicles / Notes</p>
+    <p style="margin:0 0 10px 0;padding-top:14px;font-family:${MONO};font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${gold};">Vehicles / Notes</p>
     <p style="margin:0;font-size:14px;line-height:22px;color:#CBD5E1;white-space:pre-wrap;">${esc(appt.notes)}</p>
   </td></tr>`
     : '';
   return `<!DOCTYPE html>
 <html lang="en" style="margin:0;padding:0;">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark"></head>
-<body style="margin:0;padding:0;background-color:#0A0B0D;color-scheme:dark;font-family:${FONT};color:#E2E8F0;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0A0B0D;">
+<body style="margin:0;padding:0;background-color:${obsidian};color-scheme:dark;font-family:${FONT};color:${vapor};">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${obsidian};">
 <tr><td align="center" style="padding:32px 16px;">
-<table role="presentation" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#14161A;border-radius:14px;overflow:hidden;border:1px solid rgba(212,175,55,0.15);box-shadow:0 8px 30px rgba(0,0,0,0.5);">
-  <tr><td style="background-color:#0A0B0D;padding:22px 28px;border-bottom:2px solid #D4AF37;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:${asphalt};border-radius:14px;overflow:hidden;border:1px solid rgba(212,175,55,0.15);box-shadow:0 8px 30px rgba(0,0,0,0.5);">
+  <tr><td style="background-color:${obsidian};padding:22px 28px;border-bottom:2px solid ${gold};">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-      <td style="font-size:18px;font-weight:700;letter-spacing:3px;color:#FFFFFF;">VDS&nbsp;MOBILE</td>
-      <td align="right" style="font-family:${MONO};font-size:11px;letter-spacing:2px;color:#D4AF37;font-weight:700;text-transform:uppercase;">New Booking</td>
+      <td style="font-size:18px;font-weight:700;letter-spacing:3px;color:#FFFFFF;">${contact.businessNameHeader}</td>
+      <td align="right" style="font-family:${MONO};font-size:11px;letter-spacing:2px;color:${gold};font-weight:700;text-transform:uppercase;">New Booking</td>
     </tr></table>
   </td></tr>
   <tr><td style="padding:28px 28px 6px 28px;">
-    <p style="margin:0 0 6px 0;font-family:${MONO};font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#D4AF37;font-weight:700;">Booking Request</p>
-    <h1 style="margin:0;font-size:24px;line-height:32px;color:#E2E8F0;font-weight:700;">${esc(appt.customer_name)}</h1>
+    <p style="margin:0 0 6px 0;font-family:${MONO};font-size:12px;letter-spacing:2px;text-transform:uppercase;color:${gold};font-weight:700;">Booking Request</p>
+    <h1 style="margin:0;font-size:24px;line-height:32px;color:${vapor};font-weight:700;">${esc(appt.customer_name)}</h1>
     <p style="margin:4px 0 0 0;font-family:${MONO};font-size:13px;color:#94A3B8;">${esc(appt.preferred_date)} at ${esc(appt.preferred_time)}</p>
   </td></tr>
   <tr><td style="padding:20px 28px 8px 28px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0">
@@ -116,7 +117,7 @@ function buildInternalEmail(appt) {
     ${fieldRow('Service Address', appt.service_address)}
   </table></td></tr>
   <tr><td style="padding:16px 28px 8px 28px;background-color:#0F1115;">
-    <p style="margin:0 0 12px 0;padding-top:14px;font-family:${MONO};font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#D4AF37;">Appointment</p>
+    <p style="margin:0 0 12px 0;padding-top:14px;font-family:${MONO};font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${gold};">Appointment</p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
       ${fieldRow('Date', appt.preferred_date)}
       ${fieldRow('Time', appt.preferred_time)}
@@ -125,9 +126,9 @@ function buildInternalEmail(appt) {
     </table>
   </td></tr>
   ${notesHtml}
-  <tr><td style="background-color:#0A0B0D;padding:22px 28px;border-top:2px solid #D4AF37;">
-    <p style="margin:0 0 6px 0;font-size:15px;color:#E2E8F0;font-weight:600;">&mdash; The VDS Mobile Team</p>
-    <p style="margin:0;font-family:${MONO};font-size:11px;color:#64748B;letter-spacing:0.5px;">&copy; ${new Date().getUTCFullYear()} VALET DETAILING SERVICE LLC. ALL RIGHTS RESERVED.</p>
+  <tr><td style="background-color:${obsidian};padding:22px 28px;border-top:2px solid ${gold};">
+    <p style="margin:0 0 6px 0;font-size:15px;color:${vapor};font-weight:600;">&mdash; The ${contact.businessName} Team</p>
+    <p style="margin:0;font-family:${MONO};font-size:11px;color:#64748B;letter-spacing:0.5px;">&copy; ${new Date().getUTCFullYear()} ${contact.legalName.toUpperCase()}. ALL RIGHTS RESERVED.</p>
   </td></tr>
 </table>
 </td></tr></table>
@@ -159,7 +160,7 @@ Deno.serve(async (req) => {
 
     // 1. Customer SMS confirmation (only if SMS consent given; otherwise email confirmation below suffices)
     if (appt.customer_phone && appt.sms_consent !== false) {
-      const msg = `Hi ${firstName}, your VDS Mobile appointment is confirmed for ${appt.preferred_date} at ${appt.preferred_time}. Service: ${appt.service_label || 'Detailing'}. We'll come to you${appt.service_address ? ' at ' + appt.service_address : ''}. Questions? Call/text ${contact.phone}. — VDS Mobile`;
+      const msg = `Hi ${firstName}, your ${contact.businessName} appointment is confirmed for ${appt.preferred_date} at ${appt.preferred_time}. Service: ${appt.service_label || 'Detailing'}. We'll come to you${appt.service_address ? ' at ' + appt.service_address : ''}. Questions? Call/text ${contact.phone}. — ${contact.businessName}`;
       results.sms = await sendTwilioSms(base44, appt.customer_phone, msg, appt.customer_name, 'booking_confirmation');
     }
 
@@ -171,9 +172,9 @@ Deno.serve(async (req) => {
         const html = buildCustomerEmail(firstName, appt, contact);
         const r = await sendCustomerEmail(base44, {
           to: appt.customer_email,
-          subject: `Your VDS Mobile Appointment is Confirmed — ${appt.preferred_date} at ${appt.preferred_time}`,
+          subject: `Your ${contact.businessName} Appointment is Confirmed — ${appt.preferred_date} at ${appt.preferred_time}`,
           html,
-          fromName: 'VDS Mobile',
+          fromName: contact.businessName,
         });
         results.email = r.sent;
         if (!r.sent) console.error('Customer confirmation email failed:', r.error);
@@ -182,12 +183,12 @@ Deno.serve(async (req) => {
 
     // 3. Internal notification email
     try {
-      const html = buildInternalEmail(appt);
+      const html = buildInternalEmail(appt, contact);
       await base44.asServiceRole.integrations.Core.SendEmail({
-        to: INTERNAL_EMAIL,
+        to: contact.internalEmail,
         subject: `New Booking — ${appt.customer_name} — ${appt.preferred_date} ${appt.preferred_time}`,
         body: html,
-        from_name: 'VDS Mobile',
+        from_name: contact.businessName,
       });
       results.internal = true;
     } catch (e) { console.error('Internal notification email failed:', e.message); }

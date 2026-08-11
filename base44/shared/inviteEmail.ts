@@ -44,13 +44,14 @@ export async function runInviteEndpoint(req, opts) {
 
     const setupUrl = await resolveSetupUrl(base44, inviteToken, pathSegment, (body.setupUrl || '').trim() || null);
     const contact = await loadBusinessContact(base44);
+    const subjectText = typeof subject === 'function' ? subject(contact.businessName) : subject;
     const html = buildHtml(firstName, setupUrl, contact);
 
     await base44.asServiceRole.integrations.Core.SendEmail({
       to: email,
-      subject,
+      subject: subjectText,
       body: html,
-      from_name: 'VDS Mobile',
+      from_name: contact.businessName,
     });
 
     return Response.json({ success: true, sent_to: email });

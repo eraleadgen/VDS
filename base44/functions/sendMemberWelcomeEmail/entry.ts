@@ -1,15 +1,15 @@
-// Member Welcome Email — reusable HTML template (VDS Mobile dark/gold theme)
+// Member Welcome Email — reusable HTML template (${contact.businessName} dark/gold theme)
 // POST /functions/sendMemberWelcomeEmail
 // Sends a branded welcome email to a newly registered member.
-// If the member has no active VDS Gold subscription, a Gold upsell section + CTA button is included.
+// If the member has no active ${contact.goldLabel} subscription, a Gold upsell section + CTA button is included.
 // Triggered from the client (Register.jsx) right after OTP verification — the caller must be authenticated
 // (their own verified email is used as the recipient).
-// Theme: obsidian (#0A0B0D), asphalt (#14161A), gold (#D4AF37), vapor (#E2E8F0).
+// Theme: obsidian (${obsidian}), asphalt (${asphalt}), gold (${gold}), vapor (${vapor}).
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 import { loadBusinessContact } from '../../shared/businessContact.ts';
 
-const SUBJECT = 'Welcome to VDS Mobile';
+const SUBJECT = (businessName) => `Welcome to ${businessName}`;
 const FONT = "'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 const MONO = "'Space Mono','Courier New',monospace";
 
@@ -25,12 +25,13 @@ function escapeHtml(str) {
 function bullet(items) {
   return items.map(t =>
     `<tr><td style="padding:0 0 8px 0;font-size:15px;line-height:24px;color:#CBD5E1;">
-      <span style="color:#D4AF37;font-weight:700;">&#9670;</span>&nbsp;&nbsp;${t}
+      <span style="color:${gold};font-weight:700;">&#9670;</span>&nbsp;&nbsp;${t}
     </td></tr>`
   ).join('');
 }
 
 function buildHtml(firstName, hasGold, contact) {
+  const { gold, obsidian, asphalt, vapor } = contact.theme;
   const memberItems = [
     'Book detailing appointments in seconds',
     'Manage your vehicle garage and service history',
@@ -49,11 +50,11 @@ function buildHtml(firstName, hasGold, contact) {
   const goldSection = hasGold ? '' : `
 <!-- Gold upsell -->
 <tr><td style="padding:28px 32px 8px 32px;background-color:#0F1115;">
-  <p style="margin:0 0 14px 0;padding-top:20px;font-family:${MONO};font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#D4AF37;">Get the most out of your membership</p>
-  <p style="margin:0 0 14px 0;font-size:15px;line-height:25px;color:#CBD5E1;">You're not yet enrolled in <strong style="color:#D4AF37;">VDS Gold</strong> &mdash; our premium membership that keeps your vehicle in showroom condition all year long.</p>
+  <p style="margin:0 0 14px 0;padding-top:20px;font-family:${MONO};font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${gold};">Get the most out of your membership</p>
+  <p style="margin:0 0 14px 0;font-size:15px;line-height:25px;color:#CBD5E1;">You're not yet enrolled in <strong style="color:${gold};">${contact.goldLabel}</strong> &mdash; our premium membership that keeps your vehicle in showroom condition all year long.</p>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 18px 0;">${bullet(goldBenefits)}</table>
   <table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="padding:0 0 4px 0;">
-    <a href="${contact.goldSignupUrl}" style="display:inline-block;background-color:#D4AF37;color:#0A0B0D;font-size:15px;font-weight:700;text-decoration:none;padding:15px 32px;border-radius:6px;font-family:${FONT};letter-spacing:0.5px;">Explore VDS Gold &rarr;</a>
+    <a href="${contact.goldSignupUrl}" style="display:inline-block;background-color:${gold};color:${obsidian};font-size:15px;font-weight:700;text-decoration:none;padding:15px 32px;border-radius:6px;font-family:${FONT};letter-spacing:0.5px;">Explore ${contact.goldLabel} &rarr;</a>
   </td></tr></table>
 </td></tr>`;
 
@@ -65,42 +66,42 @@ function buildHtml(firstName, hasGold, contact) {
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="color-scheme" content="light dark">
 <meta name="supported-color-schemes" content="light dark">
-<title>${SUBJECT}</title>
+<title>${SUBJECT(contact.businessName)}</title>
 </head>
-<body style="margin:0;padding:0;background-color:#000000;font-family:${FONT};color:#E2E8F0;-webkit-font-smoothing:antialiased;" bgcolor="#000000">
+<body style="margin:0;padding:0;background-color:#000000;font-family:${FONT};color:${vapor};-webkit-font-smoothing:antialiased;" bgcolor="#000000">
 
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;">Your VDS Mobile member account is ready &mdash; start booking premium detailing services.</div>
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">Your ${contact.businessName} member account is ready &mdash; start booking premium detailing services.</div>
 
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#000000;" bgcolor="#000000">
 <tr><td align="center" style="padding:32px 16px;">
 
-<table role="presentation" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#14161A;border-radius:14px;overflow:hidden;border:1px solid rgba(212,175,55,0.15);box-shadow:0 8px 30px rgba(0,0,0,0.5);" bgcolor="#14161A">
+<table role="presentation" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:${asphalt};border-radius:14px;overflow:hidden;border:1px solid rgba(212,175,55,0.15);box-shadow:0 8px 30px rgba(0,0,0,0.5);" bgcolor="${asphalt}">
 
 <!-- Header -->
-<tr><td style="background-color:#000000;padding:26px 32px;border-bottom:2px solid #D4AF37;">
+<tr><td style="background-color:#000000;padding:26px 32px;border-bottom:2px solid ${gold};">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
-    <td style="font-family:${FONT};font-size:19px;font-weight:700;letter-spacing:3px;color:#FFFFFF;">VDS&nbsp;MOBILE</td>
-    <td align="right" style="font-family:${MONO};font-size:11px;letter-spacing:2px;color:#D4AF37;font-weight:700;text-transform:uppercase;">Member</td>
+    <td style="font-family:${FONT};font-size:19px;font-weight:700;letter-spacing:3px;color:#FFFFFF;">${contact.businessNameHeader}</td>
+    <td align="right" style="font-family:${MONO};font-size:11px;letter-spacing:2px;color:${gold};font-weight:700;text-transform:uppercase;">Member</td>
   </tr></table>
 </td></tr>
 
 <!-- Hero with glowing gold particles -->
 <tr><td style="padding:0;background-color:#000000;" bgcolor="#000000">
   <div style="background-color:#000000;background-image:radial-gradient(ellipse 70% 60% at 50% 0%, rgba(212,175,55,0.14) 0%, transparent 60%), radial-gradient(ellipse 60% 50% at 85% 70%, rgba(180,140,20,0.10) 0%, transparent 55%);padding:48px 32px 30px 32px;" bgcolor="#000000">
-    <p style="margin:0 0 6px 0;font-family:${MONO};font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#D4AF37;font-weight:700;">Welcome</p>
-    <h1 style="margin:0;font-size:27px;line-height:34px;color:#E2E8F0;font-weight:700;">Hi ${firstName},</h1>
+    <p style="margin:0 0 6px 0;font-family:${MONO};font-size:12px;letter-spacing:2px;text-transform:uppercase;color:${gold};font-weight:700;">Welcome</p>
+    <h1 style="margin:0;font-size:27px;line-height:34px;color:${vapor};font-weight:700;">Hi ${firstName},</h1>
   </div>
 </td></tr>
 
 <!-- Intro -->
 <tr><td style="padding:14px 32px 0 32px;">
-  <p style="margin:0 0 16px 0;font-size:15px;line-height:25px;color:#CBD5E1;">Welcome to VDS Mobile &mdash; Atlanta's premier concierge detailing service, operated by Valet Detailing Service LLC. Your member account is ready, and you can now book premium detailing from the convenience of your phone.</p>
+  <p style="margin:0 0 16px 0;font-size:15px;line-height:25px;color:#CBD5E1;">Welcome to ${contact.businessName} &mdash; ${contact.tagline}. Your member account is ready, and you can now book premium detailing from the convenience of your phone.</p>
   <p style="margin:0 0 22px 0;font-size:15px;line-height:25px;color:#CBD5E1;">We bring the spa to your vehicle. Here's everything you can do with your new account:</p>
 </td></tr>
 
 <!-- What you can do -->
 <tr><td style="padding:0 32px 24px 32px;background-color:#0F1115;">
-  <p style="margin:0 0 14px 0;padding-top:22px;font-family:${MONO};font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#D4AF37;">Your member benefits</p>
+  <p style="margin:0 0 14px 0;padding-top:22px;font-family:${MONO};font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${gold};">Your member benefits</p>
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${bullet(memberItems)}</table>
 </td></tr>
 
@@ -108,19 +109,19 @@ ${goldSection}
 
 <!-- Need help -->
 <tr><td style="padding:28px 32px 12px 32px;">
-  <p style="margin:0 0 12px 0;font-family:${MONO};font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#D4AF37;">Need Help?</p>
+  <p style="margin:0 0 12px 0;font-family:${MONO};font-size:12px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:${gold};">Need Help?</p>
   <p style="margin:0 0 12px 0;font-size:15px;line-height:25px;color:#CBD5E1;">If you have any questions, simply reply to this email or give us a call &mdash; we're here to help.</p>
-  <p style="margin:0 0 6px 0;font-size:15px;line-height:25px;color:#CBD5E1;">Welcome to the VDS family.</p>
-  <p style="margin:0;font-size:15px;line-height:25px;color:#CBD5E1;"><strong style="color:#D4AF37;">See you soon!</strong></p>
+  <p style="margin:0 0 6px 0;font-size:15px;line-height:25px;color:#CBD5E1;">Welcome to the ${contact.businessName} family.</p>
+  <p style="margin:0;font-size:15px;line-height:25px;color:#CBD5E1;"><strong style="color:${gold};">See you soon!</strong></p>
 </td></tr>
 
 <!-- Footer -->
-<tr><td style="background-color:#000000;padding:28px 32px;border-top:2px solid #D4AF37;">
-  <p style="margin:0 0 6px 0;font-size:15px;line-height:24px;color:#E2E8F0;font-weight:600;">&mdash; The VDS Mobile Team</p>
-  <p style="margin:0 0 4px 0;font-family:${MONO};font-size:13px;line-height:22px;color:#94A3B8;"><a href="mailto:${contact.email}" style="color:#D4AF37;text-decoration:none;">${contact.email}</a></p>
-  <p style="margin:0 0 4px 0;font-family:${MONO};font-size:13px;line-height:22px;color:#94A3B8;">Call/Text: <a href="tel:${contact.phoneTel}" style="color:#D4AF37;text-decoration:none;">${contact.phone}</a></p>
-  <p style="margin:0;font-family:${MONO};font-size:13px;line-height:22px;color:#94A3B8;"><a href="${contact.website}" style="color:#D4AF37;text-decoration:none;">${contact.website}</a></p>
-  <p style="margin:16px 0 0 0;font-family:${MONO};font-size:11px;line-height:18px;color:#64748B;letter-spacing:0.5px;">&copy; ${new Date().getUTCFullYear()} VALET DETAILING SERVICE LLC. ALL RIGHTS RESERVED.</p>
+<tr><td style="background-color:#000000;padding:28px 32px;border-top:2px solid ${gold};">
+  <p style="margin:0 0 6px 0;font-size:15px;line-height:24px;color:${vapor};font-weight:600;">&mdash; The ${contact.businessName} Team</p>
+  <p style="margin:0 0 4px 0;font-family:${MONO};font-size:13px;line-height:22px;color:#94A3B8;"><a href="mailto:${contact.email}" style="color:${gold};text-decoration:none;">${contact.email}</a></p>
+  <p style="margin:0 0 4px 0;font-family:${MONO};font-size:13px;line-height:22px;color:#94A3B8;">Call/Text: <a href="tel:${contact.phoneTel}" style="color:${gold};text-decoration:none;">${contact.phone}</a></p>
+  <p style="margin:0;font-family:${MONO};font-size:13px;line-height:22px;color:#94A3B8;"><a href="${contact.website}" style="color:${gold};text-decoration:none;">${contact.website}</a></p>
+  <p style="margin:16px 0 0 0;font-family:${MONO};font-size:11px;line-height:18px;color:#64748B;letter-spacing:0.5px;">&copy; ${new Date().getUTCFullYear()} ${contact.legalName.toUpperCase()}. ALL RIGHTS RESERVED.</p>
 </td></tr>
 
 </table>
@@ -152,7 +153,7 @@ Deno.serve(async (req) => {
     // to prevent HTML injection / email content spoofing (CWE-79).
     const firstName = escapeHtml(rawFirstName);
 
-    // Check if the member already has an active VDS Gold subscription.
+    // Check if the member already has an active ${contact.goldLabel} subscription.
     let hasGold = false;
     try {
       const subs = await base44.asServiceRole.entities.VehicleSubscription.filter({ status: 'active' });
@@ -164,9 +165,9 @@ Deno.serve(async (req) => {
 
     await base44.asServiceRole.integrations.Core.SendEmail({
       to,
-      subject: SUBJECT,
+      subject: SUBJECT(contact.businessName),
       body: html,
-      from_name: 'VDS Mobile',
+      from_name: contact.businessName,
     });
 
     return Response.json({ success: true, sent_to: to, has_gold: hasGold });

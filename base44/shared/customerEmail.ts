@@ -45,7 +45,7 @@ export async function sendCustomerEmail(base44, { to, subject, html, fromName })
   if (!apiKey) {
     return { channel: 'esp', sent: false, error: 'RESEND_API_KEY not set' };
   }
-  const fromAddress = Deno.env.get('RESEND_FROM_EMAIL') || 'no-reply@vdsmobile.com';
+  const fromAddress = Deno.env.get('RESEND_FROM_EMAIL') || 'no-reply@detailing.app';
   try {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',

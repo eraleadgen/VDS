@@ -15,17 +15,19 @@ function toE164(phone) {
   return d.length >= 10 ? '+' + d : '';
 }
 
-const SUBJECTS = {
-  booking_confirmation: 'Your VDS Mobile Appointment is Confirmed',
-  reminder_24h: 'VDS Mobile — Appointment Reminder',
-  reminder_1h: 'VDS Mobile — Your Specialist is Coming',
-  review_request: 'How was your VDS detail?',
-  quote_delivery: 'Your VDS Mobile Quote',
-  valerie_reply: 'VDS Mobile — Valerie',
-  cancellation: 'VDS Mobile — Appointment Cancelled',
-  completion: 'Your VDS detail is complete!',
-  marketing: 'VDS Mobile',
-};
+function buildSubjects(businessName, conciergeName) {
+  return {
+    booking_confirmation: `Your ${businessName} Appointment is Confirmed`,
+    reminder_24h: `${businessName} — Appointment Reminder`,
+    reminder_1h: `${businessName} — Your Specialist is Coming`,
+    review_request: `How was your ${businessName} detail?`,
+    quote_delivery: `Your ${businessName} Quote`,
+    valerie_reply: `${businessName} — ${conciergeName}`,
+    cancellation: `${businessName} — Appointment Cancelled`,
+    completion: `Your ${businessName} detail is complete!`,
+    marketing: businessName,
+  };
+}
 
 async function sendTwilio(to, body) {
   const sid = Deno.env.get('TWILIO_ACCOUNT_SID');
@@ -64,6 +66,19 @@ Deno.serve(async (req) => {
     const { customer_id, customer_phone, message_type, content, subject, customer_name, email } = body;
     if (!message_type) return Response.json({ error: 'message_type is required.' }, { status: 400 });
     if (!content) return Response.json({ error: 'content is required.' }, { status: 400 });
+
+    // Load BusinessConfig for dynamic subject lines and from_name (white-label support).
+    let businessName = 'VDS Mobile';
+    let conciergeName = 'Valerie';
+    try {
+      const cfgs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
+      const cfg = cfgs && cfgs[0];
+      if (cfg) {
+        businessName = cfg.business_name || businessName;
+        conciergeName = (cfg.concierge && cfg.concierge.name) || conciergeName;
+      }
+    } catch (e) { console.error('BusinessConfig load error:', e.message); }
+    const SUBJECTS = buildSubjects(businessName, conciergeName);
 
     // ── Evaluate through the Communication Rules Engine ──
     const evalRes = await base44.asServiceRole.functions.invoke('communicationRulesEngine', {
@@ -119,10 +134,10 @@ Deno.serve(async (req) => {
       }
       const to = decision.customer_email || email;
       if (!to) return Response.json({ sent: false, channel: 'email', error: 'No email address available.' });
-      const emailSubject = subject || SUBJECTS[message_type] || 'VDS Mobile';
+      const emailSubject = subject || SUBJECTS[message_type] || businessName;
       try {
         await base44.asServiceRole.integrations.Core.SendEmail({
-          to, subject: emailSubject, body: content, from_name: 'VDS Mobile',
+          to, subject: emailSubject, body: content, from_name: businessName,
         });
         await base44.asServiceRole.functions.invoke('logEvent', {
           event_type: 'message_sent', entity_type: 'customer', entity_id: decision.customer_id || null,

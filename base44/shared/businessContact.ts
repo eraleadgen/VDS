@@ -19,7 +19,25 @@ export async function loadBusinessContact(base44) {
   let website = 'https://vdsmobile.com';
   try { website = new URL(bookingUrl).origin; } catch (_) {}
   const goldSignupUrl = (cfg && cfg.website_links && cfg.website_links.gold_signup_url) || (website + '/vds-gold');
+  const websiteDisplay = website.replace(/^https?:\/\//, '');
   const businessName = (cfg && cfg.business_name) || 'VDS Mobile';
   const legalName = (cfg && cfg.legal_name) || businessName;
-  return { phone, phoneTel, email, website, bookingUrl, goldSignupUrl, businessName, legalName, cfg };
+  const businessNameHeader = businessName.toUpperCase().replace(/ /g, '&nbsp;');
+  const internalEmail = email; // business_email — internal booking/cancellation notifications go to the tenant's own team
+  const conciergeName = (cfg && cfg.concierge && cfg.concierge.name) || 'Valerie';
+  const goldLabel = (cfg && cfg.membership_plans && cfg.membership_plans[0] && (cfg.membership_plans[0].short_label || cfg.membership_plans[0].label)) || 'Gold';
+  const tagline = (cfg && cfg.tagline) || '';
+  const brand = (cfg && cfg.brand_colors) || {};
+  const theme = {
+    gold: brand.primary || '#D4AF37',
+    obsidian: brand.background || '#0A0B0D',
+    asphalt: brand.surface || '#14161A',
+    vapor: brand.text || '#E2E8F0',
+    surfaceDark: '#0F1115',
+    textMuted: '#CBD5E1',
+    textDim: '#94A3B8',
+    textFaint: '#64748B',
+    white: '#FFFFFF',
+  };
+  return { phone, phoneTel, email, website, bookingUrl, goldSignupUrl, businessName, businessNameHeader, legalName, internalEmail, conciergeName, goldLabel, tagline, theme, cfg };
 }
