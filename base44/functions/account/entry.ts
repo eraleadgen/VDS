@@ -21,6 +21,7 @@ Deno.serve(async (req) => {
       email: u.email,
       full_name: u.full_name,
       role: u.role,
+      business_id: u.business_id || '',
       first_name: u.first_name || '',
       last_name: u.last_name || '',
       phone: u.phone || '',
@@ -29,6 +30,12 @@ Deno.serve(async (req) => {
 
     if (action === 'get') {
       const u = await base44.asServiceRole.entities.User.get(me.id);
+      // Safety net: stamp business_id on any user missing it (admin-invited users,
+      // pre-existing users missed by the backfill). Defaults to 'vds' (VDS tenant).
+      if (!u.business_id) {
+        await base44.asServiceRole.entities.User.update(me.id, { business_id: 'vds' });
+        u.business_id = 'vds';
+      }
       return Response.json({ success: true, account: project(u) });
     }
 

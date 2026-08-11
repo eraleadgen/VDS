@@ -184,7 +184,7 @@ export async function finalizeSpecialistSetup(base44, body) {
   await base44.asServiceRole.entities.Contractor.update(c.id, {
     user_id: me.id, account_created: true, invite_token: '',
   });
-  try { await base44.asServiceRole.entities.User.update(me.id, { role: 'contractor' }); }
+  try { await base44.asServiceRole.entities.User.update(me.id, { role: 'contractor', business_id: 'vds' }); }
   catch (e) { console.error('role update error:', e.message); }
   try {
     await base44.functions.invoke('sendContractorWelcomeEmail', {
@@ -515,7 +515,7 @@ export async function finalizePartnerSetup(base44, body) {
   if (profile.phone) updates.phone = profile.phone;
   if (profile.photo_url !== undefined) updates.photo_url = profile.photo_url;
   await base44.asServiceRole.entities.Partner.update(p.id, updates);
-  try { await base44.asServiceRole.entities.User.update(me.id, { role: 'partner' }); }
+  try { await base44.asServiceRole.entities.User.update(me.id, { role: 'partner', business_id: 'vds' }); }
   catch (e) { console.error('role update error:', e.message); }
   return { success: true, partner_id: p.id };
 }

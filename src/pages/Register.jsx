@@ -49,7 +49,7 @@ export default function Register() {
       }
       // Persist first/last name (the built-in full_name is immutable after signup)
       try {
-        await base44.auth.updateMe({ first_name: firstName.trim(), last_name: lastName.trim() });
+        await base44.auth.updateMe({ first_name: firstName.trim(), last_name: lastName.trim(), business_id: 'vds' });
       } catch (_) {}
       // Send themed member welcome email (Gold upsell included if no active membership)
       try {
