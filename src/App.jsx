@@ -41,6 +41,7 @@ import PartnerLogin from './pages/PartnerLogin';
 import PartnerSetup from './pages/PartnerSetup';
 import PartnerRedirect from './pages/PartnerRedirect';
 import CareGuide from './pages/CareGuide';
+import ChatWidget from '@/components/chat/ChatWidget';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
@@ -130,6 +131,7 @@ function App() {
             <ScrollToTop />
             <RouteSeo />
             <AuthenticatedApp />
+            <ChatWidget />
           </Router>
         </BusinessConfigProvider>
         <Toaster />

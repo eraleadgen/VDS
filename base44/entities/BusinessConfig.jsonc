@@ -300,6 +300,11 @@
         "review_requests_enabled": {
           "type": "boolean",
           "default": true
+        },
+        "web_chat_enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Master switch for the AI web chat widget. When true, the floating chat widget appears on all public pages, powered by the webChat backend function and the concierge persona from BusinessConfig.concierge."
         }
       }
     },
@@ -625,7 +630,7 @@
     },
     "concierge": {
       "type": "object",
-      "description": "AI concierge persona and branding. The valerie backend function builds its system prompt from these fields instead of hardcoded 'Valerie' literals. Display name also appears in admin messaging UI and customer-facing message attribution.",
+      "description": "AI concierge persona and branding. The valerie and webChat backend functions build their system prompts from these fields instead of hardcoded literals. Display name also appears in the chat widget header, admin messaging UI, and customer-facing message attribution.",
       "properties": {
         "name": {
           "type": "string",
@@ -642,7 +647,7 @@
         },
         "greeting": {
           "type": "string",
-          "description": "Default opening line for new conversations."
+          "description": "Default opening line for new conversations (shown as the first message in the web chat widget and used as the initial SMS greeting)."
         }
       }
     }

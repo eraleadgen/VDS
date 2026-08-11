@@ -107,6 +107,11 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
+    // Parse body early — internal calls (webChat via scheduler_token) bypass the origin check.
+    const body = await req.json().catch(() => ({}));
+    const SCHEDULER_TOKEN = Deno.env.get('SCHEDULER_TOKEN');
+    const isInternalCall = !!(SCHEDULER_TOKEN && body.scheduler_token === SCHEDULER_TOKEN);
+
     // Load active BusinessConfig early — drives the origin allowlist, service labels,
     // gold membership label, and Google Calendar branding (all dynamic for multi-tenant).
     let cfg = null;
@@ -116,30 +121,33 @@ Deno.serve(async (req) => {
     } catch (e) { console.error('Config load failed:', e.message); }
 
     // Public endpoint (guests book without login) — strict origin allowlist.
+    // Internal calls (webChat via scheduler_token) bypass the origin check and rate limit.
     // Tenant domains are derived from BusinessConfig website_links so a second tenant's
     // domain is automatically allowed without code changes.
-    const originHeader = req.headers.get('Origin') || req.headers.get('Referer') || '';
-    let originHost = '';
-    try { originHost = new URL(originHeader).host.toLowerCase(); } catch { originHost = ''; }
-    const tenantHosts = [];
-    if (cfg && cfg.website_links) {
-      for (const url of Object.values(cfg.website_links)) {
-        if (url) { try { tenantHosts.push(new URL(url).host.toLowerCase()); } catch {} }
+    if (!isInternalCall) {
+      const originHeader = req.headers.get('Origin') || req.headers.get('Referer') || '';
+      let originHost = '';
+      try { originHost = new URL(originHeader).host.toLowerCase(); } catch { originHost = ''; }
+      const tenantHosts = [];
+      if (cfg && cfg.website_links) {
+        for (const url of Object.values(cfg.website_links)) {
+          if (url) { try { tenantHosts.push(new URL(url).host.toLowerCase()); } catch {} }
+        }
       }
-    }
-    const allowed = tenantHosts.includes(originHost)
-      || originHost === 'localhost'
-      || originHost.endsWith('.localhost')
-      || originHost.endsWith('.base44.app')
-      || originHost.endsWith('.base44.com');
-    if (!allowed) {
-      return Response.json({ success: false, error: 'Forbidden — invalid origin.' }, { status: 403 });
-    }
+      const allowed = tenantHosts.includes(originHost)
+        || originHost === 'localhost'
+        || originHost.endsWith('.localhost')
+        || originHost.endsWith('.base44.app')
+        || originHost.endsWith('.base44.com');
+      if (!allowed) {
+        return Response.json({ success: false, error: 'Forbidden — invalid origin.' }, { status: 403 });
+      }
 
-    // Per-IP rate limit — the origin allowlist is client-controlled; this is the real anti-spam control.
-    const ip = clientIp(req);
-    if (!rateLimit('submitBooking:' + ip, 8, 15 * 60 * 1000)) {
-      return Response.json({ success: false, error: 'Too many booking attempts. Please try again later.' }, { status: 429 });
+      // Per-IP rate limit — the origin allowlist is client-controlled; this is the real anti-spam control.
+      const ip = clientIp(req);
+      if (!rateLimit('submitBooking:' + ip, 8, 15 * 60 * 1000)) {
+        return Response.json({ success: false, error: 'Too many booking attempts. Please try again later.' }, { status: 429 });
+      }
     }
 
     // Auth is optional — guests can book without an account
@@ -152,7 +160,7 @@ Deno.serve(async (req) => {
       vehicle_details, notes,
       preferred_date, preferred_time, sms_consent, quote_id, partner_referral_code,
       referral_source,
-    } = await req.json();
+    } = body;
 
     if (!name || !phone || !address || !service_type) {
       return Response.json({ success: false, error: 'Missing required fields.' }, { status: 400 });

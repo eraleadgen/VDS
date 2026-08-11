@@ -13,6 +13,7 @@
 // validate that signature (validateTwilioSignature below).
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
+import { loadConfig, formatCatalog, formatConditions, formatHours, formatGold, callOpenAI } from '../../shared/conciergeHelpers.ts';
 
 // ── Twilio webhook signature validation ────────────────────────────────
 // Twilio signs every inbound webhook with HMAC-SHA256 using TWILIO_AUTH_TOKEN.
@@ -67,58 +68,9 @@ async function validateTwilioSignature(req, body, knownUrl) {
   return { ok: false, diag };
 }
 
-// ── Config / prompt builders ───────────────────────────────────────────
-async function loadConfig(base44) {
-  const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
-  return configs && configs[0] ? configs[0] : null;
-}
-
-// Format the service catalog for the system prompt. Shows each service with its
-// per-classification or per-group prices so Valerie can quote accurately without
-// calling a tool. This matches what the pricing engine computes — Valerie never
-// invents prices.
-function formatCatalog(cfg) {
-  const classLabels = {
-    coupe: 'Coupe', sedan: 'Sedan', hatchback: 'Hatchback', mid_size_suv: 'Mid-Size SUV',
-    truck_3_row_suv: 'Truck/3-Row SUV', other: 'Other',
-    sedan_coupe: 'Sedan/Coupe', truck_suv: 'Truck/SUV',
-  };
-  const lines = [];
-  for (const svc of (cfg.services || [])) {
-    if (svc.category === 'membership') continue; // membership shown separately
-    const tiers = svc.tiers || [];
-    if (!tiers.length || tiers.every(t => t.price == null)) {
-      lines.push('  - ' + svc.label + ': Consultation' + (svc.requires_consultation ? ' (consultation required)' : ''));
-      continue;
-    }
-    // Show per-tier prices with their classification/group labels.
-    const priceParts = tiers
-      .filter(t => t.price != null)
-      .map(t => (classLabels[t.tier] || t.tier) + ' $' + t.price);
-    const consult = svc.requires_consultation ? ' (consultation required)' : '';
-    lines.push('  - ' + svc.label + ': ' + priceParts.join(', ') + consult);
-  }
-  return lines.join('\n');
-}
-
-// Format condition multipliers from BusinessConfig so Valerie knows the actual
-// pricing factors the engine applies (not hardcoded).
-function formatConditions(cfg) {
-  const conditions = (cfg.pricing_rules && cfg.pricing_rules.condition_multipliers) || [];
-  if (!conditions.length) return 'Standard pricing (no condition multipliers configured).';
-  return conditions.map(c => c.label + ' (' + c.key + '): ' + c.multiplier + 'x' + (c.duration_add_minutes ? ' +' + c.duration_add_minutes + 'min' : '')).join(', ');
-}
-
-function formatHours(cfg) {
-  return (cfg.business_hours || []).map(h => h.day.toUpperCase() + ' ' + (h.closed ? 'Closed' : h.open + '-' + h.close)).join(' | ');
-}
-
-function formatGold(cfg) {
-  return (cfg.membership_plans || []).map(p => {
-    const prices = (p.pricing_by_group || []).map(g => (g.pricing_group === 'truck_suv' ? 'Truck/SUV' : 'Sedan/Coupe') + ': $' + g.price_monthly + '/mo').join(', ');
-    return p.label + ' (' + prices + ') — ' + ((p.benefits || []).join(', '));
-  }).join('\n');
-}
+// ── Prompt builder ─────────────────────────────────────────────────────
+// Config helpers (loadConfig, formatCatalog, formatConditions, formatHours,
+// formatGold, callOpenAI) imported from shared/conciergeHelpers.ts.
 
 function buildSystemPrompt(cfg, customerCtx) {
   const c = cfg.concierge || {};
@@ -189,26 +141,7 @@ const TOOLS = [
   { type: 'function', function: { name: 'specialist_followup', description: 'Flag a request for specialist follow-up (custom work, complex corrections).', parameters: { type: 'object', properties: { phone: { type: 'string' }, reason: { type: 'string' }, notes: { type: 'string' } }, required: ['reason'] } } },
 ];
 
-// ── OpenAI call ────────────────────────────────────────────────────────
-async function callOpenAI(messages) {
-  const KEY = Deno.env.get('OpenAI_Valerie');
-  if (!KEY) throw new Error('OpenAI_Valerie secret is not set.');
-  // Fast conversational model for real-time SMS. GPT-5.5 (reasoning model) took ~3 min
-  // per reply; gpt-4o-mini responds in 2-4 seconds and handles SMS concierge tool-calling
-  // with lower latency and cost.
-  const payload = { model: 'gpt-4o-mini', temperature: 0.7, messages, tools: TOOLS, tool_choice: 'auto' };
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Authorization': 'Bearer ' + KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
-    const t = await res.text();
-    throw new Error('OpenAI error (' + res.status + '): ' + t);
-  }
-  const data = await res.json();
-  return data.choices && data.choices[0] ? data.choices[0].message : null;
-}
+// OpenAI call imported from shared/conciergeHelpers.ts
 
 // ── Tool execution (internally via valerieTools) ───────────────────────
 async function executeTool(base44, name, args) {
@@ -384,7 +317,7 @@ Deno.serve(async (req) => {
     messages.push({ role: 'user', content: message });
 
     // Agent loop — execute tools, then produce the final reply (max 5 tool rounds).
-    let msg = await callOpenAI(messages);
+    let msg = await callOpenAI(messages, TOOLS);
     let rounds = 0;
     while (msg && msg.tool_calls && msg.tool_calls.length && rounds < 5) {
       rounds++;
@@ -400,7 +333,7 @@ Deno.serve(async (req) => {
         const result = await executeTool(base44, name, args);
         messages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) });
       }
-      msg = await callOpenAI(messages);
+      msg = await callOpenAI(messages, TOOLS);
     }
 
     const finalText = (msg && msg.content) ? String(msg.content).trim() : "I'm sorry, I had trouble with that — could you rephrase?";
