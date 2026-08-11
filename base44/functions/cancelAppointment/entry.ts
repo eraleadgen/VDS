@@ -1,13 +1,15 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
+import { getUserBusinessId } from '../../shared/tenantContext.ts';
 
 // ERA Core appointment cancellation (GoHighLevel sync has been fully eliminated —
 // ERA Core is the sole source of truth). Cancels the Appointment (deprecated mirror),
 // the linked Job, and the Google Calendar mirror event.
 
-async function logEvent(base44, event) {
+async function logEvent(base44, event, businessId) {
   try {
     await base44.functions.invoke('logEvent', {
       scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
+      business_id: businessId,
       ...event,
     });
   } catch (e) {
@@ -24,9 +26,15 @@ Deno.serve(async (req) => {
     const { appointment_id } = await req.json();
     if (!appointment_id) return Response.json({ success: false, error: 'Missing appointment_id' }, { status: 400 });
 
+    const businessId = await getUserBusinessId(base44, user);
+
     // Fetch appointment via service role (bypasses read RLS)
     const appointment = await base44.asServiceRole.entities.Appointment.get(appointment_id);
     if (!appointment) return Response.json({ success: false, error: 'Appointment not found' }, { status: 404 });
+    // Tenant guard: asServiceRole bypasses RLS — verify the appointment belongs to the caller's tenant.
+    if (appointment.business_id && appointment.business_id !== businessId) {
+      return Response.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
 
     // Ownership check — authorize via the verified user id → the member's Customer record →
     // the appointment's stored customer phone. Never trust the caller's email as a sole
@@ -46,7 +54,7 @@ Deno.serve(async (req) => {
       owns = appointment.customer_phone.replace(/\D/g, '').slice(-10) === String(user.data.phone).replace(/\D/g, '').slice(-10);
     }
     if (!owns && user.id) {
-      const myCustomers = await base44.asServiceRole.entities.Customer.filter({ linked_user_id: user.id }).catch(() => []);
+      const myCustomers = await base44.asServiceRole.entities.Customer.filter({ business_id: businessId, linked_user_id: user.id }).catch(() => []);
       const c = myCustomers && myCustomers[0];
       if (c && c.phone && appointment.customer_phone) {
         owns = appointment.customer_phone.replace(/\D/g, '').slice(-10) === c.phone.replace(/\D/g, '').slice(-10);
@@ -86,7 +94,7 @@ Deno.serve(async (req) => {
           customer_id: appointment.customer_id || null,
           description: `Appointment cancelled for ${appointment.customer_name || 'customer'}`,
           metadata: { appointment_id, reason: 'reschedule_or_cancellation' },
-        });
+        }, businessId);
       } catch (e) {
         console.error('Failed to cancel linked Job:', e.message);
       }

@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
+import { getUserBusinessId } from '../../shared/tenantContext.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -6,12 +7,15 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user || user.role !== 'admin') return Response.json({ error: 'Admin only.' }, { status: 403 });
 
+    const businessId = await getUserBusinessId(base44, user);
+
     const body = await req.json();
     const { to, content, customer_name } = body || {};
     if (!to || !content) return Response.json({ error: 'to and content are required.' }, { status: 400 });
 
-    // Always log the outbound reply in conversation history
+    // Always log the outbound reply in conversation history (tenant-stamped)
     await base44.asServiceRole.entities.ConversationHistory.create({
+      business_id: businessId,
       customer_phone: to,
       customer_name: customer_name || '',
       role: 'assistant',

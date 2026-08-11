@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.32';
 import Stripe from 'npm:stripe@17.0.0';
+import { getUserBusinessId } from '../../shared/tenantContext.ts';
 
 // Cancel a single vehicle's VDS Gold membership without affecting other vehicles that
 // share the same Stripe subscription. Each VehicleSubscription stores its own
@@ -16,14 +17,17 @@ Deno.serve(async (req) => {
     const { vehicle_id } = await req.json();
     if (!vehicle_id) return Response.json({ error: 'vehicle_id required' }, { status: 400 });
 
+    const businessId = await getUserBusinessId(base44, user);
+
     // Verify vehicle belongs to user
     const vehicle = await base44.entities.MemberVehicle.get(vehicle_id);
     if (!vehicle || vehicle.created_by_id !== user.id) {
       return Response.json({ error: 'Vehicle not found or unauthorized' }, { status: 404 });
     }
 
-    // Find active subscriptions for this vehicle
+    // Find active subscriptions for this vehicle (tenant-scoped)
     const subscriptions = await base44.asServiceRole.entities.VehicleSubscription.filter({
+      business_id: businessId,
       vehicle_id,
       status: 'active'
     });
@@ -39,6 +43,7 @@ Deno.serve(async (req) => {
     for (const sub of subscriptions) {
       // Are other vehicles still active on the same Stripe subscription?
       const siblings = await base44.asServiceRole.entities.VehicleSubscription.filter({
+        business_id: businessId,
         stripe_subscription_id: sub.stripe_subscription_id,
         status: 'active'
       });
@@ -63,7 +68,7 @@ Deno.serve(async (req) => {
           const startedAt = new Date(sub.started_date || sub.created_date);
           const hoursSinceStart = (Date.now() - startedAt.getTime()) / (1000 * 60 * 60);
           const within48Hours = hoursSinceStart <= 48;
-          const serviceRecords = await base44.asServiceRole.entities.ServiceRecord.filter({ vehicle_id });
+          const serviceRecords = await base44.asServiceRole.entities.ServiceRecord.filter({ business_id: businessId, vehicle_id });
           const hasUsedPerks = serviceRecords.length > 0;
           const eligibleForRefund = within48Hours && !hasUsedPerks;
 

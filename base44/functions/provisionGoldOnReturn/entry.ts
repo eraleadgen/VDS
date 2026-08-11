@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.32';
 import Stripe from 'npm:stripe@17.0.0';
+import { getUserBusinessId } from '../../shared/tenantContext.ts';
 
 // Fallback: called when user returns from Stripe checkout with gold_success=true.
 // Creates VehicleSubscription records if the webhook hasn't already done so.
@@ -11,6 +12,7 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
+    const businessId = await getUserBusinessId(base44, user);
 
     // Find this user's Stripe customer by email
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
@@ -36,7 +38,7 @@ Deno.serve(async (req) => {
     // product/price against BusinessConfig. This prevents provisioning Gold from a cheap
     // or unrelated subscription on the caller's Stripe account (e.g. a free trial on a
     // different product) — only real Gold subscriptions count toward enrollment.
-    const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
+    const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ business_id: businessId, is_active: true });
     const cfg = configs && configs[0];
     const allowedProductIds = new Set();
     const allowedPriceIds = new Set();
@@ -78,7 +80,7 @@ Deno.serve(async (req) => {
     }
 
     // Determine which vehicles already have an active Gold subscription.
-    const existingActiveSubs = await base44.asServiceRole.entities.VehicleSubscription.filter({ status: 'active' });
+    const existingActiveSubs = await base44.asServiceRole.entities.VehicleSubscription.filter({ business_id: businessId, status: 'active' });
     const enrolledVehicleIds = new Set(existingActiveSubs.map(s => s.vehicle_id));
 
     // If no checkout-session metadata was found, we cannot know exactly which vehicles were
@@ -147,6 +149,7 @@ Deno.serve(async (req) => {
       if (item) itemPool = itemPool.filter(it => it.id !== item.id);
 
       await base44.asServiceRole.entities.VehicleSubscription.create({
+        business_id: businessId,
         vehicle_id: vehicleId,
         stripe_subscription_id: subscription.id,
         stripe_item_id: item?.id || '',

@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.32';
 import Stripe from 'npm:stripe@17.0.0';
+import { getUserBusinessId } from '../../shared/tenantContext.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -12,6 +13,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'No vehicles selected' }, { status: 400 });
     }
     const partnerReferralCode = (typeof partnerRef === 'string' ? partnerRef : '').trim();
+    const businessId = await getUserBusinessId(base44, user);
 
     const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
 
@@ -62,6 +64,7 @@ Deno.serve(async (req) => {
       cancel_url: `${req.headers.get('origin')}/vds-gold-signup`,
       metadata: {
         base44_app_id: Deno.env.get('BASE44_APP_ID'),
+        business_id: businessId,
         user_id: user.id,
         vehicle_ids: JSON.stringify(vehicleIds),
         partner_referral_code: partnerReferralCode || ''

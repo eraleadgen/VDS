@@ -8,6 +8,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 import { loadBusinessContact } from '../../shared/businessContact.ts';
+import { getUserBusinessId } from '../../shared/tenantContext.ts';
 
 const SUBJECT = (businessName) => `Welcome to ${businessName}`;
 const FONT = "'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
@@ -144,6 +145,7 @@ Deno.serve(async (req) => {
 
     const email = me.email;
     if (!email) return Response.json({ error: 'No email on account.' }, { status: 400 });
+    const businessId = await getUserBusinessId(base44, me);
 
     // Optional recipient override for admin test sends (defaults to the caller's own email).
     const to = typeof body.to === 'string' && body.to.includes('@') ? body.to : email;
@@ -156,11 +158,11 @@ Deno.serve(async (req) => {
     // Check if the member already has an active ${contact.goldLabel} subscription.
     let hasGold = false;
     try {
-      const subs = await base44.asServiceRole.entities.VehicleSubscription.filter({ status: 'active' });
+      const subs = await base44.asServiceRole.entities.VehicleSubscription.filter({ business_id: businessId, status: 'active' });
       hasGold = (subs || []).some(s => s.created_by_id === me.id);
     } catch (e) { console.error('gold status check error:', e.message); }
 
-    const contact = await loadBusinessContact(base44);
+    const contact = await loadBusinessContact(base44, businessId);
     const html = buildHtml(firstName, hasGold, contact);
 
     await base44.asServiceRole.integrations.Core.SendEmail({

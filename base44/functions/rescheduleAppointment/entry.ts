@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 import { parseTimeTo24h, zonedToUtc } from '../../shared/timezone.ts';
+import { getUserBusinessId } from '../../shared/tenantContext.ts';
 
 // ERA Core appointment reschedule.
 // The member picks a new date/time only (no re-entry of contact/vehicle info).
@@ -18,9 +19,9 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
-async function logEvent(base44, event) {
+async function logEvent(base44, event, businessId) {
   try {
-    await base44.functions.invoke('logEvent', { scheduler_token: Deno.env.get('SCHEDULER_TOKEN'), ...event });
+    await base44.functions.invoke('logEvent', { scheduler_token: Deno.env.get('SCHEDULER_TOKEN'), business_id: businessId, ...event });
   } catch (e) { console.error('logEvent failed:', e.message); }
 }
 
@@ -35,8 +36,13 @@ Deno.serve(async (req) => {
       return Response.json({ success: false, error: 'Missing appointment_id, new_date, or new_time' }, { status: 400 });
     }
 
+    const businessId = await getUserBusinessId(base44, user);
     const appt = await base44.asServiceRole.entities.Appointment.get(appointment_id);
     if (!appt) return Response.json({ success: false, error: 'Appointment not found' }, { status: 404 });
+    // Tenant guard: asServiceRole bypasses RLS — verify the appointment belongs to the caller's tenant.
+    if (appt.business_id && appt.business_id !== businessId) {
+      return Response.json({ success: false, error: 'Forbidden' }, { status: 403 });
+    }
 
     // ── Ownership check (same boundary as cancelAppointmentInGHL) ──────────
     let owns = !!(user.id && appt.created_by_id && appt.created_by_id === user.id);
@@ -47,7 +53,7 @@ Deno.serve(async (req) => {
       owns = appt.customer_phone.replace(/\D/g, '').slice(-10) === String(user.data.phone).replace(/\D/g, '').slice(-10);
     }
     if (!owns && user.id) {
-      const myCustomers = await base44.asServiceRole.entities.Customer.filter({ linked_user_id: user.id }).catch(() => []);
+      const myCustomers = await base44.asServiceRole.entities.Customer.filter({ business_id: businessId, linked_user_id: user.id }).catch(() => []);
       const c = myCustomers && myCustomers[0];
       if (c && c.phone && appt.customer_phone) {
         owns = appt.customer_phone.replace(/\D/g, '').slice(-10) === c.phone.replace(/\D/g, '').slice(-10);
@@ -61,7 +67,7 @@ Deno.serve(async (req) => {
     const phoneDigits = (appt.customer_phone || '').replace(/\D/g, '');
     if (phoneDigits) {
       try {
-        const dayJobs = await base44.asServiceRole.entities.Job.filter({ appointment_date: new_date });
+        const dayJobs = await base44.asServiceRole.entities.Job.filter({ business_id: businessId, appointment_date: new_date });
         const dup = (dayJobs || []).find(j =>
           j.status !== 'cancelled' &&
           j.id !== appt.job_id &&
@@ -106,7 +112,7 @@ Deno.serve(async (req) => {
           customer_id: job?.customer_id || null,
           description: `Appointment rescheduled to ${new_date} at ${new_time}`,
           metadata: { appointment_id, old_date: oldDate, old_time: oldTime, new_date, new_time },
-        });
+        }, businessId);
       } catch (e) { console.error('Job update failed:', e.message); }
     }
 
@@ -116,7 +122,7 @@ Deno.serve(async (req) => {
       try {
         let tz = 'America/New_York';
         try {
-          const cfgs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
+          const cfgs = await base44.asServiceRole.entities.BusinessConfig.filter({ business_id: businessId, is_active: true });
           if (cfgs && cfgs[0] && cfgs[0].timezone) tz = cfgs[0].timezone;
         } catch {}
 

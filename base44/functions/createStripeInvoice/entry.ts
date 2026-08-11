@@ -6,12 +6,15 @@
 // Admin only. Returns the Stripe hosted invoice URL for the admin to share with the customer.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
 import Stripe from 'npm:stripe@17.0.0';
+import { getUserBusinessId } from '../../shared/tenantContext.ts';
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const me = await base44.auth.me().catch(() => null);
     if (!me || me.role !== 'admin') return Response.json({ error: 'Admin only.' }, { status: 403 });
+
+    const businessId = await getUserBusinessId(base44, me);
 
     const body = await req.json().catch(() => ({}));
     const { invoice_id } = body;
@@ -20,6 +23,10 @@ Deno.serve(async (req) => {
     const invoice = await base44.asServiceRole.entities.Invoice.get(invoice_id).catch(() => null);
     if (!invoice) return Response.json({ error: 'Invoice not found.' }, { status: 404 });
     if (invoice.payment_status === 'paid') return Response.json({ error: 'Invoice is already paid.' }, { status: 400 });
+    // Tenant guard: asServiceRole bypasses RLS — verify the invoice belongs to the admin's tenant.
+    if (invoice.business_id && invoice.business_id !== businessId) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     const amount = Math.round((invoice.final_amount || invoice.amount || 0) * 100);
     if (amount <= 0) return Response.json({ error: 'Invoice amount must be greater than zero.' }, { status: 400 });
