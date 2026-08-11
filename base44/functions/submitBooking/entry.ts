@@ -22,15 +22,20 @@ function clientIp(req) {
 // GoHighLevel has been eliminated — ERA Core is now the sole CRM and messaging system.
 // Google Calendar remains as a mirror (valid integration via connector).
 
-const SERVICE_LABELS = {
+// Fallback service labels (no brand-specific text — live labels come from BusinessConfig.services).
+const SERVICE_LABELS_FALLBACK = {
   exterior_detail: 'Exterior Detail',
   interior_detail: 'Interior Detail',
   full_detail: 'Full Interior + Exterior Detail',
-  vds_gold_exterior: 'VDS Gold — Exterior Detail',
-  vds_gold_full: 'VDS Gold — Full Detail',
   ceramic_coating: 'Ceramic Coating Consultation',
   paint_correction: 'Paint Correction Consultation',
 };
+
+function resolveServiceLabel(cfg, serviceType) {
+  const svc = (cfg?.services || []).find(s => s.key === serviceType);
+  if (svc && svc.label) return svc.label;
+  return SERVICE_LABELS_FALLBACK[serviceType] || serviceType.replace(/_/g, ' ').toUpperCase();
+}
 
 function parseTimeTo24h(preferred_time) {
   if (!preferred_time) return { hours: 8, minutes: 0 };
@@ -100,11 +105,29 @@ async function computeJobPrice(base44, serviceType, pricingGroup, quoteId) {
 
 Deno.serve(async (req) => {
   try {
+    const base44 = createClientFromRequest(req);
+
+    // Load active BusinessConfig early — drives the origin allowlist, service labels,
+    // gold membership label, and Google Calendar branding (all dynamic for multi-tenant).
+    let cfg = null;
+    try {
+      const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
+      cfg = configs && configs[0];
+    } catch (e) { console.error('Config load failed:', e.message); }
+
     // Public endpoint (guests book without login) — strict origin allowlist.
+    // Tenant domains are derived from BusinessConfig website_links so a second tenant's
+    // domain is automatically allowed without code changes.
     const originHeader = req.headers.get('Origin') || req.headers.get('Referer') || '';
     let originHost = '';
     try { originHost = new URL(originHeader).host.toLowerCase(); } catch { originHost = ''; }
-    const allowed = ['vdsmobile.com', 'www.vdsmobile.com'].includes(originHost)
+    const tenantHosts = [];
+    if (cfg && cfg.website_links) {
+      for (const url of Object.values(cfg.website_links)) {
+        if (url) { try { tenantHosts.push(new URL(url).host.toLowerCase()); } catch {} }
+      }
+    }
+    const allowed = tenantHosts.includes(originHost)
       || originHost === 'localhost'
       || originHost.endsWith('.localhost')
       || originHost.endsWith('.base44.app')
@@ -118,8 +141,6 @@ Deno.serve(async (req) => {
     if (!rateLimit('submitBooking:' + ip, 8, 15 * 60 * 1000)) {
       return Response.json({ success: false, error: 'Too many booking attempts. Please try again later.' }, { status: 429 });
     }
-
-    const base44 = createClientFromRequest(req);
 
     // Auth is optional — guests can book without an account
     let user = null;
@@ -160,7 +181,8 @@ Deno.serve(async (req) => {
     const vehicleEntries = vehicle_details
       ? vehicle_details.split(' | ').map(v => v.trim()).filter(Boolean)
       : [];
-    const isGoldBooking = vehicleEntries.some(e => e.includes('VDS Gold'));
+    const goldLabel = (cfg?.membership_plans?.[0]?.short_label) || (cfg?.membership_plans?.[0]?.label) || 'Gold';
+    const isGoldBooking = vehicleEntries.some(e => e.toLowerCase().includes(goldLabel.toLowerCase()));
 
     // ── Find or create Customer (ERA Core CRM — shared helper) ────────────
     // Uses canonical E.164 phone + last-10-digit fallback so a customer who first
@@ -200,7 +222,7 @@ Deno.serve(async (req) => {
     let job = null;
     let serviceLabel = '';
     try {
-      serviceLabel = SERVICE_LABELS[service_type] || service_type.replace(/_/g, ' ').toUpperCase();
+      serviceLabel = resolveServiceLabel(cfg, service_type);
       const servicesNotes = vehicleEntries.length > 0
         ? vehicleEntries.map((entry, idx) => {
             const parts = entry.split(' — ');
@@ -349,11 +371,7 @@ Deno.serve(async (req) => {
     // ── Google Calendar mirror ────────────────────────────────────────────
     let gcalEventId = null;
     try {
-      let tz = 'America/New_York';
-      try {
-        const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
-        if (configs && configs[0] && configs[0].timezone) tz = configs[0].timezone;
-      } catch {}
+      const tz = cfg?.timezone || 'America/New_York';
 
       const vehicleCount = Math.min(vehicleEntries.length || 1, 4);
       const durationHours = vehicleEntries.length > 0 ? vehicleCount * 2 : 2;
@@ -370,7 +388,7 @@ Deno.serve(async (req) => {
           }).join('\n')
         : (vehicle_info || 'N/A');
 
-      const membershipTag = isGoldBooking ? '◆ VDS GOLD MEMBER\n\n' : '';
+      const membershipTag = isGoldBooking ? `◆ ${goldLabel.toUpperCase()} MEMBER\n\n` : '';
       const description = [
         `${membershipTag}CLIENT:`,
         `Name: ${name}`,
@@ -392,12 +410,12 @@ Deno.serve(async (req) => {
 
       const { accessToken } = await base44.asServiceRole.connectors.getConnection('googlecalendar');
       const created = await gcalCreate(accessToken, {
-        summary: `VDS — ${name} — ${vehicleCount} Vehicle${vehicleCount > 1 ? 's' : ''}${isGoldBooking ? ' ◆ Gold' : ''}`,
+        summary: `${cfg?.business_name || 'Appointment'} — ${name} — ${vehicleCount} Vehicle${vehicleCount > 1 ? 's' : ''}${isGoldBooking ? ` ◆ ${goldLabel}` : ''}`,
         description,
         location: address || undefined,
         start: { dateTime: startUtc.toISOString(), timeZone: tz },
         end: { dateTime: endUtc.toISOString(), timeZone: tz },
-        extendedProperties: { shared: { type: 'vds_appointment' } },
+        extendedProperties: { shared: { type: 'appointment' } },
       });
       gcalEventId = created?.id || null;
 
@@ -433,7 +451,7 @@ Deno.serve(async (req) => {
             const jobUpdates = {};
             if (updatedAppt?.contractor_id) {
               jobUpdates.specialist_id = updatedAppt.contractor_id;
-              jobUpdates.specialist_name = updatedAppt.contractor_name || 'VDS Founders';
+              jobUpdates.specialist_name = updatedAppt.contractor_name || (cfg?.business_name || 'Specialist');
               jobUpdates.status = 'specialist_assigned';
             }
             if (Object.keys(jobUpdates).length > 0) {
