@@ -17,6 +17,7 @@ import {
   adminInvoices, adminUpdateInvoice, adminJobs, adminReassignJob, adminChangeJobStatus,
   adminDeleteJob, adminBulkDeleteJobs, adminArchiveQuote, adminQuotes,
   adminSendPartnerInvite, validatePartnerToken, finalizePartnerSetup, partnerMyReferrals,
+  adminUsers,
 } from '../../shared/adminHandlers.ts';
 import { sendCareGuideEmail, guideKeyForService } from '../../shared/careGuideEmail.ts';
 
@@ -782,6 +783,7 @@ Deno.serve(async (req) => {
     if (action === 'admin_bulk_delete_jobs') return Response.json(await adminBulkDeleteJobs(base44, body));
     if (action === 'admin_archive_quote') return Response.json(await adminArchiveQuote(base44, body));
     if (action === 'admin_quotes') return Response.json(await adminQuotes(base44, body));
+    if (action === 'admin_users') return Response.json(await adminUsers(base44));
 
     // ── Job-scoped actions (Phase 7+8: specialist portal operates on the Job entity) ──
     if (['update_job_status', 'request_review', 'update_consultation_status'].includes(action)) {

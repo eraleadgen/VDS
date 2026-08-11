@@ -12,6 +12,7 @@ import JourneyTab from '@/components/admin/JourneyTab';
 import QuotesTab from '@/components/admin/QuotesTab';
 import OverviewTab from '@/components/admin/OverviewTab';
 import PartnersTab from '@/components/admin/PartnersTab';
+import UsersTab from '@/components/admin/UsersTab';
 import BusinessDevTab from '@/components/admin/BusinessDevTab';
 import ResourceCenter from '@/components/shared/ResourceCenter';
 
@@ -48,6 +49,7 @@ export default function AdminDashboard() {
     { key: 'invoices', label: 'INVOICES', icon: DollarSign },
     { key: 'journey', label: 'JOURNEY', icon: Route },
     { key: 'partners', label: 'PARTNERS', icon: Network },
+    { key: 'users', label: 'USERS', icon: Users },
     { key: 'business', label: 'BUSINESS DEV', icon: LineChart },
     { key: 'resources', label: 'RESOURCES', icon: Library },
     { key: 'messages', label: 'MESSAGES', icon: MessageSquare },
@@ -63,6 +65,7 @@ export default function AdminDashboard() {
           {tab === 'invoices' && <InvoicesTab />}
           {tab === 'journey' && <JourneyTab />}
           {tab === 'partners' && <PartnersTab />}
+          {tab === 'users' && <UsersTab />}
           {tab === 'business' && <BusinessDevTab />}
           {tab === 'resources' && <ResourceCenter variant="admin" />}
           {tab === 'messages' && <MessagesTab />}

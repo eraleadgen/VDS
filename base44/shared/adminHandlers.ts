@@ -8,14 +8,28 @@ import { onInvoicePaid } from './invoicePaid.ts';
 
 function requireAdmin(me) { return !!(me && me.role === 'admin'); }
 
+// Resolve the calling admin's business_id from their User record (auth.me() doesn't
+// reliably return custom fields). Falls back to 'vds' for pre-existing users.
+async function adminBusinessId(base44, me) {
+  if (!me) return 'vds';
+  try {
+    const u = await base44.asServiceRole.entities.User.get(me.id);
+    return (u && u.business_id) || 'vds';
+  } catch { return 'vds'; }
+}
+
 export async function adminContractors(base44) {
   const me = await base44.auth.me().catch(() => null);
   if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const bizId = await adminBusinessId(base44, me);
   const [all, users] = await Promise.all([
     base44.asServiceRole.entities.Contractor.list(),
     base44.asServiceRole.entities.User.list(),
   ]);
-  const byId = (users || []).reduce((m, u) => { m[u.id] = u; return m; }, {});
+  // Filter to the admin's tenant only — the built-in User entity has no RLS, so
+  // User.list() returns every user across all tenants.
+  const tenantUsers = (users || []).filter(u => (u.business_id || 'vds') === bizId);
+  const byId = tenantUsers.reduce((m, u) => { m[u.id] = u; return m; }, {});
   const contractors = (all || []).map(c => ({
     ...c,
     linked_user_emails: (c.linked_user_ids || []).map(id => byId[id] ? byId[id].email : '').filter(Boolean).join(', '),
@@ -102,13 +116,16 @@ export async function adminUpdateContractor(base44, body) {
   if (typeof updates.linked_user_emails === 'string') {
     const emails = updates.linked_user_emails.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
     if (emails.length) {
+      const me = await base44.auth.me().catch(() => null);
+      const bizId = await adminBusinessId(base44, me);
       const [all, existing] = await Promise.all([
         base44.asServiceRole.entities.User.list(),
         base44.asServiceRole.entities.Contractor.get(contractor_id).catch(() => null),
       ]);
       const primaryUserId = existing ? existing.user_id : '';
+      // Only link users from the same tenant — prevents cross-tenant privilege escalation.
       allowed.linked_user_ids = (all || [])
-        .filter(u => u.email && emails.includes(u.email.toLowerCase()) && u.id !== primaryUserId)
+        .filter(u => u.email && emails.includes(u.email.toLowerCase()) && u.id !== primaryUserId && (u.business_id || 'vds') === bizId)
         .map(u => u.id);
     } else {
       allowed.linked_user_ids = [];
@@ -548,4 +565,29 @@ export async function partnerMyReferrals(base44) {
   }));
   enriched.sort((a, b) => (b.appointment_date || '').localeCompare(a.appointment_date || ''));
   return { success: true, referrals: enriched };
+}
+
+// ── Admin: User management (tenant-scoped) ──────────────────────────────
+// The built-in User entity has no RLS, so User.list() returns every user across
+// all tenants. This function filters by the calling admin's business_id so an
+// admin only sees users in their own tenant.
+export async function adminUsers(base44) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const bizId = await adminBusinessId(base44, me);
+  const all = await base44.asServiceRole.entities.User.list();
+  const users = (all || [])
+    .filter(u => (u.business_id || 'vds') === bizId)
+    .map(u => ({
+      id: u.id,
+      email: u.email,
+      full_name: u.full_name || '',
+      role: u.role || 'user',
+      business_id: u.business_id || 'vds',
+      first_name: u.first_name || '',
+      last_name: u.last_name || '',
+      phone: u.phone || '',
+      created_date: u.created_date || '',
+    }));
+  return { success: true, users };
 }
