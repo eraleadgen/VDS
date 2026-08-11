@@ -147,41 +147,69 @@
   ],
   "rls": {
     "create": {
-      "created_by_id": "{{user.id}}"
-    },
-    "read": {
-      "$or": [
+      "$and": [
         {
-          "created_by_id": "{{user.id}}"
+          "data.business_id": "{{user.data.business_id}}"
         },
         {
-          "user_condition": {
-            "role": "admin"
-          }
+          "created_by_id": "{{user.id}}"
+        }
+      ]
+    },
+    "read": {
+      "$and": [
+        {
+          "data.business_id": "{{user.data.business_id}}"
+        },
+        {
+          "$or": [
+            {
+              "created_by_id": "{{user.id}}"
+            },
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            }
+          ]
         }
       ]
     },
     "update": {
-      "$or": [
+      "$and": [
         {
-          "created_by_id": "{{user.id}}"
+          "data.business_id": "{{user.data.business_id}}"
         },
         {
-          "user_condition": {
-            "role": "admin"
-          }
+          "$or": [
+            {
+              "created_by_id": "{{user.id}}"
+            },
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            }
+          ]
         }
       ]
     },
     "delete": {
-      "$or": [
+      "$and": [
         {
-          "created_by_id": "{{user.id}}"
+          "data.business_id": "{{user.data.business_id}}"
         },
         {
-          "user_condition": {
-            "role": "admin"
-          }
+          "$or": [
+            {
+              "created_by_id": "{{user.id}}"
+            },
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            }
+          ]
         }
       ]
     }
