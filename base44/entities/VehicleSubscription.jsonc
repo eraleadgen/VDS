@@ -3,6 +3,11 @@
   "type": "object",
   "description": "Active recurring VDS Gold membership for a single vehicle. Each vehicle enrolled in a checkout gets its own VehicleSubscription record pointing at the shared Stripe subscription, with its individual stripe_item_id so a single vehicle can be canceled without affecting other vehicles on the same subscription. Only one active VDS Gold membership may exist per vehicle.",
   "properties": {
+    "business_id": {
+      "type": "string",
+      "default": "vds",
+      "description": "Tenant scope. Set on creation so entity RLS can match the user's tenant."
+    },
     "vehicle_id": {
       "type": "string",
       "description": "ID of the MemberVehicle"
@@ -68,6 +73,7 @@
     }
   },
   "required": [
+    "business_id",
     "vehicle_id",
     "stripe_subscription_id",
     "pricing_group",

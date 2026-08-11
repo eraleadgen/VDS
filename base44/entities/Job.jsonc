@@ -3,6 +3,11 @@
   "type": "object",
   "description": "Central operational entity of ERA Core. Every service performed by the business creates a Job. Jobs connect Customers, Vehicles, Specialists, Scheduling, Invoices, Photos, Customer Journey, and future AI summaries. Quotes convert into Jobs after approval. The Job is the operational hub \u2014 all business activity relates to a Job.",
   "properties": {
+    "business_id": {
+      "type": "string",
+      "default": "vds",
+      "description": "Tenant scope. Set on creation so entity RLS can match the user's tenant."
+    },
     "customer_id": {
       "type": "string",
       "description": "Customer entity ID (system of record for customer data)"
@@ -221,6 +226,7 @@
     }
   },
   "required": [
+    "business_id",
     "customer_id",
     "service_package"
   ],

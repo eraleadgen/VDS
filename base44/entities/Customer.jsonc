@@ -3,6 +3,11 @@
   "type": "object",
   "description": "Central CRM entity for ERA Core. Stores all customer profile information, communication preferences, lifetime value, consent, review status, and relationship references. The built-in User entity handles authentication only; this entity holds all business/CRM data. ERA Core is the system of record for all customer data.",
   "properties": {
+    "business_id": {
+      "type": "string",
+      "default": "vds",
+      "description": "Tenant scope. Set on creation so entity RLS can match the user's tenant."
+    },
     "linked_user_id": {
       "type": "string",
       "description": "ID of the built-in Base44 User this customer authenticates as. Null for guest customers who have not yet registered."
@@ -113,6 +118,7 @@
     }
   },
   "required": [
+    "business_id",
     "first_name",
     "last_name",
     "phone"

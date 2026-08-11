@@ -3,6 +3,11 @@
   "type": "object",
   "description": "VDS Partner Network \u2014 ERA Core growth module. A Partner is a dealership salesperson or strategic partner who refers customers. Founding Partners are the earliest joiners. Each partner receives an auto-generated referral code (QR/link derived in UI). Revenue, conversions, incentive earnings, and service-type generation are tracked as metrics. Engineered as a reusable ERA Core module with configurable terminology for future multi-industry expansion (roofing, HVAC, plumbing, etc.).",
   "properties": {
+    "business_id": {
+      "type": "string",
+      "default": "vds",
+      "description": "Tenant scope. Set on creation so entity RLS can match the user's tenant."
+    },
     "linked_user_id": {
       "type": "string",
       "description": "Base44 User id this partner authenticates as (role 'partner'). Null for prospects not yet onboarded."
@@ -122,6 +127,7 @@
     }
   },
   "required": [
+    "business_id",
     "name",
     "email",
     "partner_type",

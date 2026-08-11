@@ -3,6 +3,11 @@
   "type": "object",
   "description": "Immutable audit trail of all significant platform events and suppressed communications. Every event-driven workflow generates an entry here. Every communication suppressed by the Communication Rules Engine is recorded with its suppression reason. This entity is the foundation of ERA Core's event-driven architecture.",
   "properties": {
+    "business_id": {
+      "type": "string",
+      "default": "vds",
+      "description": "Tenant scope. Set on creation so entity RLS can match the user's tenant."
+    },
     "event_type": {
       "type": "string",
       "description": "Standardized event type. Examples: customer_created, quote_requested, quote_approved, job_assigned, job_completed, invoice_paid, membership_activated, appointment_scheduled, appointment_cancelled, message_sent, message_suppressed, milestone_reached, review_submitted."
@@ -33,6 +38,7 @@
     }
   },
   "required": [
+    "business_id",
     "event_type"
   ],
   "rls": {

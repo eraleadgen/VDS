@@ -3,6 +3,11 @@
   "type": "object",
   "description": "Vehicle Module. Operational record for a customer's vehicle. Vehicle classification is independent from pricing group \u2014 classification is operational data, pricing group is resolved via BusinessConfig mapping and drives pricing. A vehicle belongs to exactly one Customer and may have one active VDS Gold membership.",
   "properties": {
+    "business_id": {
+      "type": "string",
+      "default": "vds",
+      "description": "Tenant scope. Set on creation so entity RLS can match the user's tenant."
+    },
     "customer_id": {
       "type": "string",
       "description": "Customer entity ID that owns this vehicle"
@@ -135,6 +140,7 @@
     }
   },
   "required": [
+    "business_id",
     "year",
     "make",
     "model"

@@ -2,6 +2,11 @@
   "type": "object",
   "name": "AILog",
   "properties": {
+    "business_id": {
+      "type": "string",
+      "default": "vds",
+      "description": "Tenant scope. Set on creation so entity RLS can match the user's tenant."
+    },
     "call_id": {
       "type": "string",
       "description": "Retell call ID"
@@ -52,6 +57,7 @@
     }
   },
   "required": [
+    "business_id",
     "action"
   ],
   "rls": {

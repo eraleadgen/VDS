@@ -3,6 +3,11 @@
   "type": "object",
   "description": "Cached Google business reviews fetched via the Places API. The Places API only surfaces up to 5 reviews per request, so each getGoogleReviews call upserts whatever it returns here and replies with the FULL accumulated set \u2014 letting the home-page carousel cycle all stored reviews (21+) instead of only the latest 5. Maintained by the getGoogleReviews backend function via the service role.",
   "properties": {
+    "business_id": {
+      "type": "string",
+      "default": "vds",
+      "description": "Tenant scope. Set on creation so entity RLS can match the user's tenant."
+    },
     "author": {
       "type": "string"
     },
@@ -28,6 +33,7 @@
     }
   },
   "required": [
+    "business_id",
     "author",
     "review_key"
   ],

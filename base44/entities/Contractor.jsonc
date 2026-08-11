@@ -3,6 +3,11 @@
   "type": "object",
   "description": "Independent detailer/contractor profile. Replaces the traditional employee model. Contractors set their own recurring weekly availability and service areas, which drive the auto-assignment scheduling engine. No clock-in/clock-out, timesheets, or shift tracking. A profile may be shared by business partners via linked_user_ids.",
   "properties": {
+    "business_id": {
+      "type": "string",
+      "default": "vds",
+      "description": "Tenant scope. Set on creation so entity RLS can match the user's tenant."
+    },
     "user_id": {
       "type": "string",
       "description": "Primary linked Base44 User id (for portal login). The linked user should have role 'contractor'."
@@ -187,6 +192,7 @@
     }
   },
   "required": [
+    "business_id",
     "name",
     "phone",
     "email"

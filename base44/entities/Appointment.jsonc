@@ -3,6 +3,11 @@
   "type": "object",
   "description": "DEPRECATED scheduling mirror. The Job entity is now the operational source of truth. This entity is retained temporarily for scheduler and specialist portal compatibility during the ERA Core migration. New bookings create a Job first, with this Appointment as a linked scheduling component. Scheduled for removal after the scheduler and specialist portal migrate to operate on Jobs directly.",
   "properties": {
+    "business_id": {
+      "type": "string",
+      "default": "vds",
+      "description": "Tenant scope. Set on creation so entity RLS can match the user's tenant."
+    },
     "job_id": {
       "type": "string",
       "description": "Linked Job entity ID (the operational source of truth). Set when this Appointment is created as a deprecated mirror of a Job."
@@ -161,6 +166,7 @@
     }
   },
   "required": [
+    "business_id",
     "service_type",
     "preferred_date",
     "preferred_time",

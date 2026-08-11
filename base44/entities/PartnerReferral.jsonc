@@ -3,6 +3,11 @@
   "type": "object",
   "description": "Tracks a single Partner Network referral event. Created when a customer books via a partner's referral link (status 'referred'). Attributed (status 'converted', attributed=true) when the linked job's invoice is paid \u2014 crediting the partner's conversions, revenue, and service-type counters, plus the earned incentive. Powers accurate, idempotent partner metrics and incentive payouts.",
   "properties": {
+    "business_id": {
+      "type": "string",
+      "default": "vds",
+      "description": "Tenant scope. Set on creation so entity RLS can match the user's tenant."
+    },
     "partner_id": {
       "type": "string",
       "description": "Partner entity ID this referral belongs to."
@@ -55,6 +60,7 @@
     }
   },
   "required": [
+    "business_id",
     "partner_id",
     "customer_id"
   ],

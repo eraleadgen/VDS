@@ -2,6 +2,11 @@
   "name": "ServiceRecord",
   "type": "object",
   "properties": {
+    "business_id": {
+      "type": "string",
+      "default": "vds",
+      "description": "Tenant scope. Set on creation so entity RLS can match the user's tenant."
+    },
     "vehicle_id": {
       "type": "string",
       "description": "ID of the MemberVehicle"
@@ -29,6 +34,7 @@
     }
   },
   "required": [
+    "business_id",
     "vehicle_id",
     "service_type",
     "service_date",

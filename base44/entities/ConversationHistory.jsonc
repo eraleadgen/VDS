@@ -3,6 +3,11 @@
   "type": "object",
   "description": "SMS conversation history for Valerie (AI concierge). One record per inbound (user) or outbound (assistant) message, keyed by customer phone. Used to reconstruct context for every conversation turn.",
   "properties": {
+    "business_id": {
+      "type": "string",
+      "default": "vds",
+      "description": "Tenant scope. Set on creation so entity RLS can match the user's tenant."
+    },
     "customer_phone": {
       "type": "string",
       "description": "Customer phone (E.164)"
@@ -31,6 +36,7 @@
     }
   },
   "required": [
+    "business_id",
     "customer_phone",
     "role",
     "content"
