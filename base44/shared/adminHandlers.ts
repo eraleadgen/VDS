@@ -41,11 +41,13 @@ export async function adminContractors(base44) {
 export async function adminChangeStatus(base44, body) {
   const me = await base44.auth.me().catch(() => null);
   if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const bizId = await adminBusinessId(base44, me);
   const { appointment_id, status } = body;
   const VALID = ['pending', 'confirmed', 'completed', 'cancelled'];
   if (!VALID.includes(status)) return { error: 'Invalid status.' };
   const appt = await base44.asServiceRole.entities.Appointment.get(appointment_id).catch(() => null);
   if (!appt) return { error: 'Appointment not found.' };
+  if (appt.business_id && appt.business_id !== bizId) return { error: 'Appointment not found.' };
   await base44.asServiceRole.entities.Appointment.update(appointment_id, { status });
   // Completed/cancelled jobs are removed from the live calendar; the Base44 record is retained.
   if (status === 'cancelled' || status === 'completed') {
@@ -56,6 +58,7 @@ export async function adminChangeStatus(base44, body) {
     try {
       await base44.functions.invoke('sendCancellationNotification', {
         appointment_id,
+        business_id: bizId,
         scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
       });
     } catch (e) { console.error('Cancellation notification failed:', e.message); }
@@ -67,10 +70,12 @@ export async function adminChangeStatus(base44, body) {
 export async function adminDeleteAppointment(base44, body) {
   const me = await base44.auth.me().catch(() => null);
   if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const bizId = await adminBusinessId(base44, me);
   const { appointment_id } = body;
   if (!appointment_id) return { error: 'appointment_id is required.' };
   const appt = await base44.asServiceRole.entities.Appointment.get(appointment_id).catch(() => null);
   if (!appt) return { error: 'Appointment not found.' };
+  if (appt.business_id && appt.business_id !== bizId) return { error: 'Appointment not found.' };
   await removeGcalEvent(base44, appt.google_calendar_event_id);
   await base44.asServiceRole.entities.Appointment.delete(appointment_id);
   return { success: true };
@@ -80,12 +85,14 @@ export async function adminDeleteAppointment(base44, body) {
 export async function adminBulkDeleteAppointments(base44, body) {
   const me = await base44.auth.me().catch(() => null);
   if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const bizId = await adminBusinessId(base44, me);
   const ids = Array.isArray(body.appointment_ids) ? body.appointment_ids.filter(Boolean) : [];
   if (!ids.length) return { error: 'appointment_ids is required.' };
   let deleted = 0;
   for (const id of ids) {
     const appt = await base44.asServiceRole.entities.Appointment.get(id).catch(() => null);
     if (!appt) continue;
+    if (appt.business_id && appt.business_id !== bizId) continue;
     await removeGcalEvent(base44, appt.google_calendar_event_id);
     try { await base44.asServiceRole.entities.Appointment.delete(id); deleted++; }
     catch (e) { console.error('delete error:', id, e.message); }
@@ -96,10 +103,11 @@ export async function adminBulkDeleteAppointments(base44, body) {
 export async function adminAppointments(base44, body) {
   const me = await base44.auth.me().catch(() => null);
   if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const bizId = await adminBusinessId(base44, me);
   let appts;
-  if (body.date) appts = await base44.asServiceRole.entities.Appointment.filter({ preferred_date: body.date });
-  else if (body.status) appts = await base44.asServiceRole.entities.Appointment.filter({ status: body.status });
-  else appts = await base44.asServiceRole.entities.Appointment.list();
+  if (body.date) appts = await base44.asServiceRole.entities.Appointment.filter({ business_id: bizId, preferred_date: body.date });
+  else if (body.status) appts = await base44.asServiceRole.entities.Appointment.filter({ business_id: bizId, status: body.status });
+  else appts = await base44.asServiceRole.entities.Appointment.filter({ business_id: bizId });
   return { success: true, appointments: appts || [] };
 }
 
@@ -138,12 +146,14 @@ export async function adminUpdateContractor(base44, body) {
 export async function adminCreateContractor(base44, body) {
   const me = await base44.auth.me().catch(() => null);
   if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const bizId = await adminBusinessId(base44, me);
   const { name, phone, email, skills, service_areas, home_address } = body;
   if (!name || !phone || !email) return { error: 'name, phone and email are required.' };
   // Create the specialist profile only. The specialist sets their own password from the themed
   // invite email link — we intentionally do NOT call inviteUser (that sends a platform invite email).
   const inviteToken = crypto.randomUUID();
   const c = await base44.asServiceRole.entities.Contractor.create({
+    business_id: bizId,
     name, phone, email, user_id: '',
     skills: skills || [], service_areas: service_areas || { counties: [], max_travel_distance_miles: 0 },
     home_address: home_address || '', status: 'active', is_enabled: true,
@@ -156,17 +166,19 @@ export async function adminCreateContractor(base44, body) {
 export async function adminSendSpecialistInvite(base44, body) {
   const me = await base44.auth.me().catch(() => null);
   if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const bizId = await adminBusinessId(base44, me);
   const { contractor_id } = body;
   if (!contractor_id) return { error: 'contractor_id is required.' };
   const c = await base44.asServiceRole.entities.Contractor.get(contractor_id).catch(() => null);
   if (!c) return { error: 'Contractor not found.' };
+  if (c.business_id && c.business_id !== bizId) return { error: 'Contractor not found.' };
   if (c.account_created) return { error: 'This specialist has already created their account.' };
   const inviteToken = c.invite_token || crypto.randomUUID();
   await base44.asServiceRole.entities.Contractor.update(contractor_id, { invite_token: inviteToken, invite_sent: true });
   try {
     await base44.functions.invoke('sendSpecialistInvite', {
       email: c.email, firstName: (c.name || '').split(' ')[0], invite_token: inviteToken,
-      scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
+      business_id: bizId, scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
     });
   } catch (e) { console.error('invite email error:', e.message); return { error: 'Failed to send the invite email.' }; }
   return { success: true, invite_sent: true };
@@ -201,7 +213,7 @@ export async function finalizeSpecialistSetup(base44, body) {
   await base44.asServiceRole.entities.Contractor.update(c.id, {
     user_id: me.id, account_created: true, invite_token: '',
   });
-  try { await base44.asServiceRole.entities.User.update(me.id, { role: 'contractor', business_id: 'vds' }); }
+  try { await base44.asServiceRole.entities.User.update(me.id, { role: 'contractor', business_id: c.business_id || 'vds' }); }
   catch (e) { console.error('role update error:', e.message); }
   try {
     await base44.functions.invoke('sendContractorWelcomeEmail', {
@@ -215,8 +227,12 @@ export async function finalizeSpecialistSetup(base44, body) {
 export async function adminDeleteContractor(base44, body) {
   const me = await base44.auth.me().catch(() => null);
   if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const bizId = await adminBusinessId(base44, me);
   const { contractor_id } = body;
   if (!contractor_id) return { error: 'contractor_id is required.' };
+  const c = await base44.asServiceRole.entities.Contractor.get(contractor_id).catch(() => null);
+  if (!c) return { error: 'Contractor not found.' };
+  if (c.business_id && c.business_id !== bizId) return { error: 'Contractor not found.' };
   await base44.asServiceRole.entities.Contractor.delete(contractor_id);
   return { success: true };
 }
@@ -224,10 +240,11 @@ export async function adminDeleteContractor(base44, body) {
 export async function adminMetrics(base44) {
   const me = await base44.auth.me().catch(() => null);
   if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const bizId = await adminBusinessId(base44, me);
   const [contractors, appts, quotes] = await Promise.all([
-    base44.asServiceRole.entities.Contractor.list(),
-    base44.asServiceRole.entities.Appointment.list(),
-    base44.asServiceRole.entities.Quote.list(),
+    base44.asServiceRole.entities.Contractor.filter({ business_id: bizId }),
+    base44.asServiceRole.entities.Appointment.filter({ business_id: bizId }),
+    base44.asServiceRole.entities.Quote.filter({ business_id: bizId }),
   ]);
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
   const cs = contractors || [];
@@ -270,17 +287,22 @@ export async function adminMetrics(base44) {
 export async function adminInvoices(base44, body) {
   const me = await base44.auth.me().catch(() => null);
   if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const bizId = await adminBusinessId(base44, me);
   let invoices;
-  if (body.payment_status) invoices = await base44.asServiceRole.entities.Invoice.filter({ payment_status: body.payment_status });
-  else invoices = await base44.asServiceRole.entities.Invoice.list('-issued_date', 200);
+  if (body.payment_status) invoices = await base44.asServiceRole.entities.Invoice.filter({ business_id: bizId, payment_status: body.payment_status });
+  else invoices = await base44.asServiceRole.entities.Invoice.filter({ business_id: bizId }, '-issued_date', 200);
   return { success: true, invoices: invoices || [] };
 }
 
 export async function adminUpdateInvoice(base44, body) {
   const me = await base44.auth.me().catch(() => null);
   if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const bizId = await adminBusinessId(base44, me);
   const { invoice_id, payment_status, payment_method } = body;
   if (!invoice_id) return { error: 'invoice_id is required.' };
+  const inv = await base44.asServiceRole.entities.Invoice.get(invoice_id).catch(() => null);
+  if (!inv) return { error: 'Invoice not found.' };
+  if (inv.business_id && inv.business_id !== bizId) return { error: 'Invoice not found.' };
   const updates = {};
   if (payment_status) updates.payment_status = payment_status;
   if (payment_method) updates.payment_method = payment_method;
@@ -290,7 +312,7 @@ export async function adminUpdateInvoice(base44, body) {
   // Shared "invoice paid" side-effects (customer LTV, partner incentive, event log,
   // quote finalize) live in base44/shared/invoicePaid.ts and are also called by the
   // Stripe webhook — so a coating job paid via Stripe credits the partner automatically.
-  if (payment_status === 'paid') await onInvoicePaid(base44, invoice_id);
+  if (payment_status === 'paid') await onInvoicePaid(base44, invoice_id, bizId);
   return { success: true };
 }
 
@@ -299,25 +321,29 @@ export async function adminUpdateInvoice(base44, body) {
 export async function adminJobs(base44, body) {
   const me = await base44.auth.me().catch(() => null);
   if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const bizId = await adminBusinessId(base44, me);
   let jobs;
-  if (body.date) jobs = await base44.asServiceRole.entities.Job.filter({ appointment_date: body.date });
-  else if (body.status) jobs = await base44.asServiceRole.entities.Job.filter({ status: body.status });
-  else jobs = await base44.asServiceRole.entities.Job.list('-updated_date', 500);
+  if (body.date) jobs = await base44.asServiceRole.entities.Job.filter({ business_id: bizId, appointment_date: body.date });
+  else if (body.status) jobs = await base44.asServiceRole.entities.Job.filter({ business_id: bizId, status: body.status });
+  else jobs = await base44.asServiceRole.entities.Job.filter({ business_id: bizId }, '-updated_date', 500);
   return { success: true, jobs: jobs || [] };
 }
 
 export async function adminReassignJob(base44, body) {
   const me = await base44.auth.me().catch(() => null);
   if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const bizId = await adminBusinessId(base44, me);
   const { job_id, specialist_id } = body;
   if (!job_id || !specialist_id) return { error: 'job_id and specialist_id are required.' };
   const job = await base44.asServiceRole.entities.Job.get(job_id).catch(() => null);
   if (!job) return { error: 'Job not found.' };
+  if (job.business_id && job.business_id !== bizId) return { error: 'Job not found.' };
   const contractor = await base44.asServiceRole.entities.Contractor.get(specialist_id).catch(() => null);
   if (!contractor) return { error: 'Specialist not found.' };
+  if (contractor.business_id && contractor.business_id !== bizId) return { error: 'Specialist not found.' };
   await base44.asServiceRole.entities.Job.update(job_id, { specialist_id, specialist_name: contractor.name });
   try {
-    const linked = await base44.asServiceRole.entities.Appointment.filter({ job_id });
+    const linked = await base44.asServiceRole.entities.Appointment.filter({ business_id: bizId, job_id });
     if (linked && linked.length) await base44.asServiceRole.entities.Appointment.update(linked[0].id, { contractor_id: specialist_id, contractor_name: contractor.name });
   } catch (e) { console.error('Appointment mirror sync error:', e.message); }
   if (job.google_calendar_event_id) {
@@ -336,10 +362,12 @@ const JOB_LIFECYCLE_STATUSES = ['quote_requested','quote_generated','awaiting_ap
 export async function adminChangeJobStatus(base44, body) {
   const me = await base44.auth.me().catch(() => null);
   if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const bizId = await adminBusinessId(base44, me);
   const { job_id, status } = body;
   if (!JOB_LIFECYCLE_STATUSES.includes(status)) return { error: 'Invalid status.' };
   const job = await base44.asServiceRole.entities.Job.get(job_id).catch(() => null);
   if (!job) return { error: 'Job not found.' };
+  if (job.business_id && job.business_id !== bizId) return { error: 'Job not found.' };
   // Map the lifecycle status to the specialist workflow status so the client-facing
   // Appointment mirror carries the live job state (in_progress / completed) the member sees.
   let jobStatusUpdate = {};
@@ -348,7 +376,7 @@ export async function adminChangeJobStatus(base44, body) {
   else if (['completed', 'awaiting_payment', 'review_requested'].includes(status)) jobStatusUpdate.job_status = 'completed';
   await base44.asServiceRole.entities.Job.update(job_id, { status, ...jobStatusUpdate });
   try {
-    const linked = await base44.asServiceRole.entities.Appointment.filter({ job_id });
+    const linked = await base44.asServiceRole.entities.Appointment.filter({ business_id: bizId, job_id });
     if (linked && linked.length) {
       let apptStatus;
       let apptJobStatus;
@@ -369,7 +397,7 @@ export async function adminChangeJobStatus(base44, body) {
     try {
       await base44.asServiceRole.functions.invoke('logEvent', {
         event_type: 'appointment_cancelled', entity_type: 'job', entity_id: job_id,
-        customer_id: job.customer_id, description: `Job cancelled for ${job.customer_name || 'customer'}`,
+        customer_id: job.customer_id, business_id: bizId, description: `Job cancelled for ${job.customer_name || 'customer'}`,
         metadata: { job_id }, scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
       });
     } catch (e) { console.error('logEvent error:', e.message); }
@@ -380,13 +408,15 @@ export async function adminChangeJobStatus(base44, body) {
 export async function adminDeleteJob(base44, body) {
   const me = await base44.auth.me().catch(() => null);
   if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const bizId = await adminBusinessId(base44, me);
   const { job_id } = body;
   if (!job_id) return { error: 'job_id is required.' };
   const job = await base44.asServiceRole.entities.Job.get(job_id).catch(() => null);
   if (!job) return { error: 'Job not found.' };
+  if (job.business_id && job.business_id !== bizId) return { error: 'Job not found.' };
   await removeGcalEvent(base44, job.google_calendar_event_id);
   try {
-    const linked = await base44.asServiceRole.entities.Appointment.filter({ job_id });
+    const linked = await base44.asServiceRole.entities.Appointment.filter({ business_id: bizId, job_id });
     if (linked && linked.length) await base44.asServiceRole.entities.Appointment.delete(linked[0].id);
   } catch (e) { console.error('Appointment mirror delete error:', e.message); }
   await base44.asServiceRole.entities.Job.delete(job_id);
@@ -396,15 +426,17 @@ export async function adminDeleteJob(base44, body) {
 export async function adminBulkDeleteJobs(base44, body) {
   const me = await base44.auth.me().catch(() => null);
   if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const bizId = await adminBusinessId(base44, me);
   const ids = Array.isArray(body.job_ids) ? body.job_ids.filter(Boolean) : [];
   if (!ids.length) return { error: 'job_ids is required.' };
   let deleted = 0;
   for (const id of ids) {
     const job = await base44.asServiceRole.entities.Job.get(id).catch(() => null);
     if (!job) continue;
+    if (job.business_id && job.business_id !== bizId) continue;
     await removeGcalEvent(base44, job.google_calendar_event_id);
     try {
-      const linked = await base44.asServiceRole.entities.Appointment.filter({ job_id: id });
+      const linked = await base44.asServiceRole.entities.Appointment.filter({ business_id: bizId, job_id: id });
       if (linked && linked.length) await base44.asServiceRole.entities.Appointment.delete(linked[0].id);
     } catch (e) { console.error('Appointment mirror delete error:', e.message); }
     try { await base44.asServiceRole.entities.Job.delete(id); deleted++; }
@@ -419,10 +451,12 @@ export async function adminBulkDeleteJobs(base44, body) {
 export async function adminArchiveQuote(base44, body) {
   const me = await base44.auth.me().catch(() => null);
   if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const bizId = await adminBusinessId(base44, me);
   const { quote_id, final_price } = body;
   if (!quote_id) return { error: 'quote_id is required.' };
   const quote = await base44.asServiceRole.entities.Quote.get(quote_id).catch(() => null);
   if (!quote) return { error: 'Quote not found.' };
+  if (quote.business_id && quote.business_id !== bizId) return { error: 'Quote not found.' };
   const updates = { status: 'finalized' };
   if (final_price != null) updates.final_price = Number(final_price) || 0;
   await base44.asServiceRole.entities.Quote.update(quote_id, updates);
@@ -431,14 +465,14 @@ export async function adminArchiveQuote(base44, body) {
   let customerId = quote.customer_id || null;
   if (!customerId && quote.customer_phone) {
     try {
-      const byPhone = await base44.asServiceRole.entities.Customer.filter({ phone: quote.customer_phone.replace(/\D/g, '') });
+      const byPhone = await base44.asServiceRole.entities.Customer.filter({ business_id: bizId, phone: quote.customer_phone.replace(/\D/g, '') });
       if (byPhone && byPhone[0]) customerId = byPhone[0].id;
     } catch {}
   }
   const amount = updates.final_price != null ? updates.final_price : (quote.final_price ?? quote.starting_price ?? 0);
   try {
     await base44.asServiceRole.functions.invoke('logEvent', {
-      event_type: 'quote_finalized', entity_type: 'quote', entity_id: quote_id, customer_id: customerId,
+      event_type: 'quote_finalized', entity_type: 'quote', entity_id: quote_id, customer_id: customerId, business_id: bizId,
       description: `Quote finalized: ${quote.quote_summary || (quote.requested_services || []).join(', ')} — $${amount}`,
       metadata: { quote_id, final_price: amount, vehicle_classification: quote.vehicle_classification, job_id: quote.job_id },
       scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
@@ -455,9 +489,10 @@ export async function adminArchiveQuote(base44, body) {
 export async function adminQuotes(base44, body) {
   const me = await base44.auth.me().catch(() => null);
   if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const bizId = await adminBusinessId(base44, me);
   const today = new Date().toISOString().split('T')[0];
   try {
-    const pending = await base44.asServiceRole.entities.Quote.filter({ status: 'pending' });
+    const pending = await base44.asServiceRole.entities.Quote.filter({ business_id: bizId, status: 'pending' });
     const toExpire = (pending || []).filter(q => q.expiration_date && q.expiration_date < today);
     for (const q of toExpire) {
       try { await base44.asServiceRole.entities.Quote.update(q.id, { status: 'expired' }); }
@@ -465,8 +500,8 @@ export async function adminQuotes(base44, body) {
     }
   } catch (e) { console.error('quote expiry sweep error:', e.message); }
   let quotes;
-  if (body.status) quotes = await base44.asServiceRole.entities.Quote.filter({ status: body.status });
-  else quotes = await base44.asServiceRole.entities.Quote.list('-created_date', 200);
+  if (body.status) quotes = await base44.asServiceRole.entities.Quote.filter({ business_id: bizId, status: body.status });
+  else quotes = await base44.asServiceRole.entities.Quote.filter({ business_id: bizId }, '-created_date', 200);
   return { success: true, quotes: quotes || [] };
 }
 
@@ -479,17 +514,19 @@ export async function adminQuotes(base44, body) {
 export async function adminSendPartnerInvite(base44, body) {
   const me = await base44.auth.me().catch(() => null);
   if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const bizId = await adminBusinessId(base44, me);
   const { partner_id } = body;
   if (!partner_id) return { error: 'partner_id is required.' };
   const p = await base44.asServiceRole.entities.Partner.get(partner_id).catch(() => null);
   if (!p) return { error: 'Partner not found.' };
+  if (p.business_id && p.business_id !== bizId) return { error: 'Partner not found.' };
   if (p.account_created) return { error: 'This partner has already created their account.' };
   const inviteToken = p.invite_token || crypto.randomUUID();
   await base44.asServiceRole.entities.Partner.update(partner_id, { invite_token: inviteToken, invite_sent: true });
   try {
     await base44.functions.invoke('sendPartnerInvite', {
       email: p.email, firstName: (p.name || '').split(' ')[0] || 'there', invite_token: inviteToken,
-      scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
+      business_id: bizId, scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
     });
   } catch (e) { console.error('partner invite email error:', e.message); return { error: 'Failed to send the invite email.' }; }
   return { success: true, invite_sent: true };
@@ -532,7 +569,7 @@ export async function finalizePartnerSetup(base44, body) {
   if (profile.phone) updates.phone = profile.phone;
   if (profile.photo_url !== undefined) updates.photo_url = profile.photo_url;
   await base44.asServiceRole.entities.Partner.update(p.id, updates);
-  try { await base44.asServiceRole.entities.User.update(me.id, { role: 'partner', business_id: 'vds' }); }
+  try { await base44.asServiceRole.entities.User.update(me.id, { role: 'partner', business_id: p.business_id || 'vds' }); }
   catch (e) { console.error('role update error:', e.message); }
   return { success: true, partner_id: p.id };
 }
@@ -548,9 +585,11 @@ export async function partnerMyReferrals(base44) {
   const all = await base44.asServiceRole.entities.Partner.filter({ linked_user_id: me.id });
   const p = all && all[0];
   if (!p) return { error: 'No partner profile is linked to your account.' };
-  const refs = await base44.asServiceRole.entities.PartnerReferral.filter({ partner_id: p.id });
+  const bizId = p.business_id || 'vds';
+  const refs = await base44.asServiceRole.entities.PartnerReferral.filter({ business_id: bizId, partner_id: p.id });
   const enriched = await Promise.all((refs || []).map(async (r) => {
-    const job = r.job_id ? await base44.asServiceRole.entities.Job.get(r.job_id).catch(() => null) : null;
+    let job = r.job_id ? await base44.asServiceRole.entities.Job.get(r.job_id).catch(() => null) : null;
+    if (job && job.business_id && job.business_id !== bizId) job = null;
     return {
       id: r.id, status: r.status, revenue: r.revenue || 0, attributed: !!r.attributed,
       incentive_type: r.incentive_type || 'none', incentive_amount: r.incentive_amount || 0,

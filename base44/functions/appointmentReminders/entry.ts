@@ -22,12 +22,12 @@ const UPCOMING_STATUSES = new Set(['appointment_scheduled', 'specialist_assigned
 // Send an outbound SMS — routed through sendMessage → Communication Rules Engine.
 // Returns true when the engine has processed the message (sent or suppressed) so the
 // idempotency flag is set and we don't retry every cycle while SMS is disabled.
-async function sendTwilioSms(base44, to, body, customerName, messageType) {
+async function sendTwilioSms(base44, to, body, customerName, messageType, businessId) {
   if (!to) return false;
   try {
     await base44.asServiceRole.functions.invoke('sendMessage', {
       customer_phone: to, message_type: messageType || 'reminder_1h', content: body,
-      customer_name: customerName || '', scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
+      customer_name: customerName || '', business_id: businessId, scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
     });
     return true;
   } catch (e) { console.error('sendMessage error:', e.message); return false; }
@@ -107,11 +107,12 @@ Deno.serve(async (req) => {
 
     // Load business config for timezone + live contact info (phone/email/website).
     const contact = await loadBusinessContact(base44);
+    const businessId = (contact.cfg && contact.cfg.business_id) || 'vds';
     const tz = (contact.cfg && contact.cfg.timezone) || 'America/New_York';
 
     // Phase 8: read from the Job entity (source of truth). Fetch all recent jobs and
     // filter for upcoming confirmed statuses client-side (filter() takes exact matches).
-    const allJobs = await base44.asServiceRole.entities.Job.list('-updated_date', 500);
+    const allJobs = await base44.asServiceRole.entities.Job.filter({ business_id: businessId }, '-updated_date', 500);
     const jobs = (allJobs || []).filter(j => UPCOMING_STATUSES.has(j.status));
     const now = Date.now();
     let emailSent = 0, smsSent = 0, skipped = 0;
@@ -148,7 +149,7 @@ Deno.serve(async (req) => {
         // SMS consent given → send via SMS
         if (job.sms_consent !== false && job.customer_phone) {
           const msg = `Hi ${firstName}, your ${contact.businessName} detailing appointment starts in about 1 hour at ${job.appointment_time}.${job.address ? ' Service address: ' + job.address : ''} Please ensure your vehicle is accessible. Questions? Call/text ${contact.phone}. — ${contact.businessName}`;
-          const sent = await sendTwilioSms(base44, job.customer_phone, msg, job.customer_name, 'reminder_1h');
+          const sent = await sendTwilioSms(base44, job.customer_phone, msg, job.customer_name, 'reminder_1h', businessId);
           if (sent) {
             await base44.asServiceRole.entities.Job.update(job.id, { reminder_1h_sent: true });
             smsSent++;

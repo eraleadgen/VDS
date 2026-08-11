@@ -147,7 +147,7 @@ function buildEmailHtml(guide, firstName, guideKey) {
   </div></body></html>`;
 }
 
-async function logCareGuideEvent(base44, { guideKey, customerId, to, sent, reason }) {
+async function logCareGuideEvent(base44, { guideKey, customerId, to, sent, reason, businessId }) {
   try {
     await base44.asServiceRole.entities.SystemEventLog.create({
       business_id: businessId,
@@ -174,10 +174,10 @@ export async function sendCareGuideEmail(base44, { guideKey, to, customerName, c
     await base44.asServiceRole.integrations.Core.SendEmail({
       to, subject: guide.subject, body,
     });
-    await logCareGuideEvent(base44, { guideKey, customerId, to, sent: true });
+    await logCareGuideEvent(base44, { guideKey, customerId, to, sent: true, businessId });
     return { sent: true };
   } catch (e) {
-    await logCareGuideEvent(base44, { guideKey, customerId, to, sent: false, reason: e.message });
+    await logCareGuideEvent(base44, { guideKey, customerId, to, sent: false, reason: e.message, businessId });
     console.error(`care guide email failed (${guideKey} → ${to}):`, e.message);
     return { sent: false, reason: e.message };
   }

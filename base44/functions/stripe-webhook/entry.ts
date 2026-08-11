@@ -39,6 +39,9 @@ Deno.serve(async (req) => {
         return Response.json({ received: true });
       }
 
+      // Read business_id from the checkout session metadata (stamped by createGoldCheckoutSession).
+      const businessId = session.metadata?.business_id || 'vds';
+
       const userId = session.metadata?.user_id;
       const vehicleIds = JSON.parse(session.metadata?.vehicle_ids || '[]');
 
@@ -74,12 +77,18 @@ Deno.serve(async (req) => {
       for (let i = 0; i < vehicleIds.length; i++) {
         const vehicleId = vehicleIds[i];
         const vehicle = await base44.asServiceRole.entities.MemberVehicle.get(vehicleId);
+        // Tenant guard: asServiceRole bypasses RLS — skip cross-tenant vehicles.
+        if (vehicle && vehicle.business_id && vehicle.business_id !== businessId) {
+          console.error(`Vehicle ${vehicleId} belongs to a different tenant — skipping`);
+          continue;
+        }
         const tier = vehicle?.vehicle_type || vehicle?.pricing_group || 'sedan_coupe';
         const item = items[i];
         const priceId = item?.price?.id || '';
         const pricing_group = tier === 'truck_suv' ? 'truck_suv' : 'sedan_coupe';
 
         await base44.asServiceRole.entities.VehicleSubscription.create({
+          business_id: businessId,
           vehicle_id: vehicleId,
           stripe_subscription_id: fullSub.id,
           stripe_item_id: item?.id || '',
@@ -117,7 +126,7 @@ Deno.serve(async (req) => {
             const u = await base44.asServiceRole.entities.User.get(userId).catch(() => null);
             goldEmail = u?.email || null; goldName = u?.full_name || '';
           } catch (e) { /* non-blocking */ }
-          const r = await creditPartnerGoldSignup(base44, { userId, partnerRefCode: partnerRef, email: goldEmail, fullName: goldName });
+          const r = await creditPartnerGoldSignup(base44, { userId, partnerRefCode: partnerRef, email: goldEmail, fullName: goldName, businessId });
           console.log('Partner Gold signup attribution:', JSON.stringify(r));
         }
       } catch (e) { console.error('Partner Gold attribution failed:', e.message); }
@@ -128,7 +137,7 @@ Deno.serve(async (req) => {
       try {
         const goldEmailForGuide = session.customer_details?.email || goldEmail || null;
         if (goldEmailForGuide) {
-          await sendCareGuideEmail(base44, { guideKey: 'vds_gold', to: goldEmailForGuide, customerName: goldName });
+          await sendCareGuideEmail(base44, { guideKey: 'vds_gold', to: goldEmailForGuide, customerName: goldName, businessId });
           console.log('VDS Gold care guide sent to', goldEmailForGuide);
         }
       } catch (e) { console.error('VDS Gold care guide send failed:', e.message); }
@@ -172,12 +181,17 @@ Deno.serve(async (req) => {
       const isSubscription = !!(inv.subscription || inv.billing_reason === 'subscription_cycle' || inv.billing_reason === 'subscription_create');
       const appMatch = inv.metadata?.base44_app_id === Deno.env.get('BASE44_APP_ID');
       if (!isSubscription && appMatch) {
+        const invoiceBizId = inv.metadata?.business_id || 'vds';
         try {
           const b44Id = inv.metadata?.base44_invoice_id;
           let invoice = null;
-          if (b44Id) invoice = await base44.asServiceRole.entities.Invoice.get(b44Id).catch(() => null);
+          if (b44Id) {
+            invoice = await base44.asServiceRole.entities.Invoice.get(b44Id).catch(() => null);
+            // Tenant guard: asServiceRole bypasses RLS — reject cross-tenant invoices.
+            if (invoice && invoice.business_id && invoice.business_id !== invoiceBizId) invoice = null;
+          }
           if (!invoice && inv.id) {
-            const byRef = await base44.asServiceRole.entities.Invoice.filter({ stripe_payment_reference: inv.id }).catch(() => []);
+            const byRef = await base44.asServiceRole.entities.Invoice.filter({ business_id: invoiceBizId, stripe_payment_reference: inv.id }).catch(() => []);
             invoice = byRef && byRef[0];
           }
           if (invoice && invoice.payment_status !== 'paid') {
@@ -186,7 +200,10 @@ Deno.serve(async (req) => {
             let skipDueToCancellation = false;
             if (invoice.job_id) {
               const linkedJob = await base44.asServiceRole.entities.Job.get(invoice.job_id).catch(() => null);
-              if (linkedJob && linkedJob.status === 'cancelled') {
+              // Tenant guard: asServiceRole bypasses RLS — reject cross-tenant jobs.
+              if (linkedJob && linkedJob.business_id && linkedJob.business_id !== invoiceBizId) {
+                skipDueToCancellation = true;
+              } else if (linkedJob && linkedJob.status === 'cancelled') {
                 skipDueToCancellation = true;
                 console.log(`Stripe invoice ${inv.id} paid but linked job ${linkedJob.id} is cancelled — skipping side effects`);
               }
@@ -198,7 +215,7 @@ Deno.serve(async (req) => {
                 stripe_payment_reference: inv.id,
                 paid_date: new Date().toISOString().split('T')[0],
               });
-              await onInvoicePaid(base44, invoice.id);
+              await onInvoicePaid(base44, invoice.id, invoiceBizId);
               console.log(`Stripe invoice ${inv.id} paid → Base44 invoice ${invoice.id} marked paid + partner attributed`);
             }
           }

@@ -25,11 +25,12 @@ Deno.serve(async (req) => {
     if (gate) return gate;
     const cfg = await loadConfig(base44);
     if (!cfg) return Response.json({ error: 'Business configuration not found.' }, { status: 500 });
+    const businessId = cfg.business_id || 'vds';
     const tz = cfg.timezone || 'America/New_York';
     const now = Date.now();
 
     // Scan recent jobs for upcoming, unassigned, non-cancelled work.
-    const allJobs = await base44.asServiceRole.entities.Job.list('-updated_date', 500);
+    const allJobs = await base44.asServiceRole.entities.Job.filter({ business_id: businessId }, '-updated_date', 500);
     const candidates = (allJobs || []).filter(j =>
       !j.specialist_id &&
       j.status !== 'cancelled' &&
@@ -58,7 +59,7 @@ Deno.serve(async (req) => {
 
       // Sync the linked Appointment mirror + Google Calendar event (if present).
       try {
-        const linked = await base44.asServiceRole.entities.Appointment.filter({ job_id: job.id });
+        const linked = await base44.asServiceRole.entities.Appointment.filter({ business_id: businessId, job_id: job.id });
         if (linked && linked.length) {
           await base44.asServiceRole.entities.Appointment.update(linked[0].id, {
             contractor_id: contractor.id,
