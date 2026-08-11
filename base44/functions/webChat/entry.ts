@@ -10,7 +10,8 @@
 // The feature_flags.web_chat_enabled flag toggles the widget off entirely.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
-import { loadConfig, formatCatalog, formatConditions, formatHours, formatGold, callOpenAI } from '../../shared/conciergeHelpers.ts';
+import { loadConfig, formatCatalog, formatConditions, formatHours, formatGold, formatFaq, callOpenAI } from '../../shared/conciergeHelpers.ts';
+import { loadBusinessContact } from '../../shared/businessContact.ts';
 
 // ── Per-IP rate limiter ─────────────────────────────────────────────────
 const _rlHits = new Map();
@@ -73,16 +74,32 @@ function buildSystemPrompt(cfg) {
     formatGold(cfg),
     '- To sign up, direct customers to ' + ((cfg.website_links && cfg.website_links.gold_signup_url) || 'our website') + '.',
     '',
+    'CONSULTATION SERVICES (high-ticket — require specialist follow-up):',
+    '- Ceramic Coatings and Paint Correction are high-ticket services that require an in-depth consultation. Do NOT attempt to quote these directly.',
+    '- When a client asks about ceramic coatings, paint correction, or wants to speak to a team member, use the request_consultation tool to send their contact info and description to our team. Collect their name, phone, and what they need before calling the tool.',
+    '- Tell the client that a specialist will reach out to them directly to discuss options and pricing.',
+    '',
     'BOOKING & QUOTES:',
-    '- For quotes, use the create_quote tool to compute an exact custom quote. The quote will be displayed to the customer with a "Book Now" button.',
-    '- For booking, use the book_appointment tool to book directly, OR direct customers to ' + ((cfg.website_links && cfg.website_links.booking_url) || 'our website') + '.',
+    '- For quotes on standard services (full detail, exterior detail, etc.), use the create_quote tool. The quote will be displayed with a "Book Now" button that takes them to the booking page.',
+    '- For actual booking, ALWAYS direct customers to the booking page: ' + ((cfg.website_links && cfg.website_links.booking_url) || 'our website') + '. Do NOT book directly through the chat — the booking page captures full vehicle details and computes the exact quote.',
     '- For availability, use check_availability to see open time slots for a specific date.',
     '- For pricing questions, use lookup_pricing to get exact starting prices.',
     '',
+    'FAQ:',
+    formatFaq(cfg),
+    '',
+    'NAVIGATION & APP GUIDE:',
+    '- You are a general assistant helping clients navigate our website and services.',
+    '- Booking page: ' + ((cfg.website_links && cfg.website_links.booking_url) || 'our website'),
+    '- Membership signup: ' + ((cfg.website_links && cfg.website_links.gold_signup_url) || 'our website'),
+    '- Gallery: ' + ((cfg.website_links && cfg.website_links.gallery_url) || 'our website'),
+    '- Help clients find the right page for their needs (booking, membership, gallery, FAQ, pricing, services).',
+    '',
     'TOOL RULES:',
-    '- Always confirm the vehicle type (classification) before creating a quote or booking.',
+    '- Always confirm the vehicle type (classification) before creating a quote.',
+    '- For ceramic coatings, paint correction, or "speak to a team member" requests, use request_consultation — do NOT quote these services.',
     '- Execute all required tools FIRST, then write your final reply to the customer.',
-    '- When you create a quote, mention the final price and that a "Book Now" button has been provided.',
+    '- When you create a quote, mention the final price and that a "Book Now" button has been provided to take them to the booking page.',
   ].join('\n');
 }
 
@@ -128,6 +145,17 @@ const TOOLS = [
       preferred_date: { type: 'string', description: 'YYYY-MM-DD' },
       preferred_time: { type: 'string', description: 'Time slot (e.g. "10:00 AM")' },
     }, required: ['name', 'phone', 'address', 'service_type', 'preferred_date', 'preferred_time'] },
+  } },
+  { type: 'function', function: {
+    name: 'request_consultation',
+    description: 'Request a specialist consultation for high-ticket services (ceramic coatings, paint correction) or when a client wants to speak to a team member. Sends the client contact info and description to the business team who will reach out directly.',
+    parameters: { type: 'object', properties: {
+      name: { type: 'string', description: 'Client name' },
+      phone: { type: 'string', description: 'Client phone number' },
+      email: { type: 'string', description: 'Client email — optional' },
+      service_interest: { type: 'string', description: 'What the client is interested in (e.g. ceramic_coating, paint_correction, speak_to_team)' },
+      description: { type: 'string', description: 'Brief description of what the client needs' },
+    }, required: ['name', 'phone', 'service_interest', 'description'] },
   } },
 ];
 
@@ -215,6 +243,35 @@ async function executeTool(base44, cfg, name, args) {
         job_id: data.job_id,
         error: data.error,
       };
+    }
+    case 'request_consultation': {
+      try {
+        const contact = await loadBusinessContact(base44);
+        const serviceLabels = { ceramic_coating: 'Ceramic Coating', paint_correction: 'Paint Correction', speak_to_team: 'Speak to a Team Member' };
+        const interestLabel = serviceLabels[args.service_interest] || args.service_interest;
+        const subject = 'Consultation Request — ' + interestLabel + ' — ' + args.name;
+        const html = '<!DOCTYPE html><html><body style="font-family:sans-serif;background:#0A0B0D;color:#E2E8F0;padding:24px;">'
+          + '<h2 style="color:#D4AF37;margin:0 0 16px 0;">Consultation Request</h2>'
+          + '<table style="width:100%;border-collapse:collapse;">'
+          + '<tr><td style="padding:6px 0;color:#94A3B8;font-size:12px;text-transform:uppercase;">Service Interest</td><td style="padding:6px 0;color:#E2E8F0;font-weight:600;">' + interestLabel + '</td></tr>'
+          + '<tr><td style="padding:6px 0;color:#94A3B8;font-size:12px;text-transform:uppercase;">Client Name</td><td style="padding:6px 0;color:#E2E8F0;font-weight:600;">' + args.name + '</td></tr>'
+          + '<tr><td style="padding:6px 0;color:#94A3B8;font-size:12px;text-transform:uppercase;">Phone</td><td style="padding:6px 0;color:#E2E8F0;font-weight:600;">' + args.phone + '</td></tr>'
+          + (args.email ? '<tr><td style="padding:6px 0;color:#94A3B8;font-size:12px;text-transform:uppercase;">Email</td><td style="padding:6px 0;color:#E2E8F0;font-weight:600;">' + args.email + '</td></tr>' : '')
+          + '</table>'
+          + '<p style="margin:16px 0 6px 0;color:#94A3B8;font-size:12px;text-transform:uppercase;">Description</p>'
+          + '<div style="background:#14161A;padding:14px;border-radius:8px;border:1px solid rgba(212,175,55,0.15);color:#CBD5E1;line-height:1.6;">' + args.description + '</div>'
+          + '<p style="color:#64748B;font-size:11px;margin-top:20px;">This consultation request was submitted via the web chat widget.</p>'
+          + '</body></html>';
+        await base44.asServiceRole.integrations.Core.SendEmail({
+          to: contact.internalEmail,
+          subject,
+          body: html,
+          from_name: contact.businessName,
+        });
+        return { success: true, message: 'Consultation request sent. A specialist will reach out directly.' };
+      } catch (e) {
+        return { error: e.message };
+      }
     }
     default:
       return { error: 'Unknown tool: ' + name };

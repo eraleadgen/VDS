@@ -51,6 +51,13 @@ export function formatGold(cfg) {
   }).join('\n');
 }
 
+// Format FAQ entries from BusinessConfig for the system prompt.
+export function formatFaq(cfg) {
+  const faqs = cfg.faq || [];
+  if (!faqs.length) return 'No FAQ entries configured.';
+  return faqs.map((f, i) => (i + 1) + '. Q: ' + f.question + '\n   A: ' + f.answer).join('\n');
+}
+
 // Shared OpenAI call — uses the OpenAI_Valerie secret and gpt-4o-mini for fast
 // conversational responses (2-4 second latency, handles tool-calling).
 export async function callOpenAI(messages, tools) {

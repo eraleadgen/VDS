@@ -13,7 +13,7 @@
 // validate that signature (validateTwilioSignature below).
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
-import { loadConfig, formatCatalog, formatConditions, formatHours, formatGold, callOpenAI } from '../../shared/conciergeHelpers.ts';
+import { loadConfig, formatCatalog, formatConditions, formatHours, formatGold, formatFaq, callOpenAI } from '../../shared/conciergeHelpers.ts';
 
 // ── Twilio webhook signature validation ────────────────────────────────
 // Twilio signs every inbound webhook with HMAC-SHA256 using TWILIO_AUTH_TOKEN.
@@ -120,12 +120,20 @@ function buildSystemPrompt(cfg, customerCtx) {
     '- For quotes and booking, always direct customers to ' + ((cfg.website_links && cfg.website_links.booking_url) || 'our website') + '. That page captures full vehicle details (year/make/model, condition, add-ons) and computes the exact custom quote.',
     '- You do NOT book, reschedule, or cancel appointments over SMS — always send the booking link.',
     '',
+    'FAQ:',
+    formatFaq(cfg),
+    '',
+    'CONSULTATION SERVICES (high-ticket — require specialist follow-up):',
+    '- Ceramic Coatings and Paint Correction are high-ticket services that require an in-depth consultation. Do NOT attempt to quote these over SMS.',
+    '- When a customer asks about ceramic coatings, paint correction, or wants to speak to a team member, use the specialist_followup tool to flag the request. Our team will reach out to them directly.',
+    '- Tell the customer that a specialist will contact them to discuss options and pricing.',
+    '',
     'TOOL RULES (CRITICAL):',
     '- PRICING: The SERVICES & STARTING PRICES section above lists the exact per-classification and per-group prices from our live catalog. Use those prices directly when quoting — match the price to the customer vehicle classification (Coupe, Sedan, Hatchback, Mid-Size SUV, Truck/3-Row SUV).',
     '- QUOTES & BOOKING: You do NOT book or quote over SMS. Always direct customers to the booking page (' + ((cfg.website_links && cfg.website_links.booking_url) || 'our website') + ') for quotes and booking.',
     '- VDS GOLD: You do NOT sign customers up over SMS. Direct them to the signup page (' + ((cfg.website_links && cfg.website_links.gold_signup_url) || 'our website') + ').',
     '- To recognize returning customers, use lookup_customer. The phone is already known to the system — never ask the customer for it.',
-    '- For custom/complex requests (specialty coatings, heavy correction), use specialist_followup.',
+    '- For ceramic coatings, paint correction, or "speak to a team member" requests, use specialist_followup — do NOT quote these services.',
     '- Execute all required tools FIRST, then write your final plain-text reply to the customer.',
     '',
     customerCtx
