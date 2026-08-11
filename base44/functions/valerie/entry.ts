@@ -164,26 +164,26 @@ async function executeTool(base44, name, args) {
 }
 
 // ── Customer context (Customer entity) ─────────────────────────────────
-async function getCustomerContext(base44, phone) {
+async function getCustomerContext(base44, phone, businessId = 'vds') {
   if (!phone) return null;
   try {
     const d = phone.replace(/\D/g, '');
     if (d.length < 10) return null;
     const e164 = d.length === 10 ? '+1' + d : '+' + d;
-    let customers = await base44.asServiceRole.entities.Customer.filter({ phone: e164 }).catch(() => []);
+    let customers = await base44.asServiceRole.entities.Customer.filter({ business_id: businessId, phone: e164 }).catch(() => []);
     if (!customers.length) {
-      const all = await base44.asServiceRole.entities.Customer.list().catch(() => []);
+      const all = await base44.asServiceRole.entities.Customer.filter({ business_id: businessId }).catch(() => []);
       customers = (all || []).filter(c => (c.phone || '').replace(/\D/g, '').slice(-10) === d.slice(-10));
     }
     const customer = customers[0];
     if (!customer) return null;
 
-    let vehicles = await base44.asServiceRole.entities.MemberVehicle.filter({ customer_id: customer.id }).catch(() => []);
+    let vehicles = await base44.asServiceRole.entities.MemberVehicle.filter({ business_id: businessId, customer_id: customer.id }).catch(() => []);
     if (!vehicles.length && customer.linked_user_id) {
-      vehicles = await base44.asServiceRole.entities.MemberVehicle.filter({ created_by_id: customer.linked_user_id }).catch(() => []);
+      vehicles = await base44.asServiceRole.entities.MemberVehicle.filter({ business_id: businessId, created_by_id: customer.linked_user_id }).catch(() => []);
     }
     const vIds = (vehicles || []).map(v => v.id);
-    const subs = await base44.asServiceRole.entities.VehicleSubscription.filter({ status: 'active' }).catch(() => []);
+    const subs = await base44.asServiceRole.entities.VehicleSubscription.filter({ business_id: businessId, status: 'active' }).catch(() => []);
     const gold = (subs || []).some(s => vIds.includes(s.vehicle_id));
     const vList = (vehicles || []).map(v => [v.year, v.make, v.model].filter(Boolean).join(' '));
     const name = [customer.first_name, customer.last_name].filter(Boolean).join(' ') || 'there';
@@ -285,6 +285,7 @@ Deno.serve(async (req) => {
     if (!tokenOk && !authedOk && !twilioOk) {
       try {
         await base44.asServiceRole.entities.SystemEventLog.create({
+          business_id: 'vds',
           event_type: 'valerie_auth_failed',
           entity_type: 'valerie',
           description: 'Twilio webhook authentication failed (signature + API verify)',
@@ -304,17 +305,21 @@ Deno.serve(async (req) => {
 
     if (!cfg) return Response.json({ error: 'BusinessConfig not found.' }, { status: 500 });
 
+    // Single-tenant stopgap: derive business_id from the active BusinessConfig.
+    // Phase 4: replace with origin/Twilio-number → BusinessConfig resolution.
+    const businessId = cfg.business_id || 'vds';
+
     // Normalize to E.164 for consistent conversation history keys.
     const d = phone.replace(/\D/g, '');
     const e164 = d.length === 10 ? '+1' + d : (d.length > 10 ? '+' + d : phone);
 
     // Load conversation history (last 20 exchanges), order chronologically.
     const history = await base44.asServiceRole.entities.ConversationHistory.filter(
-      { customer_phone: e164 }, '-created_date', 20
+      { business_id: businessId, customer_phone: e164 }, '-created_date', 20
     ).catch(() => []);
     const ordered = history.slice().reverse();
 
-    const customerCtx = await getCustomerContext(base44, phone);
+    const customerCtx = await getCustomerContext(base44, phone, businessId);
     const systemPrompt = buildSystemPrompt(cfg, customerCtx);
 
     const messages = [{ role: 'system', content: systemPrompt }];
@@ -349,8 +354,8 @@ Deno.serve(async (req) => {
     // Persist conversation history (always — even if SMS delivery is suppressed by the Rules Engine).
     try {
       await base44.asServiceRole.entities.ConversationHistory.bulkCreate([
-        { customer_phone: e164, customer_name: customerCtx ? customerCtx.name : '', role: 'user', content: message },
-        { customer_phone: e164, customer_name: customerCtx ? customerCtx.name : '', role: 'assistant', content: finalText },
+        { business_id: businessId, customer_phone: e164, customer_name: customerCtx ? customerCtx.name : '', role: 'user', content: message },
+        { business_id: businessId, customer_phone: e164, customer_name: customerCtx ? customerCtx.name : '', role: 'assistant', content: finalText },
       ]);
     } catch (e) { console.error('History save error:', e.message); }
 
@@ -359,7 +364,7 @@ Deno.serve(async (req) => {
     try {
       const r = await base44.asServiceRole.functions.invoke('sendMessage', {
         customer_phone: e164, message_type: 'valerie_reply', content: finalText,
-        customer_name: customerCtx ? customerCtx.name : '', scheduler_token: SCHEDULER_TOKEN,
+        customer_name: customerCtx ? customerCtx.name : '', business_id: businessId, scheduler_token: SCHEDULER_TOKEN,
       });
       delivery = r?.data || r || delivery;
     } catch (e) { console.error('sendMessage error:', e.message); }

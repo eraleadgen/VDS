@@ -62,14 +62,14 @@ function defaultClassification(pricingGroup) {
 }
 
 // Find a Customer by phone (E.164 exact, then last-10-digit match) or by email.
-async function findCustomer(base44, phone, email) {
+async function findCustomer(base44, phone, email, businessId = 'vds') {
   if (phone) {
     const e164 = toE164(phone);
-    let customers = await base44.asServiceRole.entities.Customer.filter({ phone: e164 }).catch(() => []);
+    let customers = await base44.asServiceRole.entities.Customer.filter({ business_id: businessId, phone: e164 }).catch(() => []);
     if (!customers.length) {
       const d = phone.replace(/\D/g, '');
       if (d.length >= 10) {
-        const all = await base44.asServiceRole.entities.Customer.list().catch(() => []);
+        const all = await base44.asServiceRole.entities.Customer.filter({ business_id: businessId }).catch(() => []);
         customers = (all || []).filter(c => (c.phone || '').replace(/\D/g, '').slice(-10) === d.slice(-10));
       }
     }
@@ -77,7 +77,7 @@ async function findCustomer(base44, phone, email) {
   }
   if (email) {
     const e = email.toLowerCase();
-    const all = await base44.asServiceRole.entities.Customer.list().catch(() => []);
+    const all = await base44.asServiceRole.entities.Customer.filter({ business_id: businessId }).catch(() => []);
     const found = (all || []).find(c => c.email && c.email.toLowerCase() === e);
     if (found) return found;
   }
@@ -85,11 +85,11 @@ async function findCustomer(base44, phone, email) {
 }
 
 // Find vehicles for a Customer — tries customer_id (new schema), falls back to linked_user_id (old records).
-async function findCustomerVehicles(base44, customer) {
+async function findCustomerVehicles(base44, customer, businessId = 'vds') {
   if (!customer) return [];
-  let vehicles = await base44.asServiceRole.entities.MemberVehicle.filter({ customer_id: customer.id }).catch(() => []);
+  let vehicles = await base44.asServiceRole.entities.MemberVehicle.filter({ business_id: businessId, customer_id: customer.id }).catch(() => []);
   if (!vehicles.length && customer.linked_user_id) {
-    vehicles = await base44.asServiceRole.entities.MemberVehicle.filter({ created_by_id: customer.linked_user_id }).catch(() => []);
+    vehicles = await base44.asServiceRole.entities.MemberVehicle.filter({ business_id: businessId, created_by_id: customer.linked_user_id }).catch(() => []);
   }
   return vehicles || [];
 }
@@ -97,16 +97,16 @@ async function findCustomerVehicles(base44, customer) {
 function customerFullName(c) { return c ? [c.first_name, c.last_name].filter(Boolean).join(' ') || 'there' : 'there'; }
 
 // ── Action Handlers ────────────────────────────────────────────────────
-async function actLookupCustomer(base44, data) {
+async function actLookupCustomer(base44, data, businessId) {
   const { phone, email } = data;
   if (!phone && !email) return { error: 'phone or email is required.' };
-  const customer = await findCustomer(base44, phone, email);
+  const customer = await findCustomer(base44, phone, email, businessId);
   if (!customer) return { success: true, customer: null, found: false };
 
   const [vehicles, subs, appts] = await Promise.all([
-    findCustomerVehicles(base44, customer),
-    base44.asServiceRole.entities.VehicleSubscription.filter({ status: 'active' }).catch(() => []),
-    base44.asServiceRole.entities.Appointment.filter({ customer_phone: customer.phone }).catch(() => []),
+    findCustomerVehicles(base44, customer, businessId),
+    base44.asServiceRole.entities.VehicleSubscription.filter({ business_id: businessId, status: 'active' }).catch(() => []),
+    base44.asServiceRole.entities.Appointment.filter({ business_id: businessId, customer_phone: customer.phone }).catch(() => []),
   ]);
   const vIds = vehicles.map(v => v.id);
   const goldSubs = (subs || []).filter(s => vIds.includes(s.vehicle_id));
@@ -128,7 +128,7 @@ async function actLookupCustomer(base44, data) {
   };
 }
 
-async function actCreateQuote(base44, data, config) {
+async function actCreateQuote(base44, data, config, businessId) {
   const { phone, service, vehicleType, vehicleClassification, vehicleYear, vehicleMake, vehicleModel, vehicleCount = 1 } = data;
   if (!phone) return { error: 'phone is required.' };
   if (!service) return { error: 'service is required.' };
@@ -149,13 +149,14 @@ async function actCreateQuote(base44, data, config) {
   const vehicleDesc = [vehicleYear, vehicleMake, vehicleModel].filter(Boolean).join(' ') || (pricingGroup === 'truck_suv' ? 'SUV/Truck' : 'Sedan/Coupe');
   const quoteSummary = `${svc.label} — ${pricingGroup === 'truck_suv' ? 'SUV/Truck' : 'Sedan/Coupe'}`;
 
-  const customer = await findCustomer(base44, phone);
+  const customer = await findCustomer(base44, phone, null, businessId);
   const customerName = customer ? customerFullName(customer) : 'Unknown';
   const customerEmail = customer?.email || '';
   const smsConsent = customer?.sms_consent ?? true;
   const expiration = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
   const quote = await base44.asServiceRole.entities.Quote.create({
+    business_id: businessId,
     customer_name: customerName, customer_phone: toE164(phone), customer_email: customerEmail,
     vehicle_year: String(vehicleYear || ''), vehicle_make: vehicleMake || '', vehicle_model: vehicleModel || '',
     vehicle_type: pricingGroup, requested_services: [svcKey],
@@ -171,13 +172,13 @@ async function actCreateQuote(base44, data, config) {
   return { success: true, quoteId: quote.id, startingPrice, quoteSummary, bookingUrl: config.bookingUrl, speech };
 }
 
-async function actSendQuote(base44, data, config) {
+async function actSendQuote(base44, data, config, businessId) {
   let { quoteId } = data;
   const lookupPhone = toE164(data.phone || data.customer_phone);
 
   if (!quoteId) {
     if (!lookupPhone) return { error: "I need the customer's phone number to find the quote. Ask them for it, then call send_quote again." };
-    const quotes = await base44.asServiceRole.entities.Quote.filter({ customer_phone: lookupPhone });
+    const quotes = await base44.asServiceRole.entities.Quote.filter({ business_id: businessId, customer_phone: lookupPhone });
     const recent = (quotes || []).filter(q => !q.sms_sent && q.status !== 'expired').sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
     quoteId = recent?.id;
     if (!quoteId) return { error: 'No pending quote found for that number. Create a quote first using create_quote.' };
@@ -185,6 +186,8 @@ async function actSendQuote(base44, data, config) {
 
   const quote = await base44.asServiceRole.entities.Quote.get(quoteId);
   if (!quote) return { error: 'Quote not found.' };
+  // Tenant guard: asServiceRole bypasses RLS — reject cross-tenant quote lookups.
+  if (quote.business_id && quote.business_id !== businessId) return { error: 'Quote not found.' };
 
   const firstName = (quote.customer_name || 'there').split(' ')[0];
   const serviceLabel = quote.quote_summary || 'Detail Service';
@@ -197,7 +200,7 @@ async function actSendQuote(base44, data, config) {
     await base44.asServiceRole.functions.invoke('sendMessage', {
       customer_phone: lookupPhone || quote.customer_phone,
       message_type: 'quote_delivery', content: smsText,
-      customer_name: quote.customer_name, scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
+      customer_name: quote.customer_name, business_id: businessId, scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
     });
   } catch (e) { console.error('sendQuote delivery error:', e.message); }
 
@@ -205,16 +208,16 @@ async function actSendQuote(base44, data, config) {
   return { success: true, sms_text: smsText, speech: "I've sent your quote to your phone — check your texts! Anything else I can help with?" };
 }
 
-async function actCheckGoldStatus(base44, data) {
+async function actCheckGoldStatus(base44, data, businessId) {
   const { phone, email } = data;
   if (!phone && !email) return { error: 'phone or email is required.' };
-  const customer = await findCustomer(base44, phone, email);
+  const customer = await findCustomer(base44, phone, email, businessId);
   if (!customer) return { success: true, active: false };
 
   const [vehicles, subs, records] = await Promise.all([
-    findCustomerVehicles(base44, customer),
-    base44.asServiceRole.entities.VehicleSubscription.filter({ status: 'active' }).catch(() => []),
-    base44.asServiceRole.entities.ServiceRecord.list().catch(() => []),
+    findCustomerVehicles(base44, customer, businessId),
+    base44.asServiceRole.entities.VehicleSubscription.filter({ business_id: businessId, status: 'active' }).catch(() => []),
+    base44.asServiceRole.entities.ServiceRecord.filter({ business_id: businessId }).catch(() => []),
   ]);
   const vIds = vehicles.map(v => v.id);
   const goldSubs = (subs || []).filter(s => vIds.includes(s.vehicle_id));
@@ -234,15 +237,16 @@ async function actCheckGoldStatus(base44, data) {
   };
 }
 
-async function actSpecialistFollowup(base44, data) {
+async function actSpecialistFollowup(base44, data, businessId) {
   const { phone, reason, notes } = data;
   if (!phone) return { error: 'phone is required.' };
   if (!reason) return { error: 'reason is required.' };
   const cleanPhone = toE164(phone);
-  const customer = await findCustomer(base44, phone);
+  const customer = await findCustomer(base44, phone, null, businessId);
   const name = customer ? customerFullName(customer) : 'Customer';
 
   await base44.asServiceRole.entities.AILog.create({
+    business_id: businessId,
     action: 'specialist_followup', customer_phone: cleanPhone, customer_name: name,
     outcome: 'other', raw_request: JSON.stringify({ phone: cleanPhone, reason, notes }),
     raw_response: JSON.stringify({ success: true }),
@@ -285,29 +289,33 @@ Deno.serve(async (req) => {
     const config = await loadConfig(base44);
     if (!config) return Response.json({ error: 'Business configuration not found.' }, { status: 500 });
 
+    // Single-tenant stopgap: derive business_id from the active BusinessConfig.
+    // Phase 4: replace with origin/Twilio-number → BusinessConfig resolution.
+    const businessId = config.cfg.business_id || 'vds';
+
     let result = {};
     let outcome = 'other';
 
     switch (action) {
       case 'lookup_customer':
-        result = await actLookupCustomer(base44, data); outcome = 'info_provided'; break;
+        result = await actLookupCustomer(base44, data, businessId); outcome = 'info_provided'; break;
       case 'get_services':
         result = actGetServices(config); outcome = 'info_provided'; break;
       case 'create_quote':
-        result = await actCreateQuote(base44, data, config); outcome = result.success ? 'quote_created' : 'error'; break;
+        result = await actCreateQuote(base44, data, config, businessId); outcome = result.success ? 'quote_created' : 'error'; break;
       case 'send_quote':
-        result = await actSendQuote(base44, data, config); outcome = result.success ? 'info_provided' : 'error'; break;
+        result = await actSendQuote(base44, data, config, businessId); outcome = result.success ? 'info_provided' : 'error'; break;
       case 'check_gold_status':
-        result = await actCheckGoldStatus(base44, data); outcome = 'info_provided'; break;
+        result = await actCheckGoldStatus(base44, data, businessId); outcome = 'info_provided'; break;
       case 'specialist_followup':
-        result = await actSpecialistFollowup(base44, data); outcome = 'other'; break;
+        result = await actSpecialistFollowup(base44, data, businessId); outcome = 'other'; break;
       case 'check_availability': {
-        const r = await base44.asServiceRole.functions.invoke('scheduler', { action: 'check_availability', date: data.date, service: data.service, vehicle_type: data.vehicleType });
+        const r = await base44.asServiceRole.functions.invoke('scheduler', { action: 'check_availability', business_id: businessId, date: data.date, service: data.service, vehicle_type: data.vehicleType });
         result = r?.data ?? r; outcome = 'info_provided'; break;
       }
       case 'book_appointment': {
         const r = await base44.asServiceRole.functions.invoke('scheduler', {
-          action: 'book', date: data.date, startUtc: data.startUtc, service: data.service,
+          action: 'book', business_id: businessId, date: data.date, startUtc: data.startUtc, service: data.service,
           vehicle_type: data.vehicleType, customer_name: data.customerName, customer_phone: data.phone,
           customer_email: data.email, vehicle_info: [data.vehicleYear, data.vehicleMake, data.vehicleModel].filter(Boolean).join(' '),
           service_address: data.serviceAddress, notes: data.notes,
@@ -336,13 +344,13 @@ Deno.serve(async (req) => {
         }
         if (action === 'cancel_appointment') {
           const r = await base44.asServiceRole.functions.invoke('scheduler', {
-            action: 'cancel', appointment_id: data.appointmentId,
+            action: 'cancel', business_id: businessId, appointment_id: data.appointmentId,
             scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
           });
           result = r?.data ?? r; outcome = 'other';
         } else {
           const r = await base44.asServiceRole.functions.invoke('scheduler', {
-            action: 'reschedule', appointment_id: data.appointmentId, new_startUtc: data.newStartUtc, new_date: data.newDate,
+            action: 'reschedule', business_id: businessId, appointment_id: data.appointmentId, new_startUtc: data.newStartUtc, new_date: data.newDate,
             scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
           });
           result = r?.data ?? r; outcome = result && result.success ? 'appointment_booked' : 'error';
@@ -355,6 +363,7 @@ Deno.serve(async (req) => {
 
     try {
       await base44.asServiceRole.entities.AILog.create({
+        business_id: businessId,
         action, customer_phone: normalizePhone(data.phone || ''), customer_name: data.customerName || '',
         vehicle_info: [data.vehicleYear, data.vehicleMake, data.vehicleModel].filter(Boolean).join(' '),
         outcome, quote_id: result?.quoteId || '', duration_seconds: Date.now() - t0,

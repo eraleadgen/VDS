@@ -7,6 +7,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 import { findOrCreateCustomer } from '../../shared/customer.ts';
+import { getInternalBusinessId } from '../../shared/tenantContext.ts';
 
 function toE164(phone) {
   if (!phone) return '';
@@ -15,8 +16,8 @@ function toE164(phone) {
   return d.length >= 10 ? '+' + d : '';
 }
 
-async function loadConfig(base44) {
-  const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
+async function loadConfig(base44, businessId) {
+  const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ business_id: businessId, is_active: true });
   return configs && configs[0] ? configs[0] : null;
 }
 
@@ -28,10 +29,10 @@ function resolvePricingGroup(cfg, classification, legacyType) {
 }
 
 // Find-or-create a Customer via the shared helper (canonical E.164 + last-10-digit fallback).
-async function ensureCustomer(base44, phone, name, email) {
+async function ensureCustomer(base44, phone, name, email, businessId) {
   const firstName = (name || '').split(' ')[0] || '';
   const lastName = (name || '').split(' ').slice(1).join(' ') || '';
-  const { customer } = await findOrCreateCustomer(base44, { phone, firstName, lastName, email });
+  const { customer } = await findOrCreateCustomer(base44, { phone, firstName, lastName, email, businessId });
   return customer;
 }
 
@@ -46,6 +47,7 @@ Deno.serve(async (req) => {
     }
     delete body.scheduler_token;
 
+    const businessId = getInternalBusinessId(body);
     const { customer_name, customer_phone, customer_email, vehicle_year, vehicle_make, vehicle_model,
             vehicle_classification, vehicle_type, services, ai_notes } = body;
 
@@ -53,7 +55,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'customer_phone and services[] are required.' }, { status: 400 });
     }
 
-    const cfg = await loadConfig(base44);
+    const cfg = await loadConfig(base44, businessId);
     if (!cfg) return Response.json({ error: 'BusinessConfig not found.' }, { status: 500 });
 
     const pricingGroup = resolvePricingGroup(cfg, vehicle_classification, vehicle_type);
@@ -75,13 +77,14 @@ Deno.serve(async (req) => {
     const quoteSummary = `Quote for ${vehicleDesc}:\n${summaryLines.join('\n')}\nStarting at $${totalPrice}`;
 
     // Find-or-create customer, snapshot consent.
-    const customer = await ensureCustomer(base44, customer_phone, customer_name, customer_email);
+    const customer = await ensureCustomer(base44, customer_phone, customer_name, customer_email, businessId);
     const customerName = customer ? [customer.first_name, customer.last_name].filter(Boolean).join(' ') : (customer_name || 'Unknown');
     const customerEmail = customer?.email || customer_email || '';
     const smsConsent = customer?.sms_consent ?? true;
 
     const expiration = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     const quote = await base44.asServiceRole.entities.Quote.create({
+      business_id: businessId,
       customer_name: customerName, customer_phone: toE164(customer_phone), customer_email: customerEmail,
       vehicle_year: vehicle_year || '', vehicle_make: vehicle_make || '', vehicle_model: vehicle_model || '',
       vehicle_type: pricingGroup, requested_services: services,
@@ -95,7 +98,7 @@ Deno.serve(async (req) => {
     try {
       await base44.asServiceRole.functions.invoke('logEvent', {
         event_type: 'quote_generated', entity_type: 'quote', entity_id: quote.id,
-        customer_id: customer?.id || null, description: `Quote generated: ${quoteSummary}`,
+        customer_id: customer?.id || null, business_id: businessId, description: `Quote generated: ${quoteSummary}`,
         metadata: { pricing_group: pricingGroup, total: totalPrice, services },
         scheduler_token: SCHEDULER_TOKEN,
       });

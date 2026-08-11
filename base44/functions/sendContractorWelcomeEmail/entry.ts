@@ -7,6 +7,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 import { loadBusinessContact } from '../../shared/businessContact.ts';
+import { getInternalBusinessId } from '../../shared/tenantContext.ts';
 
 const SUBJECT = (businessName) => `Welcome to ${businessName} — Your Contractor Account is Ready`;
 const FONT = "'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
@@ -159,10 +160,10 @@ function buildHtml(firstName, portalUrl, contact) {
 </html>`;
 }
 
-async function resolvePortalUrl(base44, explicit) {
+async function resolvePortalUrl(base44, explicit, businessId = 'vds') {
   if (explicit) return explicit;
   try {
-    const cfgs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
+    const cfgs = await base44.asServiceRole.entities.BusinessConfig.filter({ business_id: businessId, is_active: true });
     const cfg = cfgs && cfgs[0];
     const booking = cfg && cfg.website_links && cfg.website_links.booking_url;
     if (booking) {
@@ -189,12 +190,13 @@ Deno.serve(async (req) => {
     }
     if (body.scheduler_token) delete body.scheduler_token;
 
+    const businessId = getInternalBusinessId(body);
     const email = (body.email || '').trim();
     if (!email) return Response.json({ error: 'email is required.' }, { status: 400 });
 
     const firstName = (body.firstName || 'there').trim() || 'there';
-    const portalUrl = await resolvePortalUrl(base44, (body.contractorPortalUrl || '').trim() || null);
-    const contact = await loadBusinessContact(base44);
+    const portalUrl = await resolvePortalUrl(base44, (body.contractorPortalUrl || '').trim() || null, businessId);
+    const contact = await loadBusinessContact(base44, businessId);
     const html = buildHtml(firstName, portalUrl, contact);
 
     await base44.asServiceRole.integrations.Core.SendEmail({

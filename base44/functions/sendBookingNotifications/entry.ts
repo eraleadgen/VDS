@@ -6,6 +6,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 import { sendCustomerEmail } from '../../shared/customerEmail.ts';
 import { loadBusinessContact } from '../../shared/businessContact.ts';
+import { getInternalBusinessId } from '../../shared/tenantContext.ts';
 
 const FONT = "'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 const MONO = "'Space Mono','Courier New',monospace";
@@ -151,11 +152,16 @@ Deno.serve(async (req) => {
     const apptId = body.appointment_id;
     if (!apptId) return Response.json({ error: 'appointment_id is required.' }, { status: 400 });
 
+    const businessId = getInternalBusinessId(body);
     const appt = await base44.asServiceRole.entities.Appointment.get(apptId);
     if (!appt) return Response.json({ error: 'Appointment not found.' }, { status: 404 });
+    // Tenant guard: asServiceRole bypasses RLS — reject cross-tenant appointment lookups.
+    if (appt.business_id && appt.business_id !== businessId) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     const firstName = (appt.customer_name || '').split(' ')[0] || 'there';
-    const contact = await loadBusinessContact(base44);
+    const contact = await loadBusinessContact(base44, businessId);
     const results = { sms: false, email: false, internal: false };
 
     // 1. Customer SMS confirmation (only if SMS consent given; otherwise email confirmation below suffices)
@@ -175,6 +181,7 @@ Deno.serve(async (req) => {
           subject: `Your ${contact.businessName} Appointment is Confirmed — ${appt.preferred_date} at ${appt.preferred_time}`,
           html,
           fromName: contact.businessName,
+          businessId,
         });
         results.email = r.sent;
         if (!r.sent) console.error('Customer confirmation email failed:', r.error);

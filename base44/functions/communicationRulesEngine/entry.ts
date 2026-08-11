@@ -9,6 +9,7 @@
 // Protected by SCHEDULER_TOKEN — internal calls only (never callable by end users).
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
+import { getInternalBusinessId } from '../../shared/tenantContext.ts';
 
 function toE164(phone) {
   if (!phone) return '';
@@ -17,23 +18,26 @@ function toE164(phone) {
   return d.length >= 10 ? '+' + d : '';
 }
 
-async function loadConfig(base44) {
-  const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
+async function loadConfig(base44, businessId) {
+  const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ business_id: businessId, is_active: true });
   return configs && configs[0] ? configs[0] : null;
 }
 
 // Resolve a Customer by id, or by phone (E.164 exact, then last-10-digit match).
-async function resolveCustomer(base44, customerId, phone) {
+async function resolveCustomer(base44, customerId, phone, businessId) {
   if (customerId) {
-    return await base44.asServiceRole.entities.Customer.get(customerId).catch(() => null);
+    const c = await base44.asServiceRole.entities.Customer.get(customerId).catch(() => null);
+    // Tenant guard: asServiceRole bypasses RLS — reject cross-tenant customer lookups.
+    if (c && c.business_id && c.business_id !== businessId) return null;
+    return c;
   }
   if (phone) {
     const e164 = toE164(phone);
-    let customers = await base44.asServiceRole.entities.Customer.filter({ phone: e164 }).catch(() => []);
+    let customers = await base44.asServiceRole.entities.Customer.filter({ business_id: businessId, phone: e164 }).catch(() => []);
     if (!customers.length) {
       const d = phone.replace(/\D/g, '');
       if (d.length >= 10) {
-        const all = await base44.asServiceRole.entities.Customer.list().catch(() => []);
+        const all = await base44.asServiceRole.entities.Customer.filter({ business_id: businessId }).catch(() => []);
         customers = (all || []).filter(c => (c.phone || '').replace(/\D/g, '').slice(-10) === d.slice(-10));
       }
     }
@@ -70,11 +74,12 @@ Deno.serve(async (req) => {
     const { customer_id, customer_phone, message_type } = body;
     if (!message_type) return Response.json({ error: 'message_type is required.' }, { status: 400 });
 
-    const cfg = await loadConfig(base44);
+    const businessId = getInternalBusinessId(body);
+    const cfg = await loadConfig(base44, businessId);
     const flags = (cfg && cfg.feature_flags) || {};
     const twilioEnabled = flags.twilio_sms_enabled === true;
 
-    const customer = await resolveCustomer(base44, customer_id, customer_phone);
+    const customer = await resolveCustomer(base44, customer_id, customer_phone, businessId);
 
     // ── Review request suppression ──
     // A customer who already submitted a review or opted out never gets another review request.

@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
+import { getInternalBusinessId } from '../../shared/tenantContext.ts';
 
 // Centralized event logger for ERA Core's event-driven architecture.
 // Invoked by other backend functions to record significant platform events
@@ -29,7 +30,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'event_type is required' }, { status: 400 });
     }
 
+    const businessId = getInternalBusinessId(body);
+
     const entry = await base44.asServiceRole.entities.SystemEventLog.create({
+      business_id: businessId,
       event_type,
       entity_type: entity_type || null,
       entity_id: entity_id || null,
@@ -66,6 +70,7 @@ Deno.serve(async (req) => {
       if (journey) {
         try {
           await base44.asServiceRole.entities.CustomerJourney.create({
+            business_id: businessId,
             customer_id,
             entry_type: journey.entry_type,
             title: journey.title,

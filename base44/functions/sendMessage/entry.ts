@@ -7,6 +7,7 @@
 // Protected by SCHEDULER_TOKEN — internal calls only.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
+import { getInternalBusinessId } from '../../shared/tenantContext.ts';
 
 function toE164(phone) {
   if (!phone) return '';
@@ -68,10 +69,11 @@ Deno.serve(async (req) => {
     if (!content) return Response.json({ error: 'content is required.' }, { status: 400 });
 
     // Load BusinessConfig for dynamic subject lines and from_name (white-label support).
+    const businessId = getInternalBusinessId(body);
     let businessName = 'VDS Mobile';
     let conciergeName = 'Valerie';
     try {
-      const cfgs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
+      const cfgs = await base44.asServiceRole.entities.BusinessConfig.filter({ business_id: businessId, is_active: true });
       const cfg = cfgs && cfgs[0];
       if (cfg) {
         businessName = cfg.business_name || businessName;
@@ -82,7 +84,7 @@ Deno.serve(async (req) => {
 
     // ── Evaluate through the Communication Rules Engine ──
     const evalRes = await base44.asServiceRole.functions.invoke('communicationRulesEngine', {
-      customer_id, customer_phone, message_type, scheduler_token: SCHEDULER_TOKEN,
+      customer_id, customer_phone, message_type, business_id: businessId, scheduler_token: SCHEDULER_TOKEN,
     });
     const decision = evalRes?.data || evalRes;
 
@@ -98,14 +100,14 @@ Deno.serve(async (req) => {
       // Conversation history (audit trail — always logged, even if Twilio fails)
       try {
         await base44.asServiceRole.entities.ConversationHistory.create({
-          customer_phone: to, customer_name: customer_name || '', role: 'assistant', content,
+          business_id: businessId, customer_phone: to, customer_name: customer_name || '', role: 'assistant', content,
         });
       } catch (e) { console.error('history log error:', e.message); }
       // Delivery event
       try {
         await base44.asServiceRole.functions.invoke('logEvent', {
           event_type: 'message_sent', entity_type: 'customer', entity_id: decision.customer_id || null,
-          customer_id: decision.customer_id || null,
+          customer_id: decision.customer_id || null, business_id: businessId,
           description: `'${message_type}' delivered via SMS`,
           metadata: { channel: 'sms', message_type, sent: result.sent },
           scheduler_token: SCHEDULER_TOKEN,
@@ -123,7 +125,7 @@ Deno.serve(async (req) => {
         try {
           await base44.asServiceRole.functions.invoke('logEvent', {
             event_type: 'message_suppressed', entity_type: 'customer',
-            entity_id: decision.customer_id || null, customer_id: decision.customer_id || null,
+            entity_id: decision.customer_id || null, customer_id: decision.customer_id || null, business_id: businessId,
             description: `'${message_type}' SMS email-fallback suppressed (branded email sent directly)`,
             suppression_reason: 'suppressed_email_fallback',
             metadata: { message_type, reason: 'suppressed_email_fallback' },
@@ -141,7 +143,7 @@ Deno.serve(async (req) => {
         });
         await base44.asServiceRole.functions.invoke('logEvent', {
           event_type: 'message_sent', entity_type: 'customer', entity_id: decision.customer_id || null,
-          customer_id: decision.customer_id || null,
+          customer_id: decision.customer_id || null, business_id: businessId,
           description: `'${message_type}' delivered via email`,
           metadata: { channel: 'email', message_type },
           scheduler_token: SCHEDULER_TOKEN,

@@ -4,6 +4,9 @@
 // Setup page. Auth + send scaffolding live in base44/shared/inviteEmail.ts (shared with the
 // specialist invite).
 
+// sendPartnerInvite passes business_id through the shared inviteEmail runner so
+// the setup URL + BusinessConfig lookup are tenant-scoped. The admin/scheduler caller
+// is responsible for including business_id in the request body.
 import { runInviteEndpoint } from '../../shared/inviteEmail.ts';
 
 const SUBJECT = (businessName) => `You're Invited — Set Up Your ${businessName} Partner Network Account`;

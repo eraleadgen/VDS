@@ -6,9 +6,10 @@
 // Protected by SCHEDULER_TOKEN — internal calls only (called by valerieTools, website, admin).
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
+import { getInternalBusinessId } from '../../shared/tenantContext.ts';
 
-async function loadConfig(base44) {
-  const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
+async function loadConfig(base44, businessId) {
+  const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ business_id: businessId, is_active: true });
   return configs && configs[0] ? configs[0] : null;
 }
 
@@ -30,12 +31,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized.' }, { status: 401 });
     }
 
+    const businessId = getInternalBusinessId(body);
     const { vehicle_classification, vehicle_type, services, condition, add_ons, paint_protection } = body;
     if (!services || !Array.isArray(services)) {
       return Response.json({ error: 'services[] is required.' }, { status: 400 });
     }
 
-    const cfg = await loadConfig(base44);
+    const cfg = await loadConfig(base44, businessId);
     if (!cfg) return Response.json({ error: 'BusinessConfig not found.' }, { status: 500 });
 
     const pricingGroup = resolvePricingGroup(cfg, vehicle_classification, vehicle_type);
