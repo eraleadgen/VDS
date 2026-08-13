@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { LayoutDashboard, Users, CalendarRange, MessageSquare, DollarSign, Route, FileText, Network, LineChart, Library } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarRange, MessageSquare, DollarSign, Route, FileText, Network, LineChart, Library, BarChart3 } from 'lucide-react';
 import PortalShell from '@/components/portal/PortalShell';
 import ContractorsTab from '@/components/admin/ContractorsTab';
 import AppointmentsTab from '@/components/admin/AppointmentsTab';
@@ -11,6 +11,7 @@ import InvoicesTab from '@/components/admin/InvoicesTab';
 import JourneyTab from '@/components/admin/JourneyTab';
 import QuotesTab from '@/components/admin/QuotesTab';
 import OverviewTab from '@/components/admin/OverviewTab';
+import AnalyticsTab from '@/components/admin/AnalyticsTab';
 import PartnersTab from '@/components/admin/PartnersTab';
 import UsersTab from '@/components/admin/UsersTab';
 import BusinessDevTab from '@/components/admin/BusinessDevTab';
@@ -54,6 +55,7 @@ export default function AdminDashboard() {
     { key: 'users', label: 'USERS', icon: Users },
     hasFeature('partner_engine') && { key: 'business', label: 'BUSINESS DEV', icon: LineChart },
     { key: 'resources', label: 'RESOURCES', icon: Library },
+    hasFeature('advanced_analytics') && { key: 'analytics', label: 'ANALYTICS', icon: BarChart3 },
     hasFeature('ai_sms_agent') && { key: 'messages', label: 'MESSAGES', icon: MessageSquare },
   ].filter(Boolean);
 
@@ -70,6 +72,7 @@ export default function AdminDashboard() {
           {tab === 'users' && <UsersTab />}
           {tab === 'business' && hasFeature('partner_engine') && <BusinessDevTab />}
           {tab === 'resources' && <ResourceCenter variant="admin" />}
+          {tab === 'analytics' && hasFeature('advanced_analytics') && <AnalyticsTab />}
           {tab === 'messages' && hasFeature('ai_sms_agent') && <MessagesTab />}
         </>
     </PortalShell>
