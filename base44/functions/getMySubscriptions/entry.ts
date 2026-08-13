@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.32';
 import { getUserBusinessId } from '../../shared/tenantContext.ts';
+import { checkFeature } from '../../shared/planFeatures.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -8,6 +9,9 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const businessId = await getUserBusinessId(base44, user);
+
+    const fc = await checkFeature(base44, businessId, 'member_portal');
+    if (!fc.ok) return Response.json({ error: 'Member portal is not available on your current plan.' }, { status: 403 });
 
     // Get all vehicles owned by this user
     const vehicles = await base44.entities.MemberVehicle.list();

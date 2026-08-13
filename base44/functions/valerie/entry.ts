@@ -15,6 +15,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 import { loadConfig, formatCatalog, formatConditions, formatHours, formatGold, formatFaq, callOpenAI } from '../../shared/conciergeHelpers.ts';
 import { resolveBusinessIdFromTwilioNumber, logTenantMismatch } from '../../shared/tenantContext.ts';
+import { hasFeature } from '../../shared/planFeatures.ts';
 
 // ── Twilio webhook signature validation ────────────────────────────────
 // Twilio signs every inbound webhook with HMAC-SHA256 using TWILIO_AUTH_TOKEN.
@@ -329,6 +330,9 @@ Deno.serve(async (req) => {
     }
     const cfg = await loadConfig(base44, businessId);
     if (!cfg) return Response.json({ error: 'BusinessConfig not found.' }, { status: 500 });
+    if (!hasFeature(cfg.plan_tier || 'basic', 'ai_sms_agent')) {
+      return Response.json({ error: 'AI SMS agent is not available on your current plan.' }, { status: 403 });
+    }
 
     // Normalize to E.164 for consistent conversation history keys.
     const d = phone.replace(/\D/g, '');

@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 import { findOrCreateCustomer } from '../../shared/customer.ts';
 import { loadBusinessContact } from '../../shared/businessContact.ts';
+import { checkFeature } from '../../shared/planFeatures.ts';
 
 function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
@@ -57,6 +58,11 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'initCustomer') {
+      // Feature gate: member portal must be active for this tenant.
+      const u = await base44.asServiceRole.entities.User.get(me.id);
+      const fc = await checkFeature(base44, u?.business_id || 'vds', 'member_portal');
+      if (!fc.ok) return Response.json({ error: 'Member portal is not available on your current plan.' }, { status: 403 });
+
       // Create/link the member's CRM Customer record at signup and tag it with their SMS
       // consent choice. Dupe-safe: reuses findOrCreateCustomer so a prior guest booking
       // record (linked_user_id null, matched by phone/email) is linked to this new user

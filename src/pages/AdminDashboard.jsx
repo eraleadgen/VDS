@@ -15,6 +15,7 @@ import PartnersTab from '@/components/admin/PartnersTab';
 import UsersTab from '@/components/admin/UsersTab';
 import BusinessDevTab from '@/components/admin/BusinessDevTab';
 import ResourceCenter from '@/components/shared/ResourceCenter';
+import { usePlanFeatures } from '@/lib/usePlanFeatures';
 
 const invoke = (payload) => base44.functions.invoke('scheduler', payload).then(r => r.data ?? r);
 
@@ -24,6 +25,7 @@ export default function AdminDashboard() {
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const { hasFeature } = usePlanFeatures();
 
   useEffect(() => {
     if (authChecked && (!user || user.role !== 'admin')) window.location.href = '/admin-login';
@@ -48,12 +50,12 @@ export default function AdminDashboard() {
     { key: 'quotes', label: 'QUOTES', icon: FileText },
     { key: 'invoices', label: 'INVOICES', icon: DollarSign },
     { key: 'journey', label: 'JOURNEY', icon: Route },
-    { key: 'partners', label: 'PARTNERS', icon: Network },
+    hasFeature('partner_engine') && { key: 'partners', label: 'PARTNERS', icon: Network },
     { key: 'users', label: 'USERS', icon: Users },
-    { key: 'business', label: 'BUSINESS DEV', icon: LineChart },
+    hasFeature('partner_engine') && { key: 'business', label: 'BUSINESS DEV', icon: LineChart },
     { key: 'resources', label: 'RESOURCES', icon: Library },
-    { key: 'messages', label: 'MESSAGES', icon: MessageSquare },
-  ];
+    hasFeature('ai_sms_agent') && { key: 'messages', label: 'MESSAGES', icon: MessageSquare },
+  ].filter(Boolean);
 
   return (
     <PortalShell title="Admin Dashboard" navItems={navItems} active={tab} onNavigate={setTab} userLabel={user?.email} onLogout={() => base44.auth.logout('/admin-login')}>
@@ -64,11 +66,11 @@ export default function AdminDashboard() {
           {tab === 'quotes' && <QuotesTab />}
           {tab === 'invoices' && <InvoicesTab />}
           {tab === 'journey' && <JourneyTab />}
-          {tab === 'partners' && <PartnersTab />}
+          {tab === 'partners' && hasFeature('partner_engine') && <PartnersTab />}
           {tab === 'users' && <UsersTab />}
-          {tab === 'business' && <BusinessDevTab />}
+          {tab === 'business' && hasFeature('partner_engine') && <BusinessDevTab />}
           {tab === 'resources' && <ResourceCenter variant="admin" />}
-          {tab === 'messages' && <MessagesTab />}
+          {tab === 'messages' && hasFeature('ai_sms_agent') && <MessagesTab />}
         </>
     </PortalShell>
   );

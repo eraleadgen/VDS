@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Instagram, Phone, Mail } from 'lucide-react';
 import { useBusinessName, useBusinessConfig, useMembershipPlan } from '@/lib/BusinessConfigContext';
+import { usePlanFeatures } from '@/lib/usePlanFeatures';
 
 const LOGO = "https://media.base44.com/images/public/6a191df337222815cd0b1f5e/6a27779cd_1773368635248-a065bd31-ddf6-4b1c-87dc-3a6080dc60f8.png";
 
@@ -8,6 +9,7 @@ export default function Footer() {
   const businessName = useBusinessName();
   const config = useBusinessConfig();
   const plan = useMembershipPlan();
+  const { hasFeature } = usePlanFeatures();
   const legalName = config?.legal_name || businessName;
   const phone = config?.business_phone || '';
   const phoneHref = `tel:${phone.replace(/[^0-9+]/g, '')}`;
@@ -57,8 +59,8 @@ export default function Footer() {
           <div>
             <p className="text-xs font-mono-tech tracking-widest text-gold mb-6">PORTALS</p>
             <div className="flex flex-col gap-3">
-              <Link to="/specialist-login" className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">Specialist Login</Link>
-              <Link to="/partner-login" className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">Partner Login</Link>
+              {hasFeature('specialist_portal') && <Link to="/specialist-login" className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">Specialist Login</Link>}
+              {hasFeature('partner_engine') && <Link to="/partner-login" className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">Partner Login</Link>}
               <Link to="/admin-login" className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">Admin Login</Link>
             </div>
           </div>

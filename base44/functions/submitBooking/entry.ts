@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 import { findOrCreateCustomer } from '../../shared/customer.ts';
 import { resolveBusinessIdFromHost, logTenantMismatch } from '../../shared/tenantContext.ts';
+import { hasFeature } from '../../shared/planFeatures.ts';
 
 // ── Per-IP rate limiter (per-isolate) — protects public booking from spam / resource exhaustion ──
 const _rlHits = new Map();
@@ -330,7 +331,7 @@ Deno.serve(async (req) => {
       if (customer && !customer.referral_source) {
         await base44.asServiceRole.entities.Customer.update(customer.id, { referral_source: source });
       }
-      if (refCode && customer) {
+      if (refCode && customer && hasFeature(cfg?.plan_tier || 'basic', 'partner_engine')) {
         const partners = await base44.asServiceRole.entities.Partner.filter({ business_id: businessId, referral_code: refCode });
         const partner = partners && partners[0];
         if (partner) {

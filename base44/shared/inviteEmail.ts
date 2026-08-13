@@ -4,6 +4,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 import { loadBusinessContact } from './businessContact.ts';
+import { checkFeature } from './planFeatures.ts';
 
 // Resolve the setup URL from the active BusinessConfig booking_url origin, falling back to
 // the public domain. `pathSegment` is 'specialist-setup' or 'partner-setup'.
@@ -24,7 +25,7 @@ export async function resolveSetupUrl(base44, token, pathSegment, explicit, busi
 // Generic invite endpoint: validates admin/scheduler auth, resolves the setup URL, builds the
 // themed HTML via the caller's buildHtml(firstName, setupUrl), and sends the email.
 export async function runInviteEndpoint(req, opts) {
-  const { subject, buildHtml, pathSegment } = opts;
+  const { subject, buildHtml, pathSegment, feature } = opts;
   try {
     const base44 = createClientFromRequest(req);
     const body = await req.json().catch(() => ({}));
@@ -43,6 +44,15 @@ export async function runInviteEndpoint(req, opts) {
     if (!inviteToken) return Response.json({ error: 'invite_token is required.' }, { status: 400 });
 
     const businessId = body.business_id || 'vds';
+
+    // Feature gate — partner_engine for partner invites, specialist_portal for specialist invites.
+    if (feature) {
+      const fc = await checkFeature(base44, businessId, feature);
+      if (!fc.ok) {
+        return Response.json({ error: 'This feature is not available on your current plan.' }, { status: 403 });
+      }
+    }
+
     const setupUrl = await resolveSetupUrl(base44, inviteToken, pathSegment, (body.setupUrl || '').trim() || null, businessId);
     const contact = await loadBusinessContact(base44, businessId);
     const subjectText = typeof subject === 'function' ? subject(contact.businessName) : subject;

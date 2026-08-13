@@ -9,6 +9,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 import { loadBusinessContact } from '../../shared/businessContact.ts';
 import { getUserBusinessId } from '../../shared/tenantContext.ts';
+import { checkFeature } from '../../shared/planFeatures.ts';
 
 const SUBJECT = (businessName) => `Welcome to ${businessName}`;
 const FONT = "'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
@@ -146,6 +147,9 @@ Deno.serve(async (req) => {
     const email = me.email;
     if (!email) return Response.json({ error: 'No email on account.' }, { status: 400 });
     const businessId = await getUserBusinessId(base44, me);
+
+    const fc = await checkFeature(base44, businessId, 'simple_automations');
+    if (!fc.ok) return Response.json({ error: 'Automated notifications are not available on your current plan.' }, { status: 403 });
 
     // Optional recipient override for admin test sends (defaults to the caller's own email).
     const to = typeof body.to === 'string' && body.to.includes('@') ? body.to : email;

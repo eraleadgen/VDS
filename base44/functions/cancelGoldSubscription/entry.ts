@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.32';
 import Stripe from 'npm:stripe@17.0.0';
 import { getUserBusinessId } from '../../shared/tenantContext.ts';
+import { checkFeature } from '../../shared/planFeatures.ts';
 
 // Cancel a single vehicle's VDS Gold membership without affecting other vehicles that
 // share the same Stripe subscription. Each VehicleSubscription stores its own
@@ -18,6 +19,9 @@ Deno.serve(async (req) => {
     if (!vehicle_id) return Response.json({ error: 'vehicle_id required' }, { status: 400 });
 
     const businessId = await getUserBusinessId(base44, user);
+
+    const fc = await checkFeature(base44, businessId, 'member_portal');
+    if (!fc.ok) return Response.json({ error: 'Member portal is not available on your current plan.' }, { status: 403 });
 
     // Verify vehicle belongs to user
     const vehicle = await base44.entities.MemberVehicle.get(vehicle_id);

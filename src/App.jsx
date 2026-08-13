@@ -42,6 +42,7 @@ import PartnerSetup from './pages/PartnerSetup';
 import PartnerRedirect from './pages/PartnerRedirect';
 import CareGuide from './pages/CareGuide';
 import ChatWidget from '@/components/chat/ChatWidget';
+import FeatureGate from '@/components/FeatureGate';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
@@ -90,24 +91,24 @@ const AuthenticatedApp = () => {
           <Route path="/cookies" element={<Cookies />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/member-login" element={<MemberLogin />} />
-          <Route path="/member-dashboard" element={<MemberDashboard />} />
-          <Route path="/member-signup" element={<GoldSignup />} />
+          <Route path="/member-login" element={<FeatureGate feature="member_portal"><MemberLogin /></FeatureGate>} />
+          <Route path="/member-dashboard" element={<FeatureGate feature="member_portal"><MemberDashboard /></FeatureGate>} />
+          <Route path="/member-signup" element={<FeatureGate feature="member_portal"><GoldSignup /></FeatureGate>} />
           <Route path="/vds-gold-signup" element={<VdsGoldSignup />} />
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/book" element={<BookAppointment />} />
           <Route path="/gold-booking" element={<GoldBooking />} />
-          <Route path="/specialist-login" element={<SpecialistLogin />} />
-          <Route path="/specialist-portal" element={<SpecialistPortal />} />
-          <Route path="/specialist-setup" element={<SpecialistSetup />} />
+          <Route path="/specialist-login" element={<FeatureGate feature="specialist_portal"><SpecialistLogin /></FeatureGate>} />
+          <Route path="/specialist-portal" element={<FeatureGate feature="specialist_portal"><SpecialistPortal /></FeatureGate>} />
+          <Route path="/specialist-setup" element={<FeatureGate feature="specialist_portal"><SpecialistSetup /></FeatureGate>} />
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/project-overview" element={<ProjectOverview />} />
-          <Route path="/partner-portal" element={<PartnerPortal />} />
-          <Route path="/partner-login" element={<PartnerLogin />} />
-          <Route path="/partner-setup" element={<PartnerSetup />} />
+          <Route path="/partner-portal" element={<FeatureGate feature="partner_engine"><PartnerPortal /></FeatureGate>} />
+          <Route path="/partner-login" element={<FeatureGate feature="partner_engine"><PartnerLogin /></FeatureGate>} />
+          <Route path="/partner-setup" element={<FeatureGate feature="partner_engine"><PartnerSetup /></FeatureGate>} />
           <Route path="/care-guide/:key" element={<CareGuide />} />
-          <Route path="/:code" element={<PartnerRedirect />} />
+          <Route path="/:code" element={<FeatureGate feature="partner_engine"><PartnerRedirect /></FeatureGate>} />
           <Route path="*" element={<PageNotFound />} />
         </Route>
       </Routes>

@@ -10,6 +10,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 import { jobStartMs } from '../../shared/timezone.ts';
 import { requireAdminOrSchedulerToken } from '../../shared/authGate.ts';
 import { loadBusinessContact } from '../../shared/businessContact.ts';
+import { hasFeature } from '../../shared/planFeatures.ts';
 
 const FONT = "'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 const MONO = "'Space Mono','Courier New',monospace";
@@ -108,6 +109,10 @@ Deno.serve(async (req) => {
     // Load business config for timezone + live contact info (phone/email/website).
     const contact = await loadBusinessContact(base44);
     const businessId = (contact.cfg && contact.cfg.business_id) || 'vds';
+    if (!hasFeature(contact.cfg?.plan_tier || 'basic', 'simple_automations')) {
+      console.log('Appointment reminders skipped — simple_automations not enabled for tenant');
+      return Response.json({ skipped: true, reason: 'feature_not_enabled' });
+    }
     const tz = (contact.cfg && contact.cfg.timezone) || 'America/New_York';
 
     // Phase 8: read from the Job entity (source of truth). Fetch all recent jobs and

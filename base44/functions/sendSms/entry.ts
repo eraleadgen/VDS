@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 import { getUserBusinessId } from '../../shared/tenantContext.ts';
+import { checkFeature } from '../../shared/planFeatures.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -8,6 +9,9 @@ Deno.serve(async (req) => {
     if (!user || user.role !== 'admin') return Response.json({ error: 'Admin only.' }, { status: 403 });
 
     const businessId = await getUserBusinessId(base44, user);
+
+    const fc = await checkFeature(base44, businessId, 'ai_sms_agent');
+    if (!fc.ok) return Response.json({ error: 'AI SMS agent is not available on your current plan.' }, { status: 403 });
 
     const body = await req.json();
     const { to, content, customer_name } = body || {};

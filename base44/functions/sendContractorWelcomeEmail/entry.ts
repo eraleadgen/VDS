@@ -8,6 +8,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 import { loadBusinessContact } from '../../shared/businessContact.ts';
 import { getInternalBusinessId } from '../../shared/tenantContext.ts';
+import { checkFeature } from '../../shared/planFeatures.ts';
 
 const SUBJECT = (businessName) => `Welcome to ${businessName} — Your Contractor Account is Ready`;
 const FONT = "'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
@@ -188,6 +189,9 @@ Deno.serve(async (req) => {
       const me = await base44.auth.me().catch(() => null);
       if (!me || me.role !== 'admin') return Response.json({ error: 'Admin only.' }, { status: 403 });
     }
+
+    const fc = await checkFeature(base44, getInternalBusinessId(body), 'simple_automations');
+    if (!fc.ok) return Response.json({ error: 'Automated notifications are not available on your current plan.' }, { status: 403 });
     if (body.scheduler_token) delete body.scheduler_token;
 
     const businessId = getInternalBusinessId(body);

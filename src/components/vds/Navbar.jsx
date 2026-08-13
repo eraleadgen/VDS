@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, UserCircle } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useBusinessName, useBusinessConfig, useMembershipPlan } from '@/lib/BusinessConfigContext';
+import { usePlanFeatures } from '@/lib/usePlanFeatures';
 
 const LOGO = "https://media.base44.com/images/public/6a191df337222815cd0b1f5e/6a27779cd_1773368635248-a065bd31-ddf6-4b1c-87dc-3a6080dc60f8.png";
 
@@ -14,6 +15,7 @@ export default function Navbar() {
   const businessName = useBusinessName();
   const config = useBusinessConfig();
   const plan = useMembershipPlan();
+  const { hasFeature } = usePlanFeatures();
 
   const navLinks = [
     { label: 'HOME', path: '/' },
@@ -69,22 +71,24 @@ export default function Navbar() {
 
         {/* Right */}
         <div className="hidden lg:flex items-center gap-4">
-          {isLoggedIn ? (
-            <Link
-              to="/member-dashboard"
-              className="flex items-center gap-2 border border-gold/40 text-gold px-4 py-2 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold hover:text-obsidian transition-colors duration-200"
-            >
-              <UserCircle size={14} />
-              MY ACCOUNT
-            </Link>
-          ) : (
-            <Link
-              to="/member-login"
-              className="flex items-center gap-2 text-xs font-mono-tech tracking-widest text-vapor/50 hover:text-vapor transition-colors duration-200"
-            >
-              <UserCircle size={14} />
-              MEMBER LOGIN
-            </Link>
+          {hasFeature('member_portal') && (
+            isLoggedIn ? (
+              <Link
+                to="/member-dashboard"
+                className="flex items-center gap-2 border border-gold/40 text-gold px-4 py-2 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold hover:text-obsidian transition-colors duration-200"
+              >
+                <UserCircle size={14} />
+                MY ACCOUNT
+              </Link>
+            ) : (
+              <Link
+                to="/member-login"
+                className="flex items-center gap-2 text-xs font-mono-tech tracking-widest text-vapor/50 hover:text-vapor transition-colors duration-200"
+              >
+                <UserCircle size={14} />
+                MEMBER LOGIN
+              </Link>
+            )
           )}
           </div>
 
@@ -116,20 +120,22 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
-            {isLoggedIn ? (
-              <Link
-                to="/member-dashboard"
-                className="text-sm font-mono-tech tracking-widest text-gold border border-gold/40 px-4 py-3 text-center rounded-sm flex items-center justify-center gap-2"
-              >
-                <UserCircle size={15} /> MY ACCOUNT
-              </Link>
-            ) : (
-              <Link
-                to="/member-login"
-                className="text-sm font-mono-tech tracking-widest text-vapor/60 border border-vapor/20 px-4 py-3 text-center rounded-sm"
-              >
-                MEMBER LOGIN
-              </Link>
+            {hasFeature('member_portal') && (
+              isLoggedIn ? (
+                <Link
+                  to="/member-dashboard"
+                  className="text-sm font-mono-tech tracking-widest text-gold border border-gold/40 px-4 py-3 text-center rounded-sm flex items-center justify-center gap-2"
+                >
+                  <UserCircle size={15} /> MY ACCOUNT
+                </Link>
+              ) : (
+                <Link
+                  to="/member-login"
+                  className="text-sm font-mono-tech tracking-widest text-vapor/60 border border-vapor/20 px-4 py-3 text-center rounded-sm"
+                >
+                  MEMBER LOGIN
+                </Link>
+              )
             )}
           </div>
         </div>

@@ -88,4 +88,4 @@ function buildHtml(firstName, setupUrl, contact) {
 </html>`;
 }
 
-Deno.serve((req) => runInviteEndpoint(req, { subject: SUBJECT, buildHtml, pathSegment: 'partner-setup' }));
+Deno.serve((req) => runInviteEndpoint(req, { subject: SUBJECT, buildHtml, pathSegment: 'partner-setup', feature: 'partner_engine' }));

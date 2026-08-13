@@ -11,6 +11,7 @@
 // incentive credit, invoice_paid event log, and auto-finalization of the linked quote.
 
 import { sendCareGuideEmail, guideKeyForService } from './careGuideEmail.ts';
+import { checkFeature } from './planFeatures.ts';
 
 export async function onInvoicePaid(base44, invoice_id, businessId = 'vds') {
   if (!invoice_id) return;
@@ -37,7 +38,7 @@ export async function onInvoicePaid(base44, invoice_id, businessId = 'vds') {
       if (invoice.customer_id) {
         const cust = await base44.asServiceRole.entities.Customer.get(invoice.customer_id).catch(() => null);
         const partnerId = cust?.referred_by_partner_id;
-        if (partnerId) {
+        if (partnerId && (await checkFeature(base44, businessId, 'partner_engine')).ok) {
           const job = invoice.job_id ? await base44.asServiceRole.entities.Job.get(invoice.job_id).catch(() => null) : null;
           const svcLower = ((job?.service_package || '') + ' ' + (job?.service_label || '')).toLowerCase();
           const revenue = invoice.final_amount || invoice.amount || 0;

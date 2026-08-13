@@ -4,6 +4,7 @@ import { onInvoicePaid } from '../../shared/invoicePaid.ts';
 import { creditPartnerGoldSignup } from '../../shared/partnerIncentive.ts';
 import { sendCareGuideEmail } from '../../shared/careGuideEmail.ts';
 import { loadBusinessContact } from '../../shared/businessContact.ts';
+import { checkFeature } from '../../shared/planFeatures.ts';
 
 // Stripe webhook — provisions VDS Gold memberships and keeps VehicleSubscription
 // records in sync with Stripe lifecycle events. GoHighLevel has been fully removed;
@@ -120,15 +121,20 @@ Deno.serve(async (req) => {
       try {
         const partnerRef = session.metadata?.partner_referral_code;
         if (partnerRef) {
-          // Resolve the member's name/email so a Customer record can be created for a
-          // member who signed up for Gold before ever booking a detail.
-          let goldEmail = null, goldName = null;
-          try {
-            const u = await base44.asServiceRole.entities.User.get(userId).catch(() => null);
-            goldEmail = u?.email || null; goldName = u?.full_name || '';
-          } catch (e) { /* non-blocking */ }
-          const r = await creditPartnerGoldSignup(base44, { userId, partnerRefCode: partnerRef, email: goldEmail, fullName: goldName, businessId });
-          console.log('Partner Gold signup attribution:', JSON.stringify(r));
+          const fc = await checkFeature(base44, businessId, 'partner_engine');
+          if (fc.ok) {
+            // Resolve the member's name/email so a Customer record can be created for a
+            // member who signed up for Gold before ever booking a detail.
+            let goldEmail = null, goldName = null;
+            try {
+              const u = await base44.asServiceRole.entities.User.get(userId).catch(() => null);
+              goldEmail = u?.email || null; goldName = u?.full_name || '';
+            } catch (e) { /* non-blocking */ }
+            const r = await creditPartnerGoldSignup(base44, { userId, partnerRefCode: partnerRef, email: goldEmail, fullName: goldName, businessId });
+            console.log('Partner Gold signup attribution:', JSON.stringify(r));
+          } else {
+            console.log('Partner Gold attribution skipped — partner_engine not enabled for tenant');
+          }
         }
       } catch (e) { console.error('Partner Gold attribution failed:', e.message); }
 

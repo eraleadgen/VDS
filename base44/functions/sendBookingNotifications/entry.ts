@@ -7,6 +7,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 import { sendCustomerEmail } from '../../shared/customerEmail.ts';
 import { loadBusinessContact } from '../../shared/businessContact.ts';
 import { getInternalBusinessId } from '../../shared/tenantContext.ts';
+import { checkFeature } from '../../shared/planFeatures.ts';
 
 const FONT = "'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 const MONO = "'Space Mono','Courier New',monospace";
@@ -153,6 +154,9 @@ Deno.serve(async (req) => {
     if (!apptId) return Response.json({ error: 'appointment_id is required.' }, { status: 400 });
 
     const businessId = getInternalBusinessId(body);
+    const fc = await checkFeature(base44, businessId, 'simple_automations');
+    if (!fc.ok) return Response.json({ error: 'Automated notifications are not available on your current plan.' }, { status: 403 });
+
     const appt = await base44.asServiceRole.entities.Appointment.get(apptId);
     if (!appt) return Response.json({ error: 'Appointment not found.' }, { status: 404 });
     // Tenant guard: asServiceRole bypasses RLS — reject cross-tenant appointment lookups.

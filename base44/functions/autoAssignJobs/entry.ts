@@ -14,6 +14,7 @@ import { jobStartMs } from '../../shared/timezone.ts';
 import { autoAssign, loadConfig } from '../../shared/autoAssign.ts';
 import { gcal } from '../../shared/gcal.ts';
 import { requireAdminOrSchedulerToken } from '../../shared/authGate.ts';
+import { hasFeature } from '../../shared/planFeatures.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -25,6 +26,10 @@ Deno.serve(async (req) => {
     if (gate) return gate;
     const cfg = await loadConfig(base44);
     if (!cfg) return Response.json({ error: 'Business configuration not found.' }, { status: 500 });
+    if (!hasFeature(cfg.plan_tier || 'basic', 'simple_automations')) {
+      console.log('Auto-assign skipped — simple_automations not enabled for tenant');
+      return Response.json({ skipped: true, reason: 'feature_not_enabled' });
+    }
     const businessId = cfg.business_id || 'vds';
     const tz = cfg.timezone || 'America/New_York';
     const now = Date.now();
