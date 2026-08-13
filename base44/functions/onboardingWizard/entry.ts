@@ -290,7 +290,7 @@ export default async function(req: Request): Promise<Response> {
       // Load the session — verify ownership.
       const session = await base44.asServiceRole.entities.OnboardingSession.get(session_id).catch(() => null);
       if (!session) return Response.json({ error: 'Onboarding session not found.' }, { status: 404 });
-      if (session.owner_user_id !== me.id && me.role !== 'admin') {
+      if (session.owner_user_id !== me.id) {
         return Response.json({ error: 'Not authorized to modify this session.' }, { status: 403 });
       }
       if (session.status === 'completed') {
@@ -319,7 +319,7 @@ export default async function(req: Request): Promise<Response> {
 
       const session = await base44.asServiceRole.entities.OnboardingSession.get(session_id).catch(() => null);
       if (!session) return Response.json({ error: 'Onboarding session not found.' }, { status: 404 });
-      if (session.owner_user_id !== me.id && me.role !== 'admin') {
+      if (session.owner_user_id !== me.id) {
         return Response.json({ error: 'Not authorized.' }, { status: 403 });
       }
       return Response.json({ session });
@@ -332,7 +332,7 @@ export default async function(req: Request): Promise<Response> {
 
       const session = await base44.asServiceRole.entities.OnboardingSession.get(session_id).catch(() => null);
       if (!session) return Response.json({ error: 'Onboarding session not found.' }, { status: 404 });
-      if (session.owner_user_id !== me.id && me.role !== 'admin') {
+      if (session.owner_user_id !== me.id) {
         return Response.json({ error: 'Not authorized.' }, { status: 403 });
       }
       if (session.status === 'completed') {
