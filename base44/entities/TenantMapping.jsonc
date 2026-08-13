@@ -1,0 +1,79 @@
+{
+  "name": "TenantMapping",
+  "type": "object",
+  "description": "Maps incoming request hostnames and Twilio phone numbers to a business_id for multi-tenant resolution. Every public backend function resolves its tenant by looking up the request hostname here (via resolveBusinessIdFromHost in tenantContext.ts) before any BusinessConfig lookup. SMS-based functions (valerie) resolve via twilio_number. Admin-managed; one record per hostname or phone number.",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "default": "vds",
+      "description": "The tenant this mapping resolves to. Also used for RLS so an admin only manages their own tenant's mappings."
+    },
+    "hostname": {
+      "type": "string",
+      "description": "Lowercase hostname without port (e.g. 'vdsmobile.com', 'www.vdsmobile.com'). Null for phone-number-based mappings."
+    },
+    "twilio_number": {
+      "type": "string",
+      "description": "Twilio phone number in E.164 (e.g. '+14704128986') that maps to this tenant. Null for hostname-based mappings."
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true,
+      "description": "Inactive mappings are skipped during resolution."
+    }
+  },
+  "required": [
+    "business_id",
+    "is_active"
+  ],
+  "rls": {
+    "create": {
+      "$and": [
+        {
+          "data.business_id": "{{user.data.business_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "read": {
+      "$and": [
+        {
+          "data.business_id": "{{user.data.business_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "update": {
+      "$and": [
+        {
+          "data.business_id": "{{user.data.business_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "$and": [
+        {
+          "data.business_id": "{{user.data.business_id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}

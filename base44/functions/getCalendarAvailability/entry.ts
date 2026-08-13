@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
+import { resolveBusinessIdFromHost } from '../../shared/tenantContext.ts';
 
 // Public availability endpoint for the booking calendar.
 // GoHighLevel has been fully removed — availability is now resolved by the ERA Core
@@ -29,13 +30,8 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const { service_type, vehicle_type, date } = await req.json();
 
-    // Single-tenant stopgap: derive business_id from the active BusinessConfig.
-    // Phase 4: replace with origin → BusinessConfig resolution.
-    let businessId = 'vds';
-    try {
-      const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
-      if (configs && configs[0]) businessId = configs[0].business_id || 'vds';
-    } catch {}
+    // Phase 4: resolve business_id from the request hostname (multi-tenant).
+    const businessId = await resolveBusinessIdFromHost(base44, req);
 
     if (!service_type || !date) {
       return Response.json({ error: 'Missing service_type or date' }, { status: 400 });

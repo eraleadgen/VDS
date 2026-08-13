@@ -5,6 +5,7 @@
 // latest 5. No auth — Google review data is public. Uses GOOGLE_PLACES_API_KEY (New API).
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { resolveBusinessIdFromHost } from '../../shared/tenantContext.ts';
 
 const VDS_PLACE_ID = "ChIJzdzDrpzR9y8RyZ2fOz9rfTk";
 
@@ -12,13 +13,8 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
-    // Single-tenant stopgap: derive business_id from the active BusinessConfig.
-    // Phase 4: replace with origin → BusinessConfig resolution.
-    let businessId = 'vds';
-    try {
-      const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
-      if (configs && configs[0]) businessId = configs[0].business_id || 'vds';
-    } catch {}
+    // Phase 4: resolve business_id from the request hostname (multi-tenant).
+    const businessId = await resolveBusinessIdFromHost(base44, req);
 
     const key = Deno.env.get("GOOGLE_PLACES_API_KEY") || Deno.env.get("GOOGLE_MAPS_API_KEY");
     if (!key) return Response.json({ error: "Google API key not configured." }, { status: 500 });

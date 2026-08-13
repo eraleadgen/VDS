@@ -5,9 +5,10 @@
 // No SCHEDULER_TOKEN required — public endpoint with origin allowlist.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
+import { resolveBusinessIdFromHost, logTenantMismatch } from '../../shared/tenantContext.ts';
 
-async function loadConfig(base44) {
-  const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
+async function loadConfig(base44, businessId) {
+  const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ business_id: businessId, is_active: true });
   return configs && configs[0] ? configs[0] : null;
 }
 
@@ -23,11 +24,21 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const body = await req.json().catch(() => ({}));
 
-    // Load active BusinessConfig early — drives the origin allowlist (dynamic for multi-tenant).
-    const cfg = await loadConfig(base44);
-    // Single-tenant stopgap: derive business_id from the active BusinessConfig.
-    // Phase 4: replace with origin → BusinessConfig resolution.
-    const businessId = cfg?.business_id || 'vds';
+    // Phase 4: resolve business_id from the request hostname (multi-tenant).
+    const businessId = await resolveBusinessIdFromHost(base44, req);
+    const cfg = await loadConfig(base44, businessId);
+    // Mismatch logging (non-blocking) — if an authenticated user's tenant differs from
+    // the hostname's, log it but proceed with the hostname's business_id (the quote
+    // belongs to the visited business).
+    try {
+      const me = await base44.auth.me();
+      if (me && me.id) {
+        const user = await base44.asServiceRole.entities.User.get(me.id);
+        if (user && user.business_id && user.business_id !== businessId) {
+          await logTenantMismatch(base44, user.business_id, businessId, 'saveQuote');
+        }
+      }
+    } catch {}
 
     // Origin allowlist — tenant domains derived from BusinessConfig website_links.
     const originHeader = req.headers.get('Origin') || req.headers.get('Referer') || '';

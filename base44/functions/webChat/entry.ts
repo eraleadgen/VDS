@@ -12,6 +12,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 import { loadConfig, formatCatalog, formatConditions, formatHours, formatGold, formatFaq, callOpenAI } from '../../shared/conciergeHelpers.ts';
 import { loadBusinessContact } from '../../shared/businessContact.ts';
+import { resolveBusinessIdFromHost } from '../../shared/tenantContext.ts';
 
 // ── Per-IP rate limiter ─────────────────────────────────────────────────
 const _rlHits = new Map();
@@ -298,12 +299,10 @@ Deno.serve(async (req) => {
     if (!message || !message.trim()) return Response.json({ error: 'message is required.' }, { status: 400 });
     if (!conversation_id) return Response.json({ error: 'conversation_id is required.' }, { status: 400 });
 
-    const cfg = await loadConfig(base44);
+    // Phase 4: resolve business_id from the request hostname (multi-tenant).
+    const businessId = await resolveBusinessIdFromHost(base44, req);
+    const cfg = await loadConfig(base44, businessId);
     if (!cfg) return Response.json({ error: 'BusinessConfig not found.' }, { status: 500 });
-
-    // Single-tenant stopgap: derive business_id from the active BusinessConfig.
-    // Phase 4: replace with origin → BusinessConfig resolution.
-    const businessId = cfg.business_id || 'vds';
 
     // Respect the feature flag — admins can disable the widget from BusinessConfig.
     if (cfg.feature_flags && cfg.feature_flags.web_chat_enabled === false) {

@@ -14,6 +14,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 import { loadConfig, formatCatalog, formatConditions, formatHours, formatGold, formatFaq, callOpenAI } from '../../shared/conciergeHelpers.ts';
+import { resolveBusinessIdFromTwilioNumber, logTenantMismatch } from '../../shared/tenantContext.ts';
 
 // ── Twilio webhook signature validation ────────────────────────────────
 // Twilio signs every inbound webhook with HMAC-SHA256 using TWILIO_AUTH_TOKEN.
@@ -239,17 +240,10 @@ Deno.serve(async (req) => {
       body = Object.fromEntries(params.entries());
     }
 
-    // Load config early so we can derive the exact external webhook URL for Twilio
-    // signature validation (the signature is computed against the URL Twilio called,
-    // which is the published domain — not the internal proxy URL).
-    const cfg = await loadConfig(base44);
-    let knownUrl = null;
-    if (cfg && cfg.website_links && cfg.website_links.booking_url) {
-      try {
-        const bUrl = new URL(cfg.website_links.booking_url);
-        knownUrl = `${bUrl.protocol}//${bUrl.host}/functions/valerie`;
-      } catch {}
-    }
+    // Phase 4: config is loaded after business_id resolution (below). For Twilio
+    // signature validation, knownUrl is null — validateTwilioSignature falls back to
+    // req.url, Host, and x-forwarded-host candidates, which is sufficient.
+    const knownUrl = null;
 
     // Auth: SCHEDULER_TOKEN (body or query param), authenticated base44 user,
     // OR a valid Twilio webhook signature (inbound SMS from Twilio).
@@ -303,11 +297,33 @@ Deno.serve(async (req) => {
     if (!phone) return Response.json({ error: 'phone is required.' }, { status: 400 });
     if (!message) return Response.json({ error: 'message is required.' }, { status: 400 });
 
+    // Phase 4: resolve business_id from the Twilio To number (SMS has no HTTP hostname).
+    // Priority: SCHEDULER_TOKEN body.business_id → Twilio To number → authenticated user.
+    // If the authenticated user's tenant differs from the Twilio-resolved tenant, log
+    // the mismatch but proceed with the user's own business_id.
+    let businessId;
+    if (tokenOk && body.business_id) {
+      businessId = body.business_id;
+    } else {
+      const toNumber = (body.To || '').trim();
+      businessId = toNumber ? await resolveBusinessIdFromTwilioNumber(base44, toNumber) : 'vds';
+      if (authedOk) {
+        try {
+          const me = await base44.auth.me();
+          if (me && me.id) {
+            const user = await base44.asServiceRole.entities.User.get(me.id);
+            if (user && user.business_id) {
+              if (user.business_id !== businessId) {
+                await logTenantMismatch(base44, user.business_id, businessId, 'valerie');
+              }
+              businessId = user.business_id;
+            }
+          }
+        } catch {}
+      }
+    }
+    const cfg = await loadConfig(base44, businessId);
     if (!cfg) return Response.json({ error: 'BusinessConfig not found.' }, { status: 500 });
-
-    // Single-tenant stopgap: derive business_id from the active BusinessConfig.
-    // Phase 4: replace with origin/Twilio-number → BusinessConfig resolution.
-    const businessId = cfg.business_id || 'vds';
 
     // Normalize to E.164 for consistent conversation history keys.
     const d = phone.replace(/\D/g, '');

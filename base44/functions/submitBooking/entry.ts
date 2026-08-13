@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 import { findOrCreateCustomer } from '../../shared/customer.ts';
+import { resolveBusinessIdFromHost, logTenantMismatch } from '../../shared/tenantContext.ts';
 
 // ── Per-IP rate limiter (per-isolate) — protects public booking from spam / resource exhaustion ──
 const _rlHits = new Map();
@@ -116,17 +117,34 @@ Deno.serve(async (req) => {
     const SCHEDULER_TOKEN = Deno.env.get('SCHEDULER_TOKEN');
     const isInternalCall = !!(SCHEDULER_TOKEN && body.scheduler_token === SCHEDULER_TOKEN);
 
-    // Load active BusinessConfig early — drives the origin allowlist, service labels,
-    // gold membership label, and Google Calendar branding (all dynamic for multi-tenant).
+    // Phase 4: resolve business_id from the request hostname (multi-tenant).
+    // Internal calls (SCHEDULER_TOKEN) pass business_id in the body; public calls
+    // resolve from the hostname. If an authenticated user's tenant differs, log the
+    // mismatch but proceed with the hostname's business_id (the booking belongs to
+    // the visited business).
+    let businessId;
+    if (isInternalCall && body.business_id) {
+      businessId = body.business_id;
+    } else {
+      businessId = await resolveBusinessIdFromHost(base44, req);
+      try {
+        const me = await base44.auth.me();
+        if (me && me.id) {
+          const user = await base44.asServiceRole.entities.User.get(me.id);
+          if (user && user.business_id && user.business_id !== businessId) {
+            await logTenantMismatch(base44, user.business_id, businessId, 'submitBooking');
+          }
+        }
+      } catch {}
+    }
+
+    // Load the BusinessConfig for the resolved tenant — drives the origin allowlist,
+    // service labels, gold membership label, and Google Calendar branding.
     let cfg = null;
     try {
-      const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ is_active: true });
+      const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ business_id: businessId, is_active: true });
       cfg = configs && configs[0];
     } catch (e) { console.error('Config load failed:', e.message); }
-
-    // Single-tenant stopgap: derive business_id from the active BusinessConfig.
-    // Phase 4: replace with origin → BusinessConfig resolution.
-    const businessId = cfg?.business_id || 'vds';
 
     // Public endpoint (guests book without login) — strict origin allowlist.
     // Internal calls (webChat via scheduler_token) bypass the origin check and rate limit.

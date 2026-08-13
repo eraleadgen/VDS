@@ -54,3 +54,53 @@ export function tenantFilter(bizId, extra = {}) {
 export function stampCreate(data, bizId) {
   return { ...data, business_id: data.business_id || bizId };
 }
+
+// ── Phase 4: Hostname / phone-number → business_id resolution ──────────────
+//
+// Public/unauthenticated endpoints resolve their tenant from the incoming request
+// hostname. SMS-based endpoints (valerie) resolve from the Twilio destination number.
+// Both look up the TenantMapping entity (exact match, active records only) and fall
+// back to 'vds' for unmapped hostnames/numbers (preview domains, localhost, etc.).
+
+// Resolve business_id from the incoming request hostname.
+// Checks x-forwarded-host first (Base44's proxy may rewrite Host), then Host.
+export async function resolveBusinessIdFromHost(base44, req) {
+  const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || '';
+  const hostname = host.split(':')[0].toLowerCase().trim();
+  if (!hostname) return FALLBACK_BUSINESS_ID;
+  try {
+    const mappings = await base44.asServiceRole.entities.TenantMapping.filter({ hostname, is_active: true });
+    if (mappings && mappings[0]) return mappings[0].business_id || FALLBACK_BUSINESS_ID;
+  } catch (e) { console.error('TenantMapping hostname lookup failed:', e.message); }
+  return FALLBACK_BUSINESS_ID;
+}
+
+// Resolve business_id from a Twilio phone number (for SMS-based functions like valerie).
+// Accepts E.164 or raw digits; normalizes to E.164 for the lookup.
+export async function resolveBusinessIdFromTwilioNumber(base44, rawNumber) {
+  if (!rawNumber) return FALLBACK_BUSINESS_ID;
+  const d = String(rawNumber).replace(/\D/g, '');
+  const e164 = d.length === 10 ? '+1' + d : (d.length > 10 ? '+' + d : rawNumber);
+  try {
+    const mappings = await base44.asServiceRole.entities.TenantMapping.filter({ twilio_number: e164, is_active: true });
+    if (mappings && mappings[0]) return mappings[0].business_id || FALLBACK_BUSINESS_ID;
+  } catch (e) { console.error('TenantMapping phone lookup failed:', e.message); }
+  return FALLBACK_BUSINESS_ID;
+}
+
+// Log a tenant mismatch to SystemEventLog (log-and-allow: logs but does not block).
+// Called when an authenticated user's business_id differs from the hostname-resolved
+// business_id. The caller proceeds with the user's own business_id (priority 2 over 3).
+export async function logTenantMismatch(base44, userBusinessId, hostBusinessId, context) {
+  if (userBusinessId === hostBusinessId) return;
+  try {
+    await base44.asServiceRole.entities.SystemEventLog.create({
+      business_id: userBusinessId,
+      event_type: 'tenant_mismatch',
+      entity_type: 'auth',
+      description: `Authenticated user (tenant ${userBusinessId}) accessed a different tenant's domain (resolved ${hostBusinessId})`,
+      metadata: { userBusinessId, hostBusinessId, context },
+      suppression_reason: 'tenant_mismatch_log_and_allow',
+    });
+  } catch (e) { console.error('Mismatch log failed:', e.message); }
+}

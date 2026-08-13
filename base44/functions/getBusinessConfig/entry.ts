@@ -5,20 +5,27 @@
 // no secrets are stored on the BusinessConfig entity.
 
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
+import { resolveBusinessIdFromHost, logTenantMismatch } from "../../shared/tenantContext.ts";
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
-    // Determine the caller's business_id. For authenticated users, read it from
-    // their User record (auth.me() doesn't reliably return custom fields). For
-    // unauthenticated users (public pages), default to 'vds' (VDS tenant).
-    let businessId = 'vds';
+    // Phase 4: resolve business_id from the request hostname (multi-tenant).
+    // Authenticated users take priority (priority 2); if their business_id differs
+    // from the hostname-resolved tenant, log the mismatch but proceed with the user's own.
+    const hostBusinessId = await resolveBusinessIdFromHost(base44, req);
+    let businessId = hostBusinessId;
     try {
       const me = await base44.auth.me();
       if (me && me.id) {
         const user = await base44.asServiceRole.entities.User.get(me.id);
-        if (user && user.business_id) businessId = user.business_id;
+        if (user && user.business_id) {
+          if (user.business_id !== hostBusinessId) {
+            await logTenantMismatch(base44, user.business_id, hostBusinessId, 'getBusinessConfig');
+          }
+          businessId = user.business_id;
+        }
       }
     } catch {}
 
