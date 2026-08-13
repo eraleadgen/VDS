@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useBusinessConfig, useConcierge } from '@/lib/BusinessConfigContext';
 import { base44 } from '@/api/base44Client';
 import { MessageCircle, X, Send } from 'lucide-react';
@@ -9,6 +10,7 @@ import QuoteCard from './QuoteCard';
 export default function ChatWidget() {
   const config = useBusinessConfig();
   const concierge = useConcierge();
+  const location = useLocation();
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -31,6 +33,9 @@ export default function ChatWidget() {
   // Don't render until config loads, or if the feature flag is explicitly off.
   if (!config) return null;
   if (config.feature_flags?.web_chat_enabled === false) return null;
+
+  // Hide on admin/specialist/partner portal pages — chat is for customers only.
+  if (['/admin', '/specialist', '/partner', '/project-overview'].some(p => location.pathname.startsWith(p))) return null;
 
   const handleOpen = () => {
     setOpen(true);

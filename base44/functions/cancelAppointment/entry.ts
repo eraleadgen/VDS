@@ -104,6 +104,7 @@ Deno.serve(async (req) => {
     try {
       await base44.functions.invoke('sendCancellationNotification', {
         appointment_id,
+        business_id: businessId,
         scheduler_token: Deno.env.get('SCHEDULER_TOKEN'),
       });
     } catch (e) { console.error('Cancellation notification failed:', e.message); }

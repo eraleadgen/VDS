@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 import { parseTimeTo24h, zonedToUtc } from '../../shared/timezone.ts';
 import { getUserBusinessId } from '../../shared/tenantContext.ts';
+import { loadBusinessContact } from '../../shared/businessContact.ts';
 
 // ERA Core appointment reschedule.
 // The member picks a new date/time only (no re-entry of contact/vehicle info).
@@ -37,6 +38,7 @@ Deno.serve(async (req) => {
     }
 
     const businessId = await getUserBusinessId(base44, user);
+    const contact = await loadBusinessContact(base44, businessId);
     const appt = await base44.asServiceRole.entities.Appointment.get(appointment_id);
     if (!appt) return Response.json({ success: false, error: 'Appointment not found' }, { status: 404 });
     // Tenant guard: asServiceRole bypasses RLS — verify the appointment belongs to the caller's tenant.
@@ -299,10 +301,10 @@ Deno.serve(async (req) => {
 </table>
 </td></tr></table></body></html>`;
       await base44.asServiceRole.integrations.Core.SendEmail({
-        to: 'support@eraleadgen.com',
+        to: contact.internalEmail,
         subject: `Appointment Rescheduled — ${appt.customer_name || 'Client'} — ${new_date} ${new_time}`,
         body: internalHtml,
-        from_name: 'VDS Mobile',
+        from_name: contact.businessName,
       });
     } catch (e) { console.error('Internal reschedule notification email failed:', e.message); }
 

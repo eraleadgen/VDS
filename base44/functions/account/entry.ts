@@ -1,5 +1,8 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 import { findOrCreateCustomer } from '../../shared/customer.ts';
+import { loadBusinessContact } from '../../shared/businessContact.ts';
+
+function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
 // Account profile self-service.
 // The built-in full_name is platform-managed and immutable; first_name / last_name /
@@ -67,6 +70,49 @@ Deno.serve(async (req) => {
         email: me.email,
         smsConsent: body.smsConsent === true,
       });
+      // Internal notification: a new customer just created an account.
+      try {
+        const contact = await loadBusinessContact(base44, customer.business_id || 'vds');
+        const fullName = [body.firstName, body.lastName].filter(Boolean).join(' ') || me.email;
+        const phoneRow = body.phone
+          ? `<tr><td style="padding:4px 0;font-family:'Space Mono','Courier New',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#94A3B8;">Phone</td></tr><tr><td style="font-size:15px;color:#E2E8F0;font-weight:500;padding-bottom:8px;">${esc(body.phone)}</td></tr>`
+          : '';
+        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background-color:#0A0B0D;font-family:'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#E2E8F0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0A0B0D;"><tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#14161A;border-radius:14px;overflow:hidden;border:1px solid rgba(212,175,55,0.15);box-shadow:0 8px 30px rgba(0,0,0,0.5);">
+  <tr><td style="background-color:#0A0B0D;padding:22px 28px;border-bottom:2px solid #D4AF37;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td style="font-size:18px;font-weight:700;letter-spacing:3px;color:#FFFFFF;">${contact.businessNameHeader}</td>
+      <td align="right" style="font-family:'Space Mono','Courier New',monospace;font-size:11px;letter-spacing:2px;color:#D4AF37;font-weight:700;text-transform:uppercase;">New Account</td>
+    </tr></table>
+  </td></tr>
+  <tr><td style="padding:28px 28px 6px 28px;">
+    <p style="margin:0 0 6px 0;font-family:'Space Mono','Courier New',monospace;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#D4AF37;font-weight:700;">Customer Signup</p>
+    <h1 style="margin:0;font-size:24px;line-height:32px;color:#E2E8F0;font-weight:700;">${esc(fullName)}</h1>
+  </td></tr>
+  <tr><td style="padding:16px 28px 8px 28px;background-color:#0F1115;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr><td style="padding:4px 0;font-family:'Space Mono','Courier New',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#94A3B8;">Email</td></tr>
+      <tr><td style="font-size:15px;color:#E2E8F0;font-weight:500;padding-bottom:8px;">${esc(me.email)}</td></tr>
+      ${phoneRow}
+      <tr><td style="padding:4px 0;font-family:'Space Mono','Courier New',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#94A3B8;">SMS Consent</td></tr>
+      <tr><td style="font-size:15px;color:#E2E8F0;font-weight:500;padding-bottom:8px;">${body.smsConsent ? 'Yes' : 'No'}</td></tr>
+    </table>
+  </td></tr>
+  <tr><td style="background-color:#0A0B0D;padding:22px 28px;border-top:2px solid #D4AF37;">
+    <p style="margin:0;font-family:'Space Mono','Courier New',monospace;font-size:11px;color:#64748B;letter-spacing:0.5px;">&copy; ${new Date().getUTCFullYear()} ${contact.legalName.toUpperCase()}. ALL RIGHTS RESERVED.</p>
+  </td></tr>
+</table>
+</td></tr></table></body></html>`;
+        await base44.asServiceRole.integrations.Core.SendEmail({
+          to: contact.internalEmail,
+          subject: `New Customer Account — ${fullName}`,
+          body: html,
+          from_name: contact.businessName,
+        });
+      } catch (e) { console.error('Internal account creation email failed:', e.message); }
+
       return Response.json({ success: true, customer_id: customer.id, sms_consent: customer.sms_consent });
     }
 

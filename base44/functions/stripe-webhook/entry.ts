@@ -3,6 +3,7 @@ import Stripe from 'npm:stripe@17.0.0';
 import { onInvoicePaid } from '../../shared/invoicePaid.ts';
 import { creditPartnerGoldSignup } from '../../shared/partnerIncentive.ts';
 import { sendCareGuideEmail } from '../../shared/careGuideEmail.ts';
+import { loadBusinessContact } from '../../shared/businessContact.ts';
 
 // Stripe webhook — provisions VDS Gold memberships and keeps VehicleSubscription
 // records in sync with Stripe lifecycle events. GoHighLevel has been fully removed;
@@ -141,6 +142,53 @@ Deno.serve(async (req) => {
           console.log('VDS Gold care guide sent to', goldEmailForGuide);
         }
       } catch (e) { console.error('VDS Gold care guide send failed:', e.message); }
+
+      // ── Internal notification: a new Gold membership signup ──────────────
+      try {
+        const contact = await loadBusinessContact(base44, businessId);
+        const esc = (s) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        let memberEmail = session.customer_details?.email || null;
+        let memberName = '';
+        try {
+          const u = await base44.asServiceRole.entities.User.get(userId).catch(() => null);
+          memberEmail = memberEmail || u?.email || null;
+          memberName = u?.full_name || '';
+        } catch {}
+        const displayName = memberName || memberEmail || 'New Member';
+        const html = `<!DOCTYPE html><html><head><meta charset="utf-8"></head>
+<body style="margin:0;padding:0;background-color:#0A0B0D;font-family:'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif;color:#E2E8F0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0A0B0D;"><tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:#14161A;border-radius:14px;overflow:hidden;border:1px solid rgba(212,175,55,0.15);box-shadow:0 8px 30px rgba(0,0,0,0.5);">
+  <tr><td style="background-color:#0A0B0D;padding:22px 28px;border-bottom:2px solid #D4AF37;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td style="font-size:18px;font-weight:700;letter-spacing:3px;color:#FFFFFF;">${contact.businessNameHeader}</td>
+      <td align="right" style="font-family:'Space Mono','Courier New',monospace;font-size:11px;letter-spacing:2px;color:#D4AF37;font-weight:700;text-transform:uppercase;">New ${contact.goldLabel}</td>
+    </tr></table>
+  </td></tr>
+  <tr><td style="padding:28px 28px 6px 28px;">
+    <p style="margin:0 0 6px 0;font-family:'Space Mono','Courier New',monospace;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:#D4AF37;font-weight:700;">Membership Signup</p>
+    <h1 style="margin:0;font-size:24px;line-height:32px;color:#E2E8F0;font-weight:700;">${esc(displayName)}</h1>
+  </td></tr>
+  <tr><td style="padding:16px 28px 8px 28px;background-color:#0F1115;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+      <tr><td style="padding:4px 0;font-family:'Space Mono','Courier New',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#94A3B8;">Email</td></tr>
+      <tr><td style="font-size:15px;color:#E2E8F0;font-weight:500;padding-bottom:8px;">${esc(memberEmail || 'N/A')}</td></tr>
+      <tr><td style="padding:4px 0;font-family:'Space Mono','Courier New',monospace;font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:#94A3B8;">Vehicles Enrolled</td></tr>
+      <tr><td style="font-size:15px;color:#E2E8F0;font-weight:500;padding-bottom:8px;">${vehicleIds.length}</td></tr>
+    </table>
+  </td></tr>
+  <tr><td style="background-color:#0A0B0D;padding:22px 28px;border-top:2px solid #D4AF37;">
+    <p style="margin:0;font-family:'Space Mono','Courier New',monospace;font-size:11px;color:#64748B;letter-spacing:0.5px;">&copy; ${new Date().getUTCFullYear()} ${contact.legalName.toUpperCase()}. ALL RIGHTS RESERVED.</p>
+  </td></tr>
+</table>
+</td></tr></table></body></html>`;
+        await base44.asServiceRole.integrations.Core.SendEmail({
+          to: contact.internalEmail,
+          subject: `New ${contact.goldLabel} Membership — ${displayName}`,
+          body: html,
+          from_name: contact.businessName,
+        });
+      } catch (e) { console.error('Internal Gold signup email failed:', e.message); }
     }
 
     // Handle subscription updates / deletion — sync status to every VehicleSubscription

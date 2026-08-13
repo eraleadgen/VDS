@@ -11,8 +11,12 @@ export default function GoldParticles({ count = 55 }) {
     let width, height;
 
     const resize = () => {
-      width = canvas.width = canvas.offsetWidth;
-      height = canvas.height = canvas.offsetHeight;
+      const dpr = window.devicePixelRatio || 1;
+      width = canvas.offsetWidth;
+      height = canvas.offsetHeight;
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      ctx.scale(dpr, dpr);
     };
     resize();
     window.addEventListener('resize', resize);
