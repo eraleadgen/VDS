@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { LayoutDashboard, Users, CalendarRange, MessageSquare, DollarSign, Route, FileText, Network, LineChart, Library, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarRange, MessageSquare, DollarSign, Route, FileText, Network, LineChart, Library, BarChart3, Settings } from 'lucide-react';
 import PortalShell from '@/components/portal/PortalShell';
 import ContractorsTab from '@/components/admin/ContractorsTab';
 import AppointmentsTab from '@/components/admin/AppointmentsTab';
@@ -16,6 +16,7 @@ import PartnersTab from '@/components/admin/PartnersTab';
 import UsersTab from '@/components/admin/UsersTab';
 import BusinessDevTab from '@/components/admin/BusinessDevTab';
 import ResourceCenter from '@/components/shared/ResourceCenter';
+import SettingsTab from '@/components/admin/SettingsTab';
 import { usePlanFeatures } from '@/lib/usePlanFeatures';
 
 const invoke = (payload) => base44.functions.invoke('scheduler', payload).then(r => r.data ?? r);
@@ -57,6 +58,7 @@ export default function AdminDashboard() {
     { key: 'resources', label: 'RESOURCES', icon: Library },
     hasFeature('advanced_analytics') && { key: 'analytics', label: 'ANALYTICS', icon: BarChart3 },
     hasFeature('ai_sms_agent') && { key: 'messages', label: 'MESSAGES', icon: MessageSquare },
+    { key: 'settings', label: 'SETTINGS', icon: Settings },
   ].filter(Boolean);
 
   return (
@@ -74,6 +76,7 @@ export default function AdminDashboard() {
           {tab === 'resources' && <ResourceCenter variant="admin" />}
           {tab === 'analytics' && hasFeature('advanced_analytics') && <AnalyticsTab />}
           {tab === 'messages' && hasFeature('ai_sms_agent') && <MessagesTab />}
+          {tab === 'settings' && <SettingsTab />}
         </>
     </PortalShell>
   );

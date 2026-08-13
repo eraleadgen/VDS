@@ -150,7 +150,7 @@
     },
     "pricing_rules": {
       "type": "object",
-      "description": "Pricing engine rules \u2014 condition multipliers applied to computed quotes based on vehicle condition. The dynamic quote factors in vehicle size (classification), condition, add-ons, and services requested.",
+      "description": "Pricing engine rules \u2014 condition multipliers applied to computed quotes based on vehicle condition.",
       "properties": {
         "condition_multipliers": {
           "type": "array",
@@ -167,8 +167,7 @@
                 "type": "number"
               },
               "duration_add_minutes": {
-                "type": "number",
-                "description": "Extra estimated minutes added to base service duration for this vehicle condition."
+                "type": "number"
               }
             }
           }
@@ -177,7 +176,7 @@
     },
     "vehicle_classifications": {
       "type": "array",
-      "description": "Operational vehicle classifications. Independent from pricing groups. Drives scheduling and specialist matching. VDS Mobile v1.0 uses 4 classifications.",
+      "description": "Operational vehicle classifications. Independent from pricing groups.",
       "items": {
         "type": "object",
         "properties": {
@@ -200,7 +199,7 @@
     },
     "pricing_groups": {
       "type": "array",
-      "description": "Pricing groups. Independently configurable from vehicle classifications. Drives all service pricing and Stripe membership pricing. VDS Mobile v1.0 uses 2 pricing groups.",
+      "description": "Pricing groups. Independently configurable from vehicle classifications.",
       "items": {
         "type": "object",
         "properties": {
@@ -215,15 +214,14 @@
             "type": "string"
           },
           "stripe_price_id": {
-            "type": "string",
-            "description": "Stripe Price ID for VDS Gold membership at this pricing group"
+            "type": "string"
           }
         }
       }
     },
     "classification_to_pricing_group": {
       "type": "object",
-      "description": "Mapping from vehicle classification to pricing group. Configurable through the Administration Module \u2014 not hardcoded. hatchback maps to sedan_coupe (priced same as coupe); other maps to sedan_coupe as a base default (adjust per business).",
+      "description": "Mapping from vehicle classification to pricing group.",
       "properties": {
         "coupe": {
           "type": "string",
@@ -271,7 +269,7 @@
     },
     "vehicle_types": {
       "type": "array",
-      "description": "Legacy vehicle type list. Retained for backward compatibility during migration. New code should use vehicle_classifications + pricing_groups.",
+      "description": "Legacy vehicle type list. Retained for backward compatibility.",
       "items": {
         "type": "object",
         "properties": {
@@ -286,12 +284,11 @@
     },
     "feature_flags": {
       "type": "object",
-      "description": "Platform feature flags \u2014 toggle integrations and capabilities without code changes. These are internal granular toggles within the plan_tier ceiling. plan_tier is the external ceiling; feature_flags are internal preferences within that ceiling.",
+      "description": "Platform feature flags \u2014 internal granular toggles within the plan_tier ceiling.",
       "properties": {
         "twilio_sms_enabled": {
           "type": "boolean",
-          "default": false,
-          "description": "Master switch for Twilio SMS delivery. Must be false until A2P registration is approved. When false, all SMS are suppressed and routed to email fallback (or logged as suppressed)."
+          "default": false
         },
         "gold_checkout_enabled": {
           "type": "boolean",
@@ -307,8 +304,7 @@
         },
         "web_chat_enabled": {
           "type": "boolean",
-          "default": true,
-          "description": "Master switch for the AI web chat widget. When true, the floating chat widget appears on all public pages, powered by the webChat backend function and the concierge persona from BusinessConfig.concierge."
+          "default": true
         }
       }
     },
@@ -320,17 +316,15 @@
         "growth",
         "enterprise"
       ],
-      "default": "basic",
-      "description": "Subscription tier. Gates which platform features are active for this tenant per the ERA Core feature matrix. Feature checks use hasFeature(plan_tier, feature) \u2014 see base44/shared/planFeatures.ts. The existing VDS record is set to 'enterprise' (uses partner engine + AI SMS + portals)."
+      "default": "basic"
     },
     "ad_management_enabled": {
       "type": "boolean",
-      "default": false,
-      "description": "Paid add-on: Google Ads management. Available on any tier when true; included automatically at Enterprise. Checked via hasAdManagement(plan_tier, ad_management_enabled)."
+      "default": false
     },
     "services": {
       "type": "array",
-      "description": "Master service catalog. Service definitions contain NO pricing logic \u2014 pricing is resolved by the Pricing Engine using service key + pricing group (or per-classification tiers). All pricing originates here and never in code.",
+      "description": "Master service catalog.",
       "items": {
         "type": "object",
         "properties": {
@@ -360,17 +354,14 @@
           },
           "tiers": {
             "type": "array",
-            "description": "Pricing per pricing group OR per vehicle classification. When a tier's key matches the vehicle classification it takes priority; otherwise the pricing group match is used. The Pricing Engine reads this; services never calculate their own price.",
             "items": {
               "type": "object",
               "properties": {
                 "tier": {
-                  "type": "string",
-                  "description": "Pricing group key or vehicle classification key"
+                  "type": "string"
                 },
                 "price": {
-                  "type": "number",
-                  "description": "Starting price"
+                  "type": "number"
                 },
                 "duration_minutes": {
                   "type": "number"
@@ -383,13 +374,12 @@
     },
     "featured_services": {
       "type": "array",
-      "description": "Curated marketing service cards shown on the Home and Services pages. Each card references an operational service (service_key) and an optional booking preselect key, plus display-only fields (title, subtitle, image, spec list, not-in-membership flag). The onboarding wizard authors these; the operational `services` catalog drives pricing/booking. Components validate that service_key/booking_preselect still exist in the services catalog and flag stale references instead of silently breaking the booking preselect.",
+      "description": "Curated marketing service cards shown on the Home and Services pages.",
       "items": {
         "type": "object",
         "properties": {
           "service_key": {
-            "type": "string",
-            "description": "Operational service key this card represents (validated against the services catalog)."
+            "type": "string"
           },
           "title": {
             "type": "string"
@@ -408,12 +398,10 @@
           },
           "not_in_membership": {
             "type": "boolean",
-            "default": false,
-            "description": "True if this service is not included in the membership (Home card shows the 'Not included' upsell instead of the membership CTA)."
+            "default": false
           },
           "booking_preselect": {
-            "type": "string",
-            "description": "Service key passed to the booking page as preselect_service. Defaults to service_key if unset. Validated against the services catalog."
+            "type": "string"
           },
           "display_order": {
             "type": "number"
@@ -427,7 +415,7 @@
     },
     "membership_plans": {
       "type": "array",
-      "description": "Recurring membership plans. VDS Gold is the initial implementation. Each plan references ONE Stripe product with per-pricing-group pricing. Vehicle classifications map to pricing groups via classification_to_pricing_group \u2014 never hardcoded.",
+      "description": "Recurring membership plans.",
       "items": {
         "type": "object",
         "properties": {
@@ -438,16 +426,13 @@
             "type": "string"
           },
           "short_label": {
-            "type": "string",
-            "description": "Short brand form for nav links and compact CTAs (e.g. 'VDS Gold'), distinct from the full marketing label (e.g. 'VDS Gold Membership'). Falls back to label when unset."
+            "type": "string"
           },
           "stripe_product_id": {
-            "type": "string",
-            "description": "Single Stripe product ID for this membership plan"
+            "type": "string"
           },
           "pricing_by_group": {
             "type": "array",
-            "description": "Monthly price per pricing group, each with its own Stripe Price ID.",
             "items": {
               "type": "object",
               "properties": {
@@ -501,7 +486,7 @@
     },
     "referral_program": {
       "type": "object",
-      "description": "Partner Network incentive program. Configurable payouts: $30 for the initial (first) detail per referred client (one-time per client), $100 for each ceramic coating or paint correction job. Adjust payouts here without code changes.",
+      "description": "Partner Network incentive program.",
       "properties": {
         "enabled": {
           "type": "boolean",
@@ -512,22 +497,18 @@
         },
         "incentives": {
           "type": "object",
-          "description": "Partner incentive payouts. The 'initial_detail' incentive is paid once per referred client; ceramic_coating and paint_correction are paid per qualifying job.",
           "properties": {
             "initial_detail": {
               "type": "number",
-              "default": 30,
-              "description": "One-time payout for the referred client's initial detail."
+              "default": 30
             },
             "ceramic_coating": {
               "type": "number",
-              "default": 100,
-              "description": "Payout per ceramic coating job converted."
+              "default": 100
             },
             "paint_correction": {
               "type": "number",
-              "default": 100,
-              "description": "Payout per paint correction job converted."
+              "default": 100
             }
           }
         }
@@ -546,10 +527,56 @@
           "type": "string"
         },
         "google_review_url": {
-          "type": "string",
-          "description": "Google Business review link included in review-request messages to customers after a completed job."
+          "type": "string"
         }
       }
+    },
+    "custom_domain": {
+      "type": "string",
+      "description": "Custom website domain the tenant has verified (e.g. 'bobsdetail.com'). When domain_status is 'verified', a TenantMapping entry routes this hostname to the tenant's business_id."
+    },
+    "domain_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "pending",
+        "verified",
+        "failed"
+      ],
+      "default": "none",
+      "description": "Custom domain verification status. 'none' = no custom domain configured; 'pending' = DNS records generated, awaiting verification; 'verified' = DNS confirmed, domain is active; 'failed' = verification check did not pass."
+    },
+    "domain_verification_token": {
+      "type": "string",
+      "description": "Random token placed in a TXT record at _era-verify.<domain> for domain ownership verification. Generated by tenantSettings init_domain action."
+    },
+    "email_mode": {
+      "type": "string",
+      "enum": [
+        "shared",
+        "custom"
+      ],
+      "default": "shared",
+      "description": "Email sending mode. 'shared' = uses the ERA Systems shared Resend domain (noreply@erasystems.com) with the business name as from_name \u2014 no DNS required. 'custom' = tenant verifies their own sending domain via Resend's per-tenant domain API for from@theirdomain.com sending."
+    },
+    "email_from_name": {
+      "type": "string",
+      "description": "Display name used as the email sender (from_name) when email_mode is 'shared'. Defaults to business_name."
+    },
+    "resend_domain_id": {
+      "type": "string",
+      "description": "Resend domain ID returned by POST /v1/domains when the tenant initializes custom email domain verification."
+    },
+    "email_domain_status": {
+      "type": "string",
+      "enum": [
+        "shared",
+        "pending",
+        "verified",
+        "failed"
+      ],
+      "default": "shared",
+      "description": "Custom email domain verification status. 'shared' = using ERA Systems shared domain; 'pending' = Resend DNS records generated, awaiting verification; 'verified' = Resend confirmed the domain; 'failed' = verification rejected."
     },
     "social_links": {
       "type": "object",
@@ -564,13 +591,12 @@
     },
     "seo": {
       "type": "array",
-      "description": "Per-route SEO meta entries (page title + meta description), keyed by route path. Populated by the onboarding wizard \u2014 this is marketing copy, not auto-generated. RouteSeo finds the entry whose route matches the current path; routes without an entry are treated as noindex.",
+      "description": "Per-route SEO meta entries (page title + meta description), keyed by route path.",
       "items": {
         "type": "object",
         "properties": {
           "route": {
-            "type": "string",
-            "description": "Route path (e.g. '/', '/services')"
+            "type": "string"
           },
           "title": {
             "type": "string"
@@ -583,7 +609,7 @@
     },
     "faq": {
       "type": "array",
-      "description": "FAQ entries (question + answer) shown on the FAQ page and emitted as FAQPage JSON-LD structured data. Populated by the onboarding wizard \u2014 this is content, not auto-generated.",
+      "description": "FAQ entries (question + answer) shown on the FAQ page and emitted as FAQPage JSON-LD structured data.",
       "items": {
         "type": "object",
         "properties": {
@@ -598,12 +624,11 @@
     },
     "dictionary": {
       "type": "object",
-      "description": "White-label domain vocabulary for UI copy. Lets a non-automotive tenant rebrand surface language ('vehicle' -> 'item', 'classification' -> 'category', 'detail' -> 'service') without renaming entities or service keys, which remain stable literals. Components read these via useDictionary(); defaults keep the VDS automotive voice.",
+      "description": "White-label domain vocabulary for UI copy.",
       "properties": {
         "item_noun": {
           "type": "string",
-          "default": "Vehicle",
-          "description": "Singular noun for the serviced thing (a MemberVehicle). 'Vehicle' for VDS; 'Item' generically."
+          "default": "Vehicle"
         },
         "item_plural": {
           "type": "string",
@@ -611,23 +636,19 @@
         },
         "item_category_noun": {
           "type": "string",
-          "default": "Classification",
-          "description": "Noun for vehicle_classification. 'Classification' for VDS; 'Category' generically."
+          "default": "Classification"
         },
         "item_category_label": {
           "type": "string",
-          "default": "Vehicle Classification",
-          "description": "Human-facing label for the classification selector and display headings."
+          "default": "Vehicle Classification"
         },
         "service_noun": {
           "type": "string",
-          "default": "Detail",
-          "description": "Noun for a single service instance. 'Detail' for VDS; 'Service' generically."
+          "default": "Detail"
         },
         "service_verb": {
           "type": "string",
-          "default": "detail",
-          "description": "Verb for performing the service ('detail the vehicle' / 'service the item')."
+          "default": "detail"
         },
         "service_area_noun": {
           "type": "string",
@@ -643,31 +664,26 @@
         },
         "appointment_noun": {
           "type": "string",
-          "default": "Appointment",
-          "description": "Noun for a scheduled visit ('Appointment' / 'Visit')."
+          "default": "Appointment"
         }
       }
     },
     "concierge": {
       "type": "object",
-      "description": "AI concierge persona and branding. The valerie and webChat backend functions build their system prompts from these fields instead of hardcoded literals. Display name also appears in the chat widget header, admin messaging UI, and customer-facing message attribution.",
+      "description": "AI concierge persona and branding.",
       "properties": {
         "name": {
           "type": "string",
-          "default": "Valerie",
-          "description": "Concierge display name."
+          "default": "Valerie"
         },
         "persona": {
-          "type": "string",
-          "description": "Short personality description injected into the LLM system prompt."
+          "type": "string"
         },
         "business_summary": {
-          "type": "string",
-          "description": "One-paragraph business context so the concierge speaks correctly about services, pricing, and policies."
+          "type": "string"
         },
         "greeting": {
-          "type": "string",
-          "description": "Default opening line for new conversations (shown as the first message in the web chat widget and used as the initial SMS greeting)."
+          "type": "string"
         }
       }
     }
