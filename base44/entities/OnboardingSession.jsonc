@@ -1,15 +1,15 @@
 {
   "name": "OnboardingSession",
   "type": "object",
-  "description": "Tracks a new business's onboarding wizard progress. Created when a business owner completes Stripe checkout for a Basic or Foundation tier subscription. Stores accumulated wizard data at each step so the flow can be paused and resumed. Finalized into a BusinessConfig + TenantMapping + User.business_id stamp on completion.",
+  "description": "Tracks a new business's onboarding wizard progress. Created when a business owner completes Stripe checkout for a Basic or Foundation tier subscription. Stores accumulated wizard data at each step so the flow can be paused and resumed. Finalized into a BusinessConfig + TenantMapping + User.business_id stamp on completion. Access control is ownership-based (created_by_id / owner_user_id), NOT business_id-scoped, because the tenant doesn't exist until finalization.",
   "properties": {
     "business_id": {
       "type": "string",
-      "description": "The new tenant's business_id slug (generated from business_name, uniqueness-checked at finalize). Set on first step save so RLS can scope the session to the owner."
+      "description": "The new tenant's business_id slug (generated from business_name, uniqueness-checked at finalize). Set on first step save so it's available throughout the wizard."
     },
     "owner_user_id": {
       "type": "string",
-      "description": "Base44 User ID of the business owner who purchased the tier subscription. Stamped with business_id + role=admin on wizard completion."
+      "description": "Base44 User ID of the business owner who purchased the tier subscription. Stamped with business_id + role=admin on wizard completion. The backend function explicitly checks this matches the authenticated user before allowing any session access."
     },
     "plan_tier": {
       "type": "string",
@@ -57,55 +57,36 @@
   ],
   "rls": {
     "create": {
-      "$and": [
-        {
-          "data.business_id": "{{user.data.business_id}}"
-        },
-        {
-          "created_by_id": "{{user.id}}"
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     },
     "read": {
-      "$and": [
+      "$or": [
         {
-          "$or": [
-            {
-              "created_by_id": "{{user.id}}"
-            },
-            {
-              "user_condition": {
-                "role": "admin"
-              }
-            }
-          ]
-        }
-      ]
-    },
-    "update": {
-      "$and": [
-        {
-          "$or": [
-            {
-              "created_by_id": "{{user.id}}"
-            },
-            {
-              "user_condition": {
-                "role": "admin"
-              }
-            }
-          ]
-        }
-      ]
-    },
-    "delete": {
-      "$and": [
+          "created_by_id": "{{user.id}}"
+        },
         {
           "user_condition": {
             "role": "admin"
           }
         }
       ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
     }
   }
 }
