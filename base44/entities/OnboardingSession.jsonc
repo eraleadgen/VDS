@@ -1,7 +1,7 @@
 {
   "name": "OnboardingSession",
   "type": "object",
-  "description": "Tracks a new business's onboarding wizard progress. Created when a business owner completes Stripe checkout for a Basic or Foundation tier subscription. Stores accumulated wizard data at each step so the flow can be paused and resumed. Finalized into a BusinessConfig + TenantMapping + User.business_id stamp on completion. Access control is ownership-based (created_by_id / owner_user_id), NOT business_id-scoped, because the tenant doesn't exist until finalization.",
+  "description": "Tracks a new business's onboarding wizard progress. Created when a business owner completes Stripe checkout for a Basic or Foundation tier subscription. Stores accumulated wizard data at each step so the flow can be paused and resumed. Finalized into a BusinessConfig + TenantMapping + User.business_id stamp on completion. Access control is strictly ownership-based (created_by_id / owner_user_id) \u2014 no business_id scoping (tenant doesn't exist yet) and no admin bypass (every tenant's owner has role 'admin', so that would be a cross-tenant hole).",
   "properties": {
     "business_id": {
       "type": "string",
@@ -60,33 +60,13 @@
       "created_by_id": "{{user.id}}"
     },
     "read": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     },
     "update": {
-      "$or": [
-        {
-          "created_by_id": "{{user.id}}"
-        },
-        {
-          "user_condition": {
-            "role": "admin"
-          }
-        }
-      ]
+      "created_by_id": "{{user.id}}"
     },
     "delete": {
-      "user_condition": {
-        "role": "admin"
-      }
+      "created_by_id": "{{user.id}}"
     }
   }
 }
