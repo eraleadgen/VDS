@@ -1,0 +1,111 @@
+{
+  "name": "OnboardingSession",
+  "type": "object",
+  "description": "Tracks a new business's onboarding wizard progress. Created when a business owner completes Stripe checkout for a Basic or Foundation tier subscription. Stores accumulated wizard data at each step so the flow can be paused and resumed. Finalized into a BusinessConfig + TenantMapping + User.business_id stamp on completion.",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "The new tenant's business_id slug (generated from business_name, uniqueness-checked at finalize). Set on first step save so RLS can scope the session to the owner."
+    },
+    "owner_user_id": {
+      "type": "string",
+      "description": "Base44 User ID of the business owner who purchased the tier subscription. Stamped with business_id + role=admin on wizard completion."
+    },
+    "plan_tier": {
+      "type": "string",
+      "enum": [
+        "basic",
+        "foundation"
+      ],
+      "description": "The tier purchased via Stripe checkout. Stamped into BusinessConfig.plan_tier on completion."
+    },
+    "stripe_checkout_session_id": {
+      "type": "string",
+      "description": "The Stripe checkout session ID that initiated this onboarding. Used for verification."
+    },
+    "current_step": {
+      "type": "number",
+      "default": 1,
+      "description": "The wizard step the user is currently on (1-5). Incremented on each step save."
+    },
+    "wizard_data": {
+      "type": "object",
+      "description": "Accumulated form data from all completed steps. Merged incrementally on each step save. Transformed into a complete BusinessConfig on finalize."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "in_progress",
+        "completed",
+        "abandoned"
+      ],
+      "default": "in_progress"
+    },
+    "completed_business_config_id": {
+      "type": "string",
+      "description": "ID of the BusinessConfig record created on completion. Null until finalized."
+    },
+    "subdomain": {
+      "type": "string",
+      "description": "The generated subdomain (e.g. 'bobs-autospa.erasystems.com') written to TenantMapping on completion."
+    }
+  },
+  "required": [
+    "business_id",
+    "owner_user_id",
+    "plan_tier"
+  ],
+  "rls": {
+    "create": {
+      "$and": [
+        {
+          "data.business_id": "{{user.data.business_id}}"
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        }
+      ]
+    },
+    "read": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "created_by_id": "{{user.id}}"
+            },
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "update": {
+      "$and": [
+        {
+          "$or": [
+            {
+              "created_by_id": "{{user.id}}"
+            },
+            {
+              "user_condition": {
+                "role": "admin"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "delete": {
+      "$and": [
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    }
+  }
+}
