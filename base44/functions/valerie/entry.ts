@@ -297,10 +297,15 @@ Deno.serve(async (req) => {
     if (!phone) return Response.json({ error: 'phone is required.' }, { status: 400 });
     if (!message) return Response.json({ error: 'message is required.' }, { status: 400 });
 
-    // Phase 4: resolve business_id from the Twilio To number (SMS has no HTTP hostname).
-    // Priority: SCHEDULER_TOKEN body.business_id → Twilio To number → authenticated user.
-    // If the authenticated user's tenant differs from the Twilio-resolved tenant, log
-    // the mismatch but proceed with the user's own business_id.
+    // Phase 4: resolve business_id.
+    // - SCHEDULER_TOKEN calls (internal): use body.business_id if provided.
+    // - Twilio SMS webhooks: resolve from the Twilio To number (the business's
+    //   destination number). SMS has no HTTP hostname to resolve from.
+    // - Authenticated non-Twilio calls (admin testing via API explorer / in-app):
+    //   no body.To exists, so the Twilio lookup returns 'vds'; the authenticated
+    //   user's business_id then overrides so an admin tests their own concierge.
+    //   This tier never applies to genuine SMS webhooks — Twilio requests carry no
+    //   Base44 session, so authedOk is always false for them.
     let businessId;
     if (tokenOk && body.business_id) {
       businessId = body.business_id;
