@@ -1,7 +1,7 @@
 {
   "name": "BusinessConfig",
   "type": "object",
-  "description": "Single source of truth for all business configuration \u2014 vehicle classifications, pricing groups, services, pricing rules, memberships, hours, scheduling rules, feature flags, branding, domain dictionary, AI concierge persona, SEO copy, and FAQ content. Designed multi-tenant (business_id) for the ERA Systems future. Business behavior is configurable here, not hardcoded. VDS Mobile is a configuration layer over ERA Core.",
+  "description": "Single source of truth for all business configuration \u2014 vehicle classifications, pricing groups, services, pricing rules, memberships, hours, scheduling rules, feature flags, plan tier, branding, domain dictionary, AI concierge persona, SEO copy, and FAQ content. Designed multi-tenant (business_id) for the ERA Systems future. Business behavior is configurable here, not hardcoded. VDS Mobile is a configuration layer over ERA Core.",
   "properties": {
     "business_id": {
       "type": "string",
@@ -282,7 +282,7 @@
     },
     "feature_flags": {
       "type": "object",
-      "description": "Platform feature flags \u2014 toggle integrations and capabilities without code changes.",
+      "description": "Platform feature flags \u2014 toggle integrations and capabilities without code changes. These are internal granular toggles within the plan_tier ceiling. plan_tier is the external ceiling; feature_flags are internal preferences within that ceiling.",
       "properties": {
         "twilio_sms_enabled": {
           "type": "boolean",
@@ -307,6 +307,22 @@
           "description": "Master switch for the AI web chat widget. When true, the floating chat widget appears on all public pages, powered by the webChat backend function and the concierge persona from BusinessConfig.concierge."
         }
       }
+    },
+    "plan_tier": {
+      "type": "string",
+      "enum": [
+        "basic",
+        "foundation",
+        "growth",
+        "enterprise"
+      ],
+      "default": "basic",
+      "description": "Subscription tier. Gates which platform features are active for this tenant per the ERA Core feature matrix. Feature checks use hasFeature(plan_tier, feature) \u2014 see base44/shared/planFeatures.ts. The existing VDS record is set to 'enterprise' (uses partner engine + AI SMS + portals)."
+    },
+    "ad_management_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Paid add-on: Google Ads management. Available on any tier when true; included automatically at Enterprise. Checked via hasAdManagement(plan_tier, ad_management_enabled)."
     },
     "services": {
       "type": "array",
