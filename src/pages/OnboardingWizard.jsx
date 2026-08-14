@@ -7,6 +7,7 @@ import Step2Branding from '@/components/onboarding/Step2Branding';
 import Step3ServiceCatalog from '@/components/onboarding/Step3ServiceCatalog';
 import Step4TeamScheduling from '@/components/onboarding/Step4TeamScheduling';
 import Step5Integrations from '@/components/onboarding/Step5Integrations';
+import ProvisioningScreen from '@/components/onboarding/ProvisioningScreen';
 
 const STEPS = [
   { num: 1, label: 'Business Basics', key: 'business_basics', Component: Step1BusinessBasics },
@@ -26,6 +27,7 @@ export default function OnboardingWizard() {
   const [currentStep, setCurrentStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [completed, setCompleted] = useState(null);
+  const [provisioning, setProvisioning] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -72,16 +74,8 @@ export default function OnboardingWizard() {
       if (currentStep < 5) {
         setCurrentStep(currentStep + 1);
       } else {
-        const finR = await base44.functions.invoke('onboardingWizard', {
-          action: 'finalize',
-          session_id: session.id,
-        });
-        if (finR?.data?.session) {
-          setCompleted({ subdomain: finR.data.subdomain, businessName: stepData?.business_basics?.business_name || session.wizard_data?.business_basics?.business_name });
-          setSession(finR.data.session);
-        } else {
-          setError(finR?.data?.error || 'Finalization failed.');
-        }
+        // Step 5 saved — show the auto-provisioning loading screen.
+        setProvisioning(true);
       }
     } catch (e) {
       setError(e.message);
@@ -110,6 +104,18 @@ export default function OnboardingWizard() {
           <p className="text-vapor/50 text-sm">If you believe this is an error, please contact support.</p>
         </div>
       </div>
+    );
+  }
+
+  if (provisioning) {
+    return (
+      <ProvisioningScreen
+        sessionId={session.id}
+        onComplete={(result) => {
+          setCompleted({ subdomain: result.subdomain, businessName: result.business_name });
+          setProvisioning(false);
+        }}
+      />
     );
   }
 

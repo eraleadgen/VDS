@@ -325,6 +325,71 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ session });
     }
 
+    // ── provisionTenant helper ───────────────────────────────────────────
+    // Core provisioning logic shared by finalize and provision actions.
+    // Creates BusinessConfig, TenantMapping, stamps User, creates Contractors.
+    // Idempotent — safe to call multiple times (e.g. after a page refresh mid-provision).
+    async function provisionTenant(base44, session) {
+      const businessId = session.business_id;
+      const planTier = session.plan_tier;
+      const data = session.wizard_data || {};
+
+      // 1. Create BusinessConfig (idempotent — skip if already exists).
+      const existingConfigs = await base44.asServiceRole.entities.BusinessConfig.filter({ business_id: businessId }).catch(() => []);
+      let config = existingConfigs && existingConfigs[0];
+      if (!config) {
+        const configPayload = buildBusinessConfig(businessId, planTier, data);
+        config = await base44.asServiceRole.entities.BusinessConfig.create(configPayload);
+      }
+
+      // 2. Create TenantMapping (subdomain → business_id), idempotent.
+      const subdomain = `${businessId}.erasystems.com`;
+      const existingMappings = await base44.asServiceRole.entities.TenantMapping.filter({ business_id: businessId, hostname: subdomain }).catch(() => []);
+      if (!existingMappings || !existingMappings.length) {
+        await base44.asServiceRole.entities.TenantMapping.create({
+          business_id: businessId,
+          hostname: subdomain,
+          is_active: true,
+        });
+      }
+
+      // 3. Stamp the owner's User record with business_id + admin role.
+      await base44.asServiceRole.entities.User.update(session.owner_user_id, {
+        business_id: businessId,
+        role: 'admin',
+      });
+
+      // 4. Create Contractor entities for Foundation tier (idempotent by email).
+      if (planTier === 'foundation' && data.team_scheduling?.specialists?.length) {
+        for (const spec of data.team_scheduling.specialists) {
+          const emailKey = spec.email || `no-email-${Date.now()}`;
+          const existingContractors = await base44.asServiceRole.entities.Contractor.filter({ business_id: businessId, email: emailKey }).catch(() => []);
+          if (!existingContractors || !existingContractors.length) {
+            await base44.asServiceRole.entities.Contractor.create({
+              business_id: businessId,
+              name: spec.name,
+              phone: spec.phone || '',
+              email: spec.email || '',
+              skills: spec.skills || [],
+              weekly_availability: spec.weekly_availability || [],
+              service_areas: spec.service_areas || {},
+              status: 'active',
+              is_enabled: true,
+            }).catch((e) => console.error('Contractor create failed:', e.message));
+          }
+        }
+      }
+
+      // 5. Mark the session completed.
+      const completed = await base44.asServiceRole.entities.OnboardingSession.update(session.id, {
+        status: 'completed',
+        completed_business_config_id: config.id,
+        subdomain,
+      });
+
+      return { config, subdomain, completed };
+    }
+
     // ── finalize: create BusinessConfig + TenantMapping + stamp User ─────
     if (action === 'finalize') {
       const { session_id } = body;
@@ -339,63 +404,77 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ error: 'Already completed.', business_config_id: session.completed_business_config_id }, { status: 400 });
       }
 
-      const businessId = session.business_id;
-      const planTier = session.plan_tier;
-      const data = session.wizard_data || {};
+      const { config, subdomain, completed } = await provisionTenant(base44, session);
+      return Response.json({ session: completed, business_config_id: config.id, subdomain });
+    }
 
-      // Re-check slug uniqueness (in case another session finalized with the same slug).
-      const existingConfigs = await base44.asServiceRole.entities.BusinessConfig.filter({ business_id: businessId }).catch(() => []);
-      if (existingConfigs && existingConfigs.length) {
-        return Response.json({ error: 'A business with this ID already exists. Please contact support.' }, { status: 409 });
+    // ── provision: finalize + confirm Stripe + confirm Google Calendar ────
+    // Runs the full auto-provisioning pipeline and confirms external integrations.
+    // Returns a step-by-step result so the frontend loading screen can show exactly
+    // what was completed. Idempotent — safe to retry after a refresh.
+    // No carrier/Twilio step: Basic and Foundation tiers don't include the AI SMS/voice
+    // agent, so there is no "pending carrier approval" wait — everything is live on completion.
+    if (action === 'provision') {
+      const { session_id } = body;
+      if (!session_id) return Response.json({ error: 'session_id is required.' }, { status: 400 });
+
+      const session = await base44.asServiceRole.entities.OnboardingSession.get(session_id).catch(() => null);
+      if (!session) return Response.json({ error: 'Onboarding session not found.' }, { status: 404 });
+      if (session.owner_user_id !== me.id) {
+        return Response.json({ error: 'Not authorized.' }, { status: 403 });
       }
 
-      // 1. Create BusinessConfig.
-      const configPayload = buildBusinessConfig(businessId, planTier, data);
-      const config = await base44.asServiceRole.entities.BusinessConfig.create(configPayload);
+      // Steps 1 + 4: Finalize config + activate domain (provisionTenant does both).
+      const { config, subdomain } = await provisionTenant(base44, session);
 
-      // 2. Create TenantMapping (subdomain → business_id) so the new tenant is immediately reachable.
-      const subdomain = `${businessId}.erasystems.com`;
-      await base44.asServiceRole.entities.TenantMapping.create({
-        business_id: businessId,
-        hostname: subdomain,
-        is_active: true,
-      });
-
-      // 3. Stamp the owner's User record with business_id + admin role.
-      //    This follows the same discipline as the Phase 3c invite flows.
-      await base44.asServiceRole.entities.User.update(session.owner_user_id, {
-        business_id: businessId,
-        role: 'admin',
-      });
-
-      // 4. Create Contractor entities for Foundation tier (specialists entered in step 4).
-      if (planTier === 'foundation' && data.team_scheduling?.specialists?.length) {
-        for (const spec of data.team_scheduling.specialists) {
-          await base44.asServiceRole.entities.Contractor.create({
-            business_id: businessId,
-            name: spec.name,
-            phone: spec.phone || '',
-            email: spec.email || '',
-            skills: spec.skills || [],
-            weekly_availability: spec.weekly_availability || [],
-            service_areas: spec.service_areas || {},
-            status: 'active',
-            is_enabled: true,
-          }).catch((e) => console.error('Contractor create failed:', e.message));
+      // Step 2: Confirm Stripe authorization (verify the checkout session is paid).
+      let stripeStatus = 'complete';
+      let stripeError = '';
+      try {
+        const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
+        if (!stripeKey) {
+          stripeStatus = 'failed';
+          stripeError = 'Stripe API key not configured';
+        } else {
+          const stripeRes = await fetch(`https://api.stripe.com/v1/checkout/sessions/${session.stripe_checkout_session_id}`, {
+            headers: { Authorization: `Bearer ${stripeKey}` },
+          });
+          if (!stripeRes.ok) {
+            stripeStatus = 'failed';
+            stripeError = 'Stripe session lookup failed';
+          } else {
+            const stripeSession = await stripeRes.json();
+            if (stripeSession.payment_status !== 'paid') {
+              stripeStatus = 'failed';
+              stripeError = `Payment status: ${stripeSession.payment_status}`;
+            }
+          }
         }
+      } catch (e) {
+        stripeStatus = 'failed';
+        stripeError = e.message;
       }
 
-      // 5. Mark the session completed.
-      const completed = await base44.asServiceRole.entities.OnboardingSession.update(session_id, {
-        status: 'completed',
-        completed_business_config_id: config.id,
-        subdomain,
-      });
+      // Step 3: Confirm Google Calendar authorization (shared platform connector).
+      let calendarStatus = 'complete';
+      let calendarError = '';
+      try {
+        await base44.asServiceRole.connectors.getConnection('googlecalendar');
+      } catch (e) {
+        calendarStatus = 'failed';
+        calendarError = 'Google Calendar connector not authorized';
+      }
 
       return Response.json({
-        session: completed,
         business_config_id: config.id,
         subdomain,
+        business_name: config.business_name,
+        steps: {
+          config: { status: 'complete' },
+          stripe: { status: stripeStatus, error: stripeError },
+          calendar: { status: calendarStatus, error: calendarError },
+          domain: { status: 'complete' },
+        },
       });
     }
 
