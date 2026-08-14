@@ -254,17 +254,26 @@ async function executeTool(base44, cfg, businessId, name, args) {
         const contact = await loadBusinessContact(base44, businessId);
         const serviceLabels = { ceramic_coating: 'Ceramic Coating', paint_correction: 'Paint Correction', speak_to_team: 'Speak to a Team Member' };
         const interestLabel = serviceLabels[args.service_interest] || args.service_interest;
-        const subject = 'Consultation Request — ' + interestLabel + ' — ' + args.name;
+        // Escape all visitor-controlled tool arguments before interpolating into the HTML
+        // email body to prevent HTML injection (CWE-79). Tool args are extracted from the
+        // visitor's free-text chat message by the LLM, so they are untrusted.
+        const esc = (s) => (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g, '&#x2F;');
+        const eName = esc(args.name);
+        const ePhone = esc(args.phone);
+        const eEmail = esc(args.email);
+        const eInterest = esc(interestLabel);
+        const eDesc = esc(args.description);
+        const subject = 'Consultation Request — ' + eInterest + ' — ' + eName;
         const html = '<!DOCTYPE html><html><body style="font-family:sans-serif;background:#0A0B0D;color:#E2E8F0;padding:24px;">'
           + '<h2 style="color:#D4AF37;margin:0 0 16px 0;">Consultation Request</h2>'
           + '<table style="width:100%;border-collapse:collapse;">'
-          + '<tr><td style="padding:6px 0;color:#94A3B8;font-size:12px;text-transform:uppercase;">Service Interest</td><td style="padding:6px 0;color:#E2E8F0;font-weight:600;">' + interestLabel + '</td></tr>'
-          + '<tr><td style="padding:6px 0;color:#94A3B8;font-size:12px;text-transform:uppercase;">Client Name</td><td style="padding:6px 0;color:#E2E8F0;font-weight:600;">' + args.name + '</td></tr>'
-          + '<tr><td style="padding:6px 0;color:#94A3B8;font-size:12px;text-transform:uppercase;">Phone</td><td style="padding:6px 0;color:#E2E8F0;font-weight:600;">' + args.phone + '</td></tr>'
-          + (args.email ? '<tr><td style="padding:6px 0;color:#94A3B8;font-size:12px;text-transform:uppercase;">Email</td><td style="padding:6px 0;color:#E2E8F0;font-weight:600;">' + args.email + '</td></tr>' : '')
+          + '<tr><td style="padding:6px 0;color:#94A3B8;font-size:12px;text-transform:uppercase;">Service Interest</td><td style="padding:6px 0;color:#E2E8F0;font-weight:600;">' + eInterest + '</td></tr>'
+          + '<tr><td style="padding:6px 0;color:#94A3B8;font-size:12px;text-transform:uppercase;">Client Name</td><td style="padding:6px 0;color:#E2E8F0;font-weight:600;">' + eName + '</td></tr>'
+          + '<tr><td style="padding:6px 0;color:#94A3B8;font-size:12px;text-transform:uppercase;">Phone</td><td style="padding:6px 0;color:#E2E8F0;font-weight:600;">' + ePhone + '</td></tr>'
+          + (eEmail ? '<tr><td style="padding:6px 0;color:#94A3B8;font-size:12px;text-transform:uppercase;">Email</td><td style="padding:6px 0;color:#E2E8F0;font-weight:600;">' + eEmail + '</td></tr>' : '')
           + '</table>'
           + '<p style="margin:16px 0 6px 0;color:#94A3B8;font-size:12px;text-transform:uppercase;">Description</p>'
-          + '<div style="background:#14161A;padding:14px;border-radius:8px;border:1px solid rgba(212,175,55,0.15);color:#CBD5E1;line-height:1.6;">' + args.description + '</div>'
+          + '<div style="background:#14161A;padding:14px;border-radius:8px;border:1px solid rgba(212,175,55,0.15);color:#CBD5E1;line-height:1.6;">' + eDesc + '</div>'
           + '<p style="color:#64748B;font-size:11px;margin-top:20px;">This consultation request was submitted via the web chat widget.</p>'
           + '</body></html>';
         await base44.asServiceRole.integrations.Core.SendEmail({

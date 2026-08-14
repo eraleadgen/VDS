@@ -10,6 +10,17 @@ export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
     const body = await req.json().catch(() => ({}));
+
+    // Auth gate — this wrapper can send arbitrary HTML to arbitrary recipients via the
+    // Resend ESP path, so it must NOT be an open relay. Require either a valid internal
+    // SCHEDULER_TOKEN or an authenticated admin session.
+    const schedulerToken = Deno.env.get('SCHEDULER_TOKEN');
+    const tokenOk = !!(schedulerToken && body.scheduler_token && body.scheduler_token === schedulerToken);
+    if (!tokenOk) {
+      const me = await base44.auth.me().catch(() => null);
+      if (!me || me.role !== 'admin') return Response.json({ error: 'Unauthorized.' }, { status: 403 });
+    }
+
     const { to, subject, html, from_name } = body;
     if (!to || !subject || !html) {
       return Response.json({ error: 'to, subject, and html are required.' }, { status: 400 });
