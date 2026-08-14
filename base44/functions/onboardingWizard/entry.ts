@@ -227,6 +227,11 @@ export default async function(req: Request): Promise<Response> {
     if (action === 'init') {
       const { stripe_checkout_session_id } = body;
       if (!stripe_checkout_session_id) return Response.json({ error: 'stripe_checkout_session_id is required.' }, { status: 400 });
+      // Stripe checkout session IDs match a strict format (e.g. cs_live_... or cs_test_...).
+      // Reject anything else to prevent path traversal / SSRF into other Stripe API endpoints.
+      if (!/^(cs_live_|cs_test_)[A-Za-z0-9]{1,}$/.test(stripe_checkout_session_id)) {
+        return Response.json({ error: 'Invalid checkout session ID.' }, { status: 400 });
+      }
 
       // Verify the Stripe checkout session and extract plan_tier + user_id from metadata.
       const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
