@@ -175,6 +175,10 @@ Deno.serve(async (req) => {
       if (!rateLimit('submitBooking:' + ip, 8, 15 * 60 * 1000)) {
         return Response.json({ success: false, error: 'Too many booking attempts. Please try again later.' }, { status: 429 });
       }
+      // Basic bot signal — reject requests with no User-Agent (scripted spam tools often omit it).
+      if (!req.headers.get('User-Agent')) {
+        return Response.json({ success: false, error: 'Invalid request.' }, { status: 403 });
+      }
     }
 
     // Auth is optional — guests can book without an account

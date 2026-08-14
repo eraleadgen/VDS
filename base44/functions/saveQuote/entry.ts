@@ -7,6 +7,9 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 import { resolveBusinessIdFromHost, logTenantMismatch } from '../../shared/tenantContext.ts';
 
+// Per-IP rate limiter (per-isolate) for public quote submissions.
+const _saveQuoteRl = new Map();
+
 async function loadConfig(base44, businessId) {
   const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ business_id: businessId, is_active: true });
   return configs && configs[0] ? configs[0] : null;
@@ -23,9 +26,17 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const body = await req.json().catch(() => ({}));
+    const SCHEDULER_TOKEN = Deno.env.get('SCHEDULER_TOKEN');
+    const isInternalCall = !!(SCHEDULER_TOKEN && body.scheduler_token === SCHEDULER_TOKEN);
 
     // Phase 4: resolve business_id from the request hostname (multi-tenant).
-    const businessId = await resolveBusinessIdFromHost(base44, req);
+    // Internal calls (SCHEDULER_TOKEN) pass business_id in the body.
+    let businessId;
+    if (isInternalCall && body.business_id) {
+      businessId = body.business_id;
+    } else {
+      businessId = await resolveBusinessIdFromHost(base44, req);
+    }
     const cfg = await loadConfig(base44, businessId);
     // Mismatch logging (non-blocking) — if an authenticated user's tenant differs from
     // the hostname's, log it but proceed with the hostname's business_id (the quote
@@ -40,23 +51,37 @@ Deno.serve(async (req) => {
       }
     } catch {}
 
-    // Origin allowlist — tenant domains derived from BusinessConfig website_links.
-    const originHeader = req.headers.get('Origin') || req.headers.get('Referer') || '';
-    let originHost = '';
-    try { originHost = new URL(originHeader).host.toLowerCase(); } catch {}
-    const tenantHosts = [];
-    if (cfg && cfg.website_links) {
-      for (const url of Object.values(cfg.website_links)) {
-        if (url) { try { tenantHosts.push(new URL(url).host.toLowerCase()); } catch {} }
+    // Public endpoint — strict origin allowlist + per-IP rate limit.
+    // Internal calls (webChat via SCHEDULER_TOKEN) bypass these checks.
+    if (!isInternalCall) {
+      const originHeader = req.headers.get('Origin') || req.headers.get('Referer') || '';
+      let originHost = '';
+      try { originHost = new URL(originHeader).host.toLowerCase(); } catch { originHost = ''; }
+      const tenantHosts = [];
+      if (cfg && cfg.website_links) {
+        for (const url of Object.values(cfg.website_links)) {
+          if (url) { try { tenantHosts.push(new URL(url).host.toLowerCase()); } catch {} }
+        }
       }
-    }
-    const allowed = tenantHosts.includes(originHost)
-      || originHost === 'localhost'
-      || originHost.endsWith('.localhost')
-      || originHost.endsWith('.base44.app')
-      || originHost.endsWith('.base44.com');
-    if (!allowed) {
-      return Response.json({ error: 'Forbidden — invalid origin.' }, { status: 403 });
+      const allowed = tenantHosts.includes(originHost)
+        || originHost === 'localhost'
+        || originHost.endsWith('.localhost')
+        || originHost.endsWith('.base44.app')
+        || originHost.endsWith('.base44.com');
+      if (!allowed) {
+        return Response.json({ error: 'Forbidden — invalid origin.' }, { status: 403 });
+      }
+      // Per-IP rate limit — the origin allowlist is client-controlled; this is the real anti-spam control.
+      const fwd = req.headers.get('x-forwarded-for');
+      const ip = fwd ? fwd.split(',')[0].trim() : (req.headers.get('x-real-ip') || 'unknown');
+      const now = Date.now();
+      const rlKey = 'saveQuote:' + ip;
+      const rlHits = (_saveQuoteRl.get(rlKey) || []).filter(ts => now - ts < 15 * 60 * 1000);
+      if (rlHits.length >= 10) {
+        return Response.json({ error: 'Too many quote attempts. Please try again later.' }, { status: 429 });
+      }
+      rlHits.push(now);
+      _saveQuoteRl.set(rlKey, rlHits);
     }
 
     const {
