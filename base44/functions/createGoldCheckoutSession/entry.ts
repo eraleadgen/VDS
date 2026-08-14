@@ -55,13 +55,33 @@ Deno.serve(async (req) => {
       };
     });
 
+    // Derive the redirect base URL from the tenant's BusinessConfig website_links
+    // (trusted server-side config) — never from the client-supplied Origin header,
+    // which is spoofable and would enable open-redirect / phishing (CWE-601).
+    const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ business_id: businessId, is_active: true });
+    const cfg = configs && configs[0];
+    const bookingUrl = (cfg && cfg.website_links && cfg.website_links.booking_url) || '';
+    let baseUrl = '';
+    try { baseUrl = bookingUrl ? new URL(bookingUrl).origin : ''; } catch {}
+    // Fallback to the request origin only if it matches a known trusted host pattern.
+    if (!baseUrl) {
+      const origin = (req.headers.get('origin') || '').toLowerCase();
+      try {
+        const host = new URL(origin).host;
+        if (host.endsWith('.base44.app') || host.endsWith('.base44.com') || host === 'localhost' || host.endsWith('.localhost')) {
+          baseUrl = origin;
+        }
+      } catch {}
+    }
+    if (!baseUrl) return Response.json({ error: 'Unable to determine redirect URL.' }, { status: 400 });
+
     // Create checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       line_items,
       mode: 'subscription',
-      success_url: `${req.headers.get('origin')}/member-dashboard?gold_success=true`,
-      cancel_url: `${req.headers.get('origin')}/vds-gold-signup`,
+      success_url: `${baseUrl}/member-dashboard?gold_success=true`,
+      cancel_url: `${baseUrl}/vds-gold-signup`,
       metadata: {
         base44_app_id: Deno.env.get('BASE44_APP_ID'),
         business_id: businessId,
