@@ -293,10 +293,35 @@ Deno.serve(async (req) => {
     if (body._internal_token) delete body._internal_token;
 
     // Extract phone + message — JSON or Twilio webhook format.
-    const phone = (body.phone || body.From || body.customer_phone || '').trim();
+    let phone = (body.phone || body.From || body.customer_phone || '').trim();
     const message = (body.message || body.Body || body.text || '').trim();
-    if (!phone) return Response.json({ error: 'phone is required.' }, { status: 400 });
     if (!message) return Response.json({ error: 'message is required.' }, { status: 400 });
+
+    // Security: when invoked by an authenticated user session (not SCHEDULER_TOKEN or
+    // a verified Twilio webhook), force the phone to the caller's own registered number.
+    // Never trust body.phone for authenticated callers — that would let any logged-in
+    // user exfiltrate another customer's CRM data by supplying an arbitrary phone (CWE-639).
+    if (authedOk && !tokenOk && !twilioOk) {
+      try {
+        const me = await base44.auth.me();
+        if (!me || !me.id) return Response.json({ error: 'Unable to verify your identity.' }, { status: 403 });
+        const myCustomers = await base44.asServiceRole.entities.Customer.filter({ linked_user_id: me.id });
+        const myCustomer = myCustomers && myCustomers[0];
+        if (myCustomer && myCustomer.phone) {
+          phone = myCustomer.phone;
+        } else {
+          const user = await base44.asServiceRole.entities.User.get(me.id).catch(() => null);
+          if (user && user.phone) {
+            phone = user.phone;
+          } else {
+            return Response.json({ error: 'No phone number on file for your account.' }, { status: 403 });
+          }
+        }
+      } catch {
+        return Response.json({ error: 'Unable to verify your identity.' }, { status: 403 });
+      }
+    }
+    if (!phone) return Response.json({ error: 'phone is required.' }, { status: 400 });
 
     // Phase 4: resolve business_id.
     // - SCHEDULER_TOKEN calls (internal): use body.business_id if provided.
