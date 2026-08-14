@@ -54,6 +54,9 @@ export default function Home() {
         <div className="absolute inset-0 bg-gradient-to-t from-obsidian via-obsidian/60 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-r from-obsidian/70 via-transparent to-transparent" />
         <GoldParticles count={55} />
+        {/* Fade the gold particles out at the bottom edge so they don't create a
+            grainy gold strip at the boundary with the next section. */}
+        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-obsidian to-transparent pointer-events-none" style={{ zIndex: 3 }} />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 pt-32 pb-16 md:pb-24 w-full">
           <div className="max-w-3xl text-center md:text-left">
