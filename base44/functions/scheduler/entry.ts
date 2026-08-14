@@ -74,7 +74,7 @@ function dayHours(cfg, dateStr) {
 async function eligibleContractors(base44, cfg, dateStr, serviceKey) {
   const skill = serviceToSkill(serviceKey);
   const dayKey = weekdayKey(dateStr);
-  const all = await base44.asServiceRole.entities.Contractor.filter({ status: 'active' });
+  const all = await base44.asServiceRole.entities.Contractor.filter({ status: 'active', business_id: cfg.business_id });
   return all.filter(c => {
     if (c.is_enabled === false) return false;
     // A specialist with no skills listed is treated as a generalist (eligible for any service),
@@ -428,6 +428,10 @@ async function reassignAppointment(base44, data, cfg, appt) {
   if (!contractorId) return { error: 'contractor_id is required.' };
   const contractor = await base44.asServiceRole.entities.Contractor.get(contractorId);
   if (!contractor) return { error: 'Contractor not found.' };
+  // Tenant guard: reject cross-tenant contractor lookups (asServiceRole bypasses RLS).
+  if (contractor.business_id && contractor.business_id !== cfg.business_id) {
+    return { error: 'Contractor not found.' };
+  }
 
   await base44.asServiceRole.entities.Appointment.update(appt.id, {
     contractor_id: contractorId,
@@ -729,7 +733,7 @@ Deno.serve(async (req) => {
       return Response.json(await bookAppointment(base44, body, cfg));
     }
     if (action === 'list_contractors') {
-      const all = await base44.asServiceRole.entities.Contractor.filter({ status: 'active' });
+      const all = await base44.asServiceRole.entities.Contractor.filter({ status: 'active', business_id: cfg.business_id });
       return Response.json({ contractors: all.map(c => ({ id: c.id, name: c.name, skills: c.skills || [], status: c.status, is_enabled: c.is_enabled !== false })) });
     }
     if (action === 'assign_contractor') {

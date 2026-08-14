@@ -2,6 +2,7 @@
 // Used by Retell AI — never calculates pricing itself.
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+import { resolveBusinessIdFromHost } from '../../shared/tenantContext.ts';
 
 Deno.serve(async (req) => {
   try {
@@ -13,6 +14,7 @@ Deno.serve(async (req) => {
     }
 
     const base44 = createClientFromRequest(req);
+    const businessId = await resolveBusinessIdFromHost(base44, req);
     const { phone, email, customer_id } = await req.json();
 
     if (!phone && !email && !customer_id) {
@@ -27,7 +29,7 @@ Deno.serve(async (req) => {
         const digits = phone.replace(/\D/g, '');
         // Resolve phone via the Customer entity (indexed phone field + linked_user_id).
         // Never loads the full User directory into memory.
-        const customers = await base44.asServiceRole.entities.Customer.filter({ phone: digits });
+        const customers = await base44.asServiceRole.entities.Customer.filter({ phone: digits, business_id: businessId });
         const c = (customers || []).find(c => c.linked_user_id);
         if (c) match = { id: c.linked_user_id };
       }
@@ -40,14 +42,14 @@ Deno.serve(async (req) => {
       userId = match.id;
     }
 
-    const vehicles = await base44.asServiceRole.entities.MemberVehicle.filter({ created_by_id: userId });
+    const vehicles = await base44.asServiceRole.entities.MemberVehicle.filter({ created_by_id: userId, business_id: businessId });
     const vehicleIds = vehicles.map(v => v.id);
 
-    const allSubs = await base44.asServiceRole.entities.VehicleSubscription.filter({ status: 'active' });
+    const allSubs = await base44.asServiceRole.entities.VehicleSubscription.filter({ status: 'active', business_id: businessId });
     const goldSubs = allSubs.filter(s => vehicleIds.includes(s.vehicle_id));
 
     const currentMonth = new Date().toISOString().slice(0, 7);
-    const records = await base44.asServiceRole.entities.ServiceRecord.filter({});
+    const records = await base44.asServiceRole.entities.ServiceRecord.filter({ business_id: businessId });
     
     const enrichedSubs = goldSubs.map(sub => {
       const vehicle = vehicles.find(v => v.id === sub.vehicle_id);
