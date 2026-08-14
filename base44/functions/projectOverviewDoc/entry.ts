@@ -3,7 +3,7 @@
 // shipped in the public client bundle. Author/owner: Noah Grove.
 //
 // POST /functions/projectOverviewDoc
-// Public — no auth. Serves the document HTML for the shareable /project-overview route.
+// Admin-gated — requires an authenticated admin session.
 
 export const DOC_FILENAME = 'ERA-Core-1.0-VDS-Mobile-Project-Overview.html';
 
@@ -395,8 +395,16 @@ Invoice paid (detail OR coating)
 </html>`;
 }
 
-Deno.serve(async () => {
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.31';
+
+Deno.serve(async (req) => {
   try {
+    const base44 = createClientFromRequest(req);
+    const me = await base44.auth.me().catch(() => null);
+    if (!me || me.role !== 'admin') {
+      return Response.json({ error: 'Unauthorized.' }, { status: 403 });
+    }
+
     return Response.json({
       success: true,
       html: buildDocHtml(),
