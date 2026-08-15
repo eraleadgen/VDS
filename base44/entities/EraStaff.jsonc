@@ -1,0 +1,53 @@
+{
+  "name": "EraStaff",
+  "type": "object",
+  "description": "Allowlist of ERA Systems staff accounts authorized to access the cross-tenant ERA Staff Console. Authorization is based solely on user_id membership \u2014 never on role (every tenant owner is 'admin') and never on business_id (staff need not belong to a tenant). RLS denies ALL app-user operations via an unsatisfiable user_condition (no user holds role 'era_staff'), so only the service role \u2014 exec_tool seeding and the gated backend function's asServiceRole check \u2014 can read or write these records. A tenant admin cannot self-grant this flag: EraStaff is a separate entity from User (base44.auth.updateMe cannot touch it), and the deny-all RLS rejects any direct app-user create attempt.",
+  "properties": {
+    "user_id": {
+      "type": "string",
+      "description": "Base44 User id of the ERA Systems staff member. The sole key checked by assertEraStaff."
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "Staff email (readability/audit only; not used for authorization)"
+    },
+    "name": {
+      "type": "string",
+      "description": "Staff display name (audit only)"
+    },
+    "added_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date the staff record was seeded via exec_tool"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "user_id"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "era_staff"
+      }
+    },
+    "create": {
+      "user_condition": {
+        "role": "era_staff"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "era_staff"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "era_staff"
+      }
+    }
+  }
+}
