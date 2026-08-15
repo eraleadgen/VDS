@@ -133,7 +133,7 @@ export default function MemberDashboard() {
   const handleModalConfirm = async () => {
     if (!selectedVehicle) return;
     if (modalAction === 'enroll') {
-      navigate('/vds-gold-signup');
+      navigate('/membership-signup');
     } else if (modalAction === 'cancel') {
       try {
         const response = await base44.functions.invoke('cancelGoldSubscription', { vehicle_id: selectedVehicle.id });
@@ -344,7 +344,7 @@ export default function MemberDashboard() {
                   <p className="text-vapor/30 text-xs font-mono-tech mt-0.5">Join {plan.short_label} for unlimited exterior + interior details each month</p>
                 </div>
               </div>
-              <Link to="/vds-gold" className="vds-gold-btn px-5 py-2.5 text-xs font-mono-tech tracking-widest rounded-sm whitespace-nowrap">
+              <Link to="/membership" className="vds-gold-btn px-5 py-2.5 text-xs font-mono-tech tracking-widest rounded-sm whitespace-nowrap">
                 ◆ JOIN {plan.short_label.toUpperCase()}
               </Link>
             </div>

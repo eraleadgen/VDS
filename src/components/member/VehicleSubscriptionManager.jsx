@@ -16,7 +16,7 @@ export default function VehicleSubscriptionManager({ vehicle, onSubscriptionChan
     try {
       if (actionType === 'enroll') {
         // Enrollment is handled via Stripe checkout on the signup page.
-        window.location.href = '/vds-gold-signup';
+        window.location.href = '/membership-signup';
         return;
       } else {
         // Cancel the Stripe subscription + VehicleSubscription record (per-vehicle),

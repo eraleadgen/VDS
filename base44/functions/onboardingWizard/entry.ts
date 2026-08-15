@@ -195,7 +195,7 @@ function buildBusinessConfig(businessId, planTier, data) {
     referral_program: { enabled: false, credit_amount: 0, incentives: {} },
     website_links: {
       booking_url: `https://${businessId}.erasystems.com/book`,
-      gold_signup_url: sc.offer_memberships ? `https://${businessId}.erasystems.com/vds-gold-signup` : '',
+      gold_signup_url: sc.offer_memberships ? `https://${businessId}.erasystems.com/membership-signup` : '',
       gallery_url: `https://${businessId}.erasystems.com/gallery`,
       google_review_url: '',
     },

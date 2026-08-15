@@ -49,7 +49,7 @@ export default function Footer() {
           <div>
             <p className="text-xs font-mono-tech tracking-widest text-gold mb-6">NAVIGATE</p>
             <div className="flex flex-col gap-3">
-              {[['/', 'Home'], ['/services', 'Services'], ['/book', 'Quote & Book'], ['/gallery', 'Gallery'], ['/vds-gold', plan.short_label], ['/faq', 'FAQ']].map(([path, label]) => (
+              {[['/', 'Home'], ['/services', 'Services'], ['/book', 'Quote & Book'], ['/gallery', 'Gallery'], ['/membership', plan.short_label], ['/faq', 'FAQ']].map(([path, label]) => (
                 <Link key={path} to={path} className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">{label}</Link>
               ))}
             </div>
@@ -93,7 +93,7 @@ export default function Footer() {
               )}
             </div>
             <div className="mt-8">
-              <Link to="/vds-gold"
+              <Link to="/membership"
                 className="inline-block vds-gold-btn px-5 py-3 text-xs font-mono-tech tracking-widest rounded-sm">
                 ◆ JOIN {plan.short_label.toUpperCase()}
               </Link>

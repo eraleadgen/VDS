@@ -127,7 +127,7 @@ export default function GoldBooking() {
               This booking calendar is exclusive to {plan.short_label} members. Enroll at least one vehicle to access priority scheduling.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link to="/vds-gold-signup" className="vds-gold-btn px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm text-center">
+              <Link to="/membership-signup" className="vds-gold-btn px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm text-center">
                 ◆ ENROLL VEHICLE
               </Link>
               <Link to="/member-dashboard" className="border border-vapor/20 text-vapor/60 px-6 py-3 text-xs font-mono-tech tracking-widest rounded-sm text-center hover:border-vapor/40 hover:text-vapor transition-colors">

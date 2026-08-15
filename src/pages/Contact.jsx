@@ -111,7 +111,7 @@ export default function Contact() {
 
               <div className="mt-12 border-t border-vapor/10 pt-10">
                 <p className="text-xs font-mono-tech text-vapor/30 tracking-widest mb-6">OR JOIN VDS GOLD</p>
-                <Link to="/vds-gold"
+                <Link to="/membership"
                   className="vds-gold-btn flex items-center justify-between px-5 py-4 text-sm font-mono-tech tracking-widest rounded-sm">
                   <span>◆ VDS GOLD — FROM $250/MO</span>
                   <ArrowRight size={14} />

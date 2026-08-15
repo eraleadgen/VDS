@@ -23,7 +23,7 @@ export default function Navbar() {
     { label: 'QUOTE & BOOK', path: '/book' },
     { label: 'GALLERY', path: '/gallery' },
     { label: 'FAQ', path: '/faq' },
-    { label: (plan.short_label || 'VDS Gold').toUpperCase(), path: '/vds-gold', gold: true },
+    { label: (plan.short_label || 'VDS Gold').toUpperCase(), path: '/membership', gold: true },
   ];
 
   useEffect(() => {

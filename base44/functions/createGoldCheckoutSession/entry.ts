@@ -81,7 +81,7 @@ Deno.serve(async (req) => {
       line_items,
       mode: 'subscription',
       success_url: `${baseUrl}/member-dashboard?gold_success=true`,
-      cancel_url: `${baseUrl}/vds-gold-signup`,
+      cancel_url: `${baseUrl}/membership-signup`,
       metadata: {
         base44_app_id: Deno.env.get('BASE44_APP_ID'),
         business_id: businessId,

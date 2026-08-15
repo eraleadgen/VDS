@@ -9,7 +9,7 @@ import {
 const GOLD_CTA = {
   title: 'Keep It Showroom-Fresh with VDS Gold',
   body: 'The methods in this guide are exactly how we maintain our own clients\' vehicles. With VDS Gold you get unlimited exterior details (ceramic sealant included) and one full detail every month, plus an annual ceramic coating inspection — so your finish stays protected for the life of your membership. $250/mo for sedans & coupes · $300/mo for trucks & SUVs.',
-  link: '/vds-gold',
+  link: '/membership',
   linkLabel: 'Explore VDS Gold',
 };
 

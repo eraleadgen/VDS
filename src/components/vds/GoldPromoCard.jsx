@@ -32,7 +32,7 @@ export default function GoldPromoCard({ className = '' }) {
           </p>
         </div>
         <Link
-          to="/vds-gold"
+          to="/membership"
           className="group shrink-0 flex items-center gap-3 bg-gold text-obsidian px-8 py-4 text-sm font-mono-tech tracking-widest rounded-sm whitespace-nowrap transition-all duration-300 hover:bg-gold-light font-bold"
         >
           VIEW MEMBERSHIP

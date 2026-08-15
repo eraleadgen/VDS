@@ -6,7 +6,7 @@ import { useBusinessName, useBusinessConfig, useMembershipPlan } from '@/lib/Bus
 // supplied by the onboarding wizard, not auto-generated). Canonical/OG/Twitter URLs use
 // window.location.origin so they always reflect the real serving domain. Internal portals
 // (and any public route missing a config.seo entry) are noindex. Per-route JSON-LD is
-// emitted for /services, /vds-gold, and /faq (the FAQ Q&A itself comes from config.faq).
+// emitted for /services, /membership, and /faq (the FAQ Q&A itself comes from config.faq).
 // Structured address fields (address_locality/region/country) feed the Organization
 // PostalAddress; a comma-split of business_address is only a last-resort fallback.
 
@@ -109,7 +109,7 @@ export default function RouteSeo() {
         ],
       },
     },
-    '/vds-gold': {
+    '/membership': {
       '@context': 'https://schema.org',
       '@type': 'Product',
       name: plan.label,
@@ -123,7 +123,7 @@ export default function RouteSeo() {
         priceCurrency: currency,
         description: `$${g.price_monthly}/month per vehicle (${groupLabel(g.pricing_group)}).`,
         availability: 'https://schema.org/InStock',
-        url: `${baseUrl}/vds-gold-signup`,
+        url: `${baseUrl}/membership-signup`,
         seller: PROVIDER,
       })),
     },

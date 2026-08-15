@@ -82,7 +82,7 @@ const AuthenticatedApp = () => {
         <Route element={<PageTransition />}>
           <Route path="/" element={<Home />} />
           <Route path="/services" element={<Services />} />
-          <Route path="/vds-gold" element={<VdsGold />} />
+          <Route path="/membership" element={<VdsGold />} />
 
           <Route path="/faq" element={<FAQ />} />
           <Route path="/pricing" element={<Pricing />} />
@@ -95,7 +95,7 @@ const AuthenticatedApp = () => {
           <Route path="/member-login" element={<FeatureGate feature="member_portal"><MemberLogin /></FeatureGate>} />
           <Route path="/member-dashboard" element={<FeatureGate feature="member_portal"><MemberDashboard /></FeatureGate>} />
           <Route path="/member-signup" element={<FeatureGate feature="member_portal"><GoldSignup /></FeatureGate>} />
-          <Route path="/vds-gold-signup" element={<VdsGoldSignup />} />
+          <Route path="/membership-signup" element={<VdsGoldSignup />} />
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/book" element={<BookAppointment />} />
           <Route path="/gold-booking" element={<GoldBooking />} />

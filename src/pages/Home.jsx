@@ -83,7 +83,7 @@ export default function Home() {
                 className="flex items-center gap-3 border border-vapor/40 text-vapor px-6 sm:px-7 py-3.5 sm:py-4 text-xs sm:text-sm font-mono-tech tracking-widest hover:border-vapor hover:bg-vapor/5 transition-all duration-300 rounded-sm">
                 BOOK NOW <ArrowRight size={14} />
               </Link>
-              <Link to="/vds-gold"
+              <Link to="/membership"
                 className="vds-gold-btn flex items-center gap-3 px-6 sm:px-7 py-3.5 sm:py-4 text-xs sm:text-sm font-mono-tech tracking-widest rounded-sm">
                 ◆ EXPLORE VDS GOLD
               </Link>
@@ -145,7 +145,7 @@ export default function Home() {
                       ) : (
                         <>
                           <p className="text-xs font-mono-tech text-gold/70 tracking-widest mb-2">◆ INCLUDED IN</p>
-                          <Link to="/vds-gold" className="text-lg font-grotesk font-bold text-gold">VDS GOLD MEMBERSHIP</Link>
+                          <Link to="/membership" className="text-lg font-grotesk font-bold text-gold">VDS GOLD MEMBERSHIP</Link>
                           <p className="text-vapor/50 text-xs font-mono-tech mt-2">{`From $${minPrice}/mo per vehicle`}</p>
                         </>
                       )}
@@ -292,7 +292,7 @@ export default function Home() {
               className="bg-vapor text-obsidian px-10 py-4 text-sm font-mono-tech tracking-widest hover:bg-gold transition-colors duration-300 rounded-sm">
               BOOK YOUR DETAIL
             </Link>
-            <Link to="/vds-gold"
+            <Link to="/membership"
               className="vds-gold-btn px-10 py-4 text-sm font-mono-tech tracking-widest rounded-sm">
               ◆ JOIN VDS GOLD
             </Link>

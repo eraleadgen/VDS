@@ -117,14 +117,16 @@ const GUIDES = {
   },
 };
 
-const GOLD_CTA_HTML = `
+function goldCtaHtml(website) {
+  return `
   <div style="border:1px solid rgba(212,175,55,0.4);background:rgba(212,175,55,0.08);border-radius:10px;padding:18px 20px;margin-top:24px;">
     <h2 style="color:#D4AF37;margin:0 0 8px;font-size:16px;">Keep It Showroom-Fresh with VDS Gold</h2>
     <p style="margin:0 0 14px;color:#E2E8F0;font-size:14px;line-height:1.6;">The methods in this guide are exactly how we maintain our own clients' vehicles. With VDS Gold you get unlimited exterior details (ceramic sealant included) and one full detail every month, plus an annual ceramic coating inspection — so your finish stays protected for the life of your membership. $250/mo for sedans &amp; coupes · $300/mo for trucks &amp; SUVs.</p>
-    <a href="https://vdsmobile.com/vds-gold" style="display:inline-block;background:#D4AF37;color:#0A0B0D;text-decoration:none;font-family:'Space Mono',monospace;font-size:12px;letter-spacing:2px;padding:12px 22px;border-radius:4px;">◆ EXPLORE VDS GOLD</a>
+    <a href="${website}/membership" style="display:inline-block;background:#D4AF37;color:#0A0B0D;text-decoration:none;font-family:'Space Mono',monospace;font-size:12px;letter-spacing:2px;padding:12px 22px;border-radius:4px;">◆ EXPLORE VDS GOLD</a>
   </div>`;
+}
 
-function buildEmailHtml(guide, firstName, guideKey) {
+function buildEmailHtml(guide, firstName, guideKey, website) {
   const sections = guide.sections.map((s) => `
     <h2 style="color:#D4AF37;font-size:16px;margin:24px 0 10px;">${s.title}</h2>
     <ul style="padding-left:20px;margin:0;">
@@ -132,8 +134,8 @@ function buildEmailHtml(guide, firstName, guideKey) {
     </ul>`).join('');
   const buttons = `
     <div style="margin-top:24px;display:flex;flex-wrap:wrap;gap:12px;">
-      <a href="https://vdsmobile.com/member-dashboard" style="display:inline-block;background:#D4AF37;color:#0A0B0D;text-decoration:none;font-family:'Space Mono',monospace;font-size:12px;letter-spacing:2px;padding:12px 22px;border-radius:4px;">◆ VIEW ON YOUR ACCOUNT</a>
-      <a href="https://vdsmobile.com/care-guide/${guideKey}" style="display:inline-block;border:1px solid rgba(212,175,55,0.5);color:#D4AF37;text-decoration:none;font-family:'Space Mono',monospace;font-size:12px;letter-spacing:2px;padding:12px 22px;border-radius:4px;">⤓ DOWNLOAD GUIDE</a>
+      <a href="${website}/member-dashboard" style="display:inline-block;background:#D4AF37;color:#0A0B0D;text-decoration:none;font-family:'Space Mono',monospace;font-size:12px;letter-spacing:2px;padding:12px 22px;border-radius:4px;">◆ VIEW ON YOUR ACCOUNT</a>
+      <a href="${website}/care-guide/${guideKey}" style="display:inline-block;border:1px solid rgba(212,175,55,0.5);color:#D4AF37;text-decoration:none;font-family:'Space Mono',monospace;font-size:12px;letter-spacing:2px;padding:12px 22px;border-radius:4px;">⤓ DOWNLOAD GUIDE</a>
     </div>`;
   return `<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;background:#0A0B0D;font-family:'Space Grotesk',system-ui,sans-serif;">
   <div style="max-width:640px;margin:0 auto;padding:32px 20px;">
@@ -141,7 +143,7 @@ function buildEmailHtml(guide, firstName, guideKey) {
     <h1 style="color:#D4AF37;font-size:24px;margin:0 0 8px;">${guide.headline}</h1>
     <p style="color:#E2E8F0;font-size:15px;line-height:1.6;">Hi ${firstName}, thank you for choosing VDS Mobile. ${guide.intro}</p>
     ${sections}
-    ${GOLD_CTA_HTML}
+    ${goldCtaHtml(website)}
     ${buttons}
     <p style="margin-top:28px;padding-top:18px;border-top:1px solid rgba(212,175,55,0.25);font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;color:#E2E8F0;opacity:0.5;text-align:center;text-transform:uppercase;">Valet Detailing Service LLC · (470) 412-8986 · vdsmobile.com</p>
   </div></body></html>`;
@@ -169,7 +171,17 @@ export async function sendCareGuideEmail(base44, { guideKey, to, customerName, c
   if (!to) return { sent: false, reason: 'no_email' };
   const guide = GUIDES[guideKey] || GUIDES.detailing;
   const firstName = (customerName || '').split(' ')[0] || 'there';
-  const body = buildEmailHtml(guide, firstName, guideKey);
+  // Resolve the tenant's website origin from BusinessConfig so care-guide email links
+  // (membership, member dashboard, care-guide download) point to the tenant's own domain,
+  // never a hardcoded VDS domain. Falls back to the booking_url origin, then vdsmobile.com.
+  let website = 'https://vdsmobile.com';
+  try {
+    const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ business_id: businessId, is_active: true });
+    const cfg = configs && configs[0];
+    const bookingUrl = cfg && cfg.website_links && cfg.website_links.booking_url;
+    if (bookingUrl) website = new URL(bookingUrl).origin;
+  } catch (e) { console.error('care guide config load failed:', e.message); }
+  const body = buildEmailHtml(guide, firstName, guideKey, website);
   try {
     await base44.asServiceRole.integrations.Core.SendEmail({
       to, subject: guide.subject, body,
