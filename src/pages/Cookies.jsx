@@ -1,12 +1,16 @@
 import { Link } from 'react-router-dom';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
+import { useLegalContext } from '@/lib/useLegalContext';
 
-const SECTIONS = [
+// Every legal-identity reference — entity name, brand, jurisdiction, domain, contact
+// email — is templated from the tenant's BusinessConfig via useLegalContext. See
+// useLegalContext for the field mapping.
+const buildSections = (c) => [
   {
     num: '1.',
     title: 'Cookies Policy',
-    content: 'Valet Detailing Service LLC ("VDS Mobile," "we," "us," or "our") uses cookies and similar tracking technologies on our website at vdsmobile.com. This Cookies Policy explains what cookies are, how we use them, and the choices you have. This policy is provided in compliance with A2P 10DLC messaging requirements and applicable data protection regulations.',
+    content: `${c.legalName} ("${c.businessName}," "we," "us," or "our") uses cookies and similar tracking technologies on our website at ${c.domain}. This Cookies Policy explains what cookies are, how we use them, and the choices you have. This policy is provided in compliance with A2P 10DLC messaging requirements and applicable data protection regulations.`,
   },
   {
     num: '2.',
@@ -26,7 +30,7 @@ const SECTIONS = [
   {
     num: '5.',
     title: 'SMS Messaging and A2P 10DLC Consent',
-    content: 'By providing your phone number and checking the SMS consent box on our website forms, you consent to receive conversational SMS messages from Valet Detailing Service LLC (VDS Mobile) related to detailing services, including appointment confirmations, reminders, service updates, and customer support. Your SMS consent is recorded via cookies and our database to maintain compliance with A2P 10DLC registration requirements. Message frequency varies. Message and data rates may apply. Reply STOP to unsubscribe from SMS messages. Reply HELP for assistance. Carriers are not liable for delayed or undelivered messages.',
+    content: `By providing your phone number and checking the SMS consent box on our website forms, you consent to receive conversational SMS messages from ${c.legalName} (${c.businessName}) related to detailing services, including appointment confirmations, reminders, service updates, and customer support. Your SMS consent is recorded via cookies and our database to maintain compliance with A2P 10DLC registration requirements. Message frequency varies. Message and data rates may apply. Reply STOP to unsubscribe from SMS messages. Reply HELP for assistance. Carriers are not liable for delayed or undelivered messages.`,
   },
   {
     num: '6.',
@@ -36,31 +40,33 @@ const SECTIONS = [
   {
     num: '7.',
     title: 'Managing and Deleting Cookies',
-    content: 'You can control and delete cookies through your browser settings. Most web browsers provide instructions on how to manage cookies in the help or settings section. If you disable cookies, some features of our website may not function properly, including the ability to log into your member account, book appointments, or record your SMS consent. Disabling cookies does not revoke SMS consent you have already provided; to revoke SMS consent, reply STOP to any message from VDS Mobile.',
+    content: `You can control and delete cookies through your browser settings. Most web browsers provide instructions on how to manage cookies in the help or settings section. If you disable cookies, some features of our website may not function properly, including the ability to log into your member account, book appointments, or record your SMS consent. Disabling cookies does not revoke SMS consent you have already provided; to revoke SMS consent, reply STOP to any message from ${c.businessName}.`,
   },
   {
     num: '8.',
     title: 'Changes to This Policy',
-    content: 'Valet Detailing Service LLC may update this Cookies Policy from time to time to reflect changes in technology, regulation, or our business practices. The most current version will always be posted on our website. Your continued use of our website after any changes constitutes your acceptance of the updated policy.',
+    content: `${c.legalName} may update this Cookies Policy from time to time to reflect changes in technology, regulation, or our business practices. The most current version will always be posted on our website. Your continued use of our website after any changes constitutes your acceptance of the updated policy.`,
   },
   {
     num: '9.',
     title: 'Contact Us',
-    content: 'If you have any questions about this Cookies Policy or our use of cookies and tracking technologies, please contact us through the official channels listed on our website at vdsmobile.com or via email at Valetdetailingservice@gmail.com.',
+    content: `If you have any questions about this Cookies Policy or our use of cookies and tracking technologies, please contact us through the official channels listed on our website at ${c.domain} or via email at ${c.email}.`,
   },
 ];
 
 export default function Cookies() {
+  const c = useLegalContext();
+  const sections = buildSections(c);
   return (
     <div className="bg-obsidian min-h-screen">
       <Navbar />
       <section className="pt-36 pb-20 max-w-4xl mx-auto px-6">
         <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">LEGAL</p>
         <h1 className="text-5xl font-grotesk font-bold text-vapor mb-3">COOKIES POLICY</h1>
-        <p className="text-xs font-mono-tech text-vapor/30 mb-16 tracking-widest">VALET DETAILING SERVICE LLC · LAST UPDATED: JULY 16, 2026</p>
+        <p className="text-xs font-mono-tech text-vapor/30 mb-16 tracking-widest">{c.legalName.toUpperCase()} · LAST UPDATED: JULY 16, 2026</p>
 
         <div className="space-y-10">
-          {SECTIONS.map(sec => (
+          {sections.map(sec => (
             <div key={sec.title} className="border-l border-gold/20 pl-8">
               <div className="flex items-center gap-3 mb-3">
                 <span className="text-xs font-mono-tech text-gold/50">{sec.num}</span>

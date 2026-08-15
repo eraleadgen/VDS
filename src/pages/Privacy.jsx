@@ -1,8 +1,12 @@
 import { Link } from 'react-router-dom';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
+import { useLegalContext } from '@/lib/useLegalContext';
 
-const SECTIONS = [
+// Every legal-identity reference — entity name, brand, jurisdiction, domain, contact
+// email — is templated from the tenant's BusinessConfig via useLegalContext. See
+// useLegalContext for the field mapping.
+const buildSections = (c) => [
   {
     num: '1.',
     title: 'Information We Collect',
@@ -21,7 +25,7 @@ const SECTIONS = [
   {
     num: '4.',
     title: 'SMS/Text Message Policy',
-    content: 'By providing your mobile phone number and opting in, you consent to receive SMS text messages from Valet Detailing Service LLC (VDS Mobile). We do not sell or share mobile phone numbers. Mobile information will not be shared with third parties for marketing. SMS consent is not shared. Message frequency varies. Message and data rates may apply. Reply STOP to opt out. Reply HELP for assistance.',
+    content: `By providing your mobile phone number and opting in, you consent to receive SMS text messages from ${c.legalName} (${c.businessName}). We do not sell or share mobile phone numbers. Mobile information will not be shared with third parties for marketing. SMS consent is not shared. Message frequency varies. Message and data rates may apply. Reply STOP to opt out. Reply HELP for assistance.`,
   },
   {
     num: '5.',
@@ -46,12 +50,12 @@ const SECTIONS = [
   {
     num: '9.',
     title: 'Contact Us',
-    content: 'If you have any questions about this Privacy Policy, please contact us through the official channels listed on our website at vdsmobile.com or via email at Valetdetailingservice@gmail.com.',
+    content: `If you have any questions about this Privacy Policy, please contact us through the official channels listed on our website at ${c.domain} or via email at ${c.email}.`,
   },
   {
     num: '10.',
     title: 'Cookie & Tracking Practices',
-    content: 'Valet Detailing Service LLC (VDS Mobile) may use cookies and similar tracking technologies to enhance user experience, analyze website traffic, and improve our services. Cookies may collect information such as browser type, pages visited, and time spent on the website. Users may disable cookies through their browser settings.',
+    content: `${c.legalName} (${c.businessName}) may use cookies and similar tracking technologies to enhance user experience, analyze website traffic, and improve our services. Cookies may collect information such as browser type, pages visited, and time spent on the website. Users may disable cookies through their browser settings.`,
   },
   {
     num: '11.',
@@ -61,20 +65,22 @@ const SECTIONS = [
 ];
 
 export default function Privacy() {
+  const c = useLegalContext();
+  const sections = buildSections(c);
   return (
     <div className="bg-obsidian min-h-screen">
       <Navbar />
       <section className="pt-36 pb-20 max-w-4xl mx-auto px-6">
         <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">LEGAL</p>
         <h1 className="text-5xl font-grotesk font-bold text-vapor mb-3">PRIVACY POLICY</h1>
-        <p className="text-xs font-mono-tech text-vapor/30 mb-16 tracking-widest">VALET DETAILING SERVICE LLC · LAST UPDATED: JULY 16, 2026</p>
+        <p className="text-xs font-mono-tech text-vapor/30 mb-16 tracking-widest">{c.legalName.toUpperCase()} · LAST UPDATED: JULY 16, 2026</p>
 
         <p className="text-vapor/60 leading-relaxed mb-12 border-l border-gold/20 pl-8">
-          Valet Detailing Service LLC ("VDS," "we," "us," or "our") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our mobile detailing services.
+          {`${c.legalName} ("${c.shortName}," "we," "us," or "our") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website and use our mobile detailing services.`}
         </p>
 
         <div className="space-y-10">
-          {SECTIONS.map(sec => (
+          {sections.map(sec => (
             <div key={sec.num} className="border-l border-gold/20 pl-8">
               <div className="flex items-center gap-3 mb-3">
                 <span className="text-xs font-mono-tech text-gold/50">{sec.num}</span>

@@ -1,17 +1,22 @@
 import { Link } from 'react-router-dom';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
+import { useLegalContext } from '@/lib/useLegalContext';
 
-const SECTIONS = [
+// Every legal-identity reference — entity name, brand, jurisdiction, domain, contact
+// email, service area, and membership label — is templated from the tenant's
+// BusinessConfig via useLegalContext, so these pages never name a different company or
+// jurisdiction than the rest of the site. See useLegalContext for the field mapping.
+const buildSections = (c) => [
   {
     num: '1.',
     title: 'Services',
-    content: 'We provide professional mobile detailing, ceramic coating, and paint correction services for vehicles, specializing in high-end and luxury automobiles. Our services are performed at your specified location (home, office, etc.) in the North Atlanta, Georgia area. We provide all necessary equipment, supplies, and insurance for our operations.',
+    content: `We provide professional mobile detailing, ceramic coating, and paint correction services for vehicles, specializing in high-end and luxury automobiles. Our services are performed at your specified location (home, office, etc.) in the ${c.serviceArea} area. We provide all necessary equipment, supplies, and insurance for our operations.`,
   },
   {
     num: '2.',
     title: 'SMS Messaging Terms',
-    content: 'By providing your phone number and checking the SMS consent box on our website forms, customers consent to receive conversational SMS messages from Valet Detailing Service LLC (VDS Mobile) related to detailing services, including appointment confirmations, reminders, service updates, and customer support. Message frequency varies. Message and data rates may apply. Reply STOP to unsubscribe. Reply HELP for assistance.',
+    content: `By providing your phone number and checking the SMS consent box on our website forms, customers consent to receive conversational SMS messages from ${c.legalName} (${c.businessName}) related to detailing services, including appointment confirmations, reminders, service updates, and customer support. Message frequency varies. Message and data rates may apply. Reply STOP to unsubscribe. Reply HELP for assistance.`,
   },
   {
     num: '3.',
@@ -21,27 +26,27 @@ const SECTIONS = [
   {
     num: '4.',
     title: 'Pricing and Payment',
-    content: 'An estimate of the service duration, typically ranging from two to five hours, will be provided before your appointment begins. All quotes and estimated pricing provided by Valet Detailing Service LLC are valid for seven (7) days from the date generated; pricing quoted after that period is subject to change. We accept payment via Cash, Zelle, Venmo, Cash App, and Debit/Credit Card via Invoice. Payment is due in full upon completion of the service, unless other arrangements have been explicitly agreed upon in writing beforehand.',
+    content: `An estimate of the service duration, typically ranging from two to five hours, will be provided before your appointment begins. All quotes and estimated pricing provided by ${c.legalName} are valid for seven (7) days from the date generated; pricing quoted after that period is subject to change. We accept payment via Cash, Zelle, Venmo, Cash App, and Debit/Credit Card via Invoice. Payment is due in full upon completion of the service, unless other arrangements have been explicitly agreed upon in writing beforehand.`,
   },
   {
     num: '5.',
     title: 'Vehicle Condition Assessment',
-    content: 'Quotes and bookings are based on the vehicle condition you select at the time of booking. If a VDS specialist determines the vehicle is in worse or different condition than stated at the time of service, Valet Detailing Service LLC reserves the right to adjust pricing according to the actual condition. Any revised pricing will be communicated before the service begins.',
+    content: `Quotes and bookings are based on the vehicle condition you select at the time of booking. If a ${c.shortName} specialist determines the vehicle is in worse or different condition than stated at the time of service, ${c.legalName} reserves the right to adjust pricing according to the actual condition. Any revised pricing will be communicated before the service begins.`,
   },
   {
     num: '6.',
     title: 'Cancellation and Rescheduling Policy',
-    content: 'We require at least 24 hours\' notice for any appointment cancellations or rescheduling requests. This policy allows us to manage our schedule and offer availability to other clients. Failure to provide sufficient notice may result in a cancellation fee.',
+    content: "We require at least 24 hours' notice for any appointment cancellations or rescheduling requests. This policy allows us to manage our schedule and offer availability to other clients. Failure to provide sufficient notice may result in a cancellation fee.",
   },
   {
     num: '7.',
     title: 'Customer Responsibilities',
-    content: 'Before the service begins, you are responsible for removing all personal belongings from the vehicle, particularly from the interior, trunk, and any compartments. While we will exercise the utmost care, Valet Detailing Service LLC is not responsible for any personal items that are lost, damaged, or stolen.',
+    content: `Before the service begins, you are responsible for removing all personal belongings from the vehicle, particularly from the interior, trunk, and any compartments. While we will exercise the utmost care, ${c.legalName} is not responsible for any personal items that are lost, damaged, or stolen.`,
   },
   {
     num: '8.',
     title: 'Limitation of Liability',
-    content: 'We are fully insured and committed to providing the highest standard of care. However, VDS is not liable for pre-existing damage to the vehicle (whether visible or not), any damage that may occur to loose or fragile parts including aged or degraded plastic trim, emblems, or clear coat failure, or mechanical or electrical issues, as our services are strictly cosmetic. Any claim of damage caused by our service must be reported to us before our team leaves the premises.',
+    content: `We are fully insured and committed to providing the highest standard of care. However, ${c.shortName} is not liable for pre-existing damage to the vehicle (whether visible or not), any damage that may occur to loose or fragile parts including aged or degraded plastic trim, emblems, or clear coat failure, or mechanical or electrical issues, as our services are strictly cosmetic. Any claim of damage caused by our service must be reported to us before our team leaves the premises.`,
   },
   {
     num: '9.',
@@ -51,61 +56,63 @@ const SECTIONS = [
   {
     num: '10.',
     title: 'Use of Photographic and Video Materials',
-    content: 'We reserve the right to capture photographic or video content of your vehicle before, during, and after our services for training, quality control, and marketing purposes. These materials may be used on our website (vdsmobile.com), social media channels (Instagram, TikTok), and other promotional materials. No personally identifiable information will be associated with these images without your explicit consent.',
+    content: `We reserve the right to capture photographic or video content of your vehicle before, during, and after our services for training, quality control, and marketing purposes. These materials may be used on our website (${c.domain}), social media channels (Instagram, TikTok), and other promotional materials. No personally identifiable information will be associated with these images without your explicit consent.`,
   },
   {
     num: '11.',
-    title: 'VDS Gold Membership',
-    content: 'VDS Gold is a recurring monthly membership program that provides enrolled vehicles with unlimited exterior details and one (1) full interior detail per month, each service including ceramic sealant protection. Membership is billed on a per-vehicle basis at a flat monthly rate of $250/month for Sedan/Coupe vehicles and $300/month for Truck/SUV vehicles, charged automatically via Stripe. Membership benefits are non-transferable and apply only to the specific enrolled vehicle(s).',
+    title: `${c.goldLabel} Membership`,
+    content: `${c.goldLabel} is a recurring monthly membership program that provides enrolled vehicles with unlimited exterior details and one (1) full interior detail per month, each service including ceramic sealant protection. Membership is billed on a per-vehicle basis at a flat monthly rate of $250/month for Sedan/Coupe vehicles and $300/month for Truck/SUV vehicles, charged automatically via Stripe. Membership benefits are non-transferable and apply only to the specific enrolled vehicle(s).`,
   },
   {
     num: '12.',
-    title: 'VDS Gold Cancellation & Refund Policy',
-    content: 'Members may cancel their VDS Gold subscription at any time from the Member Dashboard. A full refund will be issued only if: (1) the cancellation request is submitted within 48 hours of the initial subscription start date, AND (2) no VDS Gold membership services (exterior detail or interior detail) have been redeemed or scheduled during that period. If either condition is not met — the 48-hour window has passed, or any Gold service has been used — no refund will be issued and membership benefits will continue through the end of the current billing period. Approved refunds will be processed within 3–5 business days and returned to the original payment method. Cancellations after the refund window will take effect at the end of the active billing cycle. Valet Detailing Service LLC reserves the right to revoke membership access in cases of abuse or violation of these terms.',
+    title: `${c.goldLabel} Cancellation & Refund Policy`,
+    content: `Members may cancel their ${c.goldLabel} subscription at any time from the Member Dashboard. A full refund will be issued only if: (1) the cancellation request is submitted within 48 hours of the initial subscription start date, AND (2) no ${c.goldLabel} membership services (exterior detail or interior detail) have been redeemed or scheduled during that period. If either condition is not met — the 48-hour window has passed, or any Gold service has been used — no refund will be issued and membership benefits will continue through the end of the current billing period. Approved refunds will be processed within 3–5 business days and returned to the original payment method. Cancellations after the refund window will take effect at the end of the active billing cycle. ${c.legalName} reserves the right to revoke membership access in cases of abuse or violation of these terms.`,
   },
   {
     num: '13.',
     title: 'Post-Service Maintenance Responsibility',
-    content: 'Valet Detailing Service LLC is not responsible for any damage, degradation, or diminished results caused by improper care or maintenance of the vehicle following a completed service. This includes, but is not limited to: water spots, mineral deposits, or etching that develop on ceramic-coated or sealed surfaces due to improper washing techniques, hard water exposure, or failure to follow our recommended aftercare guidelines; interior soiling or odors that return due to ongoing use without proper upkeep; and any other condition attributable to how the vehicle is maintained after our team has departed. Our services are performed to the highest professional standard, and optimal results depend on the customer\'s commitment to appropriate post-service care.',
+    content: `${c.legalName} is not responsible for any damage, degradation, or diminished results caused by improper care or maintenance of the vehicle following a completed service. This includes, but is not limited to: water spots, mineral deposits, or etching that develop on ceramic-coated or sealed surfaces due to improper washing techniques, hard water exposure, or failure to follow our recommended aftercare guidelines; interior soiling or odors that return due to ongoing use without proper upkeep; and any other condition attributable to how the vehicle is maintained after our team has departed. Our services are performed to the highest professional standard, and optimal results depend on the customer's commitment to appropriate post-service care.`,
   },
   {
     num: '14.',
     title: 'Client Care Guides',
-    content: 'Upon completion of a detailing service, and upon payment for a ceramic coating, paint correction, or VDS Gold membership, Valet Detailing Service LLC will automatically deliver a corresponding Client Care Guide to the email address associated with the client account. Each guide contains the aftercare instructions specific to the service performed and is also accessible at any time from the client\'s Member Dashboard, where it may be viewed or downloaded/printed as a PDF. The care guides are provided for informational purposes and describe recommended maintenance methods; the client\'s adherence to these methods is the client\'s responsibility as set out in the Post-Service Maintenance Responsibility section below.',
+    content: `Upon completion of a detailing service, and upon payment for a ceramic coating, paint correction, or ${c.goldLabel} membership, ${c.legalName} will automatically deliver a corresponding Client Care Guide to the email address associated with the client account. Each guide contains the aftercare instructions specific to the service performed and is also accessible at any time from the client's Member Dashboard, where it may be viewed or downloaded/printed as a PDF. The care guides are provided for informational purposes and describe recommended maintenance methods; the client's adherence to these methods is the client's responsibility as set out in the Post-Service Maintenance Responsibility section below.`,
   },
   {
     num: '15.',
     title: 'Partner Network & Referral Incentives',
-    content: 'The VDS Partner Network allows dealerships, salespersons, and strategic partners to refer clients to Valet Detailing Service LLC in exchange for incentive payouts. Incentive amounts are as follows: a one-time $30 payout for the referred client\'s initial detailing service, paid once per referred client (not per job and not for the lifetime of the client relationship); a $100 payout for each qualifying ceramic coating service converted; and a $100 payout for each qualifying paint correction service converted. A $30 payout is also issued when a referred client registers for a VDS Gold membership using the partner\'s referral link, subject to the same one-time-per-client limitation as the initial-detail incentive. Add-on services, including ceramic sealant, are expressly excluded from incentive calculations; only the job\'s primary service package is evaluated. Incentive payouts are credited to the referring partner\'s account when the associated invoice is marked paid, and are tracked within the Partner Portal. Valet Detailing Service LLC reserves the right to modify incentive amounts, eligibility criteria, or to suspend the Partner Network program at any time. Partners are treated equally; no founding or tiered status confers additional compensation.',
+    content: `The ${c.shortName} Partner Network allows dealerships, salespersons, and strategic partners to refer clients to ${c.legalName} in exchange for incentive payouts. Incentive amounts are as follows: a one-time $30 payout for the referred client's initial detailing service, paid once per referred client (not per job and not for the lifetime of the client relationship); a $100 payout for each qualifying ceramic coating service converted; and a $100 payout for each qualifying paint correction service converted. A $30 payout is also issued when a referred client registers for a ${c.goldLabel} membership using the partner's referral link, subject to the same one-time-per-client limitation as the initial-detail incentive. Add-on services, including ceramic sealant, are expressly excluded from incentive calculations; only the job's primary service package is evaluated. Incentive payouts are credited to the referring partner's account when the associated invoice is marked paid, and are tracked within the Partner Portal. ${c.legalName} reserves the right to modify incentive amounts, eligibility criteria, or to suspend the Partner Network program at any time. Partners are treated equally; no founding or tiered status confers additional compensation.`,
   },
   {
     num: '16.',
     title: 'Governing Law',
-    content: 'These Terms and Conditions shall be governed by and construed in accordance with the laws of the State of Georgia.',
+    content: `These Terms and Conditions shall be governed by and construed in accordance with the laws of the State of ${c.jurisdiction}.`,
   },
   {
     num: '17.',
     title: 'Changes to Terms',
-    content: 'Valet Detailing Service LLC reserves the right to modify these Terms and Conditions at any time. The most current version will always be posted on our website. Your continued use of our services after any changes constitutes your acceptance of the new terms.',
+    content: `${c.legalName} reserves the right to modify these Terms and Conditions at any time. The most current version will always be posted on our website. Your continued use of our services after any changes constitutes your acceptance of the new terms.`,
   },
   {
     num: '18.',
     title: 'Contact Us',
-    content: 'If you have any questions about these Terms and Conditions, please contact us through the official channels listed on our website at vdsmobile.com or via email at Valetdetailingservice@gmail.com.',
+    content: `If you have any questions about these Terms and Conditions, please contact us through the official channels listed on our website at ${c.domain} or via email at ${c.email}.`,
   },
 ];
 
 export default function Terms() {
+  const c = useLegalContext();
+  const sections = buildSections(c);
   return (
     <div className="bg-obsidian min-h-screen">
       <Navbar />
       <section className="pt-36 pb-20 max-w-4xl mx-auto px-6">
         <p className="text-xs font-mono-tech tracking-[0.3em] text-gold/70 mb-4">LEGAL</p>
         <h1 className="text-5xl font-grotesk font-bold text-vapor mb-3">TERMS & CONDITIONS</h1>
-        <p className="text-xs font-mono-tech text-vapor/30 mb-16 tracking-widest">VALET DETAILING SERVICE LLC · LAST UPDATED: JULY 23, 2026</p>
+        <p className="text-xs font-mono-tech text-vapor/30 mb-16 tracking-widest">{c.legalName.toUpperCase()} · LAST UPDATED: JULY 23, 2026</p>
 
         <div className="space-y-10">
-          {SECTIONS.map(sec => (
+          {sections.map(sec => (
             <div key={sec.title} className="border-l border-gold/20 pl-8">
               <div className="flex items-center gap-3 mb-3">
                 <span className="text-xs font-mono-tech text-gold/50">{sec.num}</span>
