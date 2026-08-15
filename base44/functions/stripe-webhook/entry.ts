@@ -5,6 +5,7 @@ import { creditPartnerGoldSignup } from '../../shared/partnerIncentive.ts';
 import { sendCareGuideEmail } from '../../shared/careGuideEmail.ts';
 import { loadBusinessContact } from '../../shared/businessContact.ts';
 import { checkFeature } from '../../shared/planFeatures.ts';
+import { handleEraSaaSEvent } from '../../shared/eraWebhook.ts';
 
 // Stripe webhook — provisions VDS Gold memberships and keeps VehicleSubscription
 // records in sync with Stripe lifecycle events. GoHighLevel has been fully removed;
@@ -38,6 +39,12 @@ Deno.serve(async (req) => {
       const session = event.data.object;
 
       if (session.metadata?.base44_app_id !== Deno.env.get('BASE44_APP_ID')) {
+        return Response.json({ received: true });
+      }
+
+      // ERA SaaS branch: route ERA Systems account/billing events to the dedicated handler.
+      if (session.metadata?.era_product_type === 'era_saas') {
+        await handleEraSaaSEvent(base44, stripe, event);
         return Response.json({ received: true });
       }
 
@@ -201,6 +208,13 @@ Deno.serve(async (req) => {
     // sharing this Stripe subscription id.
     if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted') {
       const subscription = event.data.object;
+
+      // ERA SaaS branch: route ERA Systems subscription updates to the dedicated handler.
+      if (subscription.metadata?.era_product_type === 'era_saas') {
+        await handleEraSaaSEvent(base44, stripe, event);
+        return Response.json({ received: true });
+      }
+
       const newStatus = subscription.status === 'active' ? 'active' :
                        subscription.status === 'canceled' ? 'canceled' :
                        subscription.status === 'past_due' ? 'past_due' : 'trialing';

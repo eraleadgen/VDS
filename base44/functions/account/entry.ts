@@ -34,11 +34,16 @@ Deno.serve(async (req) => {
 
     if (action === 'get') {
       const u = await base44.asServiceRole.entities.User.get(me.id);
-      // Safety net: stamp business_id on any user missing it (admin-invited users,
-      // pre-existing users missed by the backfill). Defaults to 'vds' (VDS tenant).
+      // Safety net: stamp business_id on genuinely orphaned tenant users (admin-invited
+      // users, pre-existing users missed by the backfill). Defaults to 'vds' (VDS tenant).
+      // BUT skip if this user has an EraAccount — they're an ERA SaaS account holder,
+      // intentionally business_id-null until onboarding/provisioning completes.
       if (!u.business_id) {
-        await base44.asServiceRole.entities.User.update(me.id, { business_id: 'vds' });
-        u.business_id = 'vds';
+        const eraAccount = await base44.asServiceRole.entities.EraAccount.filter({ owner_user_id: me.id });
+        if (!eraAccount || eraAccount.length === 0) {
+          await base44.asServiceRole.entities.User.update(me.id, { business_id: 'vds' });
+          u.business_id = 'vds';
+        }
       }
       return Response.json({ success: true, account: project(u) });
     }

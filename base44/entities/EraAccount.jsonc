@@ -1,0 +1,107 @@
+{
+  "name": "EraAccount",
+  "type": "object",
+  "description": "SaaS billing layer for ERA Systems account holders on eraleadgen.com. Exists BEFORE any tenant/business is provisioned (business_id is null until onboarding completes). Ownership-based RLS \u2014 no business_id scoping, identical pattern to OnboardingSession. The Stripe webhook writes plan_tier, ad_management_enabled, subscription_status, and setup_fee_paid here on confirmation only, atomically with BusinessConfig. BusinessConfig remains the authoritative gate for the tenant site (Phase 3 reads it); EraAccount is the billing mirror the account portal reads. A pre-tenant EraAccount (business_id null) is the signal that distinguishes an intentional ERA SaaS signup from a genuinely orphaned tenant user in the account/entry.ts safety net.",
+  "properties": {
+    "owner_user_id": {
+      "type": "string",
+      "description": "Base44 User id of the ERA account holder. The sole owner. Set at registration, before any subscription purchase."
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "Account holder email (denormalized from the User for portal display and Stripe customer lookup)."
+    },
+    "business_id": {
+      "type": "string",
+      "description": "Tenant business_id. NULL until onboarding/provisioning completes. Set by the provisioning flow (Phase 8), NOT by the Stripe webhook. While null, the account/entry.ts safety net must NOT stamp business_id='vds' on this user."
+    },
+    "stripe_customer_id": {
+      "type": "string",
+      "description": "Stripe customer ID for this account holder. Set by the webhook on first checkout completion."
+    },
+    "stripe_subscription_id": {
+      "type": "string",
+      "description": "Stripe subscription ID for the tier subscription (Basic or Foundation monthly). Ad Management is a line item on this same subscription."
+    },
+    "subscription_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "trialing",
+        "active",
+        "past_due",
+        "canceled"
+      ],
+      "default": "none",
+      "description": "Mirror of the Stripe subscription status. Updated by the webhook on customer.subscription.updated/deleted events."
+    },
+    "current_plan_tier": {
+      "type": "string",
+      "enum": [
+        "basic",
+        "foundation",
+        "growth",
+        "enterprise"
+      ],
+      "default": "basic",
+      "description": "Mirror of BusinessConfig.plan_tier for this account's tenant. Updated by the Stripe webhook on confirmation ONLY \u2014 never directly from a UI button. While business_id is null (pre-tenant), this reflects the tier purchased at checkout; once provisioned, it mirrors BusinessConfig."
+    },
+    "ad_management_enabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Mirror of BusinessConfig.ad_management_enabled. Updated by the Stripe webhook when the Ad Management line item is added/removed from the subscription \u2014 never directly from a toggle click."
+    },
+    "setup_fee_paid": {
+      "type": "boolean",
+      "default": false,
+      "description": "True once the one-time setup fee (Basic $500 or Foundation $900) has been paid via Stripe checkout. Set by the webhook on checkout.session.completed for ERA SaaS setup-fee line items."
+    },
+    "last_stripe_event_id": {
+      "type": "string",
+      "description": "ID of the last Stripe webhook event processed for this account. Idempotency guard against Stripe redelivery \u2014 if an incoming event.id matches this, the handler no-ops."
+    },
+    "onboarding_session_id": {
+      "type": "string",
+      "description": "OnboardingSession entity ID created after the setup fee checkout completes. Links the ERA account to the onboarding wizard so the wizard can resume if the user navigates away."
+    }
+  },
+  "required": [
+    "owner_user_id"
+  ],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.owner_user_id": "{{user.id}}"
+        }
+      ]
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.owner_user_id": "{{user.id}}"
+        }
+      ]
+    },
+    "delete": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "data.owner_user_id": "{{user.id}}"
+        }
+      ]
+    }
+  }
+}
