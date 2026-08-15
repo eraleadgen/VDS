@@ -228,11 +228,11 @@ export const CARE_GUIDES = [
       {
         title: 'How to Sign Up',
         bullets: [
-          'Visit vdsmobile.com/vds-gold-signup to start your VDS Gold enrollment.',
+          'Visit {{website}}/membership-signup to start your VDS Gold enrollment.',
           'Select your vehicle — pricing is automatically set to $250/mo for sedans & coupes and $300/mo for trucks & SUVs.',
           'Add your vehicle details (year, make, model, color) and create your member account.',
           'Complete checkout through our secure Stripe payment to activate your membership.',
-          'Once enrolled, manage your vehicle, schedule details, and track usage from your Member Dashboard at vdsmobile.com/member-dashboard.',
+          'Once enrolled, manage your vehicle, schedule details, and track usage from your Member Dashboard at {{website}}/member-dashboard.',
         ],
       },
     ],
@@ -283,17 +283,26 @@ export const CARE_GUIDES = [
         ],
       },
     ],
-    goldCta: { title: 'Refer Clients to VDS Gold', body: 'VDS Gold keeps your referred clients\' vehicles showroom-fresh all year — $250/mo for sedans & coupes · $300/mo for trucks & SUVs. You earn a $30 bonus every time a referred client registers for Gold.', link: '/vds-gold', linkLabel: 'Explore VDS Gold' },
+    goldCta: { title: 'Refer Clients to VDS Gold', body: 'VDS Gold keeps your referred clients\' vehicles showroom-fresh all year — $250/mo for sedans & coupes · $300/mo for trucks & SUVs. You earn a $30 bonus every time a referred client registers for Gold.', link: '/membership', linkLabel: 'Explore VDS Gold' },
   },
 ];
 
 export const CARE_GUIDE_ICONS = { Shield, Sparkles, Droplets, Wind, Calendar, AlertTriangle, Car, Crown, Leaf, Handshake };
 
+// Replace {{website}} tokens in guide text with the tenant's hostname (resolved from
+// BusinessConfig at render time), so guide copy never hardcodes the VDS domain.
+export function fillWebsite(text, websiteHost) {
+  return (text || '').replace(/\{\{website\}\}/g, websiteHost || '');
+}
+
 // Build the printable HTML for a single guide (used by the portal "print" buttons).
-export function buildGuidePrintHtml(guide) {
+// `websiteHost` is the tenant's hostname; defaults to the current browser host so the
+// printable footer always reflects the tenant's own domain.
+export function buildGuidePrintHtml(guide, websiteHost) {
+  const host = websiteHost || (typeof window !== 'undefined' ? window.location.hostname : '');
   const sections = guide.sections.map((s) => `
     <h2>${s.title}</h2>
-    <ul>${s.bullets.map((b) => `<li>${b}</li>`).join('')}</ul>
+    <ul>${s.bullets.map((b) => `<li>${fillWebsite(b, host)}</li>`).join('')}</ul>
   `).join('<div class="sep"></div>');
   const cta = `
     <div class="callout">
@@ -307,6 +316,6 @@ export function buildGuidePrintHtml(guide) {
     <div class="callout"><p>${guide.intro}</p></div>
     ${sections}
     ${cta}
-    <div class="foot">Valet Detailing Service LLC · (470) 412-8986 · vdsmobile.com</div>
+    <div class="foot">Valet Detailing Service LLC · (470) 412-8986 · ${host}</div>
   `;
 }

@@ -39,6 +39,7 @@ const PACKETS = {
 
 const buildPrintHtml = (variant) => {
   const p = PACKETS[variant] || PACKETS.partner;
+  const host = typeof window !== 'undefined' ? window.location.hostname : '';
   return `
     <div class="eyebrow">${p.eyebrow}</div>
     <h1>${p.title}</h1>
@@ -48,7 +49,7 @@ const buildPrintHtml = (variant) => {
       <h2>${s.h}</h2>
       <p>${s.body}</p>
     `).join('<div class="sep"></div>')}
-    <div class="foot">Valet Detailing Service LLC · (470) 412-8986 · vdsmobile.com</div>
+    <div class="foot">Valet Detailing Service LLC · (470) 412-8986 · ${host}</div>
   `;
 };
 

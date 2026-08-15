@@ -10,7 +10,7 @@
     },
     "hostname": {
       "type": "string",
-      "description": "Lowercase hostname without port (e.g. 'vdsmobile.com', 'www.vdsmobile.com'). Null for phone-number-based mappings."
+      "description": "Lowercase hostname without port (e.g. 'yourbusiness.com', 'www.yourbusiness.com'). Null for phone-number-based mappings."
     },
     "twilio_number": {
       "type": "string",

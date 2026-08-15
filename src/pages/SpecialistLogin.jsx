@@ -59,7 +59,7 @@ export default function SpecialistLogin() {
                   onChange={e => setEmail(e.target.value)}
                   required
                   className="w-full bg-asphalt border border-vapor/10 focus:border-gold/50 outline-none text-vapor px-4 py-3 text-sm font-mono-tech rounded-sm transition-colors duration-200"
-                  placeholder="specialist@vdsmobile.com"
+                  placeholder="specialist@yourbusiness.com"
                 />
               </div>
               <div>

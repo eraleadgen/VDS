@@ -127,6 +127,8 @@ function goldCtaHtml(website) {
 }
 
 function buildEmailHtml(guide, firstName, guideKey, website) {
+  let websiteHost = '';
+  try { websiteHost = new URL(website).hostname; } catch (_) { websiteHost = website; }
   const sections = guide.sections.map((s) => `
     <h2 style="color:#D4AF37;font-size:16px;margin:24px 0 10px;">${s.title}</h2>
     <ul style="padding-left:20px;margin:0;">
@@ -145,7 +147,7 @@ function buildEmailHtml(guide, firstName, guideKey, website) {
     ${sections}
     ${goldCtaHtml(website)}
     ${buttons}
-    <p style="margin-top:28px;padding-top:18px;border-top:1px solid rgba(212,175,55,0.25);font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;color:#E2E8F0;opacity:0.5;text-align:center;text-transform:uppercase;">Valet Detailing Service LLC · (470) 412-8986 · vdsmobile.com</p>
+    <p style="margin-top:28px;padding-top:18px;border-top:1px solid rgba(212,175,55,0.25);font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;color:#E2E8F0;opacity:0.5;text-align:center;text-transform:uppercase;">Valet Detailing Service LLC · (470) 412-8986 · ${websiteHost}</p>
   </div></body></html>`;
 }
 
@@ -173,14 +175,19 @@ export async function sendCareGuideEmail(base44, { guideKey, to, customerName, c
   const firstName = (customerName || '').split(' ')[0] || 'there';
   // Resolve the tenant's website origin from BusinessConfig so care-guide email links
   // (membership, member dashboard, care-guide download) point to the tenant's own domain,
-  // never a hardcoded VDS domain. Falls back to the booking_url origin, then vdsmobile.com.
-  let website = 'https://vdsmobile.com';
+  // never a hardcoded VDS domain. If the tenant's website can't be resolved, suppress the
+  // email rather than send links pointing to the wrong domain.
+  let website = '';
   try {
     const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ business_id: businessId, is_active: true });
     const cfg = configs && configs[0];
     const bookingUrl = cfg && cfg.website_links && cfg.website_links.booking_url;
     if (bookingUrl) website = new URL(bookingUrl).origin;
   } catch (e) { console.error('care guide config load failed:', e.message); }
+  if (!website) {
+    await logCareGuideEvent(base44, { guideKey, customerId, to, sent: false, reason: 'no_website_config', businessId });
+    return { sent: false, reason: 'no_website_config' };
+  }
   const body = buildEmailHtml(guide, firstName, guideKey, website);
   try {
     await base44.asServiceRole.integrations.Core.SendEmail({

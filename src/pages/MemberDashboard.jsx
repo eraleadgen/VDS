@@ -14,9 +14,6 @@ import VehicleSubscriptionModal from '../components/member/VehicleSubscriptionMo
 import { useMembershipPlan, useBusinessConfig } from '@/lib/BusinessConfigContext';
 import { getGoldMonthlyPrice, getPricingGroupLabel } from '@/lib/goldPricing';
 
-// v3
-const BOOKING_LINK = 'https://book.vdsmobile.com';
-
 export default function MemberDashboard() {
   const navigate = useNavigate();
   const plan = useMembershipPlan();

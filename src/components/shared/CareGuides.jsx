@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Printer, Library, Eye, Download, ChevronDown } from 'lucide-react';
-import { CARE_GUIDES, buildGuidePrintHtml } from '@/lib/careGuides';
+import { CARE_GUIDES, buildGuidePrintHtml, fillWebsite } from '@/lib/careGuides';
+import { useBusinessConfig } from '@/lib/BusinessConfigContext';
 import printHtml from '@/components/shared/printHtml';
 import { base44 } from '@/api/base44Client';
 
@@ -25,6 +26,15 @@ export default function CareGuides({ compact = false, onAction, from = 'member' 
   const [poError, setPoError] = useState('');
   const guide = guides.find((g) => g.key === active) || baseGuides[0];
   const isProjectOverview = active === 'project_overview';
+
+  // Resolve the tenant's hostname from BusinessConfig so guide copy and the printable
+  // footer show the tenant's own domain, never a hardcoded VDS domain.
+  const config = useBusinessConfig();
+  const websiteHost = (() => {
+    const bookingUrl = config?.website_links?.booking_url;
+    try { return bookingUrl ? new URL(bookingUrl).hostname : (typeof window !== 'undefined' ? window.location.hostname : ''); }
+    catch { return typeof window !== 'undefined' ? window.location.hostname : ''; }
+  })();
 
   const onPick = (key) => { setActive(key); setOpen(0); setPoStatus(''); setPoError(''); };
 
@@ -82,7 +92,7 @@ export default function CareGuides({ compact = false, onAction, from = 'member' 
                 <Eye size={13} /> VIEW GUIDE
               </Link>
               <button
-                onClick={() => { onAction && onAction(); printHtml(guide.title, buildGuidePrintHtml(guide)); }}
+                onClick={() => { onAction && onAction(); printHtml(guide.title, buildGuidePrintHtml(guide, websiteHost)); }}
                 className="flex items-center gap-2 text-xs font-mono-tech text-vapor/70 border border-vapor/20 hover:border-gold/40 hover:text-gold px-4 py-2.5 rounded-sm transition-colors"
               >
                 <Download size={13} /> DOWNLOAD
@@ -121,7 +131,7 @@ export default function CareGuides({ compact = false, onAction, from = 'member' 
           ))}
         </select>
         <button
-          onClick={() => printHtml(guide.title, buildGuidePrintHtml(guide))}
+          onClick={() => printHtml(guide.title, buildGuidePrintHtml(guide, websiteHost))}
           className="flex items-center gap-2 text-xs font-mono-tech text-gold border border-gold/30 bg-gold/10 hover:bg-gold/20 px-4 py-2.5 rounded-sm transition-colors ml-auto"
         >
           <Printer size={13} /> PRINT GUIDE
@@ -157,7 +167,7 @@ export default function CareGuides({ compact = false, onAction, from = 'member' 
                     {s.bullets.map((b, idx) => (
                       <li key={idx} className="text-sm text-vapor/70 leading-relaxed flex gap-2.5">
                         <span className="text-gold/60 mt-1.5 shrink-0">◆</span>
-                        <span>{b}</span>
+                        <span>{fillWebsite(b, websiteHost)}</span>
                       </li>
                     ))}
                   </ul>
