@@ -46,17 +46,21 @@ export async function findOrCreateCustomer(base44, opts) {
 
   let customer = null;
 
-  // 1) Strongest match — authenticated user link
+  // 1) Strongest match — authenticated user link (trusted: derived from session).
   if (linkedUserId) {
     const byUser = await base44.asServiceRole.entities.Customer.filter({ business_id: businessId, linked_user_id: linkedUserId }).catch(() => []);
     if (byUser && byUser.length > 0) customer = byUser[0];
   }
-  // 2) Phone match (E.164 exact, then last-10-digit fallback)
-  if (!customer && phone) {
+  // 2) Phone match — only when NO authenticated user is involved. A caller-supplied
+  // phone is unverified, so we never link an authenticated user to an existing guest
+  // record by phone (would enable CRM identity hijack — CWE-639). Phone matching is
+  // still safe for non-authenticated flows (guest bookings, Valerie) where the caller
+  // is the system, not an end user.
+  if (!customer && phone && !linkedUserId) {
     customer = await findCustomer(base44, phone, null, businessId);
   }
-  // 3) Email match
-  if (!customer && email) {
+  // 3) Email match — same restriction: only for non-authenticated flows.
+  if (!customer && email && !linkedUserId) {
     customer = await findCustomer(base44, null, email, businessId);
   }
 
@@ -64,7 +68,8 @@ export async function findOrCreateCustomer(base44, opts) {
     const updates = {};
     if (smsConsent && !customer.sms_consent) updates.sms_consent = true;
     if (email && !customer.email) updates.email = email;
-    if (linkedUserId && !customer.linked_user_id) updates.linked_user_id = linkedUserId;
+    // Only stamp linked_user_id when the match came from the authenticated-user lookup
+    // (customer already belongs to this user). Never stamp it onto a phone/email match.
     if (address && !(customer.service_addresses || []).includes(address)) {
       updates.service_addresses = [...(customer.service_addresses || []), address];
     }
