@@ -35,7 +35,6 @@ import SpecialistPortal from './pages/SpecialistPortal';
 import SpecialistSetup from './pages/SpecialistSetup';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
-import ProjectOverview from './pages/ProjectOverview';
 import PartnerPortal from './pages/PartnerPortal';
 import PartnerLogin from './pages/PartnerLogin';
 import PartnerSetup from './pages/PartnerSetup';
@@ -104,7 +103,6 @@ const AuthenticatedApp = () => {
           <Route path="/specialist-setup" element={<FeatureGate feature="specialist_portal"><SpecialistSetup /></FeatureGate>} />
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/project-overview" element={<ProjectOverview />} />
           <Route path="/partner-portal" element={<FeatureGate feature="partner_engine"><PartnerPortal /></FeatureGate>} />
           <Route path="/partner-login" element={<FeatureGate feature="partner_engine"><PartnerLogin /></FeatureGate>} />
           <Route path="/partner-setup" element={<FeatureGate feature="partner_engine"><PartnerSetup /></FeatureGate>} />

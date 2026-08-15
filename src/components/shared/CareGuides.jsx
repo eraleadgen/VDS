@@ -66,21 +66,12 @@ export default function CareGuides({ compact = false, onAction, from = 'member' 
         </div>
         <div className="flex flex-wrap gap-2 mt-4">
           {isProjectOverview ? (
-            <>
-              <Link
-                to="/project-overview"
-                onClick={() => onAction && onAction()}
-                className="flex items-center gap-2 text-xs font-mono-tech text-gold border border-gold/30 bg-gold/10 hover:bg-gold/20 px-4 py-2.5 rounded-sm transition-colors"
-              >
-                <Eye size={13} /> VIEW PROJECT OVERVIEW
-              </Link>
-              <button
-                onClick={() => { onAction && onAction(); downloadProjectOverview(); }}
-                className="flex items-center gap-2 text-xs font-mono-tech text-vapor/70 border border-vapor/20 hover:border-gold/40 hover:text-gold px-4 py-2.5 rounded-sm transition-colors"
-              >
-                <Download size={13} /> DOWNLOAD
-              </button>
-            </>
+            <button
+              onClick={() => { onAction && onAction(); downloadProjectOverview(); }}
+              className="flex items-center gap-2 text-xs font-mono-tech text-vapor/70 border border-vapor/20 hover:border-gold/40 hover:text-gold px-4 py-2.5 rounded-sm transition-colors"
+            >
+              <Download size={13} /> DOWNLOAD
+            </button>
           ) : (
             <>
               <Link

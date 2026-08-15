@@ -16,7 +16,7 @@ const DEFAULT_IMAGE = 'https://media.base44.com/images/public/6a191df337222815cd
 const NOINDEX = new Set([
   '/member-login', '/member-dashboard', '/member-signup', '/gold-booking',
   '/specialist-login', '/specialist-portal', '/specialist-setup',
-  '/admin-login', '/admin', '/project-overview',
+  '/admin-login', '/admin',
   '/forgot-password', '/reset-password',
 ]);
 
