@@ -75,6 +75,31 @@ export async function resolveBusinessIdFromHost(base44, req) {
   return FALLBACK_BUSINESS_ID;
 }
 
+// Check if a hostname is a Base44 preview/dev host (no real TenantMapping expected).
+// Used to gate the ?tenant= dev override in getBusinessConfig so a client-supplied
+// parameter can never hijack tenant resolution on a real mapped domain.
+export function isPreviewHost(hostname) {
+  if (!hostname) return false;
+  return hostname.endsWith('.base44.app')
+    || hostname.endsWith('.base44.com')
+    || hostname === 'localhost'
+    || hostname.endsWith('.localhost');
+}
+
+// Resolve business_id from hostname, returning whether a real TenantMapping matched.
+// Use this (instead of resolveBusinessIdFromHost) when you need to distinguish "no
+// mapping found, fell back to vds" from "mapping found and points to vds".
+export async function resolveBusinessIdFromHostWithMatch(base44, req) {
+  const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || '';
+  const hostname = host.split(':')[0].toLowerCase().trim();
+  if (!hostname) return { businessId: FALLBACK_BUSINESS_ID, matched: false, hostname: '' };
+  try {
+    const mappings = await base44.asServiceRole.entities.TenantMapping.filter({ hostname, is_active: true });
+    if (mappings && mappings[0]) return { businessId: mappings[0].business_id || FALLBACK_BUSINESS_ID, matched: true, hostname };
+  } catch (e) { console.error('TenantMapping hostname lookup failed:', e.message); }
+  return { businessId: FALLBACK_BUSINESS_ID, matched: false, hostname };
+}
+
 // Resolve business_id from a Twilio phone number (for SMS-based functions like valerie).
 // Accepts E.164 or raw digits; normalizes to E.164 for the lookup.
 export async function resolveBusinessIdFromTwilioNumber(base44, rawNumber) {

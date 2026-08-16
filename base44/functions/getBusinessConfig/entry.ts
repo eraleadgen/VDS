@@ -5,22 +5,23 @@
 // no secrets are stored on the BusinessConfig entity.
 
 import { createClientFromRequest } from "npm:@base44/sdk@0.8.40";
-import { resolveBusinessIdFromHost } from "../../shared/tenantContext.ts";
+import { resolveBusinessIdFromHostWithMatch, isPreviewHost } from "../../shared/tenantContext.ts";
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
 
-    // Allow a ?tenant= override for dev/preview testing (production uses TenantMapping
-    // via hostname resolution). The frontend passes this from the URL query param so
-    // ERA pages can be previewed on the shared Base44 preview domain before DNS is live.
+    // Phase 4: hostname resolution always wins. A real TenantMapping can never be
+    // overridden by a client-supplied parameter — that's the regression Phase 4 fixed.
+    const { businessId: hostBusinessId, matched, hostname } = await resolveBusinessIdFromHostWithMatch(base44, req);
+    let businessId = hostBusinessId;
+
+    // Dev/preview override: ONLY honored when no real mapping exists AND the hostname
+    // is a Base44 preview/dev host. On any real mapped domain (vdsmobile.com,
+    // eraleadgen.com), the tenant param is fully ignored — never silently accepted.
     const body = await req.json().catch(() => ({}));
-    let businessId;
-    if (body.tenant && typeof body.tenant === 'string') {
+    if (!matched && body.tenant && typeof body.tenant === 'string' && isPreviewHost(hostname)) {
       businessId = body.tenant;
-    } else {
-      // Phase 4: resolve from the request hostname, regardless of auth state.
-      businessId = await resolveBusinessIdFromHost(base44, req);
     }
 
     const configs = await base44.asServiceRole.entities.BusinessConfig.filter({
