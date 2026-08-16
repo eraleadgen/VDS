@@ -1,10 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import GoldParticles from '@/components/vds/GoldParticles';
-
-// Same logo asset used in the site navbar (top-left).
-const LOGO_URL =
-  'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/6a27779cd_1773368635248-a065bd31-ddf6-4b1c-87dc-3a6080dc60f8.png';
+import { useBusinessConfig } from '@/lib/BusinessConfigContext';
 
 // Full-screen branded page-transition overlay that replaces the loading circle. A solid
 // black field covers the screen; a rotating gold loading ring sits behind the VDS logo
@@ -23,6 +20,9 @@ const LOGO_URL =
 // phase: 'hold' (closed, waiting to open) → 'opening' (reveal) → 'done' (unmounted);
 //        on nav: 'closing' (circle shrinks to center) → 'hold' → 'opening' → 'done'.
 export default function VdsTransitionOverlay({ pathKey, authLoaded, onCloseComplete }) {
+  const config = useBusinessConfig();
+  const logoUrl = config?.logo_url || '';
+  const shortName = config?.business_short_name || config?.business_name || '';
   const onCloseCompleteRef = useRef(onCloseComplete);
   useEffect(() => { onCloseCompleteRef.current = onCloseComplete; }, [onCloseComplete]);
   const [phase, setPhase] = useState('hold');
@@ -113,7 +113,7 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded, onCloseCompl
             />
           </mask>
         </defs>
-        <rect x={0} y={0} width={w} height={h} fill="#0A0B0D" mask="url(#vdsPinchReveal)" />
+        <rect x={0} y={0} width={w} height={h} fill="rgb(var(--obsidian))" mask="url(#vdsPinchReveal)" />
       </svg>
 
       {/* Gold-flake particles — only OUTSIDE the loading ring. Masked out of the ring's
@@ -140,20 +140,32 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded, onCloseCompl
           <motion.div
             aria-hidden
             className="absolute inset-0 rounded-full vds-spin"
-            style={{ border: '2px solid rgba(212,175,55,0.12)', borderTopColor: '#D4AF37' }}
+            style={{ border: '2px solid rgb(var(--gold) / 0.12)', borderTopColor: 'rgb(var(--gold))' }}
             initial={{ opacity: 1 }}
             animate={{ opacity: phase === 'opening' ? 0 : 1 }}
             transition={{ duration: phase === 'opening' ? 0.95 : 0, ease: 'easeOut' }}
           />
-          <motion.img
-            src={LOGO_URL}
-            alt="VDS"
-            draggable={false}
-            initial={{ opacity: 1, filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.6)) blur(0px)' }}
-            animate={{ opacity: phase === 'opening' ? 0 : 1, filter: `drop-shadow(0 4px 24px rgba(0,0,0,0.6)) blur(${phase === 'opening' ? 14 : 0}px)` }}
-            transition={{ duration: phase === 'opening' ? 0.95 : 0, ease: 'easeOut', delay: phase === 'opening' ? 0.05 : 0 }}
-            className="relative max-w-[140px] max-h-[140px] w-auto h-auto object-contain select-none"
-          />
+          {logoUrl ? (
+            <motion.img
+              src={logoUrl}
+              alt={shortName}
+              draggable={false}
+              initial={{ opacity: 1, filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.6)) blur(0px)' }}
+              animate={{ opacity: phase === 'opening' ? 0 : 1, filter: `drop-shadow(0 4px 24px rgba(0,0,0,0.6)) blur(${phase === 'opening' ? 14 : 0}px)` }}
+              transition={{ duration: phase === 'opening' ? 0.95 : 0, ease: 'easeOut', delay: phase === 'opening' ? 0.05 : 0 }}
+              className="relative max-w-[140px] max-h-[140px] w-auto h-auto object-contain select-none"
+            />
+          ) : (
+            <motion.span
+              initial={{ opacity: 1, filter: 'blur(0px)' }}
+              animate={{ opacity: phase === 'opening' ? 0 : 1, filter: `blur(${phase === 'opening' ? 14 : 0}px)` }}
+              transition={{ duration: phase === 'opening' ? 0.95 : 0, ease: 'easeOut', delay: phase === 'opening' ? 0.05 : 0 }}
+              className="relative text-3xl font-grotesk font-bold tracking-widest select-none"
+              style={{ color: 'rgb(var(--gold))' }}
+            >
+              {shortName.slice(0, 4).toUpperCase()}
+            </motion.span>
+          )}
         </div>
       </div>
     </div>

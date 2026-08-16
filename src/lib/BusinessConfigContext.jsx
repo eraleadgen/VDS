@@ -49,23 +49,91 @@ export function BusinessConfigProvider({ children }) {
   }, []);
 
   // Inject brand colors as CSS variables at runtime for white-label theming.
+  // Drives BOTH the custom RGB tokens (--gold, --obsidian, etc. used by VDS components)
+  // AND the HSL semantic tokens (--primary, --background, etc. used by shadcn/AuthLayout)
+  // so every component picks up the tenant's theme automatically.
   useEffect(() => {
-    if (config?.brand_colors) {
-      const root = document.documentElement;
-      const bc = config.brand_colors;
-      const hexToRgb = (hex) => {
-        const h = (hex || '').replace('#', '');
-        if (h.length !== 6) return null;
-        const r = parseInt(h.slice(0, 2), 16);
-        const g = parseInt(h.slice(2, 4), 16);
-        const b = parseInt(h.slice(4, 6), 16);
-        return `${r} ${g} ${b}`;
-      };
-      if (bc.primary) { const v = hexToRgb(bc.primary); if (v) root.style.setProperty('--gold', v); }
-      if (bc.secondary) { const v = hexToRgb(bc.secondary); if (v) root.style.setProperty('--gold-light', v); }
-      if (bc.background) { const v = hexToRgb(bc.background); if (v) root.style.setProperty('--obsidian', v); }
-      if (bc.surface) { const v = hexToRgb(bc.surface); if (v) root.style.setProperty('--asphalt', v); }
-      if (bc.text) { const v = hexToRgb(bc.text); if (v) root.style.setProperty('--vapor', v); }
+    if (!config?.brand_colors) return;
+    const root = document.documentElement;
+    const bc = config.brand_colors;
+
+    const hexToRgb = (hex) => {
+      const h = (hex || '').replace('#', '');
+      if (h.length !== 6) return null;
+      return `${parseInt(h.slice(0, 2), 16)} ${parseInt(h.slice(2, 4), 16)} ${parseInt(h.slice(4, 6), 16)}`;
+    };
+
+    const hexToHsl = (hex) => {
+      const h = (hex || '').replace('#', '');
+      if (h.length !== 6) return null;
+      let r = parseInt(h.slice(0, 2), 16) / 255;
+      let g = parseInt(h.slice(2, 4), 16) / 255;
+      let b = parseInt(h.slice(4, 6), 16) / 255;
+      const max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let hue = 0, sat = 0;
+      const light = (max + min) / 2;
+      if (max !== min) {
+        const d = max - min;
+        sat = light > 0.5 ? d / (2 - max - min) : d / (max + min);
+        if (max === r) hue = ((g - b) / d + (g < b ? 6 : 0));
+        else if (max === g) hue = ((b - r) / d + 2);
+        else hue = ((r - g) / d + 4);
+        hue *= 60;
+      }
+      return `${Math.round(hue)} ${Math.round(sat * 100)}% ${Math.round(light * 100)}%`;
+    };
+
+    const darken = (hslStr, amt) => {
+      const p = hslStr.split(' ');
+      return `${p[0]} ${p[1]} ${Math.max(0, parseInt(p[2]) - amt)}%`;
+    };
+
+    // Custom RGB tokens (VDS components: bg-obsidian, text-gold, etc.)
+    if (bc.primary) {
+      const v = hexToRgb(bc.primary);
+      if (v) {
+        root.style.setProperty('--gold', v);
+        // Dark variant for gradient stops (65% of each channel)
+        const parts = v.split(' ');
+        root.style.setProperty('--gold-dark', parts.map((p) => Math.round(parseInt(p) * 0.65)).join(' '));
+      }
+    }
+    if (bc.secondary) { const v = hexToRgb(bc.secondary); if (v) root.style.setProperty('--gold-light', v); }
+    if (bc.background) { const v = hexToRgb(bc.background); if (v) root.style.setProperty('--obsidian', v); }
+    if (bc.surface) { const v = hexToRgb(bc.surface); if (v) root.style.setProperty('--asphalt', v); }
+    if (bc.text) { const v = hexToRgb(bc.text); if (v) root.style.setProperty('--vapor', v); }
+
+    // HSL semantic tokens (shadcn / AuthLayout / ERA pages: bg-background, text-primary, etc.)
+    const bgHsl = bc.background ? hexToHsl(bc.background) : null;
+    const surfHsl = bc.surface ? hexToHsl(bc.surface) : null;
+    const textHsl = bc.text ? hexToHsl(bc.text) : null;
+    const priHsl = bc.primary ? hexToHsl(bc.primary) : null;
+
+    if (priHsl) {
+      root.style.setProperty('--primary', priHsl);
+      root.style.setProperty('--ring', priHsl);
+      root.style.setProperty('--accent', priHsl);
+    }
+    if (bgHsl) root.style.setProperty('--background', bgHsl);
+    if (surfHsl) {
+      root.style.setProperty('--card', surfHsl);
+      root.style.setProperty('--popover', surfHsl);
+      root.style.setProperty('--secondary', surfHsl);
+      root.style.setProperty('--muted', surfHsl);
+      root.style.setProperty('--border', darken(surfHsl, 5));
+      root.style.setProperty('--input', darken(surfHsl, 5));
+    }
+    if (textHsl) {
+      root.style.setProperty('--foreground', textHsl);
+      root.style.setProperty('--card-foreground', textHsl);
+      root.style.setProperty('--popover-foreground', textHsl);
+      root.style.setProperty('--secondary-foreground', textHsl);
+      root.style.setProperty('--muted-foreground', textHsl);
+    }
+    // primary-foreground / accent-foreground: dark (background) for contrast on light primary
+    if (bgHsl) {
+      root.style.setProperty('--primary-foreground', bgHsl);
+      root.style.setProperty('--accent-foreground', bgHsl);
     }
   }, [config]);
 

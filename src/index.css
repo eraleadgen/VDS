@@ -58,8 +58,8 @@
 }
 
 @keyframes goldPulse {
-  0%, 100% { box-shadow: 0 0 8px rgba(212, 175, 55, 0.3), 0 0 20px rgba(212, 175, 55, 0.1); }
-  50% { box-shadow: 0 0 16px rgba(212, 175, 55, 0.6), 0 0 40px rgba(212, 175, 55, 0.2); }
+  0%, 100% { box-shadow: 0 0 8px rgb(var(--gold) / 0.3), 0 0 20px rgb(var(--gold) / 0.1); }
+  50% { box-shadow: 0 0 16px rgb(var(--gold) / 0.6), 0 0 40px rgb(var(--gold) / 0.2); }
 }
 
 @keyframes shimmerText {
@@ -73,11 +73,11 @@
 }
 
 @keyframes rotateBorderGlow {
-  0%   { box-shadow: 0 -4px 30px 4px rgba(212,175,55,0.5), 0 0 0 0 transparent; }
-  25%  { box-shadow: 4px 0 30px 4px rgba(212,175,55,0.5), 0 0 0 0 transparent; }
-  50%  { box-shadow: 0 4px 30px 4px rgba(212,175,55,0.5), 0 0 0 0 transparent; }
-  75%  { box-shadow: -4px 0 30px 4px rgba(212,175,55,0.5), 0 0 0 0 transparent; }
-  100% { box-shadow: 0 -4px 30px 4px rgba(212,175,55,0.5), 0 0 0 0 transparent; }
+  0%   { box-shadow: 0 -4px 30px 4px rgb(var(--gold) / 0.5), 0 0 0 0 transparent; }
+  25%  { box-shadow: 4px 0 30px 4px rgb(var(--gold) / 0.5), 0 0 0 0 transparent; }
+  50%  { box-shadow: 0 4px 30px 4px rgb(var(--gold) / 0.5), 0 0 0 0 transparent; }
+  75%  { box-shadow: -4px 0 30px 4px rgb(var(--gold) / 0.5), 0 0 0 0 transparent; }
+  100% { box-shadow: 0 -4px 30px 4px rgb(var(--gold) / 0.5), 0 0 0 0 transparent; }
 }
 
 .gold-rotating-glow {
@@ -92,7 +92,7 @@
 }
 
 .gold-shine-text {
-  background-image: linear-gradient(105deg, #A08020 0%, #A08020 30%, #C9921A 40%, #D4AF37 45%, #FFFDE0 50%, #D4AF37 55%, #C9921A 60%, #A08020 70%, #A08020 100%);
+  background-image: linear-gradient(105deg, rgb(var(--gold-dark)) 0%, rgb(var(--gold-dark)) 30%, rgb(var(--gold)) 40%, rgb(var(--gold)) 45%, rgb(var(--gold-light)) 50%, rgb(var(--gold)) 55%, rgb(var(--gold)) 60%, rgb(var(--gold-dark)) 70%, rgb(var(--gold-dark)) 100%);
   background-size: 600% 100%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -101,7 +101,7 @@
 }
 
 .gold-shimmer {
-  background: linear-gradient(90deg, #D4AF37 0%, #F5E17A 40%, #D4AF37 60%, #A08020 100%);
+  background: linear-gradient(90deg, rgb(var(--gold)) 0%, rgb(var(--gold-light)) 40%, rgb(var(--gold)) 60%, rgb(var(--gold-dark)) 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -115,17 +115,17 @@
 
 .micro-bead-border {
   border: 0.5px solid;
-  border-image: linear-gradient(135deg, rgba(212,175,55,0.6), rgba(255,255,255,0.1), rgba(212,175,55,0.3)) 1;
+  border-image: linear-gradient(135deg, rgb(var(--gold) / 0.6), rgba(255,255,255,0.1), rgb(var(--gold) / 0.3)) 1;
 }
 
 html { scroll-behavior: smooth; }
 body { overflow-x: hidden; }
 
 .glass-panel {
-  background: rgba(20, 22, 26, 0.7);
+  background: rgb(var(--asphalt) / 0.7);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(212, 175, 55, 0.12);
+  border: 1px solid rgb(var(--gold) / 0.12);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
@@ -134,15 +134,15 @@ body { overflow-x: hidden; }
 }
 .vds-card-hover:hover {
   transform: translateY(-4px);
-  border-color: rgba(212, 175, 55, 0.3);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(212, 175, 55, 0.08);
+  border-color: rgb(var(--gold) / 0.3);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgb(var(--gold) / 0.08);
 }
 
 .glass-header {
-  background: rgba(10, 11, 13, 0.85);
+  background: rgb(var(--obsidian) / 0.85);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border-bottom: 0.5px solid rgba(212, 175, 55, 0.15);
+  border-bottom: 0.5px solid rgb(var(--gold) / 0.15);
 }
 
 .vds-gold-btn {

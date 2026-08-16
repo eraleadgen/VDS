@@ -21,8 +21,16 @@ export default function GoldParticles({ count = 55 }) {
     resize();
     window.addEventListener('resize', resize);
 
-    // Gold color palette
-    const GOLDS = ['#D4AF37', '#F5E17A', '#C9A028', '#E8CC60', '#B8860B', '#FFD700'];
+    // Derive particle palette from the tenant's brand CSS variables.
+    const styles = window.getComputedStyle(document.documentElement);
+    const rgbToHex = (rgb) => {
+      const parts = (rgb || '').trim().split(/\s+/);
+      if (parts.length < 3) return null;
+      return '#' + parts.slice(0, 3).map((p) => parseInt(p).toString(16).padStart(2, '0')).join('');
+    };
+    const goldHex = rgbToHex(styles.getPropertyValue('--gold')) || '#D4AF37';
+    const goldLightHex = rgbToHex(styles.getPropertyValue('--gold-light')) || '#F5E17A';
+    const GOLDS = [goldHex, goldLightHex, goldHex, goldLightHex, goldHex, goldLightHex];
 
     // Create flakes
     const flakes = Array.from({ length: count }, () => {
