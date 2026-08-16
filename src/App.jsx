@@ -42,6 +42,9 @@ import PartnerRedirect from './pages/PartnerRedirect';
 import CareGuide from './pages/CareGuide';
 import OnboardingWizard from './pages/OnboardingWizard';
 import EraConsole from './pages/EraConsole';
+import EraRegister from './pages/EraRegister';
+import EraLogin from './pages/EraLogin';
+import EraPortal from './pages/EraPortal';
 import ChatWidget from '@/components/chat/ChatWidget';
 import FeatureGate from '@/components/FeatureGate';
 
@@ -110,6 +113,9 @@ const AuthenticatedApp = () => {
           <Route path="/care-guide/:key" element={<CareGuide />} />
           <Route path="/onboarding" element={<OnboardingWizard />} />
           <Route path="/era-console" element={<EraConsole />} />
+          <Route path="/era-register" element={<EraRegister />} />
+          <Route path="/era-login" element={<EraLogin />} />
+          <Route path="/era-portal" element={<EraPortal />} />
           <Route path="/:code" element={<FeatureGate feature="partner_engine"><PartnerRedirect /></FeatureGate>} />
           <Route path="*" element={<PageNotFound />} />
         </Route>

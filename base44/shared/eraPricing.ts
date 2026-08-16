@@ -18,6 +18,16 @@ export const ERA_PRICES = {
   ad_management_monthly: 'price_1U4lzF2MUlDjgwKfzgw32g3O',
 };
 
+// Test-mode prices (Stripe test mode — test cards only, no real charges). Used in
+// development/preview. createEraCheckoutSession selects these when mode='test'.
+export const ERA_PRICES_TEST = {
+  basic_monthly: 'price_1U4wJ1IYwvfj5W6A64BBEpmg',
+  basic_setup: 'price_1U4wJ1IYwvfj5W6A9d1zZUpW',
+  foundation_monthly: 'price_1U4wJ1IYwvfj5W6Aribekakq',
+  foundation_setup: 'price_1U4wJ1IYwvfj5W6A31JR0oxc',
+  ad_management_monthly: 'price_1U4wJ1IYwvfj5W6A4IAvSxdz',
+};
+
 // Map each recurring price ID to its role + value for webhook resolution.
 // One-time setup-fee prices are excluded — they appear on the first invoice only,
 // never on the subscription's recurring line items.
@@ -25,6 +35,9 @@ const PRICE_MAP = {
   [ERA_PRICES.basic_monthly]: { role: 'tier', tier: 'basic' },
   [ERA_PRICES.foundation_monthly]: { role: 'tier', tier: 'foundation' },
   [ERA_PRICES.ad_management_monthly]: { role: 'addon', addon: 'ad_management' },
+  [ERA_PRICES_TEST.basic_monthly]: { role: 'tier', tier: 'basic' },
+  [ERA_PRICES_TEST.foundation_monthly]: { role: 'tier', tier: 'foundation' },
+  [ERA_PRICES_TEST.ad_management_monthly]: { role: 'addon', addon: 'ad_management' },
 };
 
 // Resolve the current plan tier and ad-management status from a Stripe subscription's

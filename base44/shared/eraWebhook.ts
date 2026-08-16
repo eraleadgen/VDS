@@ -101,6 +101,7 @@ export async function handleEraSaaSEvent(base44, stripe, event) {
         await base44.asServiceRole.entities.BusinessConfig.update(cfg.id, {
           plan_tier: tier,
           ad_management_enabled,
+          subscription_status: newStatus === 'trialing' ? 'active' : newStatus,
         });
       }
     }
@@ -140,6 +141,18 @@ export async function handleEraSaaSEvent(base44, stripe, event) {
     // Mark subscription canceled. Do NOT change plan_tier on BusinessConfig —
     // no data deletion, no tier downgrade. The tenant keeps their config and data;
     // the portal shows "canceled" and can prompt re-subscription.
+    // Set a 7-day grace period on BusinessConfig so features stay live briefly.
+    if (account.business_id) {
+      const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ business_id: account.business_id, is_active: true });
+      const cfg = configs && configs[0];
+      if (cfg) {
+        const graceUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+        await base44.asServiceRole.entities.BusinessConfig.update(cfg.id, {
+          subscription_status: 'canceled',
+          grace_until: graceUntil,
+        });
+      }
+    }
     await base44.asServiceRole.entities.EraAccount.update(account.id, {
       subscription_status: 'canceled',
       last_stripe_event_id: eventId,

@@ -322,6 +322,21 @@
       "type": "boolean",
       "default": false
     },
+    "subscription_status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "past_due",
+        "canceled"
+      ],
+      "default": "active",
+      "description": "Mirror of the Stripe subscription status for this tenant. Set by the Stripe webhook. 'active' = full access. 'past_due' = features retract immediately (Stripe retrying). 'canceled' = features stay live until grace_until passes, then retract."
+    },
+    "grace_until": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO datetime. When subscription_status is 'canceled', features remain accessible until this date passes. Set to now + 7 days on subscription.deleted. Null when active or past_due."
+    },
     "services": {
       "type": "array",
       "description": "Master service catalog.",
