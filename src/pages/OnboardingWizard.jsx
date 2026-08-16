@@ -8,6 +8,7 @@ import Step3ServiceCatalog from '@/components/onboarding/Step3ServiceCatalog';
 import Step4TeamScheduling from '@/components/onboarding/Step4TeamScheduling';
 import Step5Integrations from '@/components/onboarding/Step5Integrations';
 import ProvisioningScreen from '@/components/onboarding/ProvisioningScreen';
+import ConfirmingPayment from '@/components/onboarding/ConfirmingPayment';
 
 const STEPS = [
   { num: 1, label: 'Business Basics', key: 'business_basics', Component: Step1BusinessBasics },
@@ -19,35 +20,84 @@ const STEPS = [
 
 export default function OnboardingWizard() {
   const [searchParams] = useSearchParams();
-  const sessionId = searchParams.get('session');
+  const checkout = searchParams.get('checkout');
+  const checkoutSessionId = searchParams.get('session_id');
+  const resumeSessionId = searchParams.get('session');
 
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [completed, setCompleted] = useState(null);
   const [provisioning, setProvisioning] = useState(false);
 
+  const initFromCheckout = useCallback(async (csId) => {
+    try {
+      const r = await base44.functions.invoke('onboardingWizard', {
+        action: 'init',
+        stripe_checkout_session_id: csId,
+      });
+      const s = r?.data?.session;
+      if (s) {
+        setSession(s);
+        setCurrentStep(s.current_step || 1);
+      } else {
+        setError(r?.data?.error || 'Failed to start onboarding.');
+      }
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const resumeSession = useCallback(async (sid) => {
+    try {
+      const r = await base44.functions.invoke('onboardingWizard', { action: 'get', session_id: sid });
+      const s = r?.data?.session;
+      if (s) {
+        setSession(s);
+        setCurrentStep(s.current_step || 1);
+      } else {
+        setError(r?.data?.error || 'Failed to load onboarding session.');
+      }
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     (async () => {
-      if (!sessionId) {
-        setError('No onboarding session provided. Please complete a tier purchase first.');
+      // Resume flow: ?session=<onboarding_session_id>
+      if (resumeSessionId) {
+        await resumeSession(resumeSessionId);
+        return;
+      }
+
+      // New flow from Stripe redirect: ?checkout=success&session_id=<cs_...>
+      // Show the polling state first — the webhook may not have stamped EraAccount yet.
+      if (checkout === 'success' && checkoutSessionId) {
+        setConfirming(true);
         setLoading(false);
         return;
       }
+
+      // No params: try to resume from EraAccount's onboarding_session_id.
       try {
-        let r = await base44.functions.invoke('onboardingWizard', { action: 'get', session_id: sessionId });
-        let s = r?.data?.session;
-        if (!s) {
-          r = await base44.functions.invoke('onboardingWizard', { action: 'init', stripe_checkout_session_id: sessionId });
-          s = r?.data?.session;
+        const r = await base44.functions.invoke('eraAccount', { action: 'get' });
+        const data = r?.data || r;
+        if (data.success && data.account?.onboarding_session_id) {
+          await resumeSession(data.account.onboarding_session_id);
+          return;
         }
-        if (s) {
-          setSession(s);
-          setCurrentStep(s.current_step || 1);
+        if (data.success && data.account?.setup_fee_paid) {
+          setError('Your payment is confirmed but we could not find your onboarding session. Please contact support.');
         } else {
-          setError(r?.data?.error || 'Failed to load onboarding session.');
+          setError('No onboarding session found. Please complete a tier purchase first.');
         }
       } catch (e) {
         setError(e.message);
@@ -55,7 +105,13 @@ export default function OnboardingWizard() {
         setLoading(false);
       }
     })();
-  }, [sessionId]);
+  }, []);
+
+  const handleConfirmed = useCallback(() => {
+    setConfirming(false);
+    setLoading(true);
+    initFromCheckout(checkoutSessionId);
+  }, [checkoutSessionId, initFromCheckout]);
 
   const handleNext = useCallback(async (stepData) => {
     if (!session) return;
@@ -87,6 +143,10 @@ export default function OnboardingWizard() {
   const handleBack = useCallback(() => {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   }, [currentStep]);
+
+  if (confirming) {
+    return <ConfirmingPayment onConfirmed={handleConfirmed} />;
+  }
 
   if (loading) {
     return (

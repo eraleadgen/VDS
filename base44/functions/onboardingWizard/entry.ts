@@ -251,13 +251,13 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ error: 'Checkout session does not belong to this app.' }, { status: 403 });
       }
 
-      const planTier = session.metadata?.plan_tier;
+      const planTier = session.metadata?.era_tier || session.metadata?.plan_tier;
       if (!planTier || (planTier !== 'basic' && planTier !== 'foundation')) {
         return Response.json({ error: 'Invalid or missing plan_tier in checkout metadata.' }, { status: 400 });
       }
 
       // The user who initiated the checkout must be the authenticated user.
-      const checkoutUserId = session.metadata?.user_id;
+      const checkoutUserId = session.metadata?.owner_user_id || session.metadata?.user_id;
       if (checkoutUserId && checkoutUserId !== me.id) {
         return Response.json({ error: 'Checkout session belongs to a different user.' }, { status: 403 });
       }
@@ -283,6 +283,14 @@ export default async function(req: Request): Promise<Response> {
         wizard_data: defaultWizardData(planTier),
         status: 'in_progress',
       });
+
+      // Stamp EraAccount with the onboarding session ID so the portal can link to the wizard.
+      const eraAccounts = await base44.asServiceRole.entities.EraAccount.filter({ owner_user_id: me.id }).catch(() => []);
+      if (eraAccounts && eraAccounts[0]) {
+        await base44.asServiceRole.entities.EraAccount.update(eraAccounts[0].id, {
+          onboarding_session_id: sessionRecord.id,
+        }).catch((e) => console.error('EraAccount stamp failed:', e.message));
+      }
 
       return Response.json({ session: sessionRecord });
     }
@@ -335,7 +343,18 @@ export default async function(req: Request): Promise<Response> {
     // Creates BusinessConfig, TenantMapping, stamps User, creates Contractors.
     // Idempotent — safe to call multiple times (e.g. after a page refresh mid-provision).
     async function provisionTenant(base44, session) {
-      const businessId = session.business_id;
+      // Regenerate business_id from the actual business name (Step 1 data) if available.
+      // The init action used a placeholder slug; now that we have the real name, update it
+      // so the subdomain matches the business name.
+      const businessName = session.wizard_data?.business_basics?.business_name;
+      let businessId = session.business_id;
+      if (businessName) {
+        const newSlug = await uniqueSlug(base44, slugify(businessName));
+        if (newSlug !== businessId) {
+          await base44.asServiceRole.entities.OnboardingSession.update(session.id, { business_id: newSlug }).catch(() => {});
+          businessId = newSlug;
+        }
+      }
       const planTier = session.plan_tier;
       const data = session.wizard_data || {};
 
