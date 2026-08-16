@@ -32,7 +32,12 @@ export function BusinessConfigProvider({ children }) {
     let mounted = true;
     (async () => {
       try {
-        const res = await base44.functions.invoke('getBusinessConfig', {});
+        // Dev/preview: ?tenant=era_systems overrides hostname resolution so ERA pages
+        // can be previewed on the shared Base44 preview domain. In production,
+        // eraleadgen.com resolves via TenantMapping automatically.
+        const urlParams = new URLSearchParams(window.location.search);
+        const tenant = urlParams.get('tenant') || '';
+        const res = await base44.functions.invoke('getBusinessConfig', { tenant });
         if (mounted) setConfig(res?.data ?? res);
       } catch (e) {
         console.error('BusinessConfig load failed:', e?.message || e);

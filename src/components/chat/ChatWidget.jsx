@@ -34,8 +34,9 @@ export default function ChatWidget() {
   if (!config) return null;
   if (config.feature_flags?.web_chat_enabled === false) return null;
 
-  // Hide on admin/specialist/partner portal pages — chat is for customers only.
-  if (['/admin', '/specialist', '/partner', '/onboarding'].some(p => location.pathname.startsWith(p))) return null;
+  // Hide on admin/specialist/partner portal pages and ERA account/auth pages —
+  // chat is for storefront customers only, not transactional SaaS flows.
+  if (['/admin', '/specialist', '/partner', '/onboarding', '/era-'].some(p => location.pathname.startsWith(p))) return null;
 
   const handleOpen = () => {
     setOpen(true);
