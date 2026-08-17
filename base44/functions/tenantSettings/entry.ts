@@ -51,7 +51,29 @@ Deno.serve(async (req) => {
         resend_domain_id: cfg.resend_domain_id || '',
         email_domain_status: cfg.email_domain_status || 'shared',
         business_name: cfg.business_name || '',
+        business_short_name: cfg.business_short_name || '',
+        tagline: cfg.tagline || '',
+        logo_url: cfg.logo_url || '',
+        brand_colors: cfg.brand_colors || {},
       });
+    }
+
+    // ── update_branding: save logo, tagline, short name, brand colors ───
+    if (action === 'update_branding') {
+      const { logo_url, tagline, business_short_name, brand_colors } = body;
+      const update = {};
+      if (logo_url !== undefined) update.logo_url = logo_url || '';
+      if (tagline !== undefined) update.tagline = (tagline || '').trim().slice(0, 300);
+      if (business_short_name !== undefined) update.business_short_name = (business_short_name || '').trim().slice(0, 50);
+      if (brand_colors && typeof brand_colors === 'object') {
+        const clean = {};
+        for (const k of ['primary', 'secondary', 'background', 'surface', 'text']) {
+          if (brand_colors[k] && typeof brand_colors[k] === 'string') clean[k] = brand_colors[k].trim();
+        }
+        update.brand_colors = clean;
+      }
+      await base44.asServiceRole.entities.BusinessConfig.update(cfg.id, update);
+      return Response.json({ success: true, ...update });
     }
 
     // ── update_phone: save business phone (display-only) ─────────────────

@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Globe, Mail, Phone, Check, AlertCircle, Loader2, Copy, ExternalLink } from 'lucide-react';
+import BrandingSection from '@/components/admin/BrandingSection';
 
 const invoke = (payload) => base44.functions.invoke('tenantSettings', payload).then((r) => r.data ?? r);
 
@@ -155,6 +156,9 @@ export default function SettingsTab() {
     <div className="space-y-8 max-w-3xl">
       {error && <div className="flex items-center gap-2 text-red-400 text-sm bg-red-950/20 border border-red-900/30 rounded-sm px-3 py-2"><AlertCircle size={16} /> {error}</div>}
       {success && <div className="flex items-center gap-2 text-green-400 text-sm bg-green-950/20 border border-green-900/30 rounded-sm px-3 py-2"><Check size={16} /> {success}</div>}
+
+      {/* ── BRANDING ── */}
+      <BrandingSection settings={settings} onSaved={(r) => setSettings((s) => ({ ...s, ...r }))} />
 
       {/* ── DOMAIN ── */}
       <section className="border border-vapor/10 rounded-sm bg-asphalt/30 p-6">
