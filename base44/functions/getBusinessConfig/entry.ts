@@ -14,23 +14,6 @@ Deno.serve(async (req) => {
     // Phase 4: hostname resolution always wins. A real TenantMapping can never be
     // overridden by a client-supplied parameter — that's the regression Phase 4 fixed.
     const body = await req.json().catch(() => ({}));
-
-    // TEMP DEBUG: echo all request headers so we can see what hostname the proxy
-    // actually delivers to the function on custom domains.
-    if (body.__debug_headers) {
-      const headers = {};
-      req.headers.forEach((v, k) => { headers[k] = v; });
-      return Response.json({
-        hostname_seen: req.headers.get('x-forwarded-host') || req.headers.get('host') || '',
-        x_forwarded_host: req.headers.get('x-forwarded-host'),
-        host: req.headers.get('host'),
-        forwarded: req.headers.get('forwarded'),
-        x_original_url: req.headers.get('x-original-url'),
-        x_real_ip: req.headers.get('x-real-ip'),
-        all_headers: headers,
-      });
-    }
-
     const { businessId: hostBusinessId, matched, hostname } = await resolveBusinessIdFromHostWithMatch(base44, req);
     let businessId = hostBusinessId;
 

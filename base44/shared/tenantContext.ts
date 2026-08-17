@@ -62,11 +62,23 @@ export function stampCreate(data, bizId) {
 // Both look up the TenantMapping entity (exact match, active records only) and fall
 // back to 'vds' for unmapped hostnames/numbers (preview domains, localhost, etc.).
 
-// Resolve business_id from the incoming request hostname.
-// Checks x-forwarded-host first (Base44's proxy may rewrite Host), then Host.
-export async function resolveBusinessIdFromHost(base44, req) {
+// Extract the original request hostname from a Base44 function request.
+// Base44's proxy rewrites the Host header to an internal dispatcher hostname
+// (base44-dispatcher-production.base44.workers.dev), so Host/x-forwarded-host are
+// useless for tenant resolution. The proxy injects `base44-api-url` with the
+// original full URL (e.g. "https://eraleadgen.com") — that's the reliable source.
+export function getRequestHostname(req) {
+  const apiUrl = req.headers.get('base44-api-url') || '';
+  if (apiUrl) {
+    try { return new URL(apiUrl).hostname.toLowerCase().trim(); } catch {}
+  }
   const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || '';
-  const hostname = host.split(':')[0].toLowerCase().trim();
+  return host.split(':')[0].toLowerCase().trim();
+}
+
+// Resolve business_id from the incoming request hostname.
+export async function resolveBusinessIdFromHost(base44, req) {
+  const hostname = getRequestHostname(req);
   if (!hostname) return FALLBACK_BUSINESS_ID;
   try {
     const mappings = await base44.asServiceRole.entities.TenantMapping.filter({ hostname, is_active: true });
@@ -90,8 +102,7 @@ export function isPreviewHost(hostname) {
 // Use this (instead of resolveBusinessIdFromHost) when you need to distinguish "no
 // mapping found, fell back to vds" from "mapping found and points to vds".
 export async function resolveBusinessIdFromHostWithMatch(base44, req) {
-  const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || '';
-  const hostname = host.split(':')[0].toLowerCase().trim();
+  const hostname = getRequestHostname(req);
   if (!hostname) return { businessId: FALLBACK_BUSINESS_ID, matched: false, hostname: '' };
   try {
     const mappings = await base44.asServiceRole.entities.TenantMapping.filter({ hostname, is_active: true });
