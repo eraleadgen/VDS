@@ -13,7 +13,7 @@ import PageTransition from '@/components/vds/PageTransition';
 import VdsTransitionOverlay from '@/components/vds/VdsTransitionOverlay';
 
 // Page imports
-import Home from './pages/Home';
+import HomeRouter from '@/components/HomeRouter';
 import Services from './pages/Services';
 import VdsGold from './pages/VdsGold';
 import FAQ from './pages/FAQ';
@@ -83,7 +83,7 @@ const AuthenticatedApp = () => {
     content = (
       <Routes location={committedLocation}>
         <Route element={<PageTransition />}>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<HomeRouter />} />
           <Route path="/services" element={<Services />} />
           <Route path="/membership" element={<VdsGold />} />
 
