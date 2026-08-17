@@ -146,8 +146,8 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded, onCloseCompl
             aria-hidden
             className="absolute inset-0 rounded-full vds-spin"
             style={{
-              border: `2px solid ${configLoaded ? 'rgb(var(--gold) / 0.12)' : 'rgba(255,255,255,0.08)'}`,
-              borderTopColor: configLoaded ? 'rgb(var(--gold))' : 'rgba(255,255,255,0.6)',
+              border: configLoaded ? '2px solid rgb(var(--gold) / 0.12)' : '2px solid transparent',
+              borderTopColor: configLoaded ? 'rgb(var(--gold))' : 'transparent',
             }}
             initial={{ opacity: 1 }}
             animate={{ opacity: phase === 'opening' ? 0 : 1 }}

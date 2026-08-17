@@ -29,7 +29,14 @@ export default function GoldParticles({ count = 55 }) {
       return '#' + parts.slice(0, 3).map((p) => parseInt(p).toString(16).padStart(2, '0')).join('');
     };
     const goldHex = rgbToHex(styles.getPropertyValue('--gold')) || '#D4AF37';
-    const goldLightHex = rgbToHex(styles.getPropertyValue('--gold-light')) || '#F5E17A';
+    // Lighten the brand accent for particle visibility against dark backgrounds
+    const lighten = (hex, amt) => {
+      const r = Math.min(255, parseInt(hex.slice(1, 3), 16) + amt);
+      const g = Math.min(255, parseInt(hex.slice(3, 5), 16) + amt);
+      const b = Math.min(255, parseInt(hex.slice(5, 7), 16) + amt);
+      return '#' + r.toString(16).padStart(2, '0') + g.toString(16).padStart(2, '0') + b.toString(16).padStart(2, '0');
+    };
+    const goldLightHex = lighten(goldHex, 70);
     const GOLDS = [goldHex, goldLightHex, goldHex, goldLightHex, goldHex, goldLightHex];
 
     // Create flakes
