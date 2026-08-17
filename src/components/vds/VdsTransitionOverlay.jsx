@@ -117,31 +117,38 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded, onCloseCompl
         <rect x={0} y={0} width={w} height={h} fill="rgb(var(--obsidian))" mask="url(#vdsPinchReveal)" />
       </svg>
 
-      {/* Gold-flake particles — only OUTSIDE the loading ring. Masked out of the ring's
-          interior so that stays pure black. Fades out quickly on open. */}
-      <motion.div
-        aria-hidden
-        className="absolute inset-0"
-        style={{
-          maskImage: 'radial-gradient(circle at 50% 50%, transparent 0, transparent 100px, #000 101px)',
-          WebkitMaskImage: 'radial-gradient(circle at 50% 50%, transparent 0, transparent 100px, #000 101px)',
-        }}
-        initial={{ opacity: 1 }}
-        animate={{ opacity: isOpen ? 0 : 1 }}
-        transition={{ duration: 0.35, ease: 'easeOut' }}
-      >
-        <GoldParticles count={32} />
-      </motion.div>
+      {/* Gold-flake particles — only render after the tenant config has loaded so the
+          default VDS gold palette never flashes on a non-VDS tenant. Masked out of the
+          ring's interior so that stays pure black. Fades out quickly on open. */}
+      {configLoaded && (
+        <motion.div
+          aria-hidden
+          className="absolute inset-0"
+          style={{
+            maskImage: 'radial-gradient(circle at 50% 50%, transparent 0, transparent 100px, #000 101px)',
+            WebkitMaskImage: 'radial-gradient(circle at 50% 50%, transparent 0, transparent 100px, #000 101px)',
+          }}
+          initial={{ opacity: 1 }}
+          animate={{ opacity: isOpen ? 0 : 1 }}
+          transition={{ duration: 0.35, ease: 'easeOut' }}
+        >
+          <GoldParticles count={32} />
+        </motion.div>
+      )}
 
-      {/* VDS logo centered inside a perfectly-centered 200px rotating gold loading ring.
-          The ring's interior shows the black field (no particles inside). On open the logo
-          evaporates (fade + scale up + blur) and the ring fades out. */}
+      {/* Logo centered inside a perfectly-centered 200px rotating loading ring. The
+          ring uses a neutral color until the tenant config loads (avoiding a VDS gold
+          flash on non-VDS tenants), then switches to the tenant's brand accent. On open
+          the logo evaporates (fade + scale up + blur) and the ring fades out. */}
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="relative flex items-center justify-center w-[200px] h-[200px]">
           <motion.div
             aria-hidden
             className="absolute inset-0 rounded-full vds-spin"
-            style={{ border: '2px solid rgb(var(--gold) / 0.12)', borderTopColor: 'rgb(var(--gold))' }}
+            style={{
+              border: `2px solid ${configLoaded ? 'rgb(var(--gold) / 0.12)' : 'rgba(255,255,255,0.08)'}`,
+              borderTopColor: configLoaded ? 'rgb(var(--gold))' : 'rgba(255,255,255,0.6)',
+            }}
             initial={{ opacity: 1 }}
             animate={{ opacity: phase === 'opening' ? 0 : 1 }}
             transition={{ duration: phase === 'opening' ? 0.95 : 0, ease: 'easeOut' }}
