@@ -47,6 +47,7 @@ import EraLogin from './pages/EraLogin';
 import EraPortal from './pages/EraPortal';
 import ChatWidget from '@/components/chat/ChatWidget';
 import FeatureGate from '@/components/FeatureGate';
+import TenantRouteGuard from '@/components/TenantRouteGuard';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
@@ -83,7 +84,8 @@ const AuthenticatedApp = () => {
     content = (
       <Routes location={committedLocation}>
         <Route element={<PageTransition />}>
-          <Route path="/" element={<HomeRouter />} />
+          <Route element={<TenantRouteGuard />}>
+            <Route path="/" element={<HomeRouter />} />
           <Route path="/services" element={<Services />} />
           <Route path="/membership" element={<VdsGold />} />
 
@@ -117,7 +119,8 @@ const AuthenticatedApp = () => {
           <Route path="/era-login" element={<EraLogin />} />
           <Route path="/era-portal" element={<EraPortal />} />
           <Route path="/:code" element={<FeatureGate feature="partner_engine"><PartnerRedirect /></FeatureGate>} />
-          <Route path="*" element={<PageNotFound />} />
+            <Route path="*" element={<PageNotFound />} />
+          </Route>
         </Route>
       </Routes>
     );
