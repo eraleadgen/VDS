@@ -39,11 +39,14 @@ function buildSystemPrompt(cfg) {
   const persona = c.persona || 'Warm, professional, concise.';
   const summary = c.business_summary || ('Chat concierge for ' + cfg.business_name + '.');
   const goldLabel = (cfg.membership_plans && cfg.membership_plans[0] && (cfg.membership_plans[0].short_label || cfg.membership_plans[0].label)) || 'Gold';
+  const todayStr = new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   return [
     'You are ' + name + ', the chat concierge for ' + cfg.business_name + '.' + (cfg.tagline ? ' ' + cfg.tagline : ''),
     'ROLE: ' + summary,
     '',
     'PERSONA & FORMAT: ' + persona + ' This is a web chat interface. Keep messages concise and natural (usually 1-4 sentences). You may use short line breaks for lists. Never invent information.',
+    '',
+    'TODAY\'S DATE: ' + todayStr + '. Use this to resolve relative dates (e.g. "this Thursday", "next Monday") into YYYY-MM-DD format before calling tools that require a date.',
     '',
     'BUSINESS INFO:',
     '- Phone: ' + (cfg.business_phone || 'n/a'),
@@ -80,10 +83,16 @@ function buildSystemPrompt(cfg) {
     '- When a client asks about ceramic coatings, paint correction, or wants to speak to a team member, use the request_consultation tool to send their contact info and description to our team. Collect their name, phone, and what they need before calling the tool.',
     '- Tell the client that a specialist will reach out to them directly to discuss options and pricing.',
     '',
-    'BOOKING & QUOTES:',
-    '- For quotes on standard services (full detail, exterior detail, etc.), use the create_quote tool. The quote will be displayed with a "Book Now" button that takes them to the booking page.',
-    '- For actual booking, ALWAYS direct customers to the booking page: ' + ((cfg.website_links && cfg.website_links.booking_url) || 'our website') + '. Do NOT book directly through the chat — the booking page captures full vehicle details and computes the exact quote.',
-    '- For availability, use check_availability to see open time slots for a specific date.',
+    'BOOKING & QUOTES — YOU CAN BOOK DIRECTLY IN THE CHAT:',
+    '- You are authorized to book appointments directly through the chat, acting as if you are filling in the booking form for the customer. This is the preferred flow — do NOT redirect to the booking page unless the customer specifically asks for it.',
+    '- BOOKING FLOW (follow this order):',
+    '  1. Confirm the service type (e.g. full_detail, exterior_detail, interior_detail). Ask if unsure.',
+    '  2. Confirm the vehicle classification (coupe, sedan, hatchback, mid_size_suv, truck_3_row_suv, other) and year/make/model. Ask if the customer has not mentioned their vehicle.',
+    '  3. Call check_availability with the requested date (YYYY-MM-DD) to find open slots. Present the available times to the customer.',
+    '  4. Once the customer picks a time, collect their name, phone, and service address. You already have the service, vehicle, date, and time.',
+    '  5. Call book_appointment with ALL collected fields to create the booking. Confirm the booking to the customer with the date, time, and service.',
+    '- For quotes on standard services (full detail, exterior detail, etc.), use the create_quote tool. The quote will be displayed with a "Book Now" button that takes them to the booking page. Offer this as an alternative if the customer wants to see a formal quote first.',
+    '- For availability, use check_availability to see open time slots for a specific date. Always convert relative dates to YYYY-MM-DD using TODAY\'S DATE above.',
     '- For pricing questions, use lookup_pricing to get exact starting prices.',
     '',
     'FAQ:',
@@ -97,10 +106,12 @@ function buildSystemPrompt(cfg) {
     '- Help clients find the right page for their needs (booking, membership, gallery, FAQ, pricing, services).',
     '',
     'TOOL RULES:',
-    '- Always confirm the vehicle type (classification) before creating a quote.',
-    '- For ceramic coatings, paint correction, or "speak to a team member" requests, use request_consultation — do NOT quote these services.',
+    '- Always confirm the vehicle type (classification) before creating a quote or booking.',
+    '- For ceramic coatings, paint correction, or "speak to a team member" requests, use request_consultation — do NOT quote or book these services.',
     '- Execute all required tools FIRST, then write your final reply to the customer.',
     '- When you create a quote, mention the final price and that a "Book Now" button has been provided to take them to the booking page.',
+    '- When you book an appointment, confirm the booking details (date, time, service, address) to the customer in your reply.',
+    '- The check_availability tool returns times in AM/PM format (e.g. "9:00 AM", "2:00 PM"). Pass the chosen time to book_appointment in the same AM/PM format.',
   ].join('\n');
 }
 
@@ -136,16 +147,18 @@ const TOOLS = [
   } },
   { type: 'function', function: {
     name: 'book_appointment',
-    description: 'Book an appointment directly. Requires customer name, phone, address, service type, preferred date and time.',
+    description: 'Book an appointment directly through the chat. Collect all required fields from the customer first: name, phone, address, vehicle info, service type, preferred date and time. Use check_availability to find open slots before booking.',
     parameters: { type: 'object', properties: {
-      name: { type: 'string' },
-      phone: { type: 'string' },
-      email: { type: 'string' },
-      address: { type: 'string' },
-      service_type: { type: 'string', description: 'Service key from the catalog' },
+      name: { type: 'string', description: 'Customer full name' },
+      phone: { type: 'string', description: 'Customer phone number' },
+      email: { type: 'string', description: 'Customer email — optional' },
+      address: { type: 'string', description: 'Service address where the vehicle is located' },
+      service_type: { type: 'string', description: 'Service key from the catalog (e.g. full_detail, exterior_detail, interior_detail)' },
+      vehicle_classification: { type: 'string', description: 'Vehicle classification key (coupe, sedan, hatchback, mid_size_suv, truck_3_row_suv, other)' },
+      vehicle_info: { type: 'string', description: 'Vehicle year/make/model (e.g. "2022 BMW M4")' },
       preferred_date: { type: 'string', description: 'YYYY-MM-DD' },
-      preferred_time: { type: 'string', description: 'Time slot (e.g. "10:00 AM")' },
-    }, required: ['name', 'phone', 'address', 'service_type', 'preferred_date', 'preferred_time'] },
+      preferred_time: { type: 'string', description: 'Time slot in AM/PM format (e.g. "10:00 AM") — must match a slot returned by check_availability' },
+    }, required: ['name', 'phone', 'address', 'service_type', 'vehicle_classification', 'vehicle_info', 'preferred_date', 'preferred_time'] },
   } },
   { type: 'function', function: {
     name: 'request_consultation',
@@ -191,8 +204,18 @@ async function executeTool(base44, cfg, businessId, name, args) {
         date: args.date,
       });
       const data = res?.data || res;
-      const slots = (data && Array.isArray(data.slots)) ? data.slots.map(s => s.time) : [];
-      return { date: args.date, available_slots: slots };
+      // Convert 24h "HH:MM" slots to AM/PM format so the LLM can pass them directly to book_appointment
+      const toAmPm = (hhmm) => {
+        if (!hhmm || !hhmm.includes(':')) return '';
+        let h = parseInt(hhmm.split(':')[0], 10);
+        const m = String(hhmm.split(':')[1]).padStart(2, '0');
+        const ap = h >= 12 ? 'PM' : 'AM';
+        if (h > 12) h -= 12;
+        if (h === 0) h = 12;
+        return h + ':' + m + ' ' + ap;
+      };
+      const slots = (data && Array.isArray(data.slots)) ? data.slots.map(s => toAmPm(s.time)).filter(Boolean) : [];
+      return { date: args.date, available_slots: slots, reason: data?.reason || undefined };
     }
     case 'create_quote': {
       const res = await base44.asServiceRole.functions.invoke('pricingEngine', {
@@ -230,6 +253,9 @@ async function executeTool(base44, cfg, businessId, name, args) {
       };
     }
     case 'book_appointment': {
+      // Resolve pricing group from vehicle classification via BusinessConfig mapping
+      const map = cfg.classification_to_pricing_group || {};
+      const pricingGroup = (args.vehicle_classification && map[args.vehicle_classification]) || 'sedan_coupe';
       const res = await base44.asServiceRole.functions.invoke('submitBooking', {
         scheduler_token: SCHEDULER_TOKEN,
         business_id: businessId,
@@ -238,6 +264,9 @@ async function executeTool(base44, cfg, businessId, name, args) {
         email: args.email || '',
         address: args.address,
         service_type: args.service_type,
+        vehicle_type: pricingGroup,
+        vehicle_classification: args.vehicle_classification,
+        vehicle_info: args.vehicle_info,
         preferred_date: args.preferred_date,
         preferred_time: args.preferred_time,
         sms_consent: false,
