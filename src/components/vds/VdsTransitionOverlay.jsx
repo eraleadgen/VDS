@@ -21,6 +21,7 @@ import { useBusinessConfig } from '@/lib/BusinessConfigContext';
 //        on nav: 'closing' (circle shrinks to center) → 'hold' → 'opening' → 'done'.
 export default function VdsTransitionOverlay({ pathKey, authLoaded, onCloseComplete }) {
   const config = useBusinessConfig();
+  const configLoaded = !!config;
   const logoUrl = config?.logo_url || '';
   const shortName = config?.business_short_name || config?.business_name || '';
   const onCloseCompleteRef = useRef(onCloseComplete);
@@ -145,27 +146,27 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded, onCloseCompl
             animate={{ opacity: phase === 'opening' ? 0 : 1 }}
             transition={{ duration: phase === 'opening' ? 0.95 : 0, ease: 'easeOut' }}
           />
-          {logoUrl ? (
+          {configLoaded && (logoUrl ? (
             <motion.img
               src={logoUrl}
               alt={shortName}
               draggable={false}
-              initial={{ opacity: 1, filter: 'drop-shadow(0 4px 24px rgba(0,0,0,0.6)) blur(0px)' }}
+              initial={{ opacity: 0 }}
               animate={{ opacity: phase === 'opening' ? 0 : 1, filter: `drop-shadow(0 4px 24px rgba(0,0,0,0.6)) blur(${phase === 'opening' ? 14 : 0}px)` }}
-              transition={{ duration: phase === 'opening' ? 0.95 : 0, ease: 'easeOut', delay: phase === 'opening' ? 0.05 : 0 }}
+              transition={{ duration: 0.4, ease: 'easeOut', delay: phase === 'opening' ? 0.05 : 0 }}
               className="relative max-w-[140px] max-h-[140px] w-auto h-auto object-contain select-none"
             />
           ) : (
             <motion.span
-              initial={{ opacity: 1, filter: 'blur(0px)' }}
+              initial={{ opacity: 0 }}
               animate={{ opacity: phase === 'opening' ? 0 : 1, filter: `blur(${phase === 'opening' ? 14 : 0}px)` }}
-              transition={{ duration: phase === 'opening' ? 0.95 : 0, ease: 'easeOut', delay: phase === 'opening' ? 0.05 : 0 }}
+              transition={{ duration: 0.4, ease: 'easeOut', delay: phase === 'opening' ? 0.05 : 0 }}
               className="relative text-3xl font-grotesk font-bold tracking-widest select-none"
               style={{ color: 'rgb(var(--gold))' }}
             >
               {shortName.slice(0, 4).toUpperCase()}
             </motion.span>
-          )}
+          ))}
         </div>
       </div>
     </div>

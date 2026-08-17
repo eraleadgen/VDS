@@ -158,6 +158,15 @@ export default function RouteSeo() {
       upsertLink('canonical', `${baseUrl}${path}`);
       upsertMeta('name', 'robots', 'index, follow');
     } else {
+      // Default title based on the resolved tenant so the browser tab never shows a
+      // different brand while config-specific SEO loads or on unlisted routes.
+      // When config is null (still loading), use a neutral title to avoid flashing
+      // the wrong brand before tenant resolution completes.
+      document.title = config
+        ? (config.business_id === 'era_systems'
+            ? 'ERA Core — Business Operating System for Service Companies'
+            : `${businessName} | Mobile Car Detailing in Metro Atlanta`)
+        : 'Loading…';
       upsertMeta('name', 'robots', noindex ? 'noindex, nofollow' : 'index, follow');
       upsertLink('canonical', `${baseUrl}${path}`);
     }

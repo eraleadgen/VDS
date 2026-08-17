@@ -70,11 +70,10 @@ const AuthenticatedApp = () => {
   // gate) so it replaces the loading circle and only opens once the page is ready.
   let content;
   if (!authLoaded) {
-    content = (
-      <div className="fixed inset-0 flex items-center justify-center bg-obsidian">
-        <div className="w-8 h-8 border-2 border-gold/20 border-t-gold rounded-full animate-spin"></div>
-      </div>
-    );
+    // The VdsTransitionOverlay (always rendered) covers the screen during loading;
+    // this placeholder just ensures a solid black field behind it with no VDS-branded
+    // spinner that would flash before the tenant config resolves.
+    content = <div className="fixed inset-0 bg-obsidian" />;
   } else if (authError && authError.type === 'user_not_registered') {
     content = <UserNotRegisteredError />;
   } else {
