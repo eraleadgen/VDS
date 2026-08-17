@@ -17,14 +17,21 @@ export default function Navbar() {
   const plan = useMembershipPlan();
   const { hasFeature } = usePlanFeatures();
 
-  const navLinks = [
-    { label: 'HOME', path: '/' },
-    { label: 'SERVICES', path: '/services' },
-    { label: 'QUOTE & BOOK', path: '/book' },
-    { label: 'GALLERY', path: '/gallery' },
-    { label: 'FAQ', path: '/faq' },
-    { label: (plan.short_label || 'VDS Gold').toUpperCase(), path: '/membership', gold: true },
-  ];
+  const isEra = config?.business_id === 'era_systems';
+  const navLinks = isEra
+    ? [
+        { label: 'HOME', path: '/' },
+        { label: 'PRICING', path: '/pricing' },
+        { label: 'FAQ', path: '/faq' },
+      ]
+    : [
+        { label: 'HOME', path: '/' },
+        { label: 'SERVICES', path: '/services' },
+        { label: 'QUOTE & BOOK', path: '/book' },
+        { label: 'GALLERY', path: '/gallery' },
+        { label: 'FAQ', path: '/faq' },
+        { label: (plan.short_label || 'VDS Gold').toUpperCase(), path: '/membership', gold: true },
+      ];
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 40);
@@ -71,7 +78,15 @@ export default function Navbar() {
 
         {/* Right */}
         <div className="hidden lg:flex items-center gap-4">
-          {hasFeature('member_portal') && (
+          {isEra && (
+            <Link
+              to="/era-register"
+              className="flex items-center gap-2 bg-gold text-obsidian px-4 py-2 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold-light transition-colors duration-200"
+            >
+              GET STARTED
+            </Link>
+          )}
+          {!isEra && hasFeature('member_portal') && (
             isLoggedIn ? (
               <Link
                 to="/member-dashboard"
@@ -120,7 +135,15 @@ export default function Navbar() {
                 {link.label}
               </Link>
             ))}
-            {hasFeature('member_portal') && (
+            {isEra && (
+              <Link
+                to="/era-register"
+                className="text-sm font-mono-tech tracking-widest text-obsidian bg-gold px-4 py-3 text-center rounded-sm"
+              >
+                GET STARTED
+              </Link>
+            )}
+            {!isEra && hasFeature('member_portal') && (
               isLoggedIn ? (
                 <Link
                   to="/member-dashboard"

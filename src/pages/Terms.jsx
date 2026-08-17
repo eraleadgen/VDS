@@ -2,6 +2,8 @@ import { Link } from 'react-router-dom';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
 import { useLegalContext } from '@/lib/useLegalContext';
+import { useBusinessConfig } from '@/lib/BusinessConfigContext';
+import EraTerms from '@/components/era/EraTerms';
 
 // Every legal-identity reference — entity name, brand, jurisdiction, domain, contact
 // email, service area, and membership label — is templated from the tenant's
@@ -102,6 +104,8 @@ const buildSections = (c) => [
 
 export default function Terms() {
   const c = useLegalContext();
+  const config = useBusinessConfig();
+  if (config?.business_id === 'era_systems') return <EraTerms />;
   const sections = buildSections(c);
   return (
     <div className="bg-obsidian min-h-screen">

@@ -3,6 +3,8 @@ import { ChevronDown } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/vds/Navbar';
 import Footer from '../components/vds/Footer';
+import { useBusinessConfig } from '@/lib/BusinessConfigContext';
+import EraFaq from '@/components/era/EraFaq';
 
 const FAQS = [
   {
@@ -92,7 +94,9 @@ const FAQS = [
 ];
 
 export default function FAQ() {
+  const config = useBusinessConfig();
   const [openItems, setOpenItems] = useState({});
+  if (config?.business_id === 'era_systems') return <EraFaq />;
 
   const toggle = (catIdx, itemIdx) => {
     const key = `${catIdx}-${itemIdx}`;

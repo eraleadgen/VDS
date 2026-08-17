@@ -17,6 +17,17 @@ export default function Footer() {
   const address = config?.business_address || '';
   const instagram = config?.social_links?.instagram || '';
   const tiktok = config?.social_links?.tiktok || '';
+  const isEra = config?.business_id === 'era_systems';
+
+  const navLinks = isEra
+    ? [['/', 'Home'], ['/pricing', 'Pricing'], ['/faq', 'FAQ']]
+    : [['/', 'Home'], ['/services', 'Services'], ['/book', 'Quote & Book'], ['/gallery', 'Gallery'], ['/membership', plan.short_label], ['/faq', 'FAQ']];
+  const portalLinks = isEra
+    ? [['/era-login', 'Account Login'], ['/era-console', 'ERA Console']]
+    : [];
+  const serviceLinks = isEra
+    ? ['Basic Plan', 'Foundation Plan', 'Growth (Soon)', 'Enterprise (Soon)']
+    : ['Full Detail', 'Ceramic Coatings', 'Paint Correction', plan.label, 'Interior Detail', 'Exterior Detail'];
 
   return (
     <footer className="bg-obsidian border-t border-gold/10 pt-16 pb-8">
@@ -49,7 +60,7 @@ export default function Footer() {
           <div>
             <p className="text-xs font-mono-tech tracking-widest text-gold mb-6">NAVIGATE</p>
             <div className="flex flex-col gap-3">
-              {[['/', 'Home'], ['/services', 'Services'], ['/book', 'Quote & Book'], ['/gallery', 'Gallery'], ['/membership', plan.short_label], ['/faq', 'FAQ']].map(([path, label]) => (
+              {navLinks.map(([path, label]) => (
                 <Link key={path} to={path} className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">{label}</Link>
               ))}
             </div>
@@ -59,18 +70,21 @@ export default function Footer() {
           <div>
             <p className="text-xs font-mono-tech tracking-widest text-gold mb-6">PORTALS</p>
             <div className="flex flex-col gap-3">
-              {hasFeature('specialist_portal') && <Link to="/specialist-login" className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">Specialist Login</Link>}
-              {hasFeature('partner_engine') && <Link to="/partner-login" className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">Partner Login</Link>}
-              <Link to="/admin-login" className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">Admin Login</Link>
+              {portalLinks.map(([path, label]) => (
+                <Link key={path} to={path} className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">{label}</Link>
+              ))}
+              {!isEra && hasFeature('specialist_portal') && <Link to="/specialist-login" className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">Specialist Login</Link>}
+              {!isEra && hasFeature('partner_engine') && <Link to="/partner-login" className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">Partner Login</Link>}
+              {!isEra && <Link to="/admin-login" className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">Admin Login</Link>}
             </div>
           </div>
 
-          {/* Services */}
+          {/* Services / Plans */}
           <div>
-            <p className="text-xs font-mono-tech tracking-widest text-gold mb-6">SERVICES</p>
+            <p className="text-xs font-mono-tech tracking-widest text-gold mb-6">{isEra ? 'PLANS' : 'SERVICES'}</p>
             <div className="flex flex-col gap-3">
-              {['Full Detail', 'Ceramic Coatings', 'Paint Correction', plan.label, 'Interior Detail', 'Exterior Detail'].map(s => (
-                <Link key={s} to="/services" className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">{s}</Link>
+              {serviceLinks.map(s => (
+                <Link key={s} to={isEra ? '/pricing' : '/services'} className="text-sm text-vapor/50 hover:text-vapor transition-colors duration-200 font-mono-tech">{s}</Link>
               ))}
             </div>
           </div>
@@ -93,9 +107,9 @@ export default function Footer() {
               )}
             </div>
             <div className="mt-8">
-              <Link to="/membership"
+              <Link to={isEra ? '/era-register' : '/membership'}
                 className="inline-block vds-gold-btn px-5 py-3 text-xs font-mono-tech tracking-widest rounded-sm">
-                ◆ JOIN {plan.short_label.toUpperCase()}
+                {isEra ? '◆ GET STARTED' : `◆ JOIN ${plan.short_label.toUpperCase()}`}
               </Link>
             </div>
           </div>
