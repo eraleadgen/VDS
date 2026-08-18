@@ -60,10 +60,10 @@ export function formatFaq(cfg) {
 
 // Shared OpenAI call — uses the OpenAI_Valerie secret and gpt-4o-mini for fast
 // conversational responses (2-4 second latency, handles tool-calling).
-export async function callOpenAI(messages, tools) {
+export async function callOpenAI(messages, tools, options = {}) {
   const KEY = Deno.env.get('OpenAI_Valerie');
   if (!KEY) throw new Error('OpenAI_Valerie secret is not set.');
-  const payload = { model: 'gpt-4o-mini', temperature: 0.7, messages };
+  const payload = { model: options.model || 'gpt-4o-mini', temperature: options.temperature != null ? options.temperature : 0.7, messages };
   if (tools) { payload.tools = tools; payload.tool_choice = 'auto'; }
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',

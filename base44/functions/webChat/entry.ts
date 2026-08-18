@@ -88,9 +88,10 @@ function buildSystemPrompt(cfg) {
     '- BOOKING FLOW (follow this order):',
     '  1. Confirm the service type (e.g. full_detail, exterior_detail, interior_detail). Ask if unsure.',
     '  2. Confirm the vehicle classification (coupe, sedan, hatchback, mid_size_suv, truck_3_row_suv, other) and year/make/model. Ask if the customer has not mentioned their vehicle.',
-    '  3. Call check_availability with the requested date (YYYY-MM-DD) to find open slots. Present the available times to the customer.',
-    '  4. Once the customer picks a time, collect their name, phone, and service address. You already have the service, vehicle, date, and time.',
-    '  5. Call book_appointment with ALL collected fields to create the booking. Confirm the booking to the customer with the date, time, and service.',
+    '  3. Call check_availability with the requested date (YYYY-MM-DD), service_type, and vehicle_classification to find open slots. Present the available times to the customer.',
+    '  4. Once the customer picks a time, collect their full name, phone number, email address, and service address. These are REQUIRED for booking — the phone and email are used to send booking confirmation and reminder messages.',
+    '  5. Call book_appointment with ALL collected fields (name, phone, email, address, service_type, vehicle_classification, vehicle_info, preferred_date, preferred_time) to create the booking. The booking is automatically added to Google Calendar and a specialist is auto-assigned.',
+    '  6. Confirm the booking to the customer with the date, time, service, and address. Let them know they will receive a confirmation and reminder via SMS and email.',
     '- For quotes on standard services (full detail, exterior detail, etc.), use the create_quote tool. The quote will be displayed with a "Book Now" button that takes them to the booking page. Offer this as an alternative if the customer wants to see a formal quote first.',
     '- For availability, use check_availability to see open time slots for a specific date. Always convert relative dates to YYYY-MM-DD using TODAY\'S DATE above.',
     '- For pricing questions, use lookup_pricing to get exact starting prices.',
@@ -127,12 +128,12 @@ const TOOLS = [
   } },
   { type: 'function', function: {
     name: 'check_availability',
-    description: 'Check available appointment time slots for a specific date.',
+    description: 'Check available appointment time slots for a specific date. Returns slots in AM/PM format. The slots are computed from Google Calendar busy events, business hours, contractor availability, and the service duration for the vehicle type.',
     parameters: { type: 'object', properties: {
-      date: { type: 'string', description: 'Date in YYYY-MM-DD format' },
-      service_type: { type: 'string', description: 'Service key (e.g. full_detail)' },
-      vehicle_type: { type: 'string', description: 'Pricing group: sedan_coupe or truck_suv' },
-    }, required: ['date'] },
+      date: { type: 'string', description: 'Date in YYYY-MM-DD format. Convert relative dates using TODAY\'S DATE from the system prompt.' },
+      service_type: { type: 'string', description: 'Service key (e.g. full_detail, exterior_detail, interior_detail)' },
+      vehicle_classification: { type: 'string', description: 'Vehicle classification key (coupe, sedan, hatchback, mid_size_suv, truck_3_row_suv, other) — used to determine the correct service duration' },
+    }, required: ['date', 'service_type', 'vehicle_classification'] },
   } },
   { type: 'function', function: {
     name: 'create_quote',
@@ -151,14 +152,14 @@ const TOOLS = [
     parameters: { type: 'object', properties: {
       name: { type: 'string', description: 'Customer full name' },
       phone: { type: 'string', description: 'Customer phone number' },
-      email: { type: 'string', description: 'Customer email — optional' },
+      email: { type: 'string', description: 'Customer email address — required for booking confirmation and reminder emails' },
       address: { type: 'string', description: 'Service address where the vehicle is located' },
       service_type: { type: 'string', description: 'Service key from the catalog (e.g. full_detail, exterior_detail, interior_detail)' },
       vehicle_classification: { type: 'string', description: 'Vehicle classification key (coupe, sedan, hatchback, mid_size_suv, truck_3_row_suv, other)' },
       vehicle_info: { type: 'string', description: 'Vehicle year/make/model (e.g. "2022 BMW M4")' },
       preferred_date: { type: 'string', description: 'YYYY-MM-DD' },
       preferred_time: { type: 'string', description: 'Time slot in AM/PM format (e.g. "10:00 AM") — must match a slot returned by check_availability' },
-    }, required: ['name', 'phone', 'address', 'service_type', 'vehicle_classification', 'vehicle_info', 'preferred_date', 'preferred_time'] },
+    }, required: ['name', 'phone', 'email', 'address', 'service_type', 'vehicle_classification', 'vehicle_info', 'preferred_date', 'preferred_time'] },
   } },
   { type: 'function', function: {
     name: 'request_consultation',
@@ -196,11 +197,14 @@ async function executeTool(base44, cfg, businessId, name, args) {
       };
     }
     case 'check_availability': {
+      // Resolve pricing group from vehicle classification via BusinessConfig mapping
+      const classMap = cfg.classification_to_pricing_group || {};
+      const pricingGroup = (args.vehicle_classification && classMap[args.vehicle_classification]) || 'sedan_coupe';
       const res = await base44.asServiceRole.functions.invoke('scheduler', {
         action: 'check_availability',
         business_id: businessId,
         service: args.service_type || 'full_detail',
-        vehicle_type: args.vehicle_type || 'sedan_coupe',
+        vehicle_type: pricingGroup,
         date: args.date,
       });
       const data = res?.data || res;
@@ -215,7 +219,7 @@ async function executeTool(base44, cfg, businessId, name, args) {
         return h + ':' + m + ' ' + ap;
       };
       const slots = (data && Array.isArray(data.slots)) ? data.slots.map(s => toAmPm(s.time)).filter(Boolean) : [];
-      return { date: args.date, available_slots: slots, reason: data?.reason || undefined };
+      return { date: args.date, available_slots: slots, reason: data?.reason || undefined, vehicle_classification: args.vehicle_classification, service_type: args.service_type };
     }
     case 'create_quote': {
       const res = await base44.asServiceRole.functions.invoke('pricingEngine', {
@@ -269,12 +273,13 @@ async function executeTool(base44, cfg, businessId, name, args) {
         vehicle_info: args.vehicle_info,
         preferred_date: args.preferred_date,
         preferred_time: args.preferred_time,
-        sms_consent: false,
+        sms_consent: true,
       });
       const data = res?.data || res;
       return {
         success: data.success,
         job_id: data.job_id,
+        google_calendar_event_id: data.google_calendar_event_id,
         error: data.error,
       };
     }
@@ -364,7 +369,7 @@ Deno.serve(async (req) => {
     messages.push({ role: 'user', content: message });
 
     // Agent loop — execute tools, then produce final reply (max 5 tool rounds).
-    let msg = await callOpenAI(messages, TOOLS);
+    let msg = await callOpenAI(messages, TOOLS, { temperature: 0.3 });
     let rounds = 0;
     let lastQuote = null;
     while (msg && msg.tool_calls && msg.tool_calls.length && rounds < 5) {
@@ -378,8 +383,8 @@ Deno.serve(async (req) => {
         if (toolName === 'create_quote' && result && result.quote_id) lastQuote = result;
         messages.push({ role: 'tool', tool_call_id: tc.id, content: JSON.stringify(result) });
       }
-      msg = await callOpenAI(messages, TOOLS);
-    }
+      msg = await callOpenAI(messages, TOOLS, { temperature: 0.3 });
+      }
 
     const finalText = (msg && msg.content) ? String(msg.content).trim() : "I'm sorry, I had trouble with that — could you rephrase?";
 
