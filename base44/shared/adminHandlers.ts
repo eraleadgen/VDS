@@ -241,14 +241,18 @@ export async function adminMetrics(base44) {
   const me = await base44.auth.me().catch(() => null);
   if (!requireAdmin(me)) return { error: 'Admin only.' };
   const bizId = await adminBusinessId(base44, me);
-  const [contractors, appts, quotes] = await Promise.all([
+  const [contractors, appts, quotes, jobs] = await Promise.all([
     base44.asServiceRole.entities.Contractor.filter({ business_id: bizId }),
     base44.asServiceRole.entities.Appointment.filter({ business_id: bizId }),
     base44.asServiceRole.entities.Quote.filter({ business_id: bizId }),
+    base44.asServiceRole.entities.Job.filter({ business_id: bizId }),
   ]);
   const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York' }).format(new Date());
   const cs = contractors || [];
   const as = appts || [];
+  const js = jobs || [];
+  // Booked job statuses — jobs that have been scheduled but not yet completed/cancelled.
+  const BOOKED_STATUSES = ['appointment_scheduled', 'specialist_assigned', 'appointment_confirmed', 'rescheduled'];
   // Revenue: match completed appointments to their quote by customer phone, sum the final_price.
   const normPhone = (p) => (p || '').replace(/\D/g, '').slice(-10);
   const quoteByPhone = {};
@@ -272,8 +276,8 @@ export async function adminMetrics(base44) {
     metrics: {
       total_contractors: cs.length,
       active_contractors: cs.filter(c => c.status === 'active' && c.is_enabled !== false).length,
-      todays_jobs: as.filter(a => a.preferred_date === today && a.status !== 'cancelled').length,
-      upcoming_jobs: as.filter(a => a.status === 'confirmed' && a.preferred_date >= today).length,
+      todays_jobs: js.filter(j => j.appointment_date === today && j.status !== 'cancelled' && j.status !== 'completed').length,
+      upcoming_jobs: js.filter(j => BOOKED_STATUSES.includes(j.status) && j.appointment_date >= today).length,
       completed_jobs: as.filter(a => a.status === 'completed').length,
       cancelled_jobs: as.filter(a => a.status === 'cancelled').length,
       total_revenue: Math.round(total_revenue),
