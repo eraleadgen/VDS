@@ -606,6 +606,58 @@ export async function partnerMyReferrals(base44) {
   return { success: true, referrals: enriched };
 }
 
+// ── Admin: Google Calendar events for a date range (calendar grid view) ──
+// Fetches live events from the connected Google Calendar and cross-references
+// them with Job records so the admin calendar grid shows real-time event data
+// (summary, time, customer, service, status) pulled directly from Google Calendar.
+export async function adminGcalEvents(base44, body) {
+  const me = await base44.auth.me().catch(() => null);
+  if (!requireAdmin(me)) return { error: 'Admin only.' };
+  const bizId = await adminBusinessId(base44, me);
+  const { timeMin, timeMax } = body;
+  if (!timeMin || !timeMax) return { error: 'timeMin and timeMax are required (ISO strings).' };
+  const { accessToken } = await base44.asServiceRole.connectors.getConnection('googlecalendar');
+  const q = `?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&orderBy=startTime&maxResults=250`;
+  const eventsJson = await gcal(accessToken, 'GET', `/calendars/primary/events${q}`, null);
+  const items = (eventsJson.items || []).filter(e => e.start && (e.start.dateTime || e.start.date));
+  // Cross-reference with Jobs by google_calendar_event_id for status enrichment.
+  const jobs = await base44.asServiceRole.entities.Job.filter({ business_id: bizId }, '-updated_date', 500);
+  const jobByEventId = {};
+  for (const j of (jobs || [])) { if (j.google_calendar_event_id) jobByEventId[j.google_calendar_event_id] = j; }
+  const events = items.map(e => {
+    const job = jobByEventId[e.id] || null;
+    const isVds = e.extendedProperties && e.extendedProperties.shared && e.extendedProperties.shared.type === 'vds_appointment';
+    return {
+      id: e.id,
+      summary: e.summary || '',
+      start: e.start.dateTime || e.start.date,
+      end: e.end.dateTime || e.end.date,
+      allDay: !e.start.dateTime,
+      is_vds: !!isVds,
+      html_link: e.htmlLink || '',
+      job: job ? {
+        id: job.id,
+        status: job.status,
+        job_status: job.job_status,
+        customer_name: job.customer_name,
+        customer_phone: job.customer_phone,
+        customer_email: job.customer_email,
+        service_label: job.service_label,
+        service_package: job.service_package,
+        vehicle_info: job.vehicle_info,
+        address: job.address,
+        specialist_name: job.specialist_name,
+        specialist_id: job.specialist_id,
+        estimated_price: job.estimated_price,
+        final_price: job.final_price,
+        appointment_date: job.appointment_date,
+        appointment_time: job.appointment_time,
+      } : null,
+    };
+  });
+  return { success: true, events };
+}
+
 // ── Admin: User management (tenant-scoped) ──────────────────────────────
 // The built-in User entity has no RLS, so User.list() returns every user across
 // all tenants. This function filters by the calling admin's business_id so an

@@ -1,103 +1,84 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Filter, Plus, Trash2 } from 'lucide-react';
+import { Filter } from 'lucide-react';
+import JobsCalendar from '@/components/admin/JobsCalendar';
+import JobDetailPanel from '@/components/admin/JobDetailPanel';
 import AppointmentFormModal from '@/components/admin/AppointmentFormModal';
-import DistanceGauge from '@/components/admin/DistanceGauge';
-import ExpandableCard from '@/components/portal/ExpandableCard';
-import ConsultationStatusControl, { isConsultationJob } from '@/components/shared/ConsultationStatusControl';
-
-const Checkbox = ({ checked, onChange, disabled }) => (
-  <input
-    type="checkbox"
-    checked={checked}
-    onChange={onChange}
-    disabled={disabled}
-    className="w-4 h-4 accent-gold bg-asphalt border-gold/30 rounded-sm cursor-pointer disabled:opacity-40"
-  />
-);
 
 const invoke = (payload) => base44.functions.invoke('scheduler', payload).then(r => r.data ?? r);
 
-const STATUS_BADGE = {
-  quote_requested: 'text-slate-300 bg-slate-300/5 border-slate-300/20',
-  quote_generated: 'text-slate-300 bg-slate-300/5 border-slate-300/20',
-  awaiting_approval: 'text-amber-300 bg-amber-300/5 border-amber-300/20',
-  appointment_scheduled: 'text-blue-300 bg-blue-300/5 border-blue-300/20',
-  specialist_assigned: 'text-blue-300 bg-blue-300/5 border-blue-300/20',
-  appointment_confirmed: 'text-blue-300 bg-blue-300/5 border-blue-300/20',
-  technician_en_route: 'text-cyan-300 bg-cyan-300/5 border-cyan-300/20',
-  in_progress: 'text-cyan-300 bg-cyan-300/5 border-cyan-300/20',
-  awaiting_payment: 'text-amber-300 bg-amber-300/5 border-amber-300/20',
-  completed: 'text-green-300 bg-green-300/5 border-green-300/20',
-  review_requested: 'text-purple-300 bg-purple-300/5 border-purple-300/20',
-  membership_recommended: 'text-gold bg-gold/5 border-gold/20',
-  rescheduled: 'text-amber-300 bg-amber-300/5 border-amber-300/20',
-  cancelled: 'text-red-400 bg-red-400/5 border-red-400/20',
-};
-const STATUSES = ['appointment_scheduled', 'rescheduled', 'in_progress', 'completed', 'cancelled'];
 const STATUS_LABEL = (s) => s ? s.replace(/_/g, ' ') : '';
+const FILTER_STATUSES = ['appointment_scheduled', 'rescheduled', 'in_progress', 'completed', 'cancelled'];
 
 export default function AppointmentsTab({ initialStatusFilter, initialDateFilter }) {
-  const [jobs, setJobs] = useState([]);
+  const [events, setEvents] = useState([]);
   const [contractors, setContractors] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [monthDate, setMonthDate] = useState(() => {
+    if (initialDateFilter) return new Date(initialDateFilter + 'T00:00:00');
+    return new Date();
+  });
+  const [selectedDate, setSelectedDate] = useState(() => {
+    if (initialDateFilter) return new Date(initialDateFilter + 'T00:00:00');
+    return new Date();
+  });
+  const [selectedEvent, setSelectedEvent] = useState(null);
   const [statusFilter, setStatusFilter] = useState(initialStatusFilter || '');
-  const [dateFilter, setDateFilter] = useState(initialDateFilter || '');
-  const [busy, setBusy] = useState({});
   const [adding, setAdding] = useState(false);
   const [addingBusy, setAddingBusy] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [consultBusy, setConsultBusy] = useState(false);
   const [confirmId, setConfirmId] = useState(null);
-  const [selected, setSelected] = useState([]);
-  const [bulkBusy, setBulkBusy] = useState(false);
-  const [confirmBulk, setConfirmBulk] = useState(false);
-  const [consultBusy, setConsultBusy] = useState({});
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
-      const q = {};
-      if (statusFilter) q.status = statusFilter;
-      if (dateFilter) q.date = dateFilter;
-      const [j, c] = await Promise.all([
-        invoke({ action: 'admin_jobs', ...q }),
+      const year = monthDate.getFullYear();
+      const month = monthDate.getMonth();
+      const timeMin = new Date(year, month, 1).toISOString();
+      const timeMax = new Date(year, month + 1, 0, 23, 59, 59).toISOString();
+      const [ev, c] = await Promise.all([
+        invoke({ action: 'admin_gcal_events', timeMin, timeMax }),
         invoke({ action: 'list_contractors' }),
       ]);
-      setJobs(j.jobs || []);
+      setEvents(ev.events || []);
       setContractors(c.contractors || []);
     } finally { setLoading(false); }
-  };
-  useEffect(() => { load(); }, [statusFilter, dateFilter]);
+  }, [monthDate]);
 
-  // Realtime: any Job change (incl. consultation_status updates from the specialist or
-  // admin) refreshes this board automatically so the portal stays in sync across roles.
+  useEffect(() => { load(); }, [load]);
+
+  // Realtime: any Job change refreshes the calendar
   useEffect(() => {
     const unsub = base44.entities.Job.subscribe(() => { load(); });
     return unsub;
-  }, []);
+  }, [load]);
+
+  const cName = (id) => (contractors.find(c => c.id === id) || {}).name || '';
 
   const reassign = async (jobId, specialistId) => {
     if (!specialistId) return;
-    setBusy(b => ({ ...b, [jobId]: true }));
-    try { const r = await invoke({ action: 'admin_reassign_job', job_id: jobId, specialist_id: specialistId }); if (r.error) alert(r.error); else await load(); }
-    finally { setBusy(b => ({ ...b, [jobId]: false })); }
+    setBusy(true);
+    try { const r = await invoke({ action: 'admin_reassign_job', job_id: jobId, specialist_id: specialistId }); if (r.error) alert(r.error); else { await load(); setSelectedEvent(e => e ? { ...e, job: { ...e.job, specialist_id: specialistId, specialist_name: cName(specialistId) } } : e); } }
+    finally { setBusy(false); }
   };
 
   const changeStatus = async (jobId, status) => {
-    setBusy(b => ({ ...b, [jobId]: true }));
-    try { const r = await invoke({ action: 'admin_change_job_status', job_id: jobId, status }); if (r.error) alert(r.error); else await load(); }
-    finally { setBusy(b => ({ ...b, [jobId]: false })); }
+    setBusy(true);
+    try { const r = await invoke({ action: 'admin_change_job_status', job_id: jobId, status }); if (r.error) alert(r.error); else { await load(); setSelectedEvent(e => e ? { ...e, job: { ...e.job, status } } : e); } }
+    finally { setBusy(false); }
   };
 
   const setConsultation = async (jobId, consultation_status) => {
-    setConsultBusy(b => ({ ...b, [jobId]: true }));
+    setConsultBusy(true);
     try { const r = await invoke({ action: 'update_consultation_status', job_id: jobId, consultation_status }); if (r.error) alert(r.error); else await load(); }
-    finally { setConsultBusy(b => ({ ...b, [jobId]: false })); }
+    finally { setConsultBusy(false); }
   };
 
   const remove = async (jobId) => {
-    setBusy(b => ({ ...b, [jobId]: true }));
-    try { const r = await invoke({ action: 'admin_delete_job', job_id: jobId }); if (r.error) alert(r.error); else { setConfirmId(null); await load(); } }
-    finally { setBusy(b => ({ ...b, [jobId]: false })); }
+    setBusy(true);
+    try { const r = await invoke({ action: 'admin_delete_job', job_id: jobId }); if (r.error) alert(r.error); else { setConfirmId(null); setSelectedEvent(null); await load(); } }
+    finally { setBusy(false); }
   };
 
   const createAppt = async (form) => {
@@ -114,138 +95,105 @@ export default function AppointmentsTab({ initialStatusFilter, initialDateFilter
     } finally { setAddingBusy(false); }
   };
 
-  const sorted = [...jobs].sort((a, b) => new Date((a.appointment_date || '') + 'T' + (a.appointment_time || '00:00')) - new Date((b.appointment_date || '') + 'T' + (b.appointment_time || '00:00')));
+  // Filter events by status if a filter is active
+  const filteredEvents = statusFilter
+    ? events.filter(ev => ev.job && ev.job.status === statusFilter)
+    : events;
 
-  const toggle = (id) => setSelected(s => s.includes(id) ? s.filter(x => x !== id) : [...s, id]);
-  const allSelected = sorted.length > 0 && sorted.every(a => selected.includes(a.id));
-  const someSelected = selected.length > 0 && !allSelected;
-  const toggleAll = () => setSelected(allSelected ? [] : sorted.map(a => a.id));
-
-  const bulkDelete = async () => {
-    setBulkBusy(true);
-    try {
-      const r = await invoke({ action: 'admin_bulk_delete_jobs', job_ids: selected });
-      if (r.error) { alert(r.error); return; }
-      setConfirmBulk(false); setSelected([]); await load();
-    } finally { setBulkBusy(false); }
-  };
+  // Events for the selected day (shown in side panel area)
+  const selectedKey = selectedDate ? selectedDate.toLocaleDateString('en-CA') : null;
+  const dayEvents = filteredEvents.filter(ev => new Date(ev.start).toLocaleDateString('en-CA') === selectedKey);
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-2xl font-grotesk font-bold text-vapor">Jobs</h1>
-        <button onClick={() => setAdding(true)} className="flex items-center gap-2 bg-gold/10 border border-gold/30 text-gold px-4 py-2 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold/20">
-          <Plus size={14} /> NEW JOB
-        </button>
-      </div>
-      <div className="flex flex-wrap items-center gap-3">
-        <Filter size={14} className="text-gold/60" />
-        <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="bg-asphalt border border-vapor/10 text-vapor text-xs font-mono-tech px-3 py-2 rounded-sm">
-          <option value="">All statuses</option>
-          {STATUSES.map(s => <option key={s} value={s}>{STATUS_LABEL(s)}</option>)}
-        </select>
-        <input type="date" value={dateFilter} onChange={e => setDateFilter(e.target.value)} className="bg-asphalt border border-vapor/10 text-vapor text-xs font-mono-tech px-3 py-2 rounded-sm" />
-        {(statusFilter || dateFilter) && <button onClick={() => { setStatusFilter(''); setDateFilter(''); }} className="text-xs font-mono-tech text-vapor/50 hover:text-gold">CLEAR</button>}
-        {!loading && sorted.length > 0 && <button onClick={toggleAll} className="text-xs font-mono-tech text-vapor/50 hover:text-gold ml-auto">{allSelected ? 'DESELECT ALL' : 'SELECT ALL'}</button>}
-      </div>
-
-      {selected.length > 0 && (
-        <div className="glass-panel border border-gold/20 rounded-sm px-4 py-3 flex items-center justify-between">
-          <span className="text-xs font-mono-tech tracking-widest text-gold">{selected.length} SELECTED</span>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setSelected([])} disabled={bulkBusy} className="text-xs font-mono-tech text-vapor/50 hover:text-vapor px-2 py-1">CLEAR</button>
-            {confirmBulk ? (
-              <>
-                <span className="text-xs font-mono-tech text-red-400">Delete {selected.length} job{selected.length > 1 ? 's' : ''}?</span>
-                <button onClick={() => setConfirmBulk(false)} disabled={bulkBusy} className="text-xs font-mono-tech text-vapor/50 hover:text-vapor px-2 py-1">CANCEL</button>
-                <button onClick={bulkDelete} disabled={bulkBusy} className="text-xs font-mono-tech text-red-400 border border-red-400/40 bg-red-400/10 hover:bg-red-400/20 px-3 py-1.5 rounded-sm">CONFIRM DELETE</button>
-              </>
-            ) : (
-              <button onClick={() => setConfirmBulk(true)} disabled={bulkBusy} className="flex items-center gap-1.5 text-xs font-mono-tech text-red-400 border border-red-400/40 bg-red-400/10 hover:bg-red-400/20 px-3 py-1.5 rounded-sm">
-                <Trash2 size={13} /> DELETE SELECTED
-              </button>
-            )}
-          </div>
+        <div className="flex items-center gap-3">
+          <Filter size={14} className="text-gold/60" />
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="bg-asphalt border border-vapor/10 text-vapor text-xs font-mono-tech px-3 py-2 rounded-sm">
+            <option value="">All events</option>
+            {FILTER_STATUSES.map(s => <option key={s} value={s}>{STATUS_LABEL(s)}</option>)}
+          </select>
+          {statusFilter && <button onClick={() => setStatusFilter('')} className="text-xs font-mono-tech text-vapor/50 hover:text-gold">CLEAR</button>}
         </div>
-      )}
+      </div>
 
-      {loading ? (
-        <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-gold/20 border-t-gold rounded-full animate-spin" /></div>
-      ) : (
-        <div className="space-y-3">
-          {sorted.length === 0 ? (
-            <p className="p-8 text-center text-vapor/40 font-mono-tech text-sm">No jobs match these filters.</p>
-          ) : sorted.map(a => (
-            <ExpandableCard
-              key={a.id}
-              selected={selected.includes(a.id)}
-              leading={<Checkbox checked={selected.includes(a.id)} onChange={() => toggle(a.id)} disabled={busy[a.id]} />}
-              header={
-                <div className="min-w-0">
-                  <p className="text-xs font-mono-tech tracking-widest text-gold/70">{a.appointment_date} · {a.appointment_time}</p>
-                  <h3 className="text-sm font-grotesk font-bold text-vapor truncate">{a.customer_name}</h3>
-                  <p className="text-xs text-vapor/50 font-mono-tech truncate">{a.customer_phone}</p>
-                </div>
-              }
-              right={
-                <div className="text-right">
-                  {a.estimated_price != null && (
-                    <p className="text-xs font-mono-tech text-gold mb-1">
-                      {(a.final_price != null ? a.final_price : a.estimated_price).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
-                      <span className="text-vapor/40 ml-1">{a.final_price != null ? 'final' : 'quoted'}</span>
+      {/* Calendar + side panel */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2">
+          {loading ? (
+            <div className="glass-panel border border-vapor/10 rounded-sm p-20 flex justify-center">
+              <div className="w-8 h-8 border-2 border-gold/20 border-t-gold rounded-full animate-spin" />
+            </div>
+          ) : (
+            <JobsCalendar
+              events={filteredEvents}
+              selectedDate={selectedDate}
+              onSelectDate={(d) => { setSelectedDate(d); setSelectedEvent(null); }}
+              onSelectEvent={(ev) => setSelectedEvent(ev)}
+              monthDate={monthDate}
+              onPrevMonth={() => setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() - 1, 1))}
+              onNextMonth={() => setMonthDate(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 1))}
+              onToday={() => { setMonthDate(new Date()); setSelectedDate(new Date()); }}
+              onNewJob={() => setAdding(true)}
+              loading={loading}
+            />
+          )}
+        </div>
+
+        {/* Side panel: selected event detail or day's event list */}
+        <div>
+          {selectedEvent ? (
+            <JobDetailPanel
+              event={selectedEvent}
+              contractors={contractors}
+              busy={busy}
+              consultBusy={consultBusy}
+              onClose={() => setSelectedEvent(null)}
+              onReassign={reassign}
+              onStatusChange={changeStatus}
+              onDelete={remove}
+              onConsultation={(v) => setConsultation(selectedEvent.job.id, v)}
+              confirmId={confirmId}
+              setConfirmId={setConfirmId}
+            />
+          ) : dayEvents.length > 0 ? (
+            <div className="glass-panel border border-vapor/10 rounded-sm">
+              <div className="px-5 py-4 border-b border-vapor/10">
+                <p className="text-xs font-mono-tech tracking-widest text-gold/70">
+                  {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+                </p>
+                <p className="text-sm font-grotesk font-bold text-vapor mt-1">{dayEvents.length} event{dayEvents.length > 1 ? 's' : ''}</p>
+              </div>
+              <div className="p-3 space-y-2">
+                {dayEvents.map(ev => (
+                  <button
+                    key={ev.id}
+                    onClick={() => setSelectedEvent(ev)}
+                    className="block w-full text-left p-3 rounded-sm border border-vapor/10 hover:border-gold/30 hover:bg-gold/[0.03] transition-colors"
+                  >
+                    <p className="text-xs font-mono-tech text-gold/70">
+                      {new Date(ev.start).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}
                     </p>
-                  )}
-                  <span className={`inline-block text-xs font-mono-tech tracking-widest px-2 py-1 rounded-sm border whitespace-nowrap ${STATUS_BADGE[a.status] || 'text-vapor/50 border-vapor/10'}`}>{STATUS_LABEL(a.status)}</span>
-                </div>
-              }
-            >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3">
-                <div>
-                  <p className="text-sm text-vapor/80">{a.service_label || a.service_package}</p>
-                  <p className="text-xs text-vapor/40 font-mono-tech">{a.vehicle_info || ''}</p>
-                </div>
-                <div className="min-w-0">
-                  <DistanceGauge address={a.address} />
-                  {a.address && <p className="text-xs text-vapor/30 font-mono-tech mt-1 truncate" title={a.address}>{a.address}</p>}
-                </div>
+                    <p className="text-sm font-grotesk font-bold text-vapor mt-0.5 truncate">
+                      {ev.job ? ev.job.customer_name : ev.summary.replace(/^VDS\s*—\s*/, '').split('—')[0]?.trim()}
+                    </p>
+                    {ev.job && <p className="text-xs text-vapor/40 font-mono-tech truncate">{ev.job.service_label}</p>}
+                  </button>
+                ))}
               </div>
-              {isConsultationJob(a) && (
-                <div className="mb-3">
-                  <ConsultationStatusControl job={a} busy={consultBusy[a.id]} onChange={v => setConsultation(a.id, v)} />
-                </div>
-              )}
-              <div className="flex flex-wrap items-center gap-2">
-                <select
-                  value={a.status}
-                  disabled={busy[a.id]}
-                  onChange={e => changeStatus(a.id, e.target.value)}
-                  className={`text-xs font-mono-tech px-2 py-2 rounded-sm border bg-asphalt cursor-pointer whitespace-nowrap ${STATUS_BADGE[a.status] || 'text-vapor/50 border-vapor/10'}`}
-                >
-                  {STATUSES.map(s => <option key={s} value={s} className="bg-asphalt text-vapor">{STATUS_LABEL(s)}</option>)}
-                </select>
-                <select
-                  value={a.specialist_id || ''}
-                  disabled={busy[a.id]}
-                  onChange={e => reassign(a.id, e.target.value)}
-                  className="bg-asphalt border border-vapor/10 text-vapor text-xs font-mono-tech px-3 py-2 rounded-sm flex-1 min-w-[160px]"
-                >
-                  <option value="">— Unassigned —</option>
-                  {contractors.map(c => <option key={c.id} value={c.id}>{c.name}{a.specialist_id === c.id ? ' ✓' : ''}</option>)}
-                </select>
-                {confirmId === a.id ? (
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => setConfirmId(null)} disabled={busy[a.id]} className="text-xs font-mono-tech text-vapor/50 hover:text-vapor px-2 py-2">CANCEL</button>
-                    <button onClick={() => remove(a.id)} disabled={busy[a.id]} className="text-xs font-mono-tech text-red-400 border border-red-400/40 bg-red-400/10 hover:bg-red-400/20 px-3 py-2 rounded-sm">CONFIRM</button>
-                  </div>
-                ) : (
-                  <button onClick={() => setConfirmId(a.id)} disabled={busy[a.id]} className="text-vapor/50 hover:text-red-400 disabled:opacity-50 px-2 py-2"><Trash2 size={15} /></button>
-                )}
-              </div>
-              {a.job_status && <p className="text-[10px] text-vapor/40 font-mono-tech">{a.job_status.replace(/_/g, ' ')}</p>}
-            </ExpandableCard>
-          ))}
+            </div>
+          ) : (
+            <div className="glass-panel border border-vapor/10 rounded-sm p-8 text-center">
+              <p className="text-xs font-mono-tech text-vapor/40">
+                {selectedDate ? `No events on ${selectedDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}.` : 'Select a day to view events.'}
+              </p>
+            </div>
+          )}
         </div>
-      )}
+      </div>
+
       {adding && <AppointmentFormModal onClose={() => setAdding(false)} onSaved={createAppt} busy={addingBusy} />}
     </div>
   );
