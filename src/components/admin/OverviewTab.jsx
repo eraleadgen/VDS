@@ -1,22 +1,32 @@
-import { Users, CalendarRange, Clock, CheckCircle2, XCircle, DollarSign } from 'lucide-react';
+import { Users, CalendarRange, Clock, CheckCircle2, XCircle, DollarSign, ChevronRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
-function Stat({ icon: Icon, label, value }) {
+function Stat({ icon: Icon, label, value, onClick }) {
+  const Component = onClick ? 'button' : 'div';
   return (
-    <div className="glass-panel border border-vapor/10 rounded-sm p-4">
-      <Icon size={18} className="text-gold/60 mb-3" />
+    <Component
+      onClick={onClick}
+      className={`glass-panel border border-vapor/10 rounded-sm p-4 text-left w-full transition-all duration-200 ${onClick ? 'hover:border-gold/40 hover:bg-gold/[0.03] cursor-pointer group' : ''}`}
+    >
+      <div className="flex items-start justify-between">
+        <Icon size={18} className="text-gold/60 mb-3" />
+        {onClick && <ChevronRight size={14} className="text-vapor/30 group-hover:text-gold transition-colors" />}
+      </div>
       <p className="text-2xl font-grotesk font-bold text-vapor">{value}</p>
       <p className="text-xs font-mono-tech tracking-widest text-vapor/40 mt-1">{label}</p>
-    </div>
+    </Component>
   );
 }
 
-export default function OverviewTab({ metrics, loading }) {
+export default function OverviewTab({ metrics, loading, onNavigate }) {
   if (loading) {
     return <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-gold/20 border-t-gold rounded-full animate-spin" /></div>;
   }
   const m = metrics?.metrics || {};
   const data = (metrics?.jobs_by_contractor || []).map(j => ({ name: (j.name || '').split(' ')[0], jobs: j.jobs }));
+
+  const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+  const goJobs = (filter) => onNavigate?.('appointments', filter);
 
   return (
     <div className="space-y-4">
@@ -40,12 +50,12 @@ export default function OverviewTab({ metrics, loading }) {
 
       {/* Stat grid */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-        <Stat icon={Users} label="SPECIALISTS" value={m.total_contractors} />
-        <Stat icon={Users} label="ACTIVE" value={m.active_contractors} />
-        <Stat icon={Clock} label="TODAY'S JOBS" value={m.todays_jobs} />
-        <Stat icon={CalendarRange} label="UPCOMING" value={m.upcoming_jobs} />
-        <Stat icon={CheckCircle2} label="COMPLETED" value={m.completed_jobs} />
-        <Stat icon={XCircle} label="CANCELLED" value={m.cancelled_jobs} />
+        <Stat icon={Users} label="SPECIALISTS" value={m.total_contractors} onClick={onNavigate ? () => onNavigate('contractors') : undefined} />
+        <Stat icon={Users} label="ACTIVE" value={m.active_contractors} onClick={onNavigate ? () => onNavigate('contractors') : undefined} />
+        <Stat icon={Clock} label="TODAY'S JOBS" value={m.todays_jobs} onClick={onNavigate ? () => goJobs({ dateFilter: today }) : undefined} />
+        <Stat icon={CalendarRange} label="UPCOMING" value={m.upcoming_jobs} onClick={onNavigate ? () => goJobs({ statusFilter: 'appointment_scheduled' }) : undefined} />
+        <Stat icon={CheckCircle2} label="COMPLETED" value={m.completed_jobs} onClick={onNavigate ? () => goJobs({ statusFilter: 'completed' }) : undefined} />
+        <Stat icon={XCircle} label="CANCELLED" value={m.cancelled_jobs} onClick={onNavigate ? () => goJobs({ statusFilter: 'cancelled' }) : undefined} />
       </div>
 
       {/* Chart */}

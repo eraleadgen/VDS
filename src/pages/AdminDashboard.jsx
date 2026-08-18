@@ -27,7 +27,14 @@ export default function AdminDashboard() {
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [appointmentsFilter, setAppointmentsFilter] = useState({});
   const { hasFeature } = usePlanFeatures();
+
+  const handleNavigate = (newTab, filter) => {
+    setTab(newTab);
+    if (newTab === 'appointments' && filter) setAppointmentsFilter(filter);
+    else if (newTab !== 'overview') setAppointmentsFilter({});
+  };
 
   useEffect(() => {
     if (authChecked && (!user || user.role !== 'admin')) window.location.href = '/admin-login';
@@ -62,11 +69,11 @@ export default function AdminDashboard() {
   ].filter(Boolean);
 
   return (
-    <PortalShell title="Admin Dashboard" navItems={navItems} active={tab} onNavigate={setTab} userLabel={user?.email} onLogout={() => base44.auth.logout('/admin-login')}>
+    <PortalShell title="Admin Dashboard" navItems={navItems} active={tab} onNavigate={handleNavigate} userLabel={user?.email} onLogout={() => base44.auth.logout('/admin-login')}>
       <>
-          {tab === 'overview' && <OverviewTab metrics={metrics} loading={loading} />}
+          {tab === 'overview' && <OverviewTab metrics={metrics} loading={loading} onNavigate={handleNavigate} />}
           {tab === 'contractors' && <ContractorsTab />}
-          {tab === 'appointments' && <AppointmentsTab />}
+          {tab === 'appointments' && <AppointmentsTab initialStatusFilter={appointmentsFilter.statusFilter} initialDateFilter={appointmentsFilter.dateFilter} />}
           {tab === 'quotes' && <QuotesTab />}
           {tab === 'invoices' && <InvoicesTab />}
           {tab === 'journey' && <JourneyTab />}

@@ -37,12 +37,12 @@ const STATUS_BADGE = {
 const STATUSES = ['appointment_scheduled', 'rescheduled', 'in_progress', 'completed', 'cancelled'];
 const STATUS_LABEL = (s) => s ? s.replace(/_/g, ' ') : '';
 
-export default function AppointmentsTab() {
+export default function AppointmentsTab({ initialStatusFilter, initialDateFilter }) {
   const [jobs, setJobs] = useState([]);
   const [contractors, setContractors] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState('');
-  const [dateFilter, setDateFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState(initialStatusFilter || '');
+  const [dateFilter, setDateFilter] = useState(initialDateFilter || '');
   const [busy, setBusy] = useState({});
   const [adding, setAdding] = useState(false);
   const [addingBusy, setAddingBusy] = useState(false);
