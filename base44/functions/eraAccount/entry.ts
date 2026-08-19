@@ -51,6 +51,49 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, account: { ...account, ...allowed } });
     }
 
+    // Provisioned summary: EraAccount + the client's own BusinessConfig (by business_id)
+    // + resolved live-site URL. This is the single round-trip the era-portal shell uses to
+    // render all three tabs. On eraleadgen.com the BusinessConfigContext resolves to the
+    // era_systems tenant, NOT the client's — so the portal must fetch the client's config
+    // explicitly here rather than relying on the hostname-resolved context.
+    if (action === 'get_provisioned_summary') {
+      const account = await findMyAccount();
+      if (!account) return Response.json({ success: true, summary: null });
+      if (!account.business_id) {
+        return Response.json({ success: true, summary: { account, business: null, site_url: null, site_url_source: 'none' } });
+      }
+      const cfgs = await base44.asServiceRole.entities.BusinessConfig.filter({ business_id: account.business_id, is_active: true });
+      const cfg = cfgs && cfgs[0];
+      let site_url = null;
+      let site_url_source = 'none';
+      if (cfg) {
+        if (cfg.custom_domain && cfg.domain_status === 'verified') {
+          site_url = `https://${cfg.custom_domain}`;
+          site_url_source = 'custom_domain';
+        } else {
+          const sessions = await base44.asServiceRole.entities.OnboardingSession.filter({ business_id: account.business_id }).catch(() => []);
+          const sess = sessions && sessions[0];
+          if (sess && sess.subdomain) {
+            site_url = `https://${sess.subdomain}`;
+            site_url_source = 'subdomain';
+          }
+        }
+      }
+      const business = cfg ? {
+        business_name: cfg.business_name,
+        logo_url: cfg.logo_url || null,
+        custom_domain: cfg.custom_domain || null,
+        domain_status: cfg.domain_status || 'none',
+        email_mode: cfg.email_mode || 'shared',
+        email_domain_status: cfg.email_domain_status || 'shared',
+        business_phone: cfg.business_phone || null,
+        plan_tier: cfg.plan_tier || 'basic',
+        ad_management_enabled: !!cfg.ad_management_enabled,
+        subscription_status: cfg.subscription_status || 'active',
+      } : null;
+      return Response.json({ success: true, summary: { account, business, site_url, site_url_source } });
+    }
+
     return Response.json({ error: `Unknown action: ${action}` }, { status: 400 });
   } catch (error) {
     console.error('eraAccount error:', error.message);
