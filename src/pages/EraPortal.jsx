@@ -43,6 +43,13 @@ export default function EraPortal() {
     init();
   }, []);
 
+  const refreshSummary = async () => {
+    try {
+      const sum = await invoke({ action: 'get_provisioned_summary' });
+      if (sum.success) setSummary(sum.summary);
+    } catch (e) { /* keep stale summary on refresh failure */ }
+  };
+
   const handleCheckout = async (tier) => {
     setError("");
     // Iframe check: Stripe checkout doesn't work from within an iframe.
@@ -194,8 +201,8 @@ export default function EraPortal() {
       userLabel={account.email}
       onLogout={() => base44.auth.logout('/era-login')}
     >
-      {tab === 'plan' && <EraPortalPlanTab summary={summary} />}
-      {tab === 'billing' && <EraPortalBillingTab summary={summary} />}
+      {tab === 'plan' && <EraPortalPlanTab summary={summary} onNavigate={setTab} />}
+      {tab === 'billing' && <EraPortalBillingTab summary={summary} onRefresh={refreshSummary} />}
       {tab === 'connections' && <EraPortalConnectionsTab summary={summary} />}
     </PortalShell>
   );
