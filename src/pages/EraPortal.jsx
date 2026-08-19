@@ -43,11 +43,15 @@ export default function EraPortal() {
     init();
   }, []);
 
+  // Fetches the provisioned summary and updates parent state. Returns the fresh
+  // summary so callers (the billing tab's poll loop) can inspect the real state
+  // to confirm a webhook landed — not just trigger a blind refetch.
   const refreshSummary = async () => {
     try {
       const sum = await invoke({ action: 'get_provisioned_summary' });
-      if (sum.success) setSummary(sum.summary);
-    } catch (e) { /* keep stale summary on refresh failure */ }
+      if (sum.success) { setSummary(sum.summary); return sum.summary; }
+      return null;
+    } catch (e) { return null; }
   };
 
   const handleCheckout = async (tier) => {

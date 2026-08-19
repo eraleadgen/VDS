@@ -1,11 +1,12 @@
 // Era Portal — Billing tab.
 // Phase E3: upgrade/downgrade (Stripe subscription price swap w/ proration),
 // Ad Management add-on toggle, and Stripe Customer Portal link for invoices.
-// Flags only change on webhook confirmation — never on button click. The UI
-// shows a "pending confirmation" state after each action and re-fetches the
-// summary so the user sees the update once the webhook lands.
+// Flags only change on webhook confirmation — never on button click. After
+// each action the UI POLLS the summary (not a fixed delay) for a real window,
+// checking the actual tier/flag changed — the same confirm-don't-guess pattern
+// as the checkout race fix, since webhook delivery isn't instant or guaranteed.
 import { useState } from 'react';
-import { Loader2, ArrowRight, FileText, Sparkles, CheckCircle2 } from 'lucide-react';
+import { Loader2, ArrowRight, FileText, Sparkles, CheckCircle2, Clock } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
 const invokeBilling = (payload) => base44.functions.invoke('eraBilling', payload).then(r => r.data ?? r);
@@ -23,6 +24,7 @@ export default function EraPortalBillingTab({ summary, onRefresh }) {
   const [busy, setBusy] = useState(null); // 'upgrade' | 'downgrade' | 'ad' | 'portal'
   const [msg, setMsg] = useState('');
   const [err, setErr] = useState('');
+  const [polling, setPolling] = useState(false);
 
   const isLive = typeof window !== 'undefined' && window.location.hostname.includes('eraleadgen.com');
   const mode = isLive ? 'live' : 'test';
@@ -32,22 +34,48 @@ export default function EraPortalBillingTab({ summary, onRefresh }) {
     canceled: 'text-vapor/40', none: 'text-vapor/40',
   }[subStatus] || 'text-vapor/60';
 
-  const run = async (key, payload, successMsg) => {
+  // Poll the summary until `verify` passes or the window expires.
+  // Confirms the webhook actually landed the new state — never assumes timing.
+  const pollForConfirmation = (verify, label) => {
+    if (!onRefresh) return;
+    setPolling(true);
+    const intervalMs = 1500;
+    const maxPolls = 10; // ~15s window
+    let polls = 0;
+    const poll = async () => {
+      polls++;
+      const fresh = await onRefresh();
+      if (fresh && verify(fresh)) {
+        setPolling(false);
+        setMsg(`Confirmed — ${label} is now live.`);
+        return;
+      }
+      if (polls < maxPolls) {
+        setTimeout(poll, intervalMs);
+      } else {
+        setPolling(false);
+        setMsg(`Change submitted. Stripe is still confirming — refresh in a moment if your dashboard hasn't updated.`);
+      }
+    };
+    setTimeout(poll, intervalMs);
+  };
+
+  const run = async (key, payload, successMsg, verify, confirmLabel) => {
     setErr(''); setMsg(''); setBusy(key);
     try {
       const res = await invokeBilling({ ...payload, mode });
       const data = res.data || res;
       if (data.url) {
         window.location.href = data.url;
-        return; // redirecting
+        return; // redirecting to Stripe portal
       }
       if (data.success === false || data.error) {
         setErr(data.error || 'Action failed');
-      } else {
-        setMsg(data.message || successMsg);
-        // Re-fetch after a short delay so the webhook has time to land.
-        setTimeout(() => { onRefresh?.(); }, 3000);
+        return;
       }
+      setMsg(data.message || successMsg);
+      // Poll for the real state change — don't guess webhook timing.
+      if (verify) pollForConfirmation(verify, confirmLabel || 'change');
     } catch (e) {
       setErr(e.message || 'Action failed');
     } finally {
@@ -62,13 +90,25 @@ export default function EraPortalBillingTab({ summary, onRefresh }) {
       ? `Upgrade to Foundation? Your subscription will be prorated and your features unlock once Stripe confirms.`
       : `Downgrade to Basic? Your subscription will be prorated. Foundation features (member portal, specialist portal, automations) will retract once Stripe confirms.`;
     if (!window.confirm(confirmMsg)) return;
-    run(tier === 'basic' ? 'upgrade' : 'downgrade', { action: 'change_tier', tier: newTier }, `Plan change to ${label} submitted.`);
+    run(
+      tier === 'basic' ? 'upgrade' : 'downgrade',
+      { action: 'change_tier', tier: newTier },
+      `Plan change to ${label} submitted.`,
+      (fresh) => fresh?.account?.current_plan_tier === newTier,
+      `${label} plan`
+    );
   };
 
   const handleAdToggle = () => {
-    const action = adEnabled ? 'remove' : 'add';
+    const enable = !adEnabled;
     if (!window.confirm(`${adEnabled ? 'Remove' : 'Add'} Ad Management? This is a ${adEnabled ? 'prorated removal' : 'prorated $500/mo add-on'} and updates once Stripe confirms.`)) return;
-    run('ad', { action: 'toggle_ad_management', enable: !adEnabled }, `Ad Management ${action} submitted.`);
+    run(
+      'ad',
+      { action: 'toggle_ad_management', enable },
+      `Ad Management ${enable ? 'added' : 'removed'}.`,
+      (fresh) => !!fresh?.account?.ad_management_enabled === enable,
+      `Ad Management ${enable ? 'active' : 'removed'}`
+    );
   };
 
   const handlePortal = () => run('portal', { action: 'portal_session' }, 'Opening billing portal…');
@@ -96,7 +136,9 @@ export default function EraPortalBillingTab({ summary, onRefresh }) {
       )}
       {msg && !err && (
         <div className="p-3 rounded-sm bg-gold/10 border border-gold/20 text-gold text-xs font-mono-tech flex items-center gap-2">
-          <CheckCircle2 size={14} /> {msg}
+          {polling ? <Clock size={14} className="animate-pulse" /> : <CheckCircle2 size={14} />}
+          <span>{msg}</span>
+          {polling && <span className="text-gold/60">confirming…</span>}
         </div>
       )}
 
@@ -116,7 +158,7 @@ export default function EraPortalBillingTab({ summary, onRefresh }) {
             </div>
             <button
               onClick={handleTierChange}
-              disabled={!!busy}
+              disabled={!!busy || polling}
               className={`inline-flex items-center gap-2 px-4 py-2 text-xs font-mono-tech tracking-widest rounded-sm transition-colors shrink-0 ${
                 tier === 'basic'
                   ? 'bg-gold text-obsidian hover:bg-gold-light'
@@ -149,7 +191,7 @@ export default function EraPortalBillingTab({ summary, onRefresh }) {
           </div>
           <button
             onClick={handleAdToggle}
-            disabled={!!busy || tier === 'enterprise'}
+            disabled={!!busy || polling || tier === 'enterprise'}
             className={`inline-flex items-center gap-2 px-4 py-2 text-xs font-mono-tech tracking-widest rounded-sm transition-colors shrink-0 ${
               adEnabled
                 ? 'border border-vapor/20 text-vapor/70 hover:bg-vapor/10'
