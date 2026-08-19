@@ -18,7 +18,6 @@ import { handleEraSaaSEvent } from '../../shared/eraWebhook.ts';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
 
     const body = await req.text();
     const signature = req.headers.get('stripe-signature');
@@ -27,12 +26,38 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing signature' }, { status: 400 });
     }
 
-    // Webhook authentication: Stripe signature is verified here before any data access.
-    // This is the correct auth pattern for webhook endpoints (no user session available).
-    const webhookSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
-    const event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);
+    // Dual-secret webhook verification: try the live secret first, fall back to the
+    // test secret. This lets the same handler accept both live and test-mode webhook
+    // events, so test-mode billing flows can be exercised end-to-end without real
+    // charges (the mechanism planned back in Phase A). The Stripe API client is
+    // constructed with the key matching whichever secret verified, so subscription
+    // retrieves hit the correct account (live vs test).
+    const liveSecret = Deno.env.get('STRIPE_WEBHOOK_SECRET');
+    const testSecret = Deno.env.get('STRIPE_TEST_WEBHOOK_SECRET');
+    const verifier = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')); // key unused for verification
 
-    console.log('Stripe webhook received:', event.type);
+    let event;
+    let stripe;
+    let isTestMode = false;
+    try {
+      event = await verifier.webhooks.constructEventAsync(body, signature, liveSecret);
+      stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
+    } catch (liveErr) {
+      if (!testSecret) {
+        console.error('Stripe webhook live verification failed:', liveErr.message);
+        return Response.json({ error: 'Signature verification failed' }, { status: 400 });
+      }
+      try {
+        event = await verifier.webhooks.constructEventAsync(body, signature, testSecret);
+        stripe = new Stripe(Deno.env.get('STRIPE_TEST_SECRET_KEY'));
+        isTestMode = true;
+      } catch (testErr) {
+        console.error('Stripe webhook verification failed (live + test):', liveErr.message, '/', testErr.message);
+        return Response.json({ error: 'Signature verification failed' }, { status: 400 });
+      }
+    }
+
+    console.log('Stripe webhook received:', event.type, isTestMode ? '(test mode)' : '(live)');
 
     // Handle checkout session completed
     if (event.type === 'checkout.session.completed') {
