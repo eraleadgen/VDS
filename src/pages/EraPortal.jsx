@@ -129,9 +129,9 @@ export default function EraPortal() {
             <h2 className="text-xl font-bold mb-2">Basic</h2>
             <p className="text-muted-foreground text-sm mb-6">Everything you need to launch your service business.</p>
             <div className="mb-6">
-              <span className="text-4xl font-bold">$150</span>
+              <span className="text-4xl font-bold">$199</span>
               <span className="text-muted-foreground">/month</span>
-              <p className="text-sm text-muted-foreground mt-1">+ $500 one-time setup fee</p>
+              <p className="text-sm text-muted-foreground mt-1">+ $750 one-time setup fee</p>
             </div>
             <ul className="space-y-2 mb-8 text-sm flex-1">
               <li>✓ Member portal</li>
@@ -155,9 +155,9 @@ export default function EraPortal() {
             <h2 className="text-xl font-bold mb-2">Foundation</h2>
             <p className="text-muted-foreground text-sm mb-6">Advanced tools to grow and scale.</p>
             <div className="mb-6">
-              <span className="text-4xl font-bold">$400</span>
+              <span className="text-4xl font-bold">$499</span>
               <span className="text-muted-foreground">/month</span>
-              <p className="text-sm text-muted-foreground mt-1">+ $900 one-time setup fee</p>
+              <p className="text-sm text-muted-foreground mt-1">+ $1,200 one-time setup fee</p>
             </div>
             <ul className="space-y-2 mb-8 text-sm flex-1">
               <li>✓ Everything in Basic</li>
