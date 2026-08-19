@@ -23,7 +23,15 @@ const invoke = (payload) => base44.functions.invoke('scheduler', payload).then(r
 
 export default function AdminDashboard() {
   const { user, isLoadingAuth, authChecked } = useAuth();
-  const [tab, setTab] = useState('overview');
+  // Read the initial tab from ?tab= so the era-portal SSO handoff can deep-link
+  // directly to a specific tab (e.g. /admin?tab=settings). Absent → 'overview',
+  // so existing in-app navigation is unchanged.
+  const [tab, setTab] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    const t = params.get('tab');
+    const valid = ['overview','contractors','appointments','quotes','invoices','journey','partners','users','business','resources','analytics','messages','settings'];
+    return valid.includes(t) ? t : 'overview';
+  });
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
