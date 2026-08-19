@@ -298,13 +298,40 @@
           "type": "boolean",
           "default": true
         },
-        "review_requests_enabled": {
-          "type": "boolean",
-          "default": true
-        },
         "web_chat_enabled": {
           "type": "boolean",
           "default": true
+        }
+      }
+    },
+    "automation_settings": {
+      "type": "object",
+      "description": "Per-automation on/off toggles. All default to true (an automation is off only when explicitly set to false). Email automations are available on Basic+; SMS automations on Growth+. The tier gate (planFeatures: email_automations / sms_automations) is checked in addition to the toggle, so a toggle is inert when the tier doesn't permit the channel. Booking confirmations are NOT here \u2014 they are always-on within the channel tier (no per-message toggle).",
+      "properties": {
+        "welcome_email": {
+          "type": "boolean",
+          "default": true,
+          "description": "Welcome email to new members. Gated by email_automations (Basic+)."
+        },
+        "reminder_email": {
+          "type": "boolean",
+          "default": true,
+          "description": "24-hour and 1-hour appointment reminder emails. Gated by email_automations (Basic+). Also the fallback channel for the 1-hour reminder when SMS can't fire."
+        },
+        "review_request_email": {
+          "type": "boolean",
+          "default": true,
+          "description": "Post-detail review-request email. Gated by email_automations (Basic+). Fallback for review requests when SMS can't fire."
+        },
+        "reminder_sms": {
+          "type": "boolean",
+          "default": true,
+          "description": "1-hour appointment reminder SMS. Gated by sms_automations (Growth+). When off (or tier unavailable), the 1-hour reminder falls back to email."
+        },
+        "review_request_sms": {
+          "type": "boolean",
+          "default": true,
+          "description": "Post-detail review-request SMS. Gated by sms_automations (Growth+). When off (or tier unavailable), the review request falls back to email."
         }
       }
     },

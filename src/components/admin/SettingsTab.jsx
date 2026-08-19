@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Globe, Mail, Phone, Check, AlertCircle, Loader2, Copy, ExternalLink } from 'lucide-react';
 import BrandingSection from '@/components/admin/BrandingSection';
+import AutomationsSection from '@/components/admin/AutomationsSection';
 
 const invoke = (payload) => base44.functions.invoke('tenantSettings', payload).then((r) => r.data ?? r);
 
@@ -358,6 +359,9 @@ export default function SettingsTab() {
           </Button>
         </div>
       </section>
+
+      {/* ── AUTOMATIONS ── */}
+      <AutomationsSection settings={settings} onSaved={(r) => setSettings((s) => ({ ...s, ...r }))} />
     </div>
   );
 }

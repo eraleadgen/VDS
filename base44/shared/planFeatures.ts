@@ -6,9 +6,9 @@
 //
 // Feature matrix:
 //   Basic:      website, AI chat widget, core engines, booking, payments, admin dashboard,
-//               self-serve domain/email/phone
-//   Foundation: + customer member portal, specialist/employee portal, simple automations
-//   Growth:     + AI SMS agent, AI voice agent
+//               self-serve domain/email/phone, email automations (welcome, reminders, review requests)
+//   Foundation: + customer member portal, specialist/employee portal
+//   Growth:     + SMS automations (reminders, review requests), AI SMS agent, AI voice agent
 //   Enterprise: + partner/referral engine, advanced analytics & reporting
 //   Ad Management: paid add-on on any tier (flag = true), or included at Enterprise
 
@@ -23,11 +23,12 @@ const FEATURE_MIN_TIER: Record<string, string> = {
   payments: 'basic',
   admin_dashboard: 'basic',
   self_serve_domain: 'basic',
+  email_automations: 'basic',
   // Foundation+
   member_portal: 'foundation',
   specialist_portal: 'foundation',
-  simple_automations: 'foundation',
   // Growth+
+  sms_automations: 'growth',
   ai_sms_agent: 'growth',
   ai_voice_agent: 'growth',
   // Enterprise+

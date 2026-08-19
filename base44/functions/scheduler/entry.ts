@@ -20,6 +20,8 @@ import {
   adminUsers, adminGcalEvents,
 } from '../../shared/adminHandlers.ts';
 import { sendCareGuideEmail, guideKeyForService } from '../../shared/careGuideEmail.ts';
+import { loadBusinessContact } from '../../shared/businessContact.ts';
+import { emailAutomationAllowed, smsAutomationAllowed } from '../../shared/automationSettings.ts';
 
 // weekdayKey, serviceToSkill, loadConfig, inAvailWindow, overlapsBusy, apptStartMs, apptEndMs,
 // and autoAssign now live in base44/shared/autoAssign.ts (imported above).
@@ -469,23 +471,93 @@ async function sendTwilioSms(base44, to, body, customerName, messageType) {
   } catch (e) { console.error('sendMessage error:', e.message); }
 }
 
-// Send a review-request SMS, unless the customer already reviewed or a request was already sent.
+// Branded review-request email (Basic+ review_request_email path / SMS fallback).
+function buildReviewEmail(firstName, reviewUrl, contact) {
+  const { gold, obsidian, asphalt, vapor } = contact.theme;
+  const cta = reviewUrl
+    ? `<a href="${reviewUrl}" style="display:inline-block;background-color:${gold};color:${obsidian};font-size:15px;font-weight:700;text-decoration:none;padding:15px 32px;border-radius:6px;font-family:'Space Grotesk',sans-serif;">Leave a Review &rarr;</a>`
+    : '';
+  return `<!DOCTYPE html>
+<html lang="en" style="margin:0;padding:0;">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background-color:${obsidian};font-family:'Space Grotesk',sans-serif;color:${vapor};">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${obsidian};">
+<tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background-color:${asphalt};border-radius:14px;overflow:hidden;border:1px solid rgba(212,175,55,0.15);box-shadow:0 8px 30px rgba(0,0,0,0.5);">
+  <tr><td style="background-color:${obsidian};padding:22px 28px;border-bottom:2px solid ${gold};">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+      <td style="font-size:18px;font-weight:700;letter-spacing:3px;color:#FFFFFF;">${contact.businessNameHeader}</td>
+      <td align="right" style="font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;color:${gold};font-weight:700;text-transform:uppercase;">Review</td>
+    </tr></table>
+  </td></tr>
+  <tr><td style="padding:28px 28px 6px 28px;">
+    <p style="margin:0 0 6px 0;font-family:'Space Mono',monospace;font-size:12px;letter-spacing:2px;text-transform:uppercase;color:${gold};font-weight:700;">We'd love your feedback</p>
+    <h1 style="margin:0;font-size:24px;line-height:32px;color:${vapor};font-weight:700;">Hi ${firstName},</h1>
+  </td></tr>
+  <tr><td style="padding:14px 28px 0 28px;">
+    <p style="margin:0 0 16px 0;font-size:15px;line-height:25px;color:#CBD5E1;">Your detail is complete! We hope you love the results. Your feedback means the world to us — it takes just a minute and helps us keep delivering top-tier service.</p>
+  </td></tr>
+  ${cta ? `<tr><td style="padding:8px 28px 24px 28px;">${cta}</td></tr>` : ''}
+  <tr><td style="padding:20px 28px 8px 28px;">
+    <p style="margin:0;font-size:15px;line-height:25px;color:#CBD5E1;">Need anything else? Call or text us at <strong style="color:${gold};">${contact.phone}</strong>.</p>
+  </td></tr>
+  <tr><td style="background-color:${obsidian};padding:22px 28px;border-top:2px solid ${gold};">
+    <p style="margin:0 0 6px 0;font-size:15px;color:${vapor};font-weight:600;">&mdash; The ${contact.businessName} Team</p>
+    <p style="margin:0;font-family:'Space Mono',monospace;font-size:11px;color:#64748B;letter-spacing:0.5px;">&copy; ${new Date().getUTCFullYear()} ${contact.legalName.toUpperCase()}. ALL RIGHTS RESERVED.</p>
+  </td></tr>
+</table>
+</td></tr></table>
+</body></html>`;
+}
+
+// Send a review request — SMS (Growth+ with review_request_sms) or email (Basic+ with
+// review_request_email). SMS is preferred when available; email is the fallback so a
+// tenant with SMS off (or below Growth tier) can still request reviews. No channel sends
+// when both are disabled, in which case review_requested is NOT set so an admin can retry
+// after enabling a channel.
 async function requestReview(base44, data, cfg, job) {
   if (job.review_submitted) return { error: 'Customer has already submitted a review for this job.' };
   if (job.review_requested) return { error: 'A review request was already sent for this job.' };
+
+  const contact = await loadBusinessContact(base44, cfg.business_id);
+  const reviewUrl = (cfg.website_links && cfg.website_links.google_review_url) || '';
+  const first = (job.customer_name || '').split(' ')[0] || 'there';
+  let sentSms = false, sentEmail = false;
+
+  // SMS path (Growth+ with review_request_sms toggle)
+  if (smsAutomationAllowed(cfg, 'review_request_sms') && job.customer_phone) {
+    const msg = reviewUrl
+      ? `Hi ${first}, your ${contact.businessName} detail is complete! We'd love your feedback — please leave us a review: ${reviewUrl} Thanks for choosing ${contact.businessName}!`
+      : `Hi ${first}, your ${contact.businessName} detail is complete! We'd love your feedback — please rate your experience by replying with a score from 1-5. Thanks for choosing ${contact.businessName}!`;
+    await sendTwilioSms(base44, job.customer_phone, msg, job.customer_name, 'review_request');
+    sentSms = true;
+  }
+
+  // Email path (Basic+ with review_request_email toggle) — fallback when SMS can't fire
+  if (!sentSms && emailAutomationAllowed(cfg, 'review_request_email') && job.customer_email) {
+    try {
+      const html = buildReviewEmail(first, reviewUrl, contact);
+      await base44.asServiceRole.integrations.Core.SendEmail({
+        to: job.customer_email,
+        subject: `How was your ${contact.businessName} detail?`,
+        body: html,
+        from_name: contact.businessName,
+      });
+      sentEmail = true;
+    } catch (e) { console.error('review request email failed:', e.message); }
+  }
+
+  if (!sentSms && !sentEmail) {
+    return { error: 'Review request not sent — no enabled channel. Enable review-request email or SMS in Settings (SMS requires Growth tier).' };
+  }
+
   await base44.asServiceRole.entities.Job.update(job.id, { review_requested: true });
   // Sync the review flag to the linked Appointment mirror (deprecated — admin portal compat).
   try {
     const linked = await base44.asServiceRole.entities.Appointment.filter({ job_id: job.id });
     if (linked && linked.length) await base44.asServiceRole.entities.Appointment.update(linked[0].id, { review_requested: true });
   } catch (e) { console.error('Appointment mirror sync error:', e.message); }
-  const first = (job.customer_name || '').split(' ')[0] || 'there';
-  const reviewUrl = (cfg && cfg.website_links && cfg.website_links.google_review_url) || '';
-  const msg = reviewUrl
-    ? `Hi ${first}, your VDS detail is complete! We'd love your feedback — please take a moment to leave us a review: ${reviewUrl} Thanks for choosing VDS Mobile!`
-    : `Hi ${first}, your VDS detail is complete! We'd love your feedback — please rate your experience by replying with a score from 1-5. Thanks for choosing VDS Mobile!`;
-  await sendTwilioSms(base44, job.customer_phone, msg, job.customer_name, 'review_request');
-  return { success: true };
+  return { success: true, channel: sentSms ? 'sms' : 'email' };
 }
 
 // ── Phase 6: Auto-create an Invoice when a job reaches 'invoice_complete' ──

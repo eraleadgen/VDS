@@ -10,7 +10,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.39';
 import { jobStartMs } from '../../shared/timezone.ts';
 import { requireAdminOrSchedulerToken } from '../../shared/authGate.ts';
 import { loadBusinessContact } from '../../shared/businessContact.ts';
-import { hasFeature } from '../../shared/planFeatures.ts';
+import { emailAutomationAllowed, smsAutomationAllowed } from '../../shared/automationSettings.ts';
 
 const FONT = "'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 const MONO = "'Space Mono','Courier New',monospace";
@@ -109,11 +109,8 @@ Deno.serve(async (req) => {
     // Load business config for timezone + live contact info (phone/email/website).
     const contact = await loadBusinessContact(base44);
     const businessId = (contact.cfg && contact.cfg.business_id) || 'vds';
-    if (!hasFeature(contact.cfg?.plan_tier || 'basic', 'simple_automations')) {
-      console.log('Appointment reminders skipped — simple_automations not enabled for tenant');
-      return Response.json({ skipped: true, reason: 'feature_not_enabled' });
-    }
-    const tz = (contact.cfg && contact.cfg.timezone) || 'America/New_York';
+    const cfg = contact.cfg;
+    const tz = (cfg && cfg.timezone) || 'America/New_York';
 
     // Phase 8: read from the Job entity (source of truth). Fetch all recent jobs and
     // filter for upcoming confirmed statuses client-side (filter() takes exact matches).
@@ -130,9 +127,9 @@ Deno.serve(async (req) => {
       // Skip past appointments
       if (msUntilStart <= 0) { skipped++; continue; }
 
-      // 24h email reminder: send if between 1h and 24h away and not yet sent
+      // 24h email reminder: send if between 1h and 24h away and not yet sent (Basic+ with reminder_email toggle)
       if (msUntilStart > WINDOW_1H && msUntilStart <= WINDOW_24H && !job.reminder_24h_email_sent) {
-        if (job.customer_email) {
+        if (emailAutomationAllowed(cfg, 'reminder_email') && job.customer_email) {
           try {
             const firstName = (job.customer_name || '').split(' ')[0] || 'there';
             const html = buildReminderEmail(firstName, job, contact);
@@ -148,20 +145,23 @@ Deno.serve(async (req) => {
         }
       }
 
-      // 1h reminder: send if within 1h and not yet sent (SMS if consented, email otherwise)
+      // 1h reminder: send if within 1h and not yet sent.
+      // SMS first (Growth+ with reminder_sms toggle + consent); falls back to email
+      // (Basic+ with reminder_email toggle) whenever SMS can't fire — so turning
+      // reminder_sms off routes the reminder to email, never into the void.
       if (msUntilStart > 0 && msUntilStart <= WINDOW_1H && !job.reminder_1h_sent) {
         const firstName = (job.customer_name || '').split(' ')[0] || 'there';
-        // SMS consent given → send via SMS
-        if (job.sms_consent !== false && job.customer_phone) {
+        let sent1h = false;
+        if (smsAutomationAllowed(cfg, 'reminder_sms') && job.sms_consent !== false && job.customer_phone) {
           const msg = `Hi ${firstName}, your ${contact.businessName} detailing appointment starts in about 1 hour at ${job.appointment_time}.${job.address ? ' Service address: ' + job.address : ''} Please ensure your vehicle is accessible. Questions? Call/text ${contact.phone}. — ${contact.businessName}`;
           const sent = await sendTwilioSms(base44, job.customer_phone, msg, job.customer_name, 'reminder_1h', businessId);
           if (sent) {
             await base44.asServiceRole.entities.Job.update(job.id, { reminder_1h_sent: true });
             smsSent++;
+            sent1h = true;
           }
         }
-        // No SMS consent → send 1h reminder via email instead
-        else if (job.sms_consent === false && job.customer_email) {
+        if (!sent1h && emailAutomationAllowed(cfg, 'reminder_email') && job.customer_email) {
           try {
             const html = buildReminderEmail(firstName, job, contact);
             await base44.asServiceRole.integrations.Core.SendEmail({

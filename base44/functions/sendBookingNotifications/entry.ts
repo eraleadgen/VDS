@@ -8,6 +8,7 @@ import { sendCustomerEmail } from '../../shared/customerEmail.ts';
 import { loadBusinessContact } from '../../shared/businessContact.ts';
 import { getInternalBusinessId } from '../../shared/tenantContext.ts';
 import { checkFeature } from '../../shared/planFeatures.ts';
+import { emailAutomationsEnabled, smsAutomationsEnabled } from '../../shared/automationSettings.ts';
 
 const FONT = "'Space Grotesk','Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 const MONO = "'Space Mono','Courier New',monospace";
@@ -154,8 +155,12 @@ Deno.serve(async (req) => {
     if (!apptId) return Response.json({ error: 'appointment_id is required.' }, { status: 400 });
 
     const businessId = getInternalBusinessId(body);
-    const fc = await checkFeature(base44, businessId, 'simple_automations');
-    if (!fc.ok) return Response.json({ error: 'Automated notifications are not available on your current plan.' }, { status: 403 });
+    // Booking confirmations are always-on within their channel tier (no per-toggle):
+    // email confirmations on Basic+, SMS confirmations on Growth+. The internal booking
+    // notification is operational and always sends. Load cfg once via checkFeature.
+    const fc = await checkFeature(base44, businessId, 'email_automations');
+    if (!fc.cfg) return Response.json({ error: 'Business configuration not found.' }, { status: 404 });
+    const cfg = fc.cfg;
 
     const appt = await base44.asServiceRole.entities.Appointment.get(apptId);
     if (!appt) return Response.json({ error: 'Appointment not found.' }, { status: 404 });
@@ -168,16 +173,16 @@ Deno.serve(async (req) => {
     const contact = await loadBusinessContact(base44, businessId);
     const results = { sms: false, email: false, internal: false };
 
-    // 1. Customer SMS confirmation (only if SMS consent given; otherwise email confirmation below suffices)
-    if (appt.customer_phone && appt.sms_consent !== false) {
+    // 1. Customer SMS confirmation (Growth+ tier + SMS consent; otherwise email confirmation below suffices)
+    if (smsAutomationsEnabled(cfg) && appt.customer_phone && appt.sms_consent !== false) {
       const msg = `Hi ${firstName}, your ${contact.businessName} appointment is confirmed for ${appt.preferred_date} at ${appt.preferred_time}. Service: ${appt.service_label || 'Detailing'}. We'll come to you${appt.service_address ? ' at ' + appt.service_address : ''}. Questions? Call/text ${contact.phone}. — ${contact.businessName}`;
       results.sms = await sendTwilioSms(base44, appt.customer_phone, msg, appt.customer_name, 'booking_confirmation');
     }
 
-    // 2. Customer email confirmation — hybrid delivery: registered recipients go through
-    //    the platform's SendEmail, guests go through the external ESP (Resend) so a
-    //    non-member booker actually receives their confirmation independent of Twilio SMS.
-    if (appt.customer_email) {
+    // 2. Customer email confirmation (Basic+ tier) — hybrid delivery: registered recipients
+    //    go through the platform's SendEmail, guests go through the external ESP (Resend) so
+    //    a non-member booker actually receives their confirmation independent of Twilio SMS.
+    if (emailAutomationsEnabled(cfg) && appt.customer_email) {
       try {
         const html = buildCustomerEmail(firstName, appt, contact);
         const r = await sendCustomerEmail(base44, {

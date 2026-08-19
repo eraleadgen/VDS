@@ -55,6 +55,7 @@ Deno.serve(async (req) => {
         tagline: cfg.tagline || '',
         logo_url: cfg.logo_url || '',
         brand_colors: cfg.brand_colors || {},
+        automation_settings: cfg.automation_settings || {},
       });
     }
 
@@ -267,6 +268,18 @@ Deno.serve(async (req) => {
         email_domain_status: 'shared',
       });
       return Response.json({ success: true, email_mode: 'shared' });
+    }
+
+    // ── update_automations: save email/SMS automation toggles ───────────
+    if (action === 'update_automations') {
+      const { settings } = body;
+      if (!settings || typeof settings !== 'object') return Response.json({ error: 'settings object is required.' }, { status: 400 });
+      const clean = {};
+      for (const k of ['welcome_email', 'reminder_email', 'review_request_email', 'reminder_sms', 'review_request_sms']) {
+        if (typeof settings[k] === 'boolean') clean[k] = settings[k];
+      }
+      await base44.asServiceRole.entities.BusinessConfig.update(cfg.id, { automation_settings: clean });
+      return Response.json({ success: true, automation_settings: clean });
     }
 
     return Response.json({ error: `Unknown action: ${action}` }, { status: 400 });
