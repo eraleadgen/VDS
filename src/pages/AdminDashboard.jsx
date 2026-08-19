@@ -18,6 +18,7 @@ import BusinessDevTab from '@/components/admin/BusinessDevTab';
 import ResourceCenter from '@/components/shared/ResourceCenter';
 import SettingsTab from '@/components/admin/SettingsTab';
 import { usePlanFeatures } from '@/lib/usePlanFeatures';
+import { isPreviewMode } from '@/lib/previewMode';
 
 const invoke = (payload) => base44.functions.invoke('scheduler', payload).then(r => r.data ?? r);
 
@@ -45,6 +46,7 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
+    if (isPreviewMode()) return; // builder preview: render the shell without a session
     if (authChecked && (!user || user.role !== 'admin')) window.location.href = '/admin-login';
   }, [authChecked, user]);
 
