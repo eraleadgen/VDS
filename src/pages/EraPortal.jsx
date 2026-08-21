@@ -21,6 +21,13 @@ export default function EraPortal() {
   useEffect(() => {
     const init = async () => {
       try {
+        // ERA staff (allowlisted emails / EraStaff records) never see the paywall —
+        // they belong at the cross-tenant ERA Admin Portal, not here. Check in parallel
+        // with the account load so staff are redirected without waiting on billing.
+        base44.functions.invoke('getEraStaffConsole', {})
+          .then(() => { window.location.replace('/era-admin'); })
+          .catch(() => {});
+
         const params = new URLSearchParams(window.location.search);
         const needsInit = params.get('init') === '1';
         // For Google OAuth users landing with ?init=1, create the EraAccount on first load.
