@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
           {
             type: 'CNAME',
             host: cleanDomain,
-            value: `${businessId}.erasystems.com`,
+            value: 'eraleadgen.com',
             description: 'Points your domain to your ERA Systems site.',
           },
         ],
@@ -167,7 +167,25 @@ Deno.serve(async (req) => {
         metadata: { desired_domain: desired_domain.trim(), notes: notes || '', business_name: cfg.business_name },
       });
 
-      return Response.json({ success: true, message: 'Domain purchase request submitted. Our team will contact you within 1-2 business days.' });
+      // Email the request to ERA Systems support (main contact channel).
+      try {
+        await base44.asServiceRole.integrations.Core.SendEmail({
+          to: 'support@eraleadgen.com',
+          subject: `Domain purchase request — ${cfg.business_name || businessId}`,
+          body: `A tenant requested help purchasing a new domain.
+
+Business: ${cfg.business_name || '(unknown)'} (tenant: ${businessId})
+Admin email: ${me.email || '(unknown)'}
+Desired domain: ${desired_domain.trim()}
+Notes: ${notes || '(none)'}
+
+— Sent from the ERA Systems admin dashboard (Custom Domain section)`,
+        });
+      } catch (e) {
+        console.error('Support email for domain purchase failed:', e.message);
+      }
+
+      return Response.json({ success: true, message: 'Request submitted. Our team will contact you at support@eraleadgen.com within 1-2 business days.' });
     }
 
     // ── init_email_custom: create Resend domain ─────────────────────────

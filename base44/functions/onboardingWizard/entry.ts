@@ -45,6 +45,30 @@ async function uniqueSlug(base44, base) {
   }
 }
 
+// Temp website domain: <legal-business-name-slug>.eraleadgen.com
+// Used until the tenant connects a custom domain. Slug derived from the legal
+// business name (falls back to brand business name), uniqueness-checked against
+// existing TenantMapping hostnames so two same-named tenants never collide.
+function tempSubdomainSlug(data, businessId) {
+  const b = (data && data.business_basics) || {};
+  const name = b.legal_name || b.business_name || businessId;
+  return slugify(name);
+}
+
+async function uniqueTempDomain(base44, data, businessId) {
+  const base = tempSubdomainSlug(data, businessId);
+  let candidate = base;
+  let suffix = 1;
+  while (true) {
+    const host = `${candidate}.eraleadgen.com`;
+    const mappings = await base44.asServiceRole.entities.TenantMapping.filter({ hostname: host }).catch(() => []);
+    if (!mappings || !mappings.length) return host;
+    if (mappings[0].business_id === businessId) return host; // idempotent re-provision
+    suffix++;
+    candidate = `${base}-${suffix}`;
+  }
+}
+
 // ── Default wizard_data scaffold ───────────────────────────────────────
 // Pre-fills sensible defaults so the wizard starts with a valid (if minimal) config.
 function defaultWizardData(planTier) {
@@ -144,11 +168,12 @@ function defaultWizardData(planTier) {
 }
 
 // ── Build BusinessConfig from wizard_data ─────────────────────────────
-function buildBusinessConfig(businessId, planTier, data) {
+function buildBusinessConfig(businessId, planTier, data, tempDomain) {
   const b = data.business_basics || {};
   const br = data.branding || {};
   const sc = data.service_catalog || {};
   const ts = data.team_scheduling || {};
+  const site = tempDomain || `${businessId}.eraleadgen.com`;
 
   // vehicle_types (legacy) derived from vehicle_classifications
   const vehicleTypes = (sc.vehicle_classifications || []).map((v) => ({ key: v.key, label: v.label }));
@@ -194,9 +219,9 @@ function buildBusinessConfig(businessId, planTier, data) {
     technicians: ts.technicians || [],
     referral_program: { enabled: false, credit_amount: 0, incentives: {} },
     website_links: {
-      booking_url: `https://${businessId}.erasystems.com/book`,
-      gold_signup_url: sc.offer_memberships ? `https://${businessId}.erasystems.com/membership-signup` : '',
-      gallery_url: `https://${businessId}.erasystems.com/gallery`,
+      booking_url: `https://${site}/book`,
+      gold_signup_url: sc.offer_memberships ? `https://${site}/membership-signup` : '',
+      gallery_url: `https://${site}/gallery`,
       google_review_url: '',
     },
     social_links: {},
@@ -358,16 +383,18 @@ export default async function(req: Request): Promise<Response> {
       const planTier = session.plan_tier;
       const data = session.wizard_data || {};
 
+      // Temp website domain: <legal-name-slug>.eraleadgen.com (until a custom domain is connected).
+      const subdomain = await uniqueTempDomain(base44, data, businessId);
+
       // 1. Create BusinessConfig (idempotent — skip if already exists).
       const existingConfigs = await base44.asServiceRole.entities.BusinessConfig.filter({ business_id: businessId }).catch(() => []);
       let config = existingConfigs && existingConfigs[0];
       if (!config) {
-        const configPayload = buildBusinessConfig(businessId, planTier, data);
+        const configPayload = buildBusinessConfig(businessId, planTier, data, subdomain);
         config = await base44.asServiceRole.entities.BusinessConfig.create(configPayload);
       }
 
-      // 2. Create TenantMapping (subdomain → business_id), idempotent.
-      const subdomain = `${businessId}.erasystems.com`;
+      // 2. Create TenantMapping (temp subdomain → business_id), idempotent.
       const existingMappings = await base44.asServiceRole.entities.TenantMapping.filter({ business_id: businessId, hostname: subdomain }).catch(() => []);
       if (!existingMappings || !existingMappings.length) {
         await base44.asServiceRole.entities.TenantMapping.create({

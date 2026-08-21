@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Globe, Check, AlertCircle, Loader2, Copy, ExternalLink } from 'lucide-react';
+import { Globe, Check, AlertCircle, Loader2, Copy } from 'lucide-react';
 
 const invoke = (payload) => base44.functions.invoke('tenantSettings', payload).then((r) => r.data ?? r);
 
@@ -30,7 +30,7 @@ export default function DomainSection() {
         if (r.domain_status === 'pending' && r.custom_domain && r.domain_verification_token) {
           setDomainRecords([
             { type: 'TXT', host: `_era-verify.${r.custom_domain}`, value: r.domain_verification_token, description: 'Verification record' },
-            { type: 'CNAME', host: r.custom_domain, value: `${r.business_name ? '' : ''}erasystems.com`, description: 'Points to ERA Systems' },
+            { type: 'CNAME', host: r.custom_domain, value: 'eraleadgen.com', description: 'Points to ERA Systems' },
           ]);
         }
       }
@@ -111,7 +111,7 @@ export default function DomainSection() {
 
           {showPurchaseForm && (
             <div className="mt-4 pt-4 border-t border-vapor/10 space-y-3">
-              <p className="text-vapor/50 text-sm">Tell us the domain you'd like and our team will handle the purchase and setup for you.</p>
+              <p className="text-vapor/50 text-sm">Tell us the domain you'd like and our team will handle the purchase and setup for you. Requests go to <span className="text-gold/80">support@eraleadgen.com</span>.</p>
               <Input value={desiredDomain} onChange={(e) => setDesiredDomain(e.target.value)} placeholder="mybusiness.com" className="bg-asphalt border-vapor/15 text-vapor" />
               <Textarea value={purchaseNotes} onChange={(e) => setPurchaseNotes(e.target.value)} placeholder="Any notes (optional)..." className="bg-asphalt border-vapor/15 text-vapor" rows={2} />
               <Button onClick={requestPurchase} disabled={saving === 'purchase' || !desiredDomain.trim()} variant="outline" className="border-gold/40 text-gold hover:bg-gold/10">
@@ -150,9 +150,6 @@ export default function DomainSection() {
               {domainVerifying ? <Loader2 size={16} className="animate-spin" /> : 'Verify Now'}
             </Button>
             <button onClick={() => setDomainRecords(null)} className="text-vapor/40 hover:text-vapor text-sm">← Back</button>
-            <a href="https://dns.google/" target="_blank" rel="noopener noreferrer" className="ml-auto text-vapor/30 hover:text-gold text-xs flex items-center gap-1">
-              Check DNS <ExternalLink size={12} />
-            </a>
           </div>
           {settings?.domain_status === 'verified' && (
             <p className="text-green-400 text-sm flex items-center gap-1.5"><Check size={14} /> Your domain is verified and active.</p>

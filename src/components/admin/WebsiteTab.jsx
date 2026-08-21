@@ -1,16 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Send, Loader2, Sparkles, ExternalLink, Check, Upload, Monitor, Smartphone } from 'lucide-react';
+import { Send, Loader2, Sparkles, ExternalLink, Check, Upload, Monitor, Smartphone, Info, LifeBuoy, X } from 'lucide-react';
 import DomainSection from '@/components/admin/DomainSection';
 
 const GREETING = "Hi! I'm your website design assistant. Tell me what you'd like to change about the customer-facing site — tagline, brand colors, FAQ, SEO, the concierge persona, featured services, and more. Changes stage in the preview on the right; click Publish when you're happy.";
-
-const SUGGESTIONS = [
-  "Make the brand colors cooler — a deep navy and silver",
-  "Update the tagline to 'Atlanta's Premier Mobile Detailing Concierge'",
-  "Add a FAQ entry about how long a ceramic coating lasts",
-  "Make Valerie's greeting more warm and conversational",
-];
 
 // Deep-merge a patch into a base config (objects merge, arrays/scalars replace).
 // Mirrors the backend deepMerge so the preview matches what Publish will commit.
@@ -35,6 +28,9 @@ export default function WebsiteTab() {
   const [baseConfig, setBaseConfig] = useState(null);
   const [pending, setPending] = useState({});
   const [device, setDevice] = useState('desktop');
+  const [showHelp, setShowHelp] = useState(false);
+  const [helpMessage, setHelpMessage] = useState('');
+  const [sendingHelp, setSendingHelp] = useState(false);
   const scrollRef = useRef(null);
   const iframeRef = useRef(null);
 
@@ -121,6 +117,24 @@ export default function WebsiteTab() {
     setMessages((m) => [...m, { role: 'assistant', content: 'Pending changes discarded. The preview is back to the live site.' }]);
   };
 
+  const sendHelp = async () => {
+    const text = helpMessage.trim();
+    if (!text || sendingHelp) return;
+    setSendingHelp(true);
+    try {
+      const r = await base44.functions.invoke('supportContact', { source: 'Website Designer', subject: 'Website Designer Help', message: text });
+      const res = r?.data ?? r;
+      if (res.error) throw new Error(res.error);
+      setMessages((m) => [...m, { role: 'assistant', content: '✅ Your message was sent to support@eraleadgen.com. Our team will reply by email.' }]);
+      setShowHelp(false);
+      setHelpMessage('');
+    } catch (e) {
+      setMessages((m) => [...m, { role: 'assistant', content: `⚠️ Could not send: ${e.message}` }]);
+    } finally {
+      setSendingHelp(false);
+    }
+  };
+
   const previewUrl = `${window.location.origin}/?design_preview=1`;
 
   return (
@@ -139,11 +153,20 @@ export default function WebsiteTab() {
               DISCARD
             </button>
           )}
+          <button onClick={() => setShowHelp(true)} className="flex items-center gap-1.5 text-xs font-mono-tech tracking-widest text-vapor/60 hover:text-gold border border-vapor/15 hover:border-gold/40 px-3 py-2 rounded-sm transition-colors">
+            <LifeBuoy size={14} />
+            GET HELP
+          </button>
           <button onClick={publish} disabled={!changedFields.length || publishing} className="flex items-center gap-2 bg-gold text-obsidian text-xs font-mono-tech tracking-widest px-4 py-2 rounded-sm hover:bg-gold-light disabled:opacity-40 transition-colors">
             {publishing ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
             PUBLISH{changedFields.length > 0 ? ` (${changedFields.length})` : ''}
           </button>
         </div>
+      </div>
+
+      <div className="flex items-center gap-2 text-xs bg-gold/5 border border-gold/20 rounded-sm px-3 py-2 text-gold/80 font-mono-tech">
+        <Info size={14} className="shrink-0" />
+        Changes appear in the preview instantly, but only go live on your site when you click PUBLISH.
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-4" style={{ height: 'calc(100vh - 200px)', minHeight: 420 }}>
@@ -182,13 +205,6 @@ export default function WebsiteTab() {
                 {loading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
               </button>
             </div>
-            <div className="flex gap-1.5 mt-2 flex-wrap">
-              {SUGGESTIONS.map((s) => (
-                <button key={s} onClick={() => send(s)} disabled={loading} className="text-[10px] text-vapor/45 hover:text-gold border border-vapor/10 hover:border-gold/30 rounded-sm px-2 py-1 font-grotesk transition-colors">
-                  {s}
-                </button>
-              ))}
-            </div>
           </div>
         </div>
 
@@ -218,6 +234,35 @@ export default function WebsiteTab() {
       </div>
 
       <DomainSection />
+
+      {showHelp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-obsidian/80 backdrop-blur-sm p-4">
+          <div className="glass-panel border border-gold/20 rounded-sm w-full max-w-md p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <LifeBuoy size={18} className="text-gold" />
+                <h3 className="font-grotesk text-lg text-vapor">Get Help</h3>
+              </div>
+              <button onClick={() => setShowHelp(false)} className="text-vapor/40 hover:text-vapor"><X size={18} /></button>
+            </div>
+            <p className="text-xs text-vapor/50 font-mono-tech">Send a message to our support team at <span className="text-gold/80">support@eraleadgen.com</span>. We'll reply by email.</p>
+            <textarea
+              value={helpMessage}
+              onChange={(e) => setHelpMessage(e.target.value)}
+              placeholder="Describe your question or issue…"
+              rows={5}
+              className="w-full bg-obsidian/50 border border-vapor/15 rounded-sm px-3 py-2 text-sm text-vapor font-grotesk focus:border-gold/40 outline-none placeholder:text-vapor/25 resize-none"
+            />
+            <div className="flex items-center justify-end gap-2">
+              <button onClick={() => setShowHelp(false)} className="text-xs font-mono-tech tracking-widest text-vapor/50 hover:text-vapor px-3 py-2">CANCEL</button>
+              <button onClick={sendHelp} disabled={!helpMessage.trim() || sendingHelp} className="flex items-center gap-2 bg-gold text-obsidian text-xs font-mono-tech tracking-widest px-4 py-2 rounded-sm hover:bg-gold-light disabled:opacity-40 transition-colors">
+                {sendingHelp ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+                SEND
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
