@@ -7,19 +7,27 @@ import EraWhoFor from '@/components/marketing/EraWhoFor';
 import EraPricing from '@/components/marketing/EraPricing';
 import EraCta from '@/components/marketing/EraCta';
 import EraFooter from '@/components/marketing/EraFooter';
+import EraLivingBackground from '@/components/marketing/EraLivingBackground';
+import EraCursorGlow from '@/components/marketing/EraCursorGlow';
+import EraScrollProgress from '@/components/marketing/EraScrollProgress';
 
 export default function EraHome() {
   return (
-    <div className="bg-[#060A09] min-h-screen">
+    <div className="bg-[#060A09] min-h-screen relative overflow-x-hidden">
+      <EraLivingBackground />
+      <EraCursorGlow />
+      <EraScrollProgress />
       <EraNav />
-      <EraHero />
-      <EraProof />
-      <EraPlatform />
-      <EraHowItWorks />
-      <EraWhoFor />
-      <EraPricing />
-      <EraCta />
-      <EraFooter />
+      <main className="relative z-10">
+        <EraHero />
+        <EraProof />
+        <EraPlatform />
+        <EraHowItWorks />
+        <EraWhoFor />
+        <EraPricing />
+        <EraCta />
+        <EraFooter />
+      </main>
     </div>
   );
 }

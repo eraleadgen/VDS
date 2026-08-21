@@ -3,7 +3,6 @@ import { ArrowRight } from 'lucide-react';
 import BrowserFrame from './BrowserFrame';
 import OverviewCapture from './OverviewCapture';
 import Reveal from './Reveal';
-import EraAnimatedBackground from './EraAnimatedBackground';
 
 const container = {
   hidden: {},
@@ -16,9 +15,9 @@ const item = {
 
 export default function EraHero() {
   return (
-    <section className="relative pt-32 pb-20 bg-[#060A09] overflow-hidden">
-      {/* Animated background: flowing glowing emerald lines on a dark gradient */}
-      <EraAnimatedBackground />
+    <section className="relative pt-32 pb-20 overflow-hidden">
+      {/* The living background (EraLivingBackground in EraHome) shows through the
+          transparent section background. */}
 
       <div className="relative max-w-[1200px] mx-auto px-6">
         <motion.div variants={container} initial="hidden" animate="show" className="max-w-[820px]">
