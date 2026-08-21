@@ -20,7 +20,6 @@ import SettingsTab from '@/components/admin/SettingsTab';
 import WebsiteTab from '@/components/admin/WebsiteTab';
 import { usePlanFeatures } from '@/lib/usePlanFeatures';
 import { isPreviewMode } from '@/lib/previewMode';
-import { DEMO_METRICS } from '@/lib/demoAnalytics';
 
 const invoke = (payload) => base44.functions.invoke('scheduler', payload).then(r => r.data ?? r);
 
@@ -60,7 +59,7 @@ export default function AdminDashboard() {
   }, []);
 
   useEffect(() => {
-    if (isPreviewMode()) { setMetrics(DEMO_METRICS); setLoading(false); return; }
+    if (isPreviewMode()) { setLoading(false); return; }
     if (authChecked && user?.role === 'admin') loadMetrics();
   }, [authChecked, user, loadMetrics]);
 

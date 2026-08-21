@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { DollarSign } from 'lucide-react';
 import { isPreviewMode } from '@/lib/previewMode';
-import { DEMO_ANALYTICS } from '@/lib/demoAnalytics';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
 
 export default function AnalyticsTab() {
@@ -11,7 +10,7 @@ export default function AnalyticsTab() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (isPreviewMode()) { setData(DEMO_ANALYTICS); setLoading(false); return; }
+    if (isPreviewMode()) { setData({}); setLoading(false); return; }
     (async () => {
       try {
         const r = await base44.functions.invoke('getAdvancedAnalytics', {});
