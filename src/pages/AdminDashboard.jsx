@@ -19,6 +19,7 @@ import ResourceCenter from '@/components/shared/ResourceCenter';
 import SettingsTab from '@/components/admin/SettingsTab';
 import { usePlanFeatures } from '@/lib/usePlanFeatures';
 import { isPreviewMode } from '@/lib/previewMode';
+import { DEMO_METRICS } from '@/lib/demoAnalytics';
 
 const invoke = (payload) => base44.functions.invoke('scheduler', payload).then(r => r.data ?? r);
 
@@ -57,9 +58,12 @@ export default function AdminDashboard() {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { if (authChecked && user?.role === 'admin') loadMetrics(); }, [authChecked, user, loadMetrics]);
+  useEffect(() => {
+    if (isPreviewMode()) { setMetrics(DEMO_METRICS); setLoading(false); return; }
+    if (authChecked && user?.role === 'admin') loadMetrics();
+  }, [authChecked, user, loadMetrics]);
 
-  if (!authChecked || isLoadingAuth) return <div className="min-h-screen bg-obsidian flex items-center justify-center"><div className="w-8 h-8 border-2 border-gold/20 border-t-gold rounded-full animate-spin" /></div>;
+  if (!isPreviewMode() && (!authChecked || isLoadingAuth)) return <div className="min-h-screen bg-obsidian flex items-center justify-center"><div className="w-8 h-8 border-2 border-gold/20 border-t-gold rounded-full animate-spin" /></div>;
   if (error && !metrics) return <div className="min-h-screen bg-obsidian flex items-center justify-center p-6 text-center"><div><p className="text-red-400 text-sm font-mono-tech mb-4">{error}</p><Link to="/admin-login" className="text-gold text-xs font-mono-tech tracking-widest">← BACK TO LOGIN</Link></div></div>;
 
   const navItems = [
