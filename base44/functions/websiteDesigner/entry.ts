@@ -17,6 +17,10 @@ const ALLOWED: Record<string, string> = {
   featured_services: 'array',
 };
 const OBJECT_KEYS = new Set(['brand_colors', 'concierge', 'dictionary', 'social_links', 'website_links']);
+const ARRAY_ITEM_REQUIRED: Record<string, string[]> = {
+  seo: ['route', 'title'],
+  faq: ['question', 'answer'],
+};
 
 function typeOf(v: any): string {
   if (Array.isArray(v)) return 'array';
@@ -56,6 +60,11 @@ function sanitizeUpdates(updates: any, cfg: any): Record<string, any> {
       const arr = updates[k];
       if (!arr.every((it: any) => it && typeof it === 'object' && it.service_key && it.title)) continue;
     }
+    const reqFields = ARRAY_ITEM_REQUIRED[k];
+    if (reqFields && Array.isArray(updates[k])) {
+      const arr = updates[k];
+      if (!arr.every((it: any) => it && typeof it === 'object' && reqFields.every((r) => typeof it[r] === 'string' && it[r].trim()))) continue;
+    }
     const newVal: any = OBJECT_KEYS.has(k) ? deepMerge(cfg[k], updates[k]) : updates[k];
     // Drop no-ops (model echoed an unchanged field).
     if (deepEqual(newVal, cfg[k])) continue;
@@ -94,14 +103,33 @@ export default async function(req: Request): Promise<Response> {
     if (user.role !== 'admin') return Response.json({ error: 'Forbidden' }, { status: 403 });
 
     const body = await req.json();
-    const message = (body?.message || '').trim();
-    if (!message) return Response.json({ error: 'No message provided' }, { status: 400 });
-    const history: any[] = Array.isArray(body?.history) ? body.history.slice(-6) : [];
+    const action = body?.action || 'design';
 
     const businessId = (user.data as any)?.business_id || 'vds';
     const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ business_id: businessId, is_active: true });
     const cfg = configs && configs[0];
     if (!cfg) return Response.json({ error: 'No active BusinessConfig for this tenant' }, { status: 404 });
+
+    // get: return the current editable snapshot (base config for the preview)
+    if (action === 'get') {
+      return Response.json({ config: websiteSnapshot(cfg) });
+    }
+
+    // publish: commit a staged patch to the live config
+    if (action === 'publish') {
+      const updates = sanitizeUpdates(body?.updates || {}, cfg);
+      let applied: Record<string, any> = {};
+      if (Object.keys(updates).length) {
+        await base44.asServiceRole.entities.BusinessConfig.update(cfg.id, updates);
+        applied = updates;
+      }
+      return Response.json({ applied, changed_fields: Object.keys(applied), config: websiteSnapshot({ ...cfg, ...updates }) });
+    }
+
+    // action === 'design': propose visual/text changes via LLM (does NOT write)
+    const message = (body?.message || '').trim();
+    if (!message) return Response.json({ error: 'No message provided' }, { status: 400 });
+    const history: any[] = Array.isArray(body?.history) ? body.history.slice(-6) : [];
 
     const snapshot = websiteSnapshot(cfg);
 
@@ -123,6 +151,7 @@ You may modify ONLY these top-level fields:
 - featured_services (array of { service_key, title, subtitle, specs[], display_order })
 
 Rules:
+- You modify ONLY customer-facing visual and text content. You CANNOT change business logic, automations, scheduling rules, pricing rules, billing, plan tier, feature flags, user accounts, or any system/backend operations. If the admin asks for any of those, reply that you can only help with visual and text website changes and return updates={}.
 - "reply": a friendly 1-2 sentence confirmation of what you changed.
 - "updates": a PARTIAL patch — only the fields to change. For object fields, include only the nested keys to change (they are merged). For arrays, return the FULL new array.
 - CRITICAL: Always put the concrete new values in "updates". Never describe a change in "reply" without also including the actual value in "updates". If the request is subjective ("punchier", "warmer", "cooler"), choose a concrete value yourself and put it in "updates".
@@ -173,17 +202,12 @@ Rules:
     const reply = parsed?.reply || 'Done.';
     const updates = sanitizeUpdates(parsed?.updates || {}, cfg);
 
-    let applied: Record<string, any> = {};
-    if (Object.keys(updates).length) {
-      await base44.asServiceRole.entities.BusinessConfig.update(cfg.id, updates);
-      applied = updates;
-    }
-
+    // Design mode: do NOT write to the live config. Return the proposed patch only;
+    // the admin reviews it in the preview and publishes via the "publish" action.
     return Response.json({
       reply,
-      applied,
-      changed_fields: Object.keys(applied),
-      config: websiteSnapshot({ ...cfg, ...updates }),
+      proposed_updates: updates,
+      changed_fields: Object.keys(updates),
     });
   } catch (error: any) {
     return Response.json({ error: error.message }, { status: 500 });

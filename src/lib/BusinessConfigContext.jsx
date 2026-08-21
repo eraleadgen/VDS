@@ -48,6 +48,22 @@ export function BusinessConfigProvider({ children }) {
     return () => { mounted = false; };
   }, []);
 
+  // Design preview: when this page is loaded inside the admin Website Designer
+  // iframe (?design_preview=1), accept an override config posted from the parent
+  // so the preview reflects staged (unpublished) changes without writing to the DB.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('design_preview') !== '1') return;
+    window.parent?.postMessage({ type: 'designPreviewReady' }, '*');
+    const handler = (e) => {
+      if (e.data?.type === 'designPreviewConfig' && e.data.config) {
+        setConfig(e.data.config);
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, []);
+
   // Inject brand colors as CSS variables at runtime for white-label theming.
   // Drives BOTH the custom RGB tokens (--gold, --obsidian, etc. used by VDS components)
   // AND the HSL semantic tokens (--primary, --background, etc. used by shadcn/AuthLayout)
