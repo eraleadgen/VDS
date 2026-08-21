@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import BrowserFrame from './BrowserFrame';
 import OverviewCapture from './OverviewCapture';
 import Reveal from './Reveal';
+import EraAnimatedBackground from './EraAnimatedBackground';
 
 const container = {
   hidden: {},
@@ -16,22 +17,8 @@ const item = {
 export default function EraHero() {
   return (
     <section className="relative pt-32 pb-20 bg-[#060A09] overflow-hidden">
-      {/* Animated background: grid + floating emerald orbs */}
-      <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'linear-gradient(#10B981 1px, transparent 1px), linear-gradient(90deg, #10B981 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
-        <motion.div
-          className="absolute top-[-10%] left-[20%] w-[500px] h-[500px] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.12) 0%, transparent 70%)' }}
-          animate={{ x: [0, 40, 0], y: [0, 30, 0], opacity: [0.6, 0.9, 0.6] }}
-          transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          className="absolute top-[30%] right-[5%] w-[400px] h-[400px] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(52,211,153,0.08) 0%, transparent 70%)' }}
-          animate={{ x: [0, -30, 0], y: [0, 40, 0], opacity: [0.5, 0.8, 0.5] }}
-          transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-        />
-      </div>
+      {/* Animated background: flowing glowing emerald lines on a dark gradient */}
+      <EraAnimatedBackground />
 
       <div className="relative max-w-[1200px] mx-auto px-6">
         <motion.div variants={container} initial="hidden" animate="show" className="max-w-[820px]">

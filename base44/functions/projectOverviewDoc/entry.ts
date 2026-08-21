@@ -1,11 +1,11 @@
-// ERA Core 1.0 + VDS Mobile — Project Overview & Technical Architecture document.
+// ERA Core v2.0 + VDS Mobile — Project Overview & Technical Architecture document.
 // Admin-gated download. Generated server-side so the full architecture write-up is never
 // shipped in the public client bundle. Author/owner: Noah Grove.
 //
 // POST /functions/projectOverviewDoc
 // Admin-gated — requires an authenticated admin session.
 
-export const DOC_FILENAME = 'ERA-Core-1.0-VDS-Mobile-Project-Overview.html';
+export const DOC_FILENAME = 'ERA-Core-2.0-VDS-Mobile-Project-Overview.html';
 
 function buildDocHtml() {
   return `<!DOCTYPE html>
@@ -13,7 +13,7 @@ function buildDocHtml() {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ERA Core 1.0 + VDS Mobile — Project Overview &amp; Technical Architecture</title>
+<title>ERA Core v2.0 + VDS Mobile — Project Overview &amp; Technical Architecture</title>
 <style>
   :root { --gold:#D4AF37; --gold-light:#F5E17A; --obsidian:#0A0B0D; --asphalt:#14161A; --vapor:#E2E8F0; --muted:#94A3B8; }
   * { box-sizing:border-box; }
@@ -88,7 +88,7 @@ function buildDocHtml() {
 <body>
 <header>
   <div class="brand">ERA SYSTEMS LLC <span class="sep">·</span> PROJECT ARCHIVE</div>
-  <h1 class="title">ERA Core 1.0 + VDS Mobile<br>Project Overview &amp; Technical Architecture</h1>
+  <h1 class="title">ERA Core v2.0 + VDS Mobile<br>Project Overview &amp; Technical Architecture</h1>
   <p class="subtitle">An in-depth record of the modular, event-driven business operating system and its first production vertical — the mobile auto-detailing platform VDS Mobile — including how the two layers connect and communicate.</p>
   <div class="author">Authored &amp; Built by <span>Noah Grove &amp; Shane Muenkel</span> — Owners of ERA &amp; VDS</div>
   <div class="meta">VERSION 1.1 &nbsp;·&nbsp; AUGUST 2026 &nbsp;·&nbsp; CONFIDENTIAL — INTERNAL PROJECT RECORD</div>
@@ -101,7 +101,7 @@ function buildDocHtml() {
       <li>Project Mission &amp; Scope</li>
       <li>Why ERA Core Was Built</li>
       <li>How ERA Core Was Built</li>
-      <li>What Is ERA Core 1.0?</li>
+      <li>What Is ERA Core v2.0?</li>
       <li>What Is VDS Mobile?</li>
       <li>How ERA Core &amp; VDS Mobile Connect &amp; Communicate</li>
       <li>Tier Pricing &amp; Feature Gating</li>
@@ -119,7 +119,7 @@ function buildDocHtml() {
   </div>
 
   <h2>1 · Project Mission &amp; Scope</h2>
-  <p>ERA Core 1.0 is a <strong>modular, event-driven business operating system</strong> for service-based companies, and <strong>VDS Mobile</strong> is its first production deployment — a mobile auto-detailing business operating out of metro Atlanta, GA. The project's mission was to build a single platform that could run one service business end-to-end <em>and</em> serve as a reusable foundation so future verticals (HVAC, roofing, plumbing, cleaning, etc.) could be launched by <strong>configuring</strong> the system rather than rebuilding it.</p>
+  <p>ERA Core v2.0 is a <strong>modular, event-driven business operating system</strong> for service-based companies, and <strong>VDS Mobile</strong> is its first production deployment — a mobile auto-detailing business operating out of metro Atlanta, GA. The project's mission was to build a single platform that could run one service business end-to-end <em>and</em> serve as a reusable foundation so future verticals (HVAC, roofing, plumbing, cleaning, etc.) could be launched by <strong>configuring</strong> the system rather than rebuilding it.</p>
   <p>Everything in the business — customers, vehicles, appointments, quotes, pricing, specialists, invoices, memberships, communications, partner referrals, and AI concierge conversations — runs through one database, one set of engines, and one audit trail. There is no synchronization drift between disconnected tools; ERA Core is the single source of truth.</p>
   <div class="callout"><div class="label">Scope of this document</div>This document is a complete, dated record of what was built: the architecture, the data model, every engine, every portal, every integration, and precisely how the generic ERA Core layer and the VDS-specific layer connect and communicate. It is intended as proof of the work completed.</div>
 
@@ -162,7 +162,7 @@ function buildDocHtml() {
     <li><strong>framer-motion</strong> for motion design; <strong>recharts</strong> for analytics; <strong>react-leaflet</strong> for maps; <strong>three.js</strong> for 3D.</li>
   </ul>
 
-  <h2>4 · What Is ERA Core 1.0?</h2>
+  <h2>4 · What Is ERA Core v2.0?</h2>
   <p>ERA Core is the <strong>engine</strong> — a vertical-agnostic platform providing the foundational capabilities any field-service business needs. It is deliberately separated from the specifics of any one industry.</p>
   <div class="cards">
     <div class="card"><div class="k">Event-Driven</div><div class="v">Every meaningful action raises a system event other modules react to — no monolithic logic.</div></div>
@@ -494,18 +494,18 @@ Invoice paid (detail OR coating)
   </div>
 
   <h2>17 · Summary &amp; Attribution</h2>
-  <p>ERA Core 1.0 is the engine. VDS Mobile is the proof it works for one vertical. The two layers connect through a single BusinessConfig configuration record, communicate through an event-driven architecture and shared service-role modules, and inherit ~90% of their capability from the generic platform. Onboarding a future vertical is a matter of configuration, not a rebuild.</p>
+  <p>ERA Core v2.0 is the engine. VDS Mobile is the proof it works for one vertical. The two layers connect through a single BusinessConfig configuration record, communicate through an event-driven architecture and shared service-role modules, and inherit ~90% of their capability from the generic platform. Onboarding a future vertical is a matter of configuration, not a rebuild.</p>
   <ul>
     <li>One platform, many verticals.</li>
     <li>Configure, don't rebuild.</li>
     <li>Every action audited, every customer communication consent-checked.</li>
     <li>AI concierge, scheduling, pricing, payments, and partner growth — built in.</li>
   </ul>
-  <div class="callout"><div class="label">Project Record</div>This document is a complete, dated record of the ERA Core 1.0 + VDS Mobile platform as built. It is intended as proof of the work completed and as an architectural reference for future verticals.</div>
+  <div class="callout"><div class="label">Project Record</div>This document is a complete, dated record of the ERA Core v2.0 + VDS Mobile platform as built. It is intended as proof of the work completed and as an architectural reference for future verticals.</div>
 </div>
 <footer>
   <div class="gold">ERA SYSTEMS LLC</div>
-  <p>Authored &amp; built by <strong>Noah Grove &amp; Shane Muenkel</strong> — Owners of ERA &amp; VDS · ERA Core 1.0 · VDS Mobile · July 2026.<br>Confidential — internal project record. For a tailored vertical-onboarding walkthrough, contact your ERA partner.</p>
+  <p>Authored &amp; built by <strong>Noah Grove &amp; Shane Muenkel</strong> — Owners of ERA &amp; VDS · ERA Core v2.0 · VDS Mobile · July 2026.<br>Confidential — internal project record. For a tailored vertical-onboarding walkthrough, contact your ERA partner.</p>
 </footer>
 </body>
 </html>`;
