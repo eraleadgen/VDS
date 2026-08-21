@@ -42,6 +42,7 @@ import PartnerRedirect from './pages/PartnerRedirect';
 import CareGuide from './pages/CareGuide';
 import OnboardingWizard from './pages/OnboardingWizard';
 import EraConsole from './pages/EraConsole';
+import EraAdminPortal from './pages/EraAdminPortal';
 import EraRegister from './pages/EraRegister';
 import EraLogin from './pages/EraLogin';
 import EraPortal from './pages/EraPortal';
@@ -115,6 +116,7 @@ const AuthenticatedApp = () => {
           <Route path="/care-guide/:key" element={<CareGuide />} />
           <Route path="/onboarding" element={<OnboardingWizard />} />
           <Route path="/era-console" element={<EraConsole />} />
+          <Route path="/era-admin" element={<EraAdminPortal />} />
           <Route path="/era-register" element={<EraRegister />} />
           <Route path="/era-login" element={<EraLogin />} />
           <Route path="/era-portal" element={<EraPortal />} />
