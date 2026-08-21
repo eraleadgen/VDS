@@ -91,7 +91,7 @@ function buildDocHtml() {
   <h1 class="title">ERA Core 1.0 + VDS Mobile<br>Project Overview &amp; Technical Architecture</h1>
   <p class="subtitle">An in-depth record of the modular, event-driven business operating system and its first production vertical — the mobile auto-detailing platform VDS Mobile — including how the two layers connect and communicate.</p>
   <div class="author">Authored &amp; Built by <span>Noah Grove &amp; Shane Muenkel</span> — Owners of ERA &amp; VDS</div>
-  <div class="meta">VERSION 1.0 &nbsp;·&nbsp; JULY 2026 &nbsp;·&nbsp; CONFIDENTIAL — INTERNAL PROJECT RECORD</div>
+  <div class="meta">VERSION 1.1 &nbsp;·&nbsp; AUGUST 2026 &nbsp;·&nbsp; CONFIDENTIAL — INTERNAL PROJECT RECORD</div>
   <div class="badge">PROOF OF WORK</div>
 </header>
 <div class="wrap">
@@ -99,13 +99,17 @@ function buildDocHtml() {
     <h4>Contents</h4>
     <ol>
       <li>Project Mission &amp; Scope</li>
+      <li>Why ERA Core Was Built</li>
+      <li>How ERA Core Was Built</li>
       <li>What Is ERA Core 1.0?</li>
       <li>What Is VDS Mobile?</li>
       <li>How ERA Core &amp; VDS Mobile Connect &amp; Communicate</li>
+      <li>Tier Pricing &amp; Feature Gating</li>
       <li>System Architecture &amp; Technology Stack</li>
       <li>The Data Model (Entities)</li>
       <li>The Engines</li>
       <li>The Portals</li>
+      <li>The UI Layer &amp; Design System</li>
       <li>Integrations &amp; External Services</li>
       <li>Partner Network &amp; Incentive Attribution</li>
       <li>Security, Privacy &amp; Audit</li>
@@ -119,7 +123,46 @@ function buildDocHtml() {
   <p>Everything in the business — customers, vehicles, appointments, quotes, pricing, specialists, invoices, memberships, communications, partner referrals, and AI concierge conversations — runs through one database, one set of engines, and one audit trail. There is no synchronization drift between disconnected tools; ERA Core is the single source of truth.</p>
   <div class="callout"><div class="label">Scope of this document</div>This document is a complete, dated record of what was built: the architecture, the data model, every engine, every portal, every integration, and precisely how the generic ERA Core layer and the VDS-specific layer connect and communicate. It is intended as proof of the work completed.</div>
 
-  <h2>2 · What Is ERA Core 1.0?</h2>
+  <h2>2 · Why ERA Core Was Built</h2>
+  <p>Service businesses — mobile detailers, HVAC companies, roofers, plumbers — share a universal problem: they run on <strong>disconnected tools</strong>. A typical shop juggles a booking calendar in one app, a CRM in another, invoicing in a third, SMS blasts from a phone, and a spreadsheet for partner referrals. Every tool has its own database, its own login, and its own version of the truth. When a customer moves through the funnel — quote, booking, service, payment, review — the data is manually copy-pasted between systems. Things fall through the cracks. Partners don't get credited. Reminders don't fire. The business owner becomes the integration layer.</p>
+  <p>ERA Core was built to solve this at the root. Instead of bolting tools together, the entire business — customers, jobs, scheduling, pricing, communications, payments, partners, and AI — runs on <strong>one database, one set of engines, and one audit trail</strong>. There is no synchronization drift because there is nothing to synchronize.</p>
+  <div class="callout"><div class="label">The core insight</div>A service business is not a collection of features — it is a <strong>sequence of events</strong>. A customer is created, a quote is requested, a job is assigned, a service is completed, an invoice is paid, a review is requested. If the platform models those events and lets modules react to them, every downstream behavior — reminders, partner attribution, journey timelines, analytics — falls out naturally, without brittle integrations.</div>
+  <h3>2.1 · Why event-driven?</h3>
+  <p>Because a service business <em>is</em> a series of events. Every meaningful action — a booking, a completion, a payment — is logged immutably to the <code>SystemEventLog</code>. Downstream modules react to those events instead of being called in a rigid chain. This means a new capability (say, a future "milestone celebration" email) can be added by subscribing to existing events — no rewrite of the booking flow, no risk to the payment flow.</p>
+  <h3>2.2 · Why configuration over code?</h3>
+  <p>Because every service business is 80% identical and 20% unique. The 80% — scheduling, CRM, invoicing, consent, audit — is the engine. The 20% — service names, pricing, vehicle classifications, terminology, brand colors — is <code>BusinessConfig</code>. A new vertical is a configuration exercise, not a rebuild. VDS Mobile proved this: it added zero engine logic. It configured a <code>BusinessConfig</code> record, connected its Stripe products, and branded its AI concierge.</p>
+  <h3>2.3 · Why prove it with a real business first?</h3>
+  <p>Because a platform built in a vacuum is a mockup. ERA Core's first tenant — VDS Mobile Detailing — is a <strong>real, revenue-generating business</strong> operating in Metro Atlanta. Every engine, every portal, and every integration has been pressure-tested by real customers, real payments, and real scheduling conflicts. The platform is not a prototype that might work; it is a product that <em>does</em> work, and this document is proof of that work.</p>
+
+  <h2>3 · How ERA Core Was Built</h2>
+  <p>ERA Core was built in a deliberate sequence: <strong>engines first, portals second, vertical configuration third</strong>. This ordering ensured the business logic was sound before any UI was built on top of it, and that the UI was always driven by real data — never mocked.</p>
+  <h3>3.1 · Build Sequence</h3>
+  <table>
+    <tr><th>Phase</th><th>What was built</th><th>Why this order</th></tr>
+    <tr><td><strong>1 · Data Model</strong></td><td>The entity schema — Customer, Job, Quote, Contractor, Invoice, BusinessConfig, and the audit/journey entities.</td><td>You cannot build engines without knowing what they operate on. The Job-centric model was defined first so every engine had a clear target.</td></tr>
+    <tr><td><strong>2 · Engines</strong></td><td>Pricing Engine, Scheduling Engine, Communication Rules Engine, and the shared modules (<code>customer.ts</code>, <code>invoicePaid.ts</code>, <code>partnerIncentive.ts</code>, <code>gcal.ts</code>).</td><td>Engines are the business logic. They were built and tested as backend functions before any portal consumed them, so the logic was provably correct independent of UI.</td></tr>
+    <tr><td><strong>3 · Portals</strong></td><td>Member Portal, Specialist Portal, Partner Portal, and Admin Dashboard — each consuming the engines via the SDK.</td><td>With engines proven, portals became thin presentation layers. A portal bug could never corrupt business logic because the logic lived behind the API.</td></tr>
+    <tr><td><strong>4 · Vertical Configuration</strong></td><td>VDS Mobile's <code>BusinessConfig</code> — service catalog, pricing, vehicle classifications, membership plans, Stripe product IDs, concierge persona.</td><td>Configuration last proved the platform was truly vertical-agnostic. If VDS had required engine changes, the architecture would have failed its own thesis.</td></tr>
+    <tr><td><strong>5 · Integrations</strong></td><td>Stripe (live), Google Calendar (OAuth), Twilio (SMS), OpenAI (Valerie).</td><td>External services were connected after the core was stable, so each integration was a clean add-on to a working system — not a dependency the system was built around.</td></tr>
+  </table>
+  <h3>3.2 · Key Architecture Decisions</h3>
+  <ul>
+    <li><strong>Single source of truth.</strong> One database, one <code>BusinessConfig</code>, one audit log. No sync, no drift. This was the foundational decision — everything else follows from it.</li>
+    <li><strong>Row-Level Security (RLS) on every entity.</strong> Isolation is enforced at the database layer, not in application code. A customer can only see their own data; a specialist only their jobs; a partner only their profile. Admins manage their tenant. Cross-tenant access is impossible by construction.</li>
+    <li><strong>The service role for automation.</strong> Server-side automation (webhooks, auto-assignment, reminders) runs under a service role that bypasses per-user RLS. This lets the Stripe webhook provision a membership or the auto-assigner create a Job without a human session — while every action is still audited.</li>
+    <li><strong>Shared modules, not copied code.</strong> Logic used by more than one function lives in <code>base44/shared/</code>. <code>invoicePaid.ts</code> is used by both the admin "mark paid" button <em>and</em> the Stripe webhook — one code path, one audit trail, no drift.</li>
+    <li><strong>Server-side pricing.</strong> Quotes are always recomputed from <code>BusinessConfig</code> on the server. Client-supplied prices are discarded. A customer cannot forge a quote.</li>
+    <li><strong>Consent-first communications.</strong> No message goes out without a consent flag check. Suppressed messages are logged with a reason — never silently dropped.</li>
+  </ul>
+  <h3>3.3 · Technology Choices</h3>
+  <ul>
+    <li><strong>Base44 Backend-as-a-Service</strong> was chosen so the team could focus on business logic, not infrastructure. Managed auth, database, serverless functions, automations, and hosting eliminated months of plumbing.</li>
+    <li><strong>React + Vite + Tailwind</strong> for the frontend — fast, modern, and publishable to iOS/Android from one codebase.</li>
+    <li><strong>Deno Deploy serverless functions</strong> for external API orchestration — Stripe webhooks, Google Calendar, Twilio, OpenAI.</li>
+    <li><strong>framer-motion</strong> for motion design; <strong>recharts</strong> for analytics; <strong>react-leaflet</strong> for maps; <strong>three.js</strong> for 3D.</li>
+  </ul>
+
+  <h2>4 · What Is ERA Core 1.0?</h2>
   <p>ERA Core is the <strong>engine</strong> — a vertical-agnostic platform providing the foundational capabilities any field-service business needs. It is deliberately separated from the specifics of any one industry.</p>
   <div class="cards">
     <div class="card"><div class="k">Event-Driven</div><div class="v">Every meaningful action raises a system event other modules react to — no monolithic logic.</div></div>
@@ -130,7 +173,7 @@ function buildDocHtml() {
     <div class="card"><div class="k">Audit-First</div><div class="v">Every event and every suppressed message is recorded immutably to the SystemEventLog.</div></div>
   </div>
 
-  <h2>3 · What Is VDS Mobile?</h2>
+  <h2>5 · What Is VDS Mobile?</h2>
   <p>VDS Mobile is the <strong>first vertical</strong> deployed on ERA Core. It is a real, revenue-generating mobile detailing business. VDS does not add engine logic to the platform — it <strong>configures</strong> ERA Core and connects its own external services:</p>
   <table>
     <tr><th>ERA Core (generic)</th><th>VDS Mobile (configured)</th></tr>
@@ -147,7 +190,7 @@ function buildDocHtml() {
     <tr><td>Growth module</td><td>The VDS Partner Network — dealership salespeople &amp; strategic partners who refer clients</td></tr>
   </table>
 
-  <h2>4 · How ERA Core &amp; VDS Mobile Connect &amp; Communicate</h2>
+  <h2>6 · How ERA Core &amp; VDS Mobile Connect &amp; Communicate</h2>
   <p>The connection between the two layers is best understood as a <strong>configuration relationship</strong>, not a code integration. VDS Mobile is a configuration layer that sits on top of ERA Core's engines and data model. They communicate through three mechanisms:</p>
 
   <h3>4.1 · The BusinessConfig Bridge</h3>
@@ -185,7 +228,45 @@ Job completed &amp; invoice paid
   <p>Logic needed by more than one backend function lives in <strong>shared modules</strong> under <code>base44/shared/</code> — for example <code>invoicePaid.ts</code> (used by both the manual admin "mark paid" flow <em>and</em> the Stripe webhook), <code>customer.ts</code> (the canonical find-or-create helper), <code>partnerIncentive.ts</code>, and <code>gcal.ts</code> (Google Calendar). These shared modules run under the <strong>service role</strong>, which bypasses per-user Row-Level Security so server-side automation (webhooks, auto-assignment, reminders) can write the records it needs to.</p>
   <div class="callout"><div class="label">Key Insight</div>VDS Mobile adds no new engine logic. It configures BusinessConfig, registers its services and pricing, defines its vehicle classifications, connects its Stripe products, and brands its AI concierge. Scheduling, CRM, pricing, communications, audit, and partner attribution are all inherited from ERA Core.</div>
 
-  <h2>5 · System Architecture &amp; Technology Stack</h2>
+  <h2>7 · Tier Pricing &amp; Feature Gating</h2>
+  <p>ERA Core is sold as a SaaS platform to service businesses. Each tier unlocks more capability — from a branded website and booking flow at Basic, to AI agents and advanced analytics at Enterprise. Feature gating is enforced at two layers: the <strong>plan tier</strong> (checked via <code>planFeatures</code>) and the per-automation <strong>feature flags</strong> in <code>BusinessConfig</code>.</p>
+  <h3>7.1 · The Tiers</h3>
+  <table>
+    <tr><th>Tier</th><th>Monthly</th><th>Setup Fee</th><th>Best For</th></tr>
+    <tr><td><strong>Basic</strong></td><td>$199/mo</td><td>$750 one-time</td><td>Launch — branded website, booking, scheduling, payments, admin dashboard.</td></tr>
+    <tr><td><strong>Foundation</strong></td><td>$499/mo</td><td>$1,200 one-time</td><td>Grow — adds member portal, specialist portal, simple automations (reminders, welcome emails).</td></tr>
+    <tr><td><strong>Growth</strong></td><td>TBD</td><td>TBD</td><td>Scale — adds AI SMS agent, AI voice agent, advanced customer engagement.</td></tr>
+    <tr><td><strong>Enterprise</strong></td><td>TBD</td><td>TBD</td><td>Full platform — partner/referral engine, advanced analytics, unlimited scale.</td></tr>
+  </table>
+  <h3>7.2 · Ad Management Add-On</h3>
+  <p>A $500/month add-on available on every tier. When enabled, it unlocks the in-platform Google Ads management flow so a tenant can create, fund, and manage real ad campaigns that promote their published site — without leaving ERA Core.</p>
+  <h3>7.3 · Feature Matrix by Tier</h3>
+  <table>
+    <tr><th>Feature</th><th>Basic</th><th>Foundation</th><th>Growth</th><th>Enterprise</th></tr>
+    <tr><td>Branded website &amp; AI chat widget</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td>Core engines (communication, workflow, CRM)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td>Booking &amp; scheduling</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td>Payments (Stripe)</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td>Admin dashboard</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td>Self-serve domain, email &amp; phone</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td>Customer member portal</td><td>—</td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td>Specialist / employee portal</td><td>—</td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td>Simple automations (reminders, welcome)</td><td>—</td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td>AI SMS agent</td><td>—</td><td>—</td><td>✓</td><td>✓</td></tr>
+    <tr><td>AI voice agent</td><td>—</td><td>—</td><td>✓</td><td>✓</td></tr>
+    <tr><td>Partner / referral engine</td><td>—</td><td>—</td><td>—</td><td>✓</td></tr>
+    <tr><td>Advanced analytics &amp; reporting</td><td>—</td><td>—</td><td>—</td><td>✓</td></tr>
+    <tr><td>Ad Management</td><td>add-on</td><td>add-on</td><td>add-on</td><td>included</td></tr>
+  </table>
+  <h3>7.4 · How Gating Works</h3>
+  <p>Feature access is checked at two levels:</p>
+  <ul>
+    <li><strong>Plan tier gate</strong> — The <code>planFeatures</code> module maps each tier to a set of boolean capabilities (e.g. <code>email_automations</code>, <code>sms_automations</code>, <code>member_portal</code>, <code>specialist_portal</code>, <code>partner_engine</code>, <code>ai_sms_agent</code>). The frontend <code>FeatureGate</code> component wraps any route or UI element and hides it if the current tier doesn't permit the feature.</li>
+    <li><strong>Per-automation feature flags</strong> — Within the tier ceiling, <code>BusinessConfig.feature_flags</code> and <code>automation_settings</code> provide granular on/off toggles. For example, <code>twilio_sms_enabled</code> gates SMS delivery independently of the tier; individual automation toggles (<code>welcome_email</code>, <code>reminder_sms</code>, etc.) let a tenant disable a specific automation without losing the tier.</li>
+  </ul>
+  <div class="callout"><div class="label">Subscription enforcement</div>The Stripe webhook writes <code>plan_tier</code>, <code>subscription_status</code>, <code>ad_management_enabled</code>, and <code>setup_fee_paid</code> to both <code>BusinessConfig</code> (the authoritative gate the tenant site reads) and <code>EraAccount</code> (the billing mirror the account portal reads) — atomically, on confirmation only. A tier change never comes from a UI button; it comes from Stripe.</div>
+
+  <h2>8 · System Architecture &amp; Technology Stack</h2>
   <h3>5.1 · Frontend</h3>
   <ul>
     <li><strong>React + Vite</strong> single-page application with React Router.</li>
@@ -209,7 +290,7 @@ Job completed &amp; invoice paid
     <li><strong>OpenAI</strong> — powers the Valerie AI concierge.</li>
   </ul>
 
-  <h2>6 · The Data Model (Entities)</h2>
+  <h2>9 · The Data Model (Entities)</h2>
   <p>ERA Core is organized around a central <strong>Job</strong> hub. Everything relates back to a Job.</p>
   <div class="diagram">            +------------------+
              |  BusinessConfig  |  <- configuration layer (per vertical)
@@ -251,7 +332,7 @@ Job completed &amp; invoice paid
     <tr><td><strong>ServiceRecord</strong></td><td>(VDS) Per-vehicle service history log.</td></tr>
   </table>
 
-  <h2>7 · The Engines</h2>
+  <h2>10 · The Engines</h2>
   <h3>Pricing Engine</h3>
   <ul>
     <li>Reads entirely from BusinessConfig — no hardcoded prices.</li>
@@ -287,7 +368,7 @@ Job completed &amp; invoice paid
     <li>Recurring VDS Gold memberships billed through Stripe subscriptions; the webhook provisions per-vehicle access only after validating against BusinessConfig.</li>
   </ul>
 
-  <h2>8 · The Portals</h2>
+  <h2>11 · The Portals</h2>
   <table>
     <tr><th>Portal</th><th>Who uses it</th><th>What it does</th></tr>
     <tr><td><strong>Member Portal</strong></td><td>Car owners</td><td>Vehicle garage, VDS Gold enrollment &amp; management, appointment booking, service history, account &amp; consent settings.</td></tr>
@@ -296,7 +377,42 @@ Job completed &amp; invoice paid
     <tr><td><strong>Admin Dashboard</strong></td><td>ERA Systems administrators</td><td>Overview &amp; revenue metrics, appointments, jobs, quotes, invoices (incl. "Charge via Stripe"), contractors, partners, business-dev analytics, client directory / journey, messages, and migration tools.</td></tr>
   </table>
 
-  <h2>9 · Integrations &amp; External Services</h2>
+  <h2>12 · The UI Layer &amp; Design System</h2>
+  <p>The UI is what makes ERA Core feel <strong>alive</strong>. It is not a skin over the engines — it is the primary way users experience the platform. Every portal, every flow, and every animation was designed to make a complex, event-driven system feel simple, fast, and inevitable.</p>
+  <h3>12.1 · Design Token System</h3>
+  <p>The entire UI is driven by CSS custom properties defined in <code>index.css</code> and mapped to Tailwind classes in <code>tailwind.config.js</code>. This is the white-label theming engine: a tenant's <code>BusinessConfig.brand_colors</code> are injected as CSS variables at runtime, and every component — from buttons to charts to the loading screen — picks up the tenant's theme automatically.</p>
+  <div class="cards">
+    <div class="card"><div class="k">VDS Theme</div><div class="v">Obsidian black + metallic gold — the detailing brand.</div></div>
+    <div class="card"><div class="k">ERA Marketing</div><div class="v">Deep black + emerald green — the platform brand.</div></div>
+    <div class="card"><div class="k">Custom Tenants</div><div class="v">Any brand colors via BusinessConfig — injected at runtime.</div></div>
+  </div>
+  <h3>12.2 · Component Architecture</h3>
+  <ul>
+    <li><strong>shadcn/ui</strong> primitives for forms, dialogs, tables, and navigation — accessible, composable, and consistent.</li>
+    <li><strong>lucide-react</strong> for icons — only icons that exist, never a broken import.</li>
+    <li><strong>framer-motion</strong> for motion — page transitions, scroll reveals, hover lifts, and the branded loading overlay.</li>
+    <li><strong>Custom components</strong> for domain-specific UI: <code>VehicleCard</code>, <code>JobCard</code>, <code>AppointmentCard</code>, <code>ChatWidget</code>, <code>BookingCalendar</code>, <code>ServicePicker</code>, <code>ConditionSelector</code>.</li>
+  </ul>
+  <h3>12.3 · The Portal System</h3>
+  <p>Every portal shares a common shell pattern — a persistent sidebar (desktop) / dropdown (mobile), a branded header, and a content area that swaps tabs without a full page reload. The <code>PortalShell</code> component wraps the member, specialist, and partner portals; the <code>EraAdminShell</code> wraps the ERA staff admin portal. This gives users a consistent navigation mental model across every role.</p>
+  <table>
+    <tr><th>Portal</th><th>Key UI Flows</th></tr>
+    <tr><td><strong>Member Portal</strong></td><td>Vehicle garage → VDS Gold enrollment → appointment booking (service picker → condition selector → calendar → confirmation) → service history → account settings.</td></tr>
+    <tr><td><strong>Specialist Portal</strong></td><td>Job board (assigned → accepted → driving → arrived → in progress → quality check → completed) → availability editor → completion modal with photo upload.</td></tr>
+    <tr><td><strong>Partner Portal</strong></td><td>Overview metrics → referral link/QR → referrals list → resource center (welcome packet + care guides).</td></tr>
+    <tr><td><strong>Admin Dashboard</strong></td><td>Overview KPIs → appointments calendar → jobs board → quotes → invoices (with "Charge via Stripe") → contractors → partners → business-dev analytics → client journey → messages → settings → website designer.</td></tr>
+    <tr><td><strong>ERA Admin Portal</strong></td><td>Cross-tenant overview → client list → client detail (business info, plan tier, domain status, live site preview) — staff-only.</td></tr>
+  </table>
+  <h3>12.4 · The Branded Transition Overlay</h3>
+  <p>Every in-app navigation triggers a branded full-screen transition: the overlay closes (a circular wipe shrinks to center), the page swaps under the cover, and the overlay opens (the circle grows outward) to reveal the new page. The overlay is <strong>tenant-specific</strong> — VDS gets gold-flake particles and a rotating gold ring; ERA Systems gets a custom logo loading video; other tenants get a clean branded ring in their own brand color. This makes the platform feel premium and alive, not like a static web form.</p>
+  <h3>12.5 · Real-Time Updates</h3>
+  <p>Key lists — jobs, appointments, partner metrics — subscribe to entity changes via the SDK's <code>subscribe()</code> method. When a job is assigned, the specialist's board updates instantly without a refresh. When an invoice is paid, the admin dashboard updates in real time. This is what makes ERA Core feel like a <strong>living system</strong>, not a page-reload app.</p>
+  <h3>12.6 · Responsive &amp; Native-Ready</h3>
+  <p>Every portal is built mobile-first with Tailwind responsive breakpoints and is publishable to iOS/Android from the same React codebase. The specialist portal — used in the field on a phone — is optimized for touch: large tap targets, swipe-friendly job cards, and a camera-integrated photo upload flow.</p>
+  <h3>12.7 · The Chat Widget</h3>
+  <p>A floating, glassmorphism chat widget on the public site connects customers directly to Valerie (the AI concierge). It can generate quotes, check availability, and book appointments — all grounded in the live <code>BusinessConfig</code> catalog. The widget is the first touchpoint for many customers and is designed to feel like texting a knowledgeable concierge, not filling out a form.</p>
+
+  <h2>13 · Integrations &amp; External Services</h2>
   <h3>Stripe (live mode)</h3>
   <ul>
     <li>VDS Gold recurring subscriptions — one Stripe product, per-pricing-group Price IDs ($250 sedan/coupe, $300 truck/SUV per month).</li>
@@ -318,7 +434,7 @@ Job completed &amp; invoice paid
     <li>Powers the SMS concierge with tool-calling for quotes, booking, and membership lookups, grounded in BusinessConfig.</li>
   </ul>
 
-  <h2>10 · Partner Network &amp; Incentive Attribution</h2>
+  <h2>14 · Partner Network &amp; Incentive Attribution</h2>
   <p>The VDS Partner Network is ERA Core's reusable growth module. Each partner gets a vanity referral link (<code>domain/CODE</code>). The referral code is captured and persisted (localStorage) so it survives navigation — including clicks to VDS Gold — and still attributes a later signup.</p>
   <div class="diagram">Partner link (domain/CODE)
       │
@@ -345,7 +461,7 @@ Invoice paid (detail OR coating)
   </ul>
   <p>Attribution is keyed off the Customer's <code>referred_by_partner_id</code>, set the first time a client books via a partner link — so a partner is correctly credited when a coating <em>consultation</em> converts to a later <em>purchase</em>, even months later.</p>
 
-  <h2>11 · Security, Privacy &amp; Audit</h2>
+  <h2>15 · Security, Privacy &amp; Audit</h2>
   <ul>
     <li><strong>Row-Level Security (RLS)</strong> on every entity — customers only see their own data; specialists see only their jobs; partners see only their profile; admins manage everything.</li>
     <li><strong>Consent-first</strong>: no SMS or email is sent without an explicit consent flag; suppressed messages are logged with a reason.</li>
@@ -355,7 +471,7 @@ Invoice paid (detail OR coating)
     <li><strong>Admin-gated documentation</strong>: architecture documents (like this one) are generated server-side and never shipped in the public client bundle.</li>
   </ul>
 
-  <h2>12 · Build Accomplishments (Feature Inventory)</h2>
+  <h2>16 · Build Accomplishments (Feature Inventory)</h2>
   <div class="pillrow">
     <span class="pill">Dynamic pricing engine</span>
     <span class="pill">Booking &amp; quote flow</span>
@@ -377,7 +493,7 @@ Invoice paid (detail OR coating)
     <span class="pill">Automated reminders &amp; review requests</span>
   </div>
 
-  <h2>13 · Summary &amp; Attribution</h2>
+  <h2>17 · Summary &amp; Attribution</h2>
   <p>ERA Core 1.0 is the engine. VDS Mobile is the proof it works for one vertical. The two layers connect through a single BusinessConfig configuration record, communicate through an event-driven architecture and shared service-role modules, and inherit ~90% of their capability from the generic platform. Onboarding a future vertical is a matter of configuration, not a rebuild.</p>
   <ul>
     <li>One platform, many verticals.</li>
