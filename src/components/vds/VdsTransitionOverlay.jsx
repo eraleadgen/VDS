@@ -24,6 +24,7 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded, onCloseCompl
   const configLoaded = !!config;
   const logoUrl = config?.logo_url || '';
   const shortName = config?.business_short_name || config?.business_name || '';
+  const isEra = config?.business_id === 'era_systems';
   const onCloseCompleteRef = useRef(onCloseComplete);
   useEffect(() => { onCloseCompleteRef.current = onCloseComplete; }, [onCloseComplete]);
   const [phase, setPhase] = useState('hold');
@@ -88,6 +89,32 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded, onCloseCompl
   }, [phase]);
 
   if (phase === 'done') return null;
+
+  // ERA Systems: a distinct loading screen — the real ERA logo loading-loop video,
+  // fading in when the overlay appears and fading out as the page reveals.
+  // No gold ring or particles; just the video on a pure-black field.
+  if (isEra) {
+    const fadeOut = phase === 'opening';
+    return (
+      <motion.div
+        className="fixed inset-0 z-[100] pointer-events-none bg-black flex items-center justify-center overflow-hidden"
+        initial={{ opacity: 1 }}
+        animate={{ opacity: fadeOut ? 0 : 1 }}
+        transition={{ duration: fadeOut ? 0.6 : 0.4, ease: 'easeOut' }}
+      >
+        <motion.video
+          src="https://media.base44.com/videos/public/6a191df337222815cd0b1f5e/17eef1394_LogoLoadingLoop.mp4"
+          autoPlay loop muted playsInline
+          aria-hidden
+          initial={{ opacity: 0 }}
+          animate={{ opacity: fadeOut ? 0 : 1 }}
+          transition={{ duration: fadeOut ? 0.5 : 0.7, ease: 'easeOut' }}
+          className="max-w-[260px] w-auto h-auto select-none"
+        />
+      </motion.div>
+    );
+  }
+
   const isOpen = phase === 'opening';
 
   // Reveal circle: grows outward from the center of the screen (around the VDS logo /
