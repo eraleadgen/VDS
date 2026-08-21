@@ -1,8 +1,10 @@
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import BrowserFrame from './BrowserFrame';
-import OverviewCapture from './OverviewCapture';
 import Reveal from './Reveal';
+
+const OVERVIEW_IMG =
+  'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/7d5a479cc_generated_image.png';
 
 const container = {
   hidden: {},
@@ -36,9 +38,14 @@ export default function EraHero() {
 
         <Reveal delay={0.3} className="mt-14 md:mt-20">
           <BrowserFrame url="app.eracore.com/admin">
-            <OverviewCapture />
+            <img
+              src={OVERVIEW_IMG}
+              alt="VDS Mobile Detailing admin dashboard — overview with revenue, active jobs, and contractor performance"
+              className="block w-full aspect-[16/10] object-cover"
+              loading="lazy"
+            />
           </BrowserFrame>
-          <p className="font-['JetBrains_Mono'] text-[11px] text-[#4A6359] mt-4 text-center">Representative view — VDS Mobile Detailing dashboard · ERA Core tenant #1</p>
+          <p className="font-['JetBrains_Mono'] text-[11px] text-[#4A6359] mt-4 text-center">VDS Mobile Detailing admin dashboard · ERA Core tenant #1</p>
         </Reveal>
       </div>
     </section>

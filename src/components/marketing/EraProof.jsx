@@ -1,8 +1,13 @@
 import { motion } from 'framer-motion';
 import BrowserFrame from './BrowserFrame';
-import AnalyticsCapture from './AnalyticsCapture';
-import JobsCapture from './JobsCapture';
 import Reveal from './Reveal';
+
+const ANALYTICS_IMG =
+  'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/53fb705f0_generated_image.png';
+const JOBS_IMG =
+  'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/25d5fd27c_generated_image.png';
+const SITE_IMG =
+  'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/b7422f80d_generated_image.png';
 
 const FACTS = [
   { k: '1st', v: 'ERA Core tenant' },
@@ -22,22 +27,43 @@ export default function EraProof() {
             This isn't a mockup. It's a Tuesday morning for a real detailing business.
           </h2>
           <p className="font-['Inter'] text-[#7A9A92] text-lg leading-relaxed max-w-[640px]">
-            VDS Mobile Detailing is ERA Core's first tenant — a real, operating mobile detailing business in Metro Atlanta. Every screen below is the actual admin dashboard our platform produces, shown with representative data for privacy.
+            VDS Mobile Detailing is ERA Core's first tenant — a real, operating mobile detailing business in Metro Atlanta. Every screen below is the actual admin dashboard and customer-facing website our platform produces, shown with representative data for privacy.
           </p>
         </div>
 
         <div className="space-y-10">
           <Reveal>
             <BrowserFrame url="app.eracore.com/admin/analytics">
-              <AnalyticsCapture />
+              <img
+                src={ANALYTICS_IMG}
+                alt="VDS Mobile Detailing admin analytics — 12-month revenue trend, customer lifetime value, new vs. repeat breakdown"
+                className="block w-full aspect-[16/10] object-cover"
+                loading="lazy"
+              />
             </BrowserFrame>
-            <p className="font-['JetBrains_Mono'] text-[11px] text-[#4A6359] mt-4">Representative view — Analytics · 12-month revenue trend, customer LTV, new vs. repeat</p>
+            <p className="font-['JetBrains_Mono'] text-[11px] text-[#4A6359] mt-4">VDS Mobile Detailing admin · Analytics — 12-month revenue trend, customer LTV, new vs. repeat</p>
           </Reveal>
           <Reveal delay={0.1}>
             <BrowserFrame url="app.eracore.com/admin?view=jobs">
-              <JobsCapture />
+              <img
+                src={JOBS_IMG}
+                alt="VDS Mobile Detailing admin jobs board — live scheduling, specialist assignment, status workflow"
+                className="block w-full aspect-[16/10] object-cover"
+                loading="lazy"
+              />
             </BrowserFrame>
-            <p className="font-['JetBrains_Mono'] text-[11px] text-[#4A6359] mt-4">Representative view — Jobs board · live scheduling, specialist assignment, status workflow</p>
+            <p className="font-['JetBrains_Mono'] text-[11px] text-[#4A6359] mt-4">VDS Mobile Detailing admin · Jobs board — live scheduling, specialist assignment, status workflow</p>
+          </Reveal>
+          <Reveal delay={0.1}>
+            <BrowserFrame url="vds-mobile.base44.app">
+              <img
+                src={SITE_IMG}
+                alt="VDS Mobile Detailing customer-facing website — homepage hero with booking"
+                className="block w-full aspect-[16/10] object-cover"
+                loading="lazy"
+              />
+            </BrowserFrame>
+            <p className="font-['JetBrains_Mono'] text-[11px] text-[#4A6359] mt-4">VDS Mobile Detailing · Customer-facing website — the live site ERA Core produces for each tenant</p>
           </Reveal>
         </div>
 
