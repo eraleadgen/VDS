@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Send, Loader2, Sparkles, ExternalLink, Check, Upload, Monitor, Smartphone } from 'lucide-react';
+import DomainSection from '@/components/admin/DomainSection';
 
 const GREETING = "Hi! I'm your website design assistant. Tell me what you'd like to change about the customer-facing site — tagline, brand colors, FAQ, SEO, the concierge persona, featured services, and more. Changes stage in the preview on the right; click Publish when you're happy.";
 
@@ -215,6 +216,8 @@ export default function WebsiteTab() {
           </div>
         </div>
       </div>
+
+      <DomainSection />
     </div>
   );
 }
