@@ -34,10 +34,18 @@ export default function AnalyticsTab() {
   const formatMonth = (key) => {
     const [y, m] = key.split('-');
     const d = new Date(Number(y), Number(m) - 1);
-    return d.toLocaleDateString('en-US', { month: 'short' });
+    return d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' });
   };
 
-  const revenueData = (data.revenueTrends || []).map((d) => ({ month: formatMonth(d.month), revenue: d.revenue }));
+  const formatMonthFull = (key) => {
+    const [y, m] = key.split('-');
+    const d = new Date(Number(y), Number(m) - 1);
+    return d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  };
+
+  const trends = data.revenueTrends || [];
+  const rangeLabel = trends.length >= 2 ? `${formatMonthFull(trends[0].month)} – ${formatMonthFull(trends[trends.length - 1].month)}` : '';
+  const revenueData = trends.map((d) => ({ month: formatMonth(d.month), revenue: d.revenue }));
   const breakdownData = [
     { name: 'New', value: data.customerBreakdown?.new || 0 },
     { name: 'Repeat', value: data.customerBreakdown?.repeat || 0 },
@@ -53,7 +61,10 @@ export default function AnalyticsTab() {
 
       {/* Revenue Trends */}
       <div className="glass-panel border border-vapor/10 rounded-sm p-5">
-        <h2 className="text-xs font-mono-tech tracking-widest text-gold/70 mb-4">REVENUE TRENDS — LAST 12 MONTHS</h2>
+        <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
+          <h2 className="text-xs font-mono-tech tracking-widest text-gold/70">REVENUE TRENDS — LAST 12 MONTHS</h2>
+          {rangeLabel && <span className="text-xs font-mono-tech text-vapor/40">{rangeLabel}</span>}
+        </div>
         {revenueData.length ? (
           <ResponsiveContainer width="100%" height={280}>
             <AreaChart data={revenueData}>
