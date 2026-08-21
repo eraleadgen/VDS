@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import Reveal from './Reveal';
 
 const INDUSTRIES = [
@@ -11,24 +12,32 @@ const INDUSTRIES = [
 
 export default function EraWhoFor() {
   return (
-    <section id="customers" className="bg-[#F6F8F8] py-24 md:py-32">
+    <section id="customers" className="bg-[#060A09] py-24 md:py-32">
       <div className="max-w-[1200px] mx-auto px-6">
         <div className="max-w-[760px] mb-12">
-          <p className="font-['JetBrains_Mono'] text-[11px] tracking-[0.25em] text-[#0B7C72] mb-5">CUSTOMERS — 04</p>
-          <h2 className="font-['Fraunces'] font-semibold text-[#0C1B1A] text-[34px] md:text-[48px] leading-[1.05] tracking-[-0.02em] mb-5">
+          <p className="font-['JetBrains_Mono'] text-[11px] tracking-[0.25em] text-[#10B981] mb-5">CUSTOMERS — 04</p>
+          <h2 className="font-['Fraunces'] font-semibold text-[#DFEDE9] text-[34px] md:text-[48px] leading-[1.05] tracking-[-0.02em] mb-5">
             Built for mobile detailing today. Engineered for every service business tomorrow.
           </h2>
-          <p className="font-['Inter'] text-[#5B6770] text-lg leading-relaxed max-w-[640px]">
+          <p className="font-['Inter'] text-[#7A9A92] text-lg leading-relaxed max-w-[640px]">
             ERA Core's dictionary, pricing groups, and workflows are configurable — not hardcoded to one industry. Detailing is live and proven; the same engine is built to scale across service businesses.
           </p>
         </div>
         <Reveal>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-            {INDUSTRIES.map((ind) => (
-              <div key={ind.name} className="bg-white rounded-[10px] ring-1 ring-[#DCE1E5] p-4 text-center">
-                <p className="font-['Fraunces'] font-semibold text-[#0C1B1A] text-base">{ind.name}</p>
-                <p className={`font-['JetBrains_Mono'] text-[9px] tracking-widest mt-2 ${ind.live ? 'text-[#0B7C72]' : 'text-[#8A9499]'}`}>{ind.status.toUpperCase()}</p>
-              </div>
+            {INDUSTRIES.map((ind, i) => (
+              <motion.div
+                key={ind.name}
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.06, duration: 0.4 }}
+                whileHover={{ y: -3 }}
+                className={`bg-[#0C1614] rounded-[10px] ring-1 p-4 text-center ${ind.live ? 'ring-[#10B981]/20 hover:ring-[#10B981]/40' : 'ring-[#1A2A24]'}`}
+              >
+                <p className="font-['Fraunces'] font-semibold text-[#DFEDE9] text-base">{ind.name}</p>
+                <p className={`font-['JetBrains_Mono'] text-[9px] tracking-widest mt-2 ${ind.live ? 'text-[#10B981]' : 'text-[#4A6359]'}`}>{ind.status.toUpperCase()}</p>
+              </motion.div>
             ))}
           </div>
         </Reveal>
