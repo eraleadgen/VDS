@@ -14,7 +14,7 @@ const FACTS = [
 export default function EraProof() {
   return (
     <section id="proof" className="bg-[#08110E] py-24 md:py-32 relative overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: 'linear-gradient(#10B981 1px, transparent 1px), linear-gradient(90deg, #10B981 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
+      <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 70% 30%, rgba(16,185,129,0.04) 0%, transparent 50%)' }} />
       <div className="relative max-w-[1200px] mx-auto px-6">
         <div className="max-w-[780px] mb-16">
           <p className="font-['JetBrains_Mono'] text-[11px] tracking-[0.25em] text-[#10B981] mb-5">PROOF — 01</p>
@@ -51,6 +51,8 @@ export default function EraProof() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.08, duration: 0.5 }}
+                  whileHover={{ y: -4 }}
+                  className="transition-all duration-300 hover:drop-shadow-[0_0_12px_rgba(16,185,129,0.4)]"
                 >
                   <p className="font-['Fraunces'] font-semibold text-[#10B981] text-2xl md:text-3xl">{f.k}</p>
                   <p className="font-['JetBrains_Mono'] text-[10px] tracking-widest text-[#4A6359] mt-1">{f.v.toUpperCase()}</p>

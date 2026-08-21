@@ -7,7 +7,7 @@ import Reveal from './Reveal';
 export default function EraCta() {
   return (
     <section className="bg-[#060A09] py-24 md:py-32 relative overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none opacity-[0.04]" style={{ backgroundImage: 'linear-gradient(#10B981 1px, transparent 1px), linear-gradient(90deg, #10B981 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
+      <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 50%, rgba(16,185,129,0.06) 0%, transparent 60%)' }} />
       <div className="max-w-[1200px] mx-auto px-6 relative">
         <Reveal>
           <div className="relative rounded-[16px] bg-[#08110E] overflow-hidden px-8 py-16 md:px-16 md:py-20 text-center ring-1 ring-[#10B981]/15">

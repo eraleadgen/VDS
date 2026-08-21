@@ -52,7 +52,7 @@ export default function EraPricing() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-16">
           {PLANS.map((p) => (
             <Reveal key={p.key}>
-              <div className={`relative rounded-[10px] p-6 flex flex-col h-full transition-all ${p.popular ? 'ring-2 ring-[#10B981] bg-[#10B981]/[0.04] shadow-[0_0_40px_-12px_rgba(16,185,129,0.3)]' : p.available ? 'ring-1 ring-[#1A2A24] bg-[#0C1614]' : 'ring-1 ring-[#1A2A24] bg-[#0C1614] opacity-50'}`}>
+              <div className={`relative rounded-[10px] p-6 flex flex-col h-full transition-all ${p.popular ? 'ring-2 ring-[#10B981] bg-[#10B981]/[0.04] shadow-[0_0_40px_-12px_rgba(16,185,129,0.3)] hover:shadow-[0_0_50px_-8px_rgba(16,185,129,0.5)]' : p.available ? 'ring-1 ring-[#1A2A24] bg-[#0C1614] hover:ring-[#10B981]/40 hover:shadow-[0_0_30px_-8px_rgba(16,185,129,0.3)]' : 'ring-1 ring-[#1A2A24] bg-[#0C1614] opacity-50'}`}>
                 {p.popular && <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#10B981] text-[#060A09] text-[10px] font-['JetBrains_Mono'] tracking-widest px-3 py-1 rounded-full">MOST POPULAR</span>}
                 {!p.available && <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#0C1614] border border-[#1A2A24] text-[#4A6359] text-[10px] font-['JetBrains_Mono'] tracking-widest px-3 py-1 rounded-full">COMING SOON</span>}
                 <h3 className="font-['Fraunces'] font-semibold text-[#DFEDE9] text-xl mb-1.5">{p.name}</h3>

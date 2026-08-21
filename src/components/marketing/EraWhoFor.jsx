@@ -33,7 +33,7 @@ export default function EraWhoFor() {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.06, duration: 0.4 }}
                 whileHover={{ y: -3 }}
-                className={`bg-[#0C1614] rounded-[10px] ring-1 p-4 text-center ${ind.live ? 'ring-[#10B981]/20 hover:ring-[#10B981]/40' : 'ring-[#1A2A24]'}`}
+                className={`bg-[#0C1614] rounded-[10px] ring-1 p-4 text-center transition-all duration-300 ${ind.live ? 'ring-[#10B981]/20 hover:ring-[#10B981]/50 hover:shadow-[0_0_24px_-6px_rgba(16,185,129,0.3)]' : 'ring-[#1A2A24]'}`}
               >
                 <p className="font-['Fraunces'] font-semibold text-[#DFEDE9] text-base">{ind.name}</p>
                 <p className={`font-['JetBrains_Mono'] text-[9px] tracking-widest mt-2 ${ind.live ? 'text-[#10B981]' : 'text-[#4A6359]'}`}>{ind.status.toUpperCase()}</p>

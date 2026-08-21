@@ -168,7 +168,7 @@ export default function EraPlatform() {
                 <motion.div
                   whileHover={{ y: -4 }}
                   transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                  className="bg-[#0C1614] rounded-[10px] ring-1 ring-[#1A2A24] overflow-hidden h-full hover:ring-[#10B981]/30 transition-shadow hover:shadow-[0_18px_50px_-20px_rgba(16,185,129,0.25)]"
+                  className="bg-[#0C1614] rounded-[10px] ring-1 ring-[#1A2A24] overflow-hidden h-full transition-all duration-300 hover:ring-[#10B981]/50 hover:shadow-[0_0_30px_-8px_rgba(16,185,129,0.35),0_18px_50px_-20px_rgba(16,185,129,0.3)]"
                 >
                   <div className="p-4"><F /></div>
                   <div className="px-5 pb-5">

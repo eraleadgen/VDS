@@ -66,7 +66,7 @@ export default function EraHowItWorks() {
           {STEPS.map((s, i) => (
             <Reveal key={s.n} delay={i * 0.1}>
               <div>
-                <div className="mb-4">{s.capture}</div>
+                <div className="mb-4 transition-transform duration-300 hover:scale-[1.03]">{s.capture}</div>
                 <p className="font-['JetBrains_Mono'] text-[11px] tracking-widest text-[#10B981] mb-2">{s.n}</p>
                 <h3 className="font-['Fraunces'] font-semibold text-[#DFEDE9] text-xl mb-2">{s.title}</h3>
                 <p className="font-['Inter'] text-[#7A9A92] text-sm leading-relaxed">{s.desc}</p>
