@@ -7,20 +7,11 @@ import { useEffect, useMemo } from 'react';
 //   #18 Animated Gradient Effects  → slow-drifting, pulsing radial gradients
 //   #20 Background Animations      → dot grid + noise texture for depth
 //   #17 Liquid Motion Effects      → particles that drift and fade organically
-//   #7  Line Animation             → refined comet trails with glowing heads
 //   #2  Scrollytelling / Parallax   → mouse-reactive depth shift on all layers
 //
 // All layers are fixed behind the content (z-0). The hero section is transparent
 // so this shows through; other sections have their own opaque backgrounds with
 // the cursor glow floating on top.
-
-const TRAILS = [
-  { top: '12%', angle: 6,  delay: 0,   dur: 3.5, len: 180, op: 0.75, gap: 7 },
-  { top: '32%', angle: -5, delay: 4.5, dur: 4,   len: 140, op: 0.55, gap: 9 },
-  { top: '55%', angle: 8,  delay: 9,   dur: 3.8, len: 160, op: 0.65, gap: 8 },
-  { top: '75%', angle: -7, delay: 13,  dur: 4.2, len: 120, op: 0.45, gap: 10 },
-  { top: '22%', angle: 10, delay: 16,  dur: 3.6, len: 150, op: 0.6,  gap: 9 },
-];
 
 export default function EraLivingBackground() {
   const mouseX = useMotionValue(0);
@@ -110,40 +101,6 @@ export default function EraLivingBackground() {
           style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.09) 0%, transparent 70%)' }}
         />
       </motion.div>
-
-      {/* Refined light trails — comet streaks with glowing heads */}
-      {TRAILS.map((t, i) => (
-        <motion.div
-          key={`trail-${i}`}
-          className="absolute"
-          style={{
-            top: t.top,
-            width: `${t.len}px`,
-            height: '1.5px',
-            background:
-              'linear-gradient(90deg, transparent 0%, rgba(16,185,129,0.15) 25%, rgba(52,211,153,0.55) 75%, rgba(110,231,183,0.9) 100%)',
-            rotate: `${t.angle}deg`,
-            filter: 'drop-shadow(0 0 6px rgba(16,185,129,0.5))',
-            borderRadius: '999px',
-          }}
-          initial={{ x: '-25vw', opacity: 0 }}
-          animate={{ x: '130vw', opacity: [0, t.op, t.op, 0] }}
-          transition={{
-            duration: t.dur,
-            delay: t.delay,
-            repeat: Infinity,
-            repeatDelay: t.gap,
-            ease: 'easeIn',
-            opacity: { duration: t.dur, times: [0, 0.1, 0.9, 1] },
-          }}
-        >
-          {/* Comet head — bright dot at the leading edge */}
-          <div
-            className="absolute right-0 top-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full bg-[#6EE7B7]"
-            style={{ boxShadow: '0 0 8px 2px rgba(110,231,183,0.7)' }}
-          />
-        </motion.div>
-      ))}
 
       {/* Floating particle field — slow upward drift with organic fade */}
       {particles.map((p) => (
