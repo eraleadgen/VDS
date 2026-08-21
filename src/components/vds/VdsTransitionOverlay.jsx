@@ -25,6 +25,10 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded, onCloseCompl
   const logoUrl = config?.logo_url || '';
   const shortName = config?.business_short_name || config?.business_name || '';
   const isEra = config?.business_id === 'era_systems';
+  // The VDS gold-flake + ring treatment is exclusive to the VDS tenant. Every other
+  // tenant gets a clean branded ring in their own brand color with their own logo —
+  // no VDS-specific gold particles.
+  const isVds = config?.business_id === 'vds';
   const onCloseCompleteRef = useRef(onCloseComplete);
   useEffect(() => { onCloseCompleteRef.current = onCloseComplete; }, [onCloseComplete]);
   const [phase, setPhase] = useState('hold');
@@ -144,10 +148,10 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded, onCloseCompl
         <rect x={0} y={0} width={w} height={h} fill="rgb(var(--obsidian))" mask="url(#vdsPinchReveal)" />
       </svg>
 
-      {/* Gold-flake particles — only render after the tenant config has loaded so the
-          default VDS gold palette never flashes on a non-VDS tenant. Masked out of the
-          ring's interior so that stays pure black. Fades out quickly on open. */}
-      {configLoaded && (
+      {/* Gold-flake particles — VDS tenant only. Other tenants get a clean branded
+          ring without the VDS-specific gold flakes. Masked out of the ring's interior
+          so that stays pure black. Fades out quickly on open. */}
+      {configLoaded && isVds && (
         <motion.div
           aria-hidden
           className="absolute inset-0"
