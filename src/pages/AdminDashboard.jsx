@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
-import { LayoutDashboard, Users, CalendarRange, MessageSquare, DollarSign, Route, FileText, Network, LineChart, Library, BarChart3, Settings } from 'lucide-react';
+import { LayoutDashboard, Users, CalendarRange, MessageSquare, DollarSign, Route, FileText, Network, LineChart, Library, BarChart3, Settings, Palette } from 'lucide-react';
 import PortalShell from '@/components/portal/PortalShell';
 import ContractorsTab from '@/components/admin/ContractorsTab';
 import AppointmentsTab from '@/components/admin/AppointmentsTab';
@@ -17,6 +17,7 @@ import UsersTab from '@/components/admin/UsersTab';
 import BusinessDevTab from '@/components/admin/BusinessDevTab';
 import ResourceCenter from '@/components/shared/ResourceCenter';
 import SettingsTab from '@/components/admin/SettingsTab';
+import WebsiteTab from '@/components/admin/WebsiteTab';
 import { usePlanFeatures } from '@/lib/usePlanFeatures';
 import { isPreviewMode } from '@/lib/previewMode';
 import { DEMO_METRICS } from '@/lib/demoAnalytics';
@@ -31,7 +32,7 @@ export default function AdminDashboard() {
   const [tab, setTab] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     const t = params.get('tab');
-    const valid = ['overview','contractors','appointments','quotes','invoices','journey','partners','users','business','resources','analytics','messages','settings'];
+    const valid = ['overview','contractors','appointments','quotes','invoices','journey','partners','users','business','resources','website','analytics','messages','settings'];
     return valid.includes(t) ? t : 'overview';
   });
   const [metrics, setMetrics] = useState(null);
@@ -77,6 +78,7 @@ export default function AdminDashboard() {
     { key: 'users', label: 'USERS', icon: Users },
     hasFeature('partner_engine') && { key: 'business', label: 'BUSINESS DEV', icon: LineChart },
     { key: 'resources', label: 'RESOURCES', icon: Library },
+    { key: 'website', label: 'WEBSITE', icon: Palette },
     hasFeature('advanced_analytics') && { key: 'analytics', label: 'ANALYTICS', icon: BarChart3 },
     hasFeature('ai_sms_agent') && { key: 'messages', label: 'MESSAGES', icon: MessageSquare },
     { key: 'settings', label: 'SETTINGS', icon: Settings },
@@ -95,6 +97,7 @@ export default function AdminDashboard() {
           {tab === 'users' && <UsersTab />}
           {tab === 'business' && hasFeature('partner_engine') && <BusinessDevTab />}
           {tab === 'resources' && <ResourceCenter variant="admin" />}
+          {tab === 'website' && <WebsiteTab />}
           {tab === 'analytics' && hasFeature('advanced_analytics') && <AnalyticsTab />}
           {tab === 'messages' && hasFeature('ai_sms_agent') && <MessagesTab />}
           {tab === 'settings' && <SettingsTab />}
