@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Loader2, CheckCircle2, ArrowRight, CreditCard, Globe, Sparkles } from "lucide-react";
@@ -14,9 +14,9 @@ export default function EraPortal() {
   const [account, setAccount] = useState(null);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [checkingOut, setCheckingOut] = useState(null);
   const [error, setError] = useState("");
   const [tab, setTab] = useState("plan");
+  const navigate = useNavigate();
 
   useEffect(() => {
     const init = async () => {
@@ -61,29 +61,10 @@ export default function EraPortal() {
     } catch (e) { return null; }
   };
 
-  const handleCheckout = async (tier) => {
-    setError("");
-    // Iframe check: Stripe checkout doesn't work from within an iframe.
-    if (window.self !== window.top) {
-      alert("Checkout works only from the published app. Please open this page in a new tab.");
-      return;
-    }
-    setCheckingOut(tier);
-    try {
-      // Use test mode unless we're on the production ERA domain.
-      const isLive = window.location.hostname.includes('eraleadgen.com');
-      const res = await base44.functions.invoke('createEraCheckoutSession', { tier, mode: isLive ? 'live' : 'test' });
-      const data = res?.data || res;
-      if (data.url) {
-        window.location.href = data.url;
-      } else {
-        setError(data.error || "Failed to start checkout");
-        setCheckingOut(null);
-      }
-    } catch (e) {
-      setError(e.message || "Checkout failed");
-      setCheckingOut(null);
-    }
+  // Tier selection now starts the onboarding wizard immediately (before payment).
+  // The wizard collects business info first; checkout happens after step 5.
+  const handleChooseTier = (tier) => {
+    navigate(`/onboarding?tier=${tier}`);
   };
 
   if (loading) {
@@ -107,7 +88,7 @@ export default function EraPortal() {
     );
   }
 
-  // Paid but not provisioned — continue to onboarding.
+  // Paid but not provisioned — finalize provisioning (wizard already complete).
   if (account.setup_fee_paid && !account.business_id) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -115,10 +96,27 @@ export default function EraPortal() {
           <CheckCircle2 className="w-12 h-12 mx-auto mb-4 text-primary" />
           <h1 className="text-2xl font-bold mb-2">Payment confirmed</h1>
           <p className="text-muted-foreground mb-6">
-            Your {account.current_plan_tier === 'foundation' ? 'Foundation' : 'Basic'} plan is active. Let's set up your business.
+            Your {account.current_plan_tier === 'foundation' ? 'Foundation' : 'Basic'} plan is active. Let's finish setting up your site.
           </p>
-          <Link to="/onboarding">
-            <Button size="lg">Start onboarding <ArrowRight className="w-4 h-4 ml-2" /></Button>
+          <Link to="/onboarding?checkout=success">
+            <Button size="lg">Complete setup <ArrowRight className="w-4 h-4 ml-2" /></Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Started onboarding but haven't paid — resume the wizard (data is preserved).
+  if (!account.setup_fee_paid && !account.business_id && account.onboarding_session_id) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center max-w-md">
+          <h1 className="text-2xl font-bold mb-2">Continue your setup</h1>
+          <p className="text-muted-foreground mb-6">
+            You started setting up your business. Pick up where you left off.
+          </p>
+          <Link to={`/onboarding?session=${account.onboarding_session_id}`}>
+            <Button size="lg">Resume onboarding <ArrowRight className="w-4 h-4 ml-2" /></Button>
           </Link>
         </div>
       </div>
@@ -154,12 +152,8 @@ export default function EraPortal() {
                 <li>✓ CRM & job management</li>
                 <li>✓ AI concierge</li>
               </ul>
-              <Button onClick={() => handleCheckout('basic')} disabled={checkingOut !== null} className="w-full">
-                {checkingOut === 'basic' ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Redirecting...</>
-                ) : (
-                  "Choose Basic"
-                )}
+              <Button onClick={() => handleChooseTier('basic')} className="w-full">
+                Choose Basic
               </Button>
             </div>
 
@@ -180,12 +174,8 @@ export default function EraPortal() {
                 <li>✓ Advanced analytics</li>
                 <li>✓ Priority support</li>
               </ul>
-              <Button onClick={() => handleCheckout('foundation')} disabled={checkingOut !== null} className="w-full">
-                {checkingOut === 'foundation' ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Redirecting...</>
-                ) : (
-                  "Choose Foundation"
-                )}
+              <Button onClick={() => handleChooseTier('foundation')} className="w-full">
+                Choose Foundation
               </Button>
             </div>
           </div>

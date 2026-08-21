@@ -248,9 +248,57 @@ export default async function(req: Request): Promise<Response> {
     const me = await base44.auth.me();
     if (!me || !me.id) return Response.json({ error: 'Authentication required.' }, { status: 401 });
 
-    // ── init: create OnboardingSession from Stripe checkout session ────
+    // ── init: create OnboardingSession ────────────────────────────────
+    // Two entry paths:
+    //   A) Pre-payment (new flow): { plan_tier } — creates the session before
+    //      checkout so the user fills out business info first. Checks for an
+    //      existing in-progress session and resumes it (prevents duplicates).
+    //   B) Post-checkout (legacy): { stripe_checkout_session_id } — verifies
+    //      the Stripe session and creates from its metadata. Retained for
+    //      backward compatibility; the new flow uses path A.
     if (action === 'init') {
-      const { stripe_checkout_session_id } = body;
+      const { stripe_checkout_session_id, plan_tier: directTier } = body;
+
+      // Path A: pre-payment init from selected tier (no Stripe session yet).
+      if (directTier && !stripe_checkout_session_id) {
+        if (directTier !== 'basic' && directTier !== 'foundation') {
+          return Response.json({ error: 'Invalid plan_tier.' }, { status: 400 });
+        }
+        // Resume: return an existing in-progress session instead of duplicating.
+        const existing = await base44.asServiceRole.entities.OnboardingSession.filter(
+          { owner_user_id: me.id, status: 'in_progress' }
+        ).catch(() => []);
+        if (existing && existing.length) {
+          // Update the tier if the user picked a different one this time.
+          if (existing[0].plan_tier !== directTier) {
+            const updated = await base44.asServiceRole.entities.OnboardingSession.update(existing[0].id, { plan_tier: directTier });
+            return Response.json({ session: updated });
+          }
+          return Response.json({ session: existing[0] });
+        }
+        // Create a new session. business_id slug from the user's name as a placeholder;
+        // provisionTenant regenerates it from the real business name (Step 1 data).
+        const businessId = await uniqueSlug(base44, slugify(me.full_name || 'new-business'));
+        const sessionRecord = await base44.asServiceRole.entities.OnboardingSession.create({
+          business_id: businessId,
+          owner_user_id: me.id,
+          plan_tier: directTier,
+          stripe_checkout_session_id: null,
+          current_step: 1,
+          wizard_data: defaultWizardData(directTier),
+          status: 'in_progress',
+        });
+        // Stamp EraAccount so the portal can link to the wizard for resume.
+        const eraAccounts = await base44.asServiceRole.entities.EraAccount.filter({ owner_user_id: me.id }).catch(() => []);
+        if (eraAccounts && eraAccounts[0]) {
+          await base44.asServiceRole.entities.EraAccount.update(eraAccounts[0].id, {
+            onboarding_session_id: sessionRecord.id,
+          }).catch((e) => console.error('EraAccount stamp failed:', e.message));
+        }
+        return Response.json({ session: sessionRecord });
+      }
+
+      // Path B: legacy post-checkout init (requires a Stripe session ID).
       if (!stripe_checkout_session_id) return Response.json({ error: 'stripe_checkout_session_id is required.' }, { status: 400 });
       // Stripe checkout session IDs match a strict format (e.g. cs_live_... or cs_test_...).
       // Reject anything else to prevent path traversal / SSRF into other Stripe API endpoints.
@@ -475,36 +523,48 @@ export default async function(req: Request): Promise<Response> {
         return Response.json({ error: 'Not authorized.' }, { status: 403 });
       }
 
-      // Steps 1 + 4: Finalize config + activate domain (provisionTenant does both).
-      const { config, subdomain } = await provisionTenant(base44, session);
-
-      // Step 2: Confirm Stripe authorization (verify the checkout session is paid).
-      let stripeStatus = 'complete';
-      let stripeError = '';
+      // ── Hard payment gate (BEFORE any real resource is created) ──────────
+      // This is the single point where real resources get created. Payment must
+      // be confirmed by two independent sources before provisionTenant runs:
+      //   1. EraAccount.setup_fee_paid === true  (webhook stamped it)
+      //   2. Stripe checkout session payment_status === 'paid'  (direct API)
+      // If either fails, return an error and create nothing. This preserves the
+      // "nothing real gets created until Stripe confirms payment" discipline —
+      // the backend never trusts the frontend's sequencing.
+      const eraAccounts = await base44.asServiceRole.entities.EraAccount.filter({ owner_user_id: me.id }).catch(() => []);
+      const eraAccount = eraAccounts && eraAccounts[0];
+      if (!eraAccount || !eraAccount.setup_fee_paid) {
+        return Response.json({ error: 'Payment not confirmed. Please complete checkout before provisioning.' }, { status: 402 });
+      }
+      if (!session.stripe_checkout_session_id) {
+        return Response.json({ error: 'No checkout session on this onboarding session. Please complete checkout first.' }, { status: 402 });
+      }
       try {
         const stripeKey = Deno.env.get('STRIPE_SECRET_KEY');
         if (!stripeKey) {
-          stripeStatus = 'failed';
-          stripeError = 'Stripe API key not configured';
-        } else {
-          const stripeRes = await fetch(`https://api.stripe.com/v1/checkout/sessions/${session.stripe_checkout_session_id}`, {
-            headers: { Authorization: `Bearer ${stripeKey}` },
-          });
-          if (!stripeRes.ok) {
-            stripeStatus = 'failed';
-            stripeError = 'Stripe session lookup failed';
-          } else {
-            const stripeSession = await stripeRes.json();
-            if (stripeSession.payment_status !== 'paid') {
-              stripeStatus = 'failed';
-              stripeError = `Payment status: ${stripeSession.payment_status}`;
-            }
-          }
+          return Response.json({ error: 'Stripe API key not configured.' }, { status: 500 });
+        }
+        const stripeRes = await fetch(`https://api.stripe.com/v1/checkout/sessions/${session.stripe_checkout_session_id}`, {
+          headers: { Authorization: `Bearer ${stripeKey}` },
+        });
+        if (!stripeRes.ok) {
+          return Response.json({ error: 'Unable to verify payment with Stripe.' }, { status: 402 });
+        }
+        const stripeSession = await stripeRes.json();
+        if (stripeSession.payment_status !== 'paid') {
+          return Response.json({ error: `Payment not complete (status: ${stripeSession.payment_status}).` }, { status: 402 });
         }
       } catch (e) {
-        stripeStatus = 'failed';
-        stripeError = e.message;
+        return Response.json({ error: `Payment verification failed: ${e.message}` }, { status: 500 });
       }
+
+      // ── Payment confirmed — provision the tenant ──────────────────────
+      // Steps 1 + 4: Finalize config + activate domain (provisionTenant does both).
+      const { config, subdomain } = await provisionTenant(base44, session);
+
+      // Step 2: Stripe confirmation (already verified above — report as complete).
+      const stripeStatus = 'complete';
+      const stripeError = '';
 
       // Step 3: Confirm Google Calendar authorization (shared platform connector).
       let calendarStatus = 'complete';

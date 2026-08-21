@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { tier, mode } = await req.json();
+    const { tier, mode, onboarding_session_id } = await req.json();
     if (!tier || !['basic', 'foundation'].includes(tier)) {
       return Response.json({ error: 'Invalid tier' }, { status: 400 });
     }
@@ -68,6 +68,22 @@ Deno.serve(async (req) => {
     } catch {}
     if (!baseUrl) return Response.json({ error: 'Unable to determine redirect URL.' }, { status: 400 });
 
+    // Stamp the Stripe checkout session ID back onto the OnboardingSession so
+    // the provision action can verify payment against it. The session already
+    // exists (created pre-payment by the wizard's init action).
+    let onboardingSession = null;
+    if (onboarding_session_id) {
+      const sessions = await base44.asServiceRole.entities.OnboardingSession.filter({ id: onboarding_session_id, owner_user_id: user.id }).catch(() => []);
+      onboardingSession = sessions && sessions[0];
+    }
+
+    // cancel_url returns to the wizard (not era-portal) so the user retries
+    // checkout without losing their already-entered business info. All wizard
+    // data is preserved in the OnboardingSession — canceling doesn't touch it.
+    const cancelUrl = onboardingSession
+      ? `${baseUrl}/onboarding?session=${onboardingSession.id}`
+      : `${baseUrl}/era-portal`;
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       line_items: [
@@ -76,7 +92,7 @@ Deno.serve(async (req) => {
       ],
       mode: 'subscription',
       success_url: `${baseUrl}/onboarding?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/era-portal`,
+      cancel_url: cancelUrl,
       metadata: {
         base44_app_id: Deno.env.get('BASE44_APP_ID'),
         era_product_type: 'era_saas',
@@ -92,6 +108,14 @@ Deno.serve(async (req) => {
         },
       },
     });
+
+    // Stamp the checkout session ID onto the OnboardingSession so provision can
+    // verify payment against it after the webhook stamps EraAccount.setup_fee_paid.
+    if (onboardingSession) {
+      await base44.asServiceRole.entities.OnboardingSession.update(onboardingSession.id, {
+        stripe_checkout_session_id: session.id,
+      }).catch((e) => console.error('OnboardingSession stamp failed:', e.message));
+    }
 
     return Response.json({ url: session.url });
   } catch (error) {

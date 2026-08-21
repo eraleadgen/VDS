@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { Check, ChevronRight, ChevronLeft, Loader2 } from 'lucide-react';
+import { Check, ChevronLeft, Loader2 } from 'lucide-react';
 import Step1BusinessBasics from '@/components/onboarding/Step1BusinessBasics';
 import Step2Branding from '@/components/onboarding/Step2Branding';
 import Step3ServiceCatalog from '@/components/onboarding/Step3ServiceCatalog';
@@ -21,7 +21,6 @@ const STEPS = [
 export default function OnboardingWizard() {
   const [searchParams] = useSearchParams();
   const checkout = searchParams.get('checkout');
-  const checkoutSessionId = searchParams.get('session_id');
   const resumeSessionId = searchParams.get('session');
 
   const [session, setSession] = useState(null);
@@ -30,14 +29,13 @@ export default function OnboardingWizard() {
   const [error, setError] = useState('');
   const [currentStep, setCurrentStep] = useState(1);
   const [saving, setSaving] = useState(false);
-  const [completed, setCompleted] = useState(null);
   const [provisioning, setProvisioning] = useState(false);
 
-  const initFromCheckout = useCallback(async (csId) => {
+  const initFromTier = useCallback(async (tier) => {
     try {
       const r = await base44.functions.invoke('onboardingWizard', {
         action: 'init',
-        stripe_checkout_session_id: csId,
+        plan_tier: tier,
       });
       const s = r?.data?.session;
       if (s) {
@@ -78,11 +76,26 @@ export default function OnboardingWizard() {
         return;
       }
 
-      // New flow from Stripe redirect: ?checkout=success&session_id=<cs_...>
-      // Show the polling state first — the webhook may not have stamped EraAccount yet.
-      if (checkout === 'success' && checkoutSessionId) {
+      // Post-checkout: ?checkout=success — confirm payment landed, then provision.
+      // Load the existing session (created pre-payment) so it's ready for provisioning.
+      if (checkout === 'success') {
+        try {
+          const r = await base44.functions.invoke('eraAccount', { action: 'get' });
+          const data = r?.data || r;
+          if (data.success && data.account?.onboarding_session_id) {
+            const sessRes = await base44.functions.invoke('onboardingWizard', { action: 'get', session_id: data.account.onboarding_session_id });
+            if (sessRes?.data?.session) setSession(sessRes.data.session);
+          }
+        } catch (e) { /* session loaded after confirming if this fails */ }
         setConfirming(true);
         setLoading(false);
+        return;
+      }
+
+      // Pre-payment: ?tier=<basic|foundation> — start the wizard before checkout.
+      const tier = searchParams.get('tier');
+      if (tier) {
+        await initFromTier(tier);
         return;
       }
 
@@ -94,11 +107,8 @@ export default function OnboardingWizard() {
           await resumeSession(data.account.onboarding_session_id);
           return;
         }
-        if (data.success && data.account?.setup_fee_paid) {
-          setError('Your payment is confirmed but we could not find your onboarding session. Please contact support.');
-        } else {
-          setError('No onboarding session found. Please complete a tier purchase first.');
-        }
+        // No session — send them to the portal to pick a tier.
+        window.location.href = '/era-portal';
       } catch (e) {
         setError(e.message);
       } finally {
@@ -108,10 +118,41 @@ export default function OnboardingWizard() {
   }, []);
 
   const handleConfirmed = useCallback(() => {
+    // Payment confirmed by webhook — go straight to provisioning (no init needed;
+    // the OnboardingSession already exists from the pre-payment wizard flow).
     setConfirming(false);
-    setLoading(true);
-    initFromCheckout(checkoutSessionId);
-  }, [checkoutSessionId, initFromCheckout]);
+    setProvisioning(true);
+  }, []);
+
+  // Step 5 complete — redirect to Stripe checkout. Payment happens AFTER the wizard
+  // collects all business info, BEFORE provisioning. The OnboardingSession is stamped
+  // with the checkout session ID so the provision action can verify payment against it.
+  const startCheckout = useCallback(async () => {
+    if (!session) return;
+    if (window.self !== window.top) {
+      setError('Checkout works only from the published app. Please open this page in a new tab.');
+      return;
+    }
+    setSaving(true);
+    try {
+      const isLive = window.location.hostname.includes('eraleadgen.com');
+      const res = await base44.functions.invoke('createEraCheckoutSession', {
+        tier: session.plan_tier,
+        mode: isLive ? 'live' : 'test',
+        onboarding_session_id: session.id,
+      });
+      const data = res?.data || res;
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setError(data.error || 'Failed to start checkout');
+      }
+    } catch (e) {
+      setError(e.message || 'Checkout failed');
+    } finally {
+      setSaving(false);
+    }
+  }, [session]);
 
   const handleNext = useCallback(async (stepData) => {
     if (!session) return;
@@ -130,15 +171,15 @@ export default function OnboardingWizard() {
       if (currentStep < 5) {
         setCurrentStep(currentStep + 1);
       } else {
-        // Step 5 saved — show the auto-provisioning loading screen.
-        setProvisioning(true);
+        // Step 5 saved — redirect to Stripe checkout (payment before provisioning).
+        await startCheckout();
       }
     } catch (e) {
       setError(e.message);
     } finally {
       setSaving(false);
     }
-  }, [currentStep, session]);
+  }, [currentStep, session, startCheckout]);
 
   const handleBack = useCallback(() => {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
@@ -171,29 +212,12 @@ export default function OnboardingWizard() {
     return (
       <ProvisioningScreen
         sessionId={session.id}
-        onComplete={(result) => {
-          setCompleted({ subdomain: result.subdomain, businessName: result.business_name });
-          setProvisioning(false);
+        onComplete={() => {
+          // Provisioning complete — redirect to the ERA account portal, which shows
+          // the active plan, features, and a link to the client's live site via SSO.
+          window.location.href = '/era-portal';
         }}
       />
-    );
-  }
-
-  if (completed) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-obsidian px-6">
-        <div className="max-w-md text-center">
-          <div className="w-16 h-16 rounded-full bg-gold/10 border border-gold/30 flex items-center justify-center mx-auto mb-6">
-            <Check size={32} className="text-gold" />
-          </div>
-          <h1 className="text-2xl font-grotesk font-bold text-vapor mb-2">You're all set!</h1>
-          <p className="text-vapor/60 mb-1">Your business is now live at</p>
-          <p className="text-gold font-mono-tech text-lg mb-6">{completed.subdomain}</p>
-          <a href={`https://${completed.subdomain}`} className="inline-flex items-center gap-2 px-6 py-3 bg-gold text-obsidian font-grotesk font-bold rounded-sm hover:bg-gold-light transition-colors">
-            Visit Your Site <ChevronRight size={18} />
-          </a>
-        </div>
-      </div>
     );
   }
 
