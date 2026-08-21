@@ -43,6 +43,13 @@ export default function EraClientDetail({ client: initialClient, onBack, onUpdat
       ? client.website_links.booking_url.replace('/book', '')
       : null;
 
+  // The live preview iframe loads the app's own origin with a ?tenant= override
+  // (supported by BusinessConfigContext) instead of the custom domain. Custom
+  // domains often send X-Frame-Options that block embedding, and a 'pending'
+  // domain doesn't resolve at all. This way the preview always renders the
+  // tenant's branded site, domain-live or not.
+  const previewUrl = `${window.location.origin}?tenant=${encodeURIComponent(client.business_id)}`;
+
   const startEdit = () => {
     setEditValues({
       business_name: client.business_name || '',
@@ -258,7 +265,7 @@ export default function EraClientDetail({ client: initialClient, onBack, onUpdat
           <div className="mt-5">
             <p className="text-[10px] font-mono tracking-widest text-white/30 mb-2">LIVE SITE PREVIEW</p>
             <div className="border border-white/8 rounded-sm overflow-hidden" style={{ height: 400 }}>
-              <iframe src={siteUrl} title="Client site" className="w-full h-full bg-white" />
+              <iframe src={previewUrl} title="Client site" className="w-full h-full bg-white" />
             </div>
           </div>
         )}
