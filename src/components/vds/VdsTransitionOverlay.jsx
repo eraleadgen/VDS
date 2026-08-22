@@ -69,7 +69,7 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded, onCloseCompl
     if (!authLoaded) return;
     let cancelled = false;
     let clearChecks = 0;
-    const MIN_HOLD = 650;
+    const MIN_HOLD = 1000;
     const MAX_WAIT = 3000;
     const openNow = () => { if (!cancelled) setPhase('opening'); };
     const maxTimer = setTimeout(openNow, MAX_WAIT);
@@ -109,7 +109,7 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded, onCloseCompl
   const partEase = [0.7, 0, 0.3, 1];
 
   return (
-    <div className="fixed inset-0 z-[100] pointer-events-none overflow-hidden" style={{ background: isEra ? '#000000' : 'rgb(var(--obsidian))' }}>
+    <div className="fixed inset-0 z-[100] pointer-events-none overflow-hidden" style={{ background: 'transparent' }}>
       {/* Black field, erased by the single growing/shrinking reveal circle */}
       <svg className="absolute inset-0" width={w} height={h} aria-hidden>
         <defs>
