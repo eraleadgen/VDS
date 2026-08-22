@@ -171,7 +171,8 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded, onCloseCompl
               initial={{ opacity: 0 }}
               animate={{ opacity: phase === 'opening' ? 0 : 1, filter: `drop-shadow(0 4px 24px rgba(0,0,0,0.6)) blur(${phase === 'opening' ? 14 : 0}px)` }}
               transition={{ duration: 0.4, ease: 'easeOut', delay: phase === 'opening' ? 0.05 : 0 }}
-              className="relative max-w-[140px] max-h-[140px] w-auto h-auto object-contain select-none"
+              className={`relative object-contain select-none ${isEra ? 'w-[140px] h-[140px]' : 'max-w-[140px] max-h-[140px] w-auto h-auto'}`}
+              style={{ willChange: 'opacity, filter' }}
             />
           ) : (
             <motion.span
