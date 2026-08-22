@@ -26,7 +26,7 @@ export default function EraHero() {
             More bookings. Less overhead. A business that runs itself.
           </motion.h1>
           <motion.p variants={item} className="font-['Inter'] text-[#7A9A92] text-lg md:text-xl leading-relaxed max-w-[640px] mb-9">
-            ERA Systems gives your service business a complete platform — website, booking, customer management, automated communication, and payments — working from day one. No developers. No spreadsheets. No missed calls.
+            ERA Systems gives your service business a complete platform: website, booking, customer management, automated communication, and payments, all working from day one. No developers. No spreadsheets. No missed calls.
           </motion.p>
           <motion.div variants={item} className="flex flex-wrap items-center gap-3">
             <Link to="/era-results" className="inline-flex items-center gap-2 bg-[#10B981] text-[#060A09] font-['Inter'] text-sm font-semibold px-5 py-3 rounded-[6px] hover:bg-[#34D399] transition-all duration-200 shadow-[0_0_24px_-6px_rgba(16,185,129,0.5)] hover:shadow-[0_0_32px_-6px_rgba(52,211,153,0.7)]">See the results <ArrowRight size={15} /></Link>

@@ -20,7 +20,7 @@ export default function EraWhoFor() {
             Any service business that books jobs and gets paid.
           </h2>
           <p className="font-['Inter'] text-[#7A9A92] text-lg leading-relaxed max-w-[640px]">
-            Today ERA is running mobile detailing operations end-to-end. The same engine is built to scale across any service business — roofing, HVAC, plumbing, and beyond.
+            Today ERA is running mobile detailing operations end-to-end. The same engine is built to scale across any service business: roofing, HVAC, plumbing, and beyond.
           </p>
         </div>
         <Reveal>

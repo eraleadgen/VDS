@@ -28,6 +28,10 @@ const ERA_ALLOWLIST = new Set([
   '/terms',
   '/privacy',
   '/cookies',
+  '/era-platform',
+  '/era-results',
+  '/era-pricing',
+  '/era-who-for',
 ]);
 
 export default function TenantRouteGuard() {

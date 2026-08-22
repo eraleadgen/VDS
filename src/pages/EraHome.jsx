@@ -14,7 +14,7 @@ const FACTS = [
 ];
 
 const PAGES = [
-  { to: '/era-platform', label: 'What we do', desc: 'Six automated systems that run your business — from first call to final payment.', tag: 'PLATFORM' },
+  { to: '/era-platform', label: 'What we do', desc: 'Six automated systems that run your business, from first call to final payment.', tag: 'PLATFORM' },
   { to: '/era-results', label: 'Results', desc: 'See the actual website and admin dashboard ERA produces, running live today.', tag: 'PROOF' },
   { to: '/era-pricing', label: 'Pricing', desc: 'One-time setup, flat monthly. No per-seat surprises. Basic and Foundation live now.', tag: 'PRICING' },
   { to: '/era-who-for', label: "Who it's for", desc: 'Any service business that books jobs and gets paid. Detailing today, more tomorrow.', tag: 'CUSTOMERS' },

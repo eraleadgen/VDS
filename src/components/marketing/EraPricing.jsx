@@ -40,12 +40,12 @@ export default function EraPricing() {
     <section id="pricing" className="bg-[#08110E] py-24 md:py-32 border-t border-[#10B981]/8">
       <div className="max-w-[1200px] mx-auto px-6">
         <div className="max-w-[760px] mb-14">
-          <p className="font-['JetBrains_Mono'] text-[11px] tracking-[0.25em] text-[#10B981] mb-5">PRICING — 05</p>
+          <p className="font-['JetBrains_Mono'] text-[11px] tracking-[0.25em] text-[#10B981] mb-5">PRICING · 05</p>
           <h2 className="font-['Sora'] font-semibold text-[#DFEDE9] text-[34px] md:text-[48px] leading-[1.05] tracking-[-0.02em] mb-5">
             One-time setup. Flat monthly. No per-seat surprises.
           </h2>
           <p className="font-['Inter'] text-[#7A9A92] text-lg leading-relaxed">
-            Start with a one-time setup fee, then a flat monthly rate. Basic and Foundation are live today — Growth and Enterprise are on the roadmap.
+            Start with a one-time setup fee, then a flat monthly rate. Basic and Foundation are live today. Growth and Enterprise are on the roadmap.
           </p>
         </div>
 

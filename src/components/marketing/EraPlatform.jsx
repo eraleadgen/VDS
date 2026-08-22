@@ -11,7 +11,7 @@ function ValerieFragment() {
       </div>
       <div className="flex justify-end">
         <div className="max-w-[85%]">
-          <div className="bg-[#10B981] text-[#060A09] rounded-md rounded-tr-sm px-2.5 py-1.5 text-[11px] font-['Inter'] font-medium">Saturday 10am works — Marcus is available. Want me to book it?</div>
+          <div className="bg-[#10B981] text-[#060A09] rounded-md rounded-tr-sm px-2.5 py-1.5 text-[11px] font-['Inter'] font-medium">Saturday 10am works. Marcus is available. Want me to book it?</div>
         </div>
       </div>
       <div className="max-w-[55%]">
@@ -53,7 +53,7 @@ function SchedFragment() {
       <div className="space-y-1.5">
         <div className="flex items-center gap-2 rounded-md border border-[#1A2A24] px-2 py-1.5">
           <span className="font-['JetBrains_Mono'] text-[10px] text-[#6B8A82] w-10">09:00</span>
-          <span className="font-['JetBrains_Mono'] text-[10px] text-[#4A6359]">— open —</span>
+          <span className="font-['JetBrains_Mono'] text-[10px] text-[#4A6359]">Open</span>
         </div>
         <div className="flex items-center gap-2 rounded-md border border-[#10B981]/40 bg-[#10B981]/10 px-2 py-1.5">
           <span className="font-['JetBrains_Mono'] text-[10px] text-[#10B981] w-10">10:00</span>
@@ -149,10 +149,10 @@ export default function EraPlatform() {
         <div className="max-w-[760px] mb-14">
           <p className="font-['JetBrains_Mono'] text-[11px] tracking-[0.25em] text-[#10B981] mb-5">WHAT ERA DOES</p>
           <h2 className="font-['Sora'] font-bold text-[#DFEDE9] text-[34px] md:text-[48px] leading-[1.05] tracking-[-0.03em] mb-5">
-            Six things your business used to need people for — now running themselves.
+            Six things your business used to need people for, now running themselves.
           </h2>
           <p className="font-['Inter'] text-[#7A9A92] text-lg leading-relaxed">
-            Every part of your operation — from the first call to the final payment — handled automatically. Not a collection of tools. One system that works together.
+            Every part of your operation, from the first call to the final payment, handled automatically. Not a collection of tools. One system that works together.
           </p>
         </div>
 

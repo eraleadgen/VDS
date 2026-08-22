@@ -23,7 +23,7 @@ export default function EraProof() {
             This is what your business looks like on ERA.
           </h2>
           <p className="font-['Inter'] text-[#7A9A92] text-lg leading-relaxed max-w-[640px]">
-            VDS Mobile Detailing is ERA's first client — a real, operating business in Metro Atlanta. Every screen below is the actual website and admin dashboard our platform produces, shown with representative data.
+            VDS Mobile Detailing is ERA's first client, a real, operating business in Metro Atlanta. Every screen below is the actual website and admin dashboard our platform produces, shown with representative data.
           </p>
         </div>
 
