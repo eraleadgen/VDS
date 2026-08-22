@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import EraLogo from './EraLogo';
 
 const COLS = [
-  { title: 'Platform', links: [['#platform', 'Modules'], ['#proof', 'Proof'], ['#pricing', 'Pricing'], ['#customers', 'Customers']] },
+  { title: 'Platform', links: [['/era-platform', 'What we do'], ['/era-results', 'Results'], ['/era-pricing', 'Pricing'], ['/era-who-for', "Who it's for"]] },
   { title: 'Account', links: [['/era-register', 'Get started'], ['/era-login', 'Sign in'], ['/era-portal', 'Account portal'], ['/era-admin', 'Admin portal']] },
   { title: 'Legal', links: [['/terms', 'Terms'], ['/privacy', 'Privacy'], ['/cookies', 'Cookies']] },
 ];

@@ -4,10 +4,10 @@ import { Menu, X } from 'lucide-react';
 import EraLogo from './EraLogo';
 
 const LINKS = [
-  { href: '#platform', label: 'What we do' },
-  { href: '#proof', label: 'Results' },
-  { href: '#pricing', label: 'Pricing' },
-  { href: '#customers', label: "Who it's for" },
+  { to: '/era-platform', label: 'What we do' },
+  { to: '/era-results', label: 'Results' },
+  { to: '/era-pricing', label: 'Pricing' },
+  { to: '/era-who-for', label: "Who it's for" },
 ];
 
 export default function EraNav() {
@@ -28,7 +28,7 @@ export default function EraNav() {
 
         <nav className="hidden md:flex items-center gap-8">
           {LINKS.map((l) => (
-            <a key={l.href} href={l.href} className="font-['Inter'] text-sm text-[#7A9A92] hover:text-[#34D399] transition-colors duration-200">{l.label}</a>
+            <Link key={l.to} to={l.to} className="font-['Inter'] text-sm text-[#7A9A92] hover:text-[#34D399] transition-colors duration-200">{l.label}</Link>
           ))}
         </nav>
 
@@ -45,7 +45,7 @@ export default function EraNav() {
       {open && (
         <div className="md:hidden bg-[#060A09] border-b border-[#10B981]/10 px-6 py-4 space-y-3">
           {LINKS.map((l) => (
-            <a key={l.href} href={l.href} onClick={() => setOpen(false)} className="block font-['Inter'] text-sm text-[#DFEDE9]">{l.label}</a>
+            <Link key={l.to} to={l.to} onClick={() => setOpen(false)} className="block font-['Inter'] text-sm text-[#DFEDE9]">{l.label}</Link>
           ))}
           <div className="flex gap-3 pt-2 border-t border-[#10B981]/10">
             <Link to="/era-login" className="flex-1 text-center font-['Inter'] text-sm font-medium text-[#DFEDE9] border border-[#1A2A24] rounded-[6px] py-2">Sign in</Link>

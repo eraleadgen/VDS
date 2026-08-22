@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import BrowserFrame from './BrowserFrame';
@@ -28,8 +29,8 @@ export default function EraHero() {
             ERA Systems gives your service business a complete platform — website, booking, customer management, automated communication, and payments — working from day one. No developers. No spreadsheets. No missed calls.
           </motion.p>
           <motion.div variants={item} className="flex flex-wrap items-center gap-3">
-            <a href="#proof" className="inline-flex items-center gap-2 bg-[#10B981] text-[#060A09] font-['Inter'] text-sm font-semibold px-5 py-3 rounded-[6px] hover:bg-[#34D399] transition-all duration-200 shadow-[0_0_24px_-6px_rgba(16,185,129,0.5)] hover:shadow-[0_0_32px_-6px_rgba(52,211,153,0.7)]">See the results <ArrowRight size={15} /></a>
-            <a href="#pricing" className="inline-flex items-center gap-2 font-['Inter'] text-sm font-medium text-[#DFEDE9] px-5 py-3 rounded-[6px] border border-[#1A2A24] hover:border-[#10B981]/40 hover:text-[#34D399] transition-colors">View pricing</a>
+            <Link to="/era-results" className="inline-flex items-center gap-2 bg-[#10B981] text-[#060A09] font-['Inter'] text-sm font-semibold px-5 py-3 rounded-[6px] hover:bg-[#34D399] transition-all duration-200 shadow-[0_0_24px_-6px_rgba(16,185,129,0.5)] hover:shadow-[0_0_32px_-6px_rgba(52,211,153,0.7)]">See the results <ArrowRight size={15} /></Link>
+            <Link to="/era-pricing" className="inline-flex items-center gap-2 font-['Inter'] text-sm font-medium text-[#DFEDE9] px-5 py-3 rounded-[6px] border border-[#1A2A24] hover:border-[#10B981]/40 hover:text-[#34D399] transition-colors">View pricing</Link>
           </motion.div>
         </motion.div>
 

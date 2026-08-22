@@ -46,6 +46,10 @@ import EraAdminPortal from './pages/EraAdminPortal';
 import EraRegister from './pages/EraRegister';
 import EraLogin from './pages/EraLogin';
 import EraPortal from './pages/EraPortal';
+import EraPlatformPage from './pages/era/EraPlatformPage';
+import EraResultsPage from './pages/era/EraResultsPage';
+import EraPricingPage from './pages/era/EraPricingPage';
+import EraWhoForPage from './pages/era/EraWhoForPage';
 import SsoHandoff from './pages/SsoHandoff';
 import ChatWidget from '@/components/chat/ChatWidget';
 import FeatureGate from '@/components/FeatureGate';
@@ -120,6 +124,10 @@ const AuthenticatedApp = () => {
           <Route path="/era-register" element={<EraRegister />} />
           <Route path="/era-login" element={<EraLogin />} />
           <Route path="/era-portal" element={<EraPortal />} />
+          <Route path="/era-platform" element={<EraPlatformPage />} />
+          <Route path="/era-results" element={<EraResultsPage />} />
+          <Route path="/era-pricing" element={<EraPricingPage />} />
+          <Route path="/era-who-for" element={<EraWhoForPage />} />
           <Route path="/sso" element={<SsoHandoff />} />
           <Route path="/:code" element={<FeatureGate feature="partner_engine"><PartnerRedirect /></FeatureGate>} />
             <Route path="*" element={<PageNotFound />} />
