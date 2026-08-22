@@ -11,6 +11,7 @@ import { useBusinessName, useBusinessConfig, useMembershipPlan } from '@/lib/Bus
 // PostalAddress; a comma-split of business_address is only a last-resort fallback.
 
 const DEFAULT_IMAGE = 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/6a27779cd_1773368635248-a065bd31-ddf6-4b1c-87dc-3a6080dc60f8.png';
+const ERA_LOGO = 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/b68e16deb_ERALogo-Photoroom.png';
 
 // Internal portals that should never be indexed.
 const NOINDEX = new Set([
@@ -41,6 +42,21 @@ function upsertLink(rel, href) {
     el.setAttribute('rel, rel');
   }
   el.setAttribute('href', href);
+}
+
+// Update the browser tab favicon. The static index.html favicon is VDS-branded;
+// for the ERA Systems marketing tenant we swap it to the ERA logo at runtime.
+function setFavicon(href) {
+  const rels = ['icon', 'apple-touch-icon'];
+  rels.forEach(rel => {
+    let el = document.head.querySelector(`link[rel="${rel}"]`);
+    if (!el) {
+      el = document.createElement('link');
+      el.setAttribute('rel', rel);
+      document.head.appendChild(el);
+    }
+    el.setAttribute('href', href);
+  });
 }
 
 // Inject or remove the route-specific JSON-LD structured-data block.
@@ -142,19 +158,28 @@ export default function RouteSeo() {
   }
 
   useEffect(() => {
+    const isEra = config?.business_id === 'era_systems';
+    // ERA Systems marketing site (eraleadgen.com) always shows "ERA Systems LLC"
+    // as the browser tab title and uses the ERA logo as the favicon, regardless of
+    // any per-route SEO entry in the config.
+    if (isEra) {
+      document.title = 'ERA Systems LLC';
+      setFavicon(ERA_LOGO);
+    }
+
     const seoEntry = (config?.seo || []).find(s => s.route === path);
     const noindex = NOINDEX.has(path) || !seoEntry;
 
     if (seoEntry) {
-      document.title = seoEntry.title;
+      if (!isEra) document.title = seoEntry.title;
       upsertMeta('name', 'description', seoEntry.description);
-      upsertMeta('property', 'og:title', seoEntry.title);
+      upsertMeta('property', 'og:title', isEra ? 'ERA Systems LLC' : seoEntry.title);
       upsertMeta('property', 'og:description', seoEntry.description);
       upsertMeta('property', 'og:url', `${baseUrl}${path}`);
-      upsertMeta('property', 'og:image', logo);
-      upsertMeta('name', 'twitter:title', seoEntry.title);
+      upsertMeta('property', 'og:image', isEra ? ERA_LOGO : logo);
+      upsertMeta('name', 'twitter:title', isEra ? 'ERA Systems LLC' : seoEntry.title);
       upsertMeta('name', 'twitter:description', seoEntry.description);
-      upsertMeta('name', 'twitter:image', logo);
+      upsertMeta('name', 'twitter:image', isEra ? ERA_LOGO : logo);
       upsertLink('canonical', `${baseUrl}${path}`);
       upsertMeta('name', 'robots', 'index, follow');
     } else {
@@ -162,11 +187,11 @@ export default function RouteSeo() {
       // different brand while config-specific SEO loads or on unlisted routes.
       // When config is null (still loading), use a neutral title to avoid flashing
       // the wrong brand before tenant resolution completes.
-      document.title = config
-        ? (config.business_id === 'era_systems'
-            ? 'ERA Core — Business Operating System for Service Companies'
-            : `${businessName} | Mobile Car Detailing in Metro Atlanta`)
-        : 'Loading…';
+      if (!isEra) {
+        document.title = config
+          ? `${businessName} | Mobile Car Detailing in Metro Atlanta`
+          : 'Loading…';
+      }
       upsertMeta('name', 'robots', noindex ? 'noindex, nofollow' : 'index, follow');
       upsertLink('canonical', `${baseUrl}${path}`);
     }
