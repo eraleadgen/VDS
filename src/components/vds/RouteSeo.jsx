@@ -159,12 +159,17 @@ export default function RouteSeo() {
 
   useEffect(() => {
     const isEra = config?.business_id === 'era_systems';
+    // Set the correct tenant favicon as soon as the config resolves. The static
+    // index.html favicon is a neutral black square so no brand flashes before
+    // this runs. ERA Systems always uses the ERA logo; every other tenant uses
+    // its own config.logo_url (VDS falls back to the VDS logo).
+    const VDS_LOGO = 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/6a27779cd_1773368635248-a065bd31-ddf6-4b1c-87dc-3a6080dc60f8.png';
+    setFavicon(isEra ? ERA_LOGO : (config?.logo_url || VDS_LOGO));
+
     // ERA Systems marketing site (eraleadgen.com) always shows "ERA Systems LLC"
-    // as the browser tab title and uses the ERA logo as the favicon, regardless of
-    // any per-route SEO entry in the config.
+    // as the browser tab title, regardless of any per-route SEO entry in the config.
     if (isEra) {
       document.title = 'ERA Systems LLC';
-      setFavicon(ERA_LOGO);
     }
 
     const seoEntry = (config?.seo || []).find(s => s.route === path);
