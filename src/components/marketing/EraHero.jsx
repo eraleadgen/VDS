@@ -4,7 +4,7 @@ import BrowserFrame from './BrowserFrame';
 import Reveal from './Reveal';
 
 const OVERVIEW_IMG =
-  'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/05937f199_image.png';
+  'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/d3a68ae2b_image.png';
 
 const container = {
   hidden: {},
@@ -34,10 +34,10 @@ export default function EraHero() {
         </motion.div>
 
         <Reveal delay={0.3} className="mt-14 md:mt-20">
-          <BrowserFrame url="app.eracore.com/admin">
+          <BrowserFrame url="vdsmobile.com/admin">
             <img
               src={OVERVIEW_IMG}
-              alt="ERA Systems admin dashboard — overview with revenue, specialists, and jobs"
+              alt="VDS Mobile Detailing admin dashboard — overview with revenue, specialists, and jobs"
               className="block w-full aspect-[16/10] object-cover"
               loading="lazy"
             />

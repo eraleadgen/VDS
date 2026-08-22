@@ -1,28 +1,6 @@
 import { Users, CalendarRange, Clock, CheckCircle2, XCircle, DollarSign, ChevronRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 
-// Representative metrics shown when the tenant has no real revenue data yet —
-// gives the overview a populated, screenshot-ready appearance for a healthy
-// ~$9.6k/mo detailing operation. Real data takes precedence once it exists.
-const DEMO_METRICS = {
-  metrics: {
-    total_revenue: 9640,
-    revenue_jobs: 34,
-    total_contractors: 4,
-    active_contractors: 3,
-    todays_jobs: 3,
-    upcoming_jobs: 12,
-    completed_jobs: 34,
-    cancelled_jobs: 2,
-  },
-  jobs_by_contractor: [
-    { name: 'Marcus', jobs: 14 },
-    { name: 'Sarah', jobs: 11 },
-    { name: 'David', jobs: 6 },
-    { name: 'Tyler', jobs: 3 },
-  ],
-};
-
 function Stat({ icon: Icon, label, value, onClick }) {
   const Component = onClick ? 'button' : 'div';
   return (
@@ -44,11 +22,8 @@ export default function OverviewTab({ metrics, loading, onNavigate }) {
   if (loading) {
     return <div className="flex justify-center py-20"><div className="w-8 h-8 border-2 border-gold/20 border-t-gold rounded-full animate-spin" /></div>;
   }
-  const realMetrics = metrics?.metrics || {};
-  const hasRealData = (realMetrics.total_revenue || 0) > 0;
-  const m = hasRealData ? realMetrics : DEMO_METRICS.metrics;
-  const rawContractorData = hasRealData ? (metrics?.jobs_by_contractor || []) : DEMO_METRICS.jobs_by_contractor;
-  const data = rawContractorData.map(j => ({ name: (j.name || '').split(' ')[0], jobs: j.jobs }));
+  const m = metrics?.metrics || {};
+  const data = (metrics?.jobs_by_contractor || []).map(j => ({ name: (j.name || '').split(' ')[0], jobs: j.jobs }));
 
   const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
   const goJobs = (filter) => onNavigate?.('appointments', filter);

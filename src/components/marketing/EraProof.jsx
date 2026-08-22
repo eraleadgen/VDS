@@ -3,9 +3,9 @@ import BrowserFrame from './BrowserFrame';
 import Reveal from './Reveal';
 
 const MEMBER_PORTAL_IMG =
-  'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/da3bc900c_image.png';
+  'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/c82894ebc_image.png';
 const CUSTOMER_SITE_IMG =
-  'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/8a0fe8077_image.png';
+  'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/b2f42e978_image.png';
 
 const FACTS = [
   { k: '1st', v: 'ERA Systems client' },
@@ -31,18 +31,18 @@ export default function EraProof() {
 
         <div className="space-y-10">
           <Reveal>
-            <BrowserFrame url="vds-mobile.base44.app/member-dashboard">
+            <BrowserFrame url="vdsmobile.com/book">
               <img
                 src={MEMBER_PORTAL_IMG}
-                alt="VDS Mobile Detailing member portal — appointments, membership, and account management"
+                alt="VDS Mobile Detailing quote and booking page — build a custom quote and schedule online"
                 className="block w-full aspect-[16/10] object-cover"
                 loading="lazy"
               />
             </BrowserFrame>
-            <p className="font-['JetBrains_Mono'] text-[11px] text-[#4A6359] mt-4">VDS Mobile Detailing · Member portal — appointments, membership, and account management</p>
+            <p className="font-['JetBrains_Mono'] text-[11px] text-[#4A6359] mt-4">VDS Mobile Detailing · Quote & Book — custom pricing and scheduling in one place</p>
           </Reveal>
           <Reveal delay={0.1}>
-            <BrowserFrame url="vds-mobile.base44.app">
+            <BrowserFrame url="vdsmobile.com">
               <img
                 src={CUSTOMER_SITE_IMG}
                 alt="VDS Mobile Detailing customer-facing website — homepage hero with booking"
