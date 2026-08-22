@@ -1,4 +1,4 @@
-import { Globe, Mail, Phone, Building2, ChevronRight } from 'lucide-react';
+import { Globe, Building2, ChevronRight, Clock } from 'lucide-react';
 
 const TIER_COLORS = {
   basic: 'text-zinc-400 bg-zinc-800',
@@ -59,17 +59,17 @@ export default function EraClientList({ clients, onSelect, search, onSearch }) {
                 </div>
               </div>
               <div className="flex items-center gap-3 shrink-0">
+                {c.era_account?.provisioning_review_status === 'pending_review' && (
+                  <span className="flex items-center gap-1 text-[10px] font-mono tracking-widest text-yellow-400 bg-yellow-900/30 px-2 py-0.5 rounded">
+                    <Clock size={9} /> REVIEW
+                  </span>
+                )}
                 <span className={`text-[10px] font-mono tracking-widest px-2 py-0.5 rounded ${TIER_COLORS[c.plan_tier] || 'text-white/40'}`}>
                   {(c.plan_tier || '').toUpperCase()}
                 </span>
                 <span className={`text-[10px] font-mono ${STATUS_COLORS[c.subscription_status] || 'text-white/30'}`}>
                   {c.is_active ? 'ACTIVE' : 'INACTIVE'}
                 </span>
-                {c.custom_domain && (
-                  <span className="text-[10px] font-mono text-white/30 flex items-center gap-1">
-                    <Globe size={10} /> {c.custom_domain}
-                  </span>
-                )}
                 <ChevronRight size={14} className="text-white/20 group-hover:text-[#D4AF37]/60 transition-colors" />
               </div>
             </div>

@@ -26,7 +26,7 @@ export default function Step5Integrations({ data, onNext, onBack, saving, isLast
 
   return (
     <div className="space-y-6">
-      <p className="text-vapor/50 text-sm">Connect the integrations your business needs. You can complete these later from your admin dashboard.</p>
+      <p className="text-vapor/50 text-sm">Connect the integrations your business needs. Domain, email domain, and phone number setup are handled by ERA Systems after provisioning — you'll be contacted within 24 hours. You can skip the items below and connect them later from your admin dashboard.</p>
 
       {/* Stripe */}
       <div className="glass-panel border border-vapor/10 rounded-sm p-5">

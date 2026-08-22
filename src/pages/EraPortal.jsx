@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Loader2, CheckCircle2, ArrowRight, CreditCard, Globe, Sparkles, LayoutDashboard, Users, CalendarRange, FileText, DollarSign, Route, Network, LineChart, Library, Palette, BarChart3, MessageSquare, Settings } from "lucide-react";
+import { Loader2, CheckCircle2, ArrowRight, CreditCard, Globe, Sparkles, LayoutDashboard, Users, CalendarRange, FileText, DollarSign, Route, Network, LineChart, Palette, BarChart3, MessageSquare, Settings } from "lucide-react";
 import PortalShell from "@/components/portal/PortalShell";
 import EraPortalPlanTab from "@/components/era/EraPortalPlanTab";
 import EraPortalBillingTab from "@/components/era/EraPortalBillingTab";
@@ -210,7 +210,6 @@ export default function EraPortal() {
     { key: 'partners', label: 'PARTNERS', icon: Network, minTier: 4 },
     { key: 'users', label: 'USERS', icon: Users, minTier: 1 },
     { key: 'business', label: 'BUSINESS DEV', icon: LineChart, minTier: 4 },
-    { key: 'resources', label: 'RESOURCES', icon: Library, minTier: 1 },
     { key: 'website', label: 'WEBSITE', icon: Palette, minTier: 1 },
     { key: 'analytics', label: 'ANALYTICS', icon: BarChart3, minTier: 4 },
     { key: 'messages', label: 'MESSAGES', icon: MessageSquare, minTier: 3 },

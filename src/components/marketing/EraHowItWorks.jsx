@@ -3,23 +3,24 @@ import Reveal from './Reveal';
 const STEPS = [
   {
     n: '01',
-    title: 'Connect your domain',
-    desc: 'Bring your own domain or use a temporary ERA subdomain. DNS, email sending, and business phone are self-serve from your dashboard.',
+    title: 'Select a plan & pay',
+    desc: 'Choose Basic or Foundation and complete checkout. No waiting — your onboarding wizard unlocks immediately after payment.',
     capture: (
-      <div className="bg-[#0C1614] border border-[#1A2A24] rounded-md p-3.5">
-        <p className="font-['JetBrains_Mono'] text-[9px] tracking-widest text-[#6B8A82] mb-2">CUSTOM DOMAIN</p>
-        <div className="flex items-center gap-2 rounded-md border border-[#1A2A24] bg-[#060A09] px-2.5 py-2">
-          <span className="font-['JetBrains_Mono'] text-[11px] text-[#DFEDE9]">bobsdetail.com</span>
-          <span className="ml-auto font-['JetBrains_Mono'] text-[8px] tracking-widest text-[#10B981] bg-[#10B981]/10 px-1.5 py-0.5 rounded">VERIFIED</span>
-        </div>
-        <p className="font-['JetBrains_Mono'] text-[9px] text-[#4A6359] mt-2">CNAME → eraleadgen.com · auto-provisioned</p>
+      <div className="bg-[#0C1614] border border-[#1A2A24] rounded-md p-3.5 space-y-2">
+        <p className="font-['JetBrains_Mono'] text-[9px] tracking-widest text-[#6B8A82] mb-1">SELECT YOUR PLAN</p>
+        {[['Basic', '$199/mo', false], ['Foundation', '$499/mo', true]].map(([name, price, active]) => (
+          <div key={name} className={`flex items-center justify-between rounded-md border px-2.5 py-1.5 ${active ? 'border-[#10B981]/60 bg-[#10B981]/10' : 'border-[#1A2A24]'}`}>
+            <span className={`font-['Inter'] text-[11px] ${active ? 'text-[#DFEDE9]' : 'text-[#6B8A82]'}`}>{name}</span>
+            <span className={`font-['JetBrains_Mono'] text-[10px] ${active ? 'text-[#10B981]' : 'text-[#4A6359]'}`}>{price}</span>
+          </div>
+        ))}
       </div>
     ),
   },
   {
     n: '02',
-    title: 'Configure services & pricing',
-    desc: 'The onboarding wizard builds your service catalog, pricing groups, vehicle classifications, specialists, and scheduling rules — your business rules, not ours.',
+    title: 'Fill out the onboarding wizard',
+    desc: 'A guided questionnaire collects your business identity, branding, service catalog, pricing, hours, and team. Progress is saved — pause and resume any time.',
     capture: (
       <div className="bg-[#0C1614] border border-[#1A2A24] rounded-md p-3.5 space-y-2">
         <p className="font-['JetBrains_Mono'] text-[9px] tracking-widest text-[#6B8A82]">SERVICE CATALOG</p>
@@ -34,8 +35,8 @@ const STEPS = [
   },
   {
     n: '03',
-    title: 'Go live',
-    desc: 'Your branded site, booking flow, AI concierge, and admin dashboard are live the moment the wizard finishes — typically under five minutes of your time.',
+    title: 'ERA provisions and you go live',
+    desc: 'Your branded site, booking flow, AI concierge, and admin dashboard go live automatically once the wizard finishes. ERA Systems handles domain, email, and phone provisioning — you never wait on a developer.',
     capture: (
       <div className="bg-[#0C1614] border border-[#1A2A24] rounded-md p-3.5">
         <div className="flex items-center gap-1.5 mb-2">

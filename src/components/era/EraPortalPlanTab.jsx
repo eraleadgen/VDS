@@ -12,13 +12,12 @@ const FEATURE_GROUPS = [
     label: 'Core Platform',
     minTier: 'basic',
     features: [
-      { key: 'website', label: 'Branded website' },
-      { key: 'ai_chat_widget', label: 'AI concierge chat widget' },
-      { key: 'core_engines', label: 'CRM, job & pricing engines' },
-      { key: 'booking', label: 'Online booking & scheduling' },
-      { key: 'payments', label: 'Payments & invoicing' },
-      { key: 'admin_dashboard', label: 'Admin dashboard' },
-      { key: 'self_serve_domain', label: 'Self-serve domain & email' },
+      { key: 'website', label: 'Custom-built website & UI' },
+      { key: 'ai_chat_widget', label: 'AI chat widget (24/7 quotes & FAQs)' },
+      { key: 'core_engines', label: 'Core engines: pricing, scheduling & booking' },
+      { key: 'payments', label: 'Payments (Stripe) & admin dashboard' },
+      { key: 'domain_setup', label: 'Domain, email domain & phone setup (ERA-managed)' },
+      { key: 'email_automations', label: 'Email welcome & reminder automations' },
     ],
   },
   {
@@ -27,22 +26,22 @@ const FEATURE_GROUPS = [
     features: [
       { key: 'member_portal', label: 'Customer member portal' },
       { key: 'specialist_portal', label: 'Specialist / employee portal' },
-      { key: 'simple_automations', label: 'Simple automations & reminders' },
     ],
   },
   {
     label: 'AI Agents',
     minTier: 'growth',
     features: [
-      { key: 'ai_sms_agent', label: 'AI SMS agent (Valerie)' },
-      { key: 'ai_voice_agent', label: 'AI voice agent' },
+      { key: 'sms_automations', label: 'SMS welcome & reminder automations' },
+      { key: 'ai_sms_agent', label: 'AI SMS agent (24/7 texts, quotes & booking)' },
+      { key: 'ai_voice_agent', label: 'AI voice agent (24/7 phone calls)' },
     ],
   },
   {
     label: 'Growth & Analytics',
     minTier: 'enterprise',
     features: [
-      { key: 'partner_engine', label: 'Partner / referral engine' },
+      { key: 'partner_engine', label: 'Partner & referral network engine' },
       { key: 'advanced_analytics', label: 'Advanced analytics & reporting' },
     ],
   },

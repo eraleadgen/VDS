@@ -31,40 +31,49 @@ export default async function(req) {
         if (a.business_id) accountByBiz[a.business_id] = a;
       }
 
-      const clients = (configs || []).map(c => ({
-        id: c.id,
-        business_id: c.business_id,
-        business_name: c.business_name,
-        business_short_name: c.business_short_name || '',
-        legal_name: c.legal_name || '',
-        tagline: c.tagline || '',
-        logo_url: c.logo_url || '',
-        plan_tier: c.plan_tier || 'basic',
-        subscription_status: c.subscription_status || 'active',
-        ad_management_enabled: !!c.ad_management_enabled,
-        business_email: c.business_email || '',
-        business_phone: c.business_phone || '',
-        business_address: c.business_address || '',
-        service_areas: c.service_areas || [],
-        custom_domain: c.custom_domain || '',
-        domain_status: c.domain_status || 'none',
-        email_mode: c.email_mode || 'shared',
-        email_domain_status: c.email_domain_status || 'shared',
-        is_active: c.is_active !== false,
-        created_date: c.created_date,
-        timezone: c.timezone || '',
-        website_links: c.website_links || {},
-        social_links: c.social_links || {},
-        services_count: (c.services || []).length,
-        team_count: (c.technicians || []).length,
-        era_account: accountByBiz[c.business_id] ? {
-          stripe_customer_id: accountByBiz[c.business_id].stripe_customer_id || '',
-          stripe_subscription_id: accountByBiz[c.business_id].stripe_subscription_id || '',
-          subscription_status: accountByBiz[c.business_id].subscription_status || 'none',
-          setup_fee_paid: !!accountByBiz[c.business_id].setup_fee_paid,
-          owner_email: accountByBiz[c.business_id].email || '',
-        } : null,
-      }));
+      const clients = (configs || []).map(c => {
+        const ea = accountByBiz[c.business_id];
+        return {
+          id: c.id,
+          business_id: c.business_id,
+          business_name: c.business_name,
+          business_short_name: c.business_short_name || '',
+          legal_name: c.legal_name || '',
+          tagline: c.tagline || '',
+          logo_url: c.logo_url || '',
+          plan_tier: c.plan_tier || 'basic',
+          subscription_status: c.subscription_status || 'active',
+          ad_management_enabled: !!c.ad_management_enabled,
+          business_email: c.business_email || '',
+          business_phone: c.business_phone || '',
+          business_address: c.business_address || '',
+          service_areas: c.service_areas || [],
+          custom_domain: c.custom_domain || '',
+          domain_status: c.domain_status || 'none',
+          email_mode: c.email_mode || 'shared',
+          email_domain_status: c.email_domain_status || 'shared',
+          is_active: c.is_active !== false,
+          created_date: c.created_date,
+          timezone: c.timezone || '',
+          website_links: c.website_links || {},
+          social_links: c.social_links || {},
+          services_count: (c.services || []).length,
+          team_count: (c.technicians || []).length,
+          era_account: ea ? {
+            id: ea.id,
+            stripe_customer_id: ea.stripe_customer_id || '',
+            stripe_subscription_id: ea.stripe_subscription_id || '',
+            subscription_status: ea.subscription_status || 'none',
+            setup_fee_paid: !!ea.setup_fee_paid,
+            owner_email: ea.email || '',
+            provisioning_review_status: ea.provisioning_review_status || 'approved',
+            review_deadline: ea.review_deadline || null,
+            review_notes: ea.review_notes || '',
+            reviewed_at: ea.reviewed_at || null,
+            reviewed_by: ea.reviewed_by || null,
+          } : null,
+        };
+      });
 
       return Response.json({ success: true, clients });
     }

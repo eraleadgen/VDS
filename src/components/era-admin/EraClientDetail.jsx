@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { ArrowLeft, Edit3, Check, X, Globe, ExternalLink, Mail, Phone, MapPin, CreditCard, Loader2, Save } from 'lucide-react';
+import { ArrowLeft, Edit3, Check, X, Globe, ExternalLink, CreditCard, Loader2, Save, ShieldCheck, ShieldAlert, Clock } from 'lucide-react';
 
 const TIER_OPTIONS = ['basic', 'foundation', 'growth', 'enterprise'];
 const TIER_COLORS = {
@@ -11,6 +11,86 @@ const TIER_COLORS = {
 };
 
 const invoke = (body) => base44.functions.invoke('eraAdmin', body).then(r => r.data ?? r);
+const invokeReview = (body) => base44.functions.invoke('provisioningReview', body).then(r => r.data ?? r);
+
+function ReviewPanel({ eraAccount, businessId, onResolved }) {
+  const status = eraAccount?.provisioning_review_status || 'approved';
+  const [notes, setNotes] = useState(eraAccount?.review_notes || '');
+  const [saving, setSaving] = useState(false);
+  const [msg, setMsg] = useState('');
+
+  const resolve = async (action) => {
+    setSaving(true);
+    setMsg('');
+    try {
+      const res = await invokeReview({ action, era_account_id: eraAccount.id, notes });
+      if (res.success) {
+        const now = new Date().toISOString();
+        onResolved({ provisioning_review_status: res.status, review_notes: notes, reviewed_at: now });
+        setMsg(action === 'approve' ? 'Approved — client notified.' : 'Rejected — client notified.');
+      } else {
+        setMsg(res.error || 'Failed');
+      }
+    } catch (e) {
+      setMsg(e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (status === 'approved') {
+    return (
+      <div className="flex items-center gap-2 text-green-400 text-xs font-mono mt-2">
+        <ShieldCheck size={13} /> Provisioning approved
+        {eraAccount.reviewed_by === 'system_auto' && <span className="text-white/30 ml-1">(auto)</span>}
+        {eraAccount.reviewed_at && <span className="text-white/20 ml-1">{new Date(eraAccount.reviewed_at).toLocaleDateString()}</span>}
+      </div>
+    );
+  }
+
+  if (status === 'rejected') {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 text-red-400 text-xs font-mono">
+          <ShieldAlert size={13} /> Rejected
+        </div>
+        {eraAccount.review_notes && <p className="text-white/40 text-xs font-mono">{eraAccount.review_notes}</p>}
+        <button onClick={() => resolve('approve')} disabled={saving} className="text-xs font-mono text-green-400 hover:text-green-300 border border-green-500/30 px-3 py-1.5 rounded-sm disabled:opacity-50">
+          {saving ? 'Approving...' : 'Approve Now'}
+        </button>
+        {msg && <p className="text-xs font-mono text-white/40">{msg}</p>}
+      </div>
+    );
+  }
+
+  // pending_review
+  return (
+    <div className="space-y-3 mt-2 pt-3 border-t border-white/8">
+      <div className="flex items-center gap-2 text-yellow-400 text-xs font-mono">
+        <Clock size={13} /> Pending ERA review
+        {eraAccount.review_deadline && (
+          <span className="text-white/30 ml-1">· deadline {new Date(eraAccount.review_deadline).toLocaleString()}</span>
+        )}
+      </div>
+      <textarea
+        value={notes}
+        onChange={e => setNotes(e.target.value)}
+        placeholder="Notes for client (required if rejecting)"
+        rows={2}
+        className="w-full bg-white/5 border border-white/10 rounded-sm px-3 py-2 text-xs text-white placeholder:text-white/20 focus:outline-none focus:border-[#D4AF37]/40 resize-none"
+      />
+      <div className="flex items-center gap-2">
+        <button onClick={() => resolve('approve')} disabled={saving} className="flex items-center gap-1.5 text-xs font-mono bg-green-700/30 text-green-300 hover:bg-green-700/50 border border-green-500/30 px-3 py-1.5 rounded-sm disabled:opacity-50">
+          {saving ? <Loader2 size={11} className="animate-spin" /> : <ShieldCheck size={11} />} Approve
+        </button>
+        <button onClick={() => resolve('reject')} disabled={saving || !notes.trim()} className="flex items-center gap-1.5 text-xs font-mono bg-red-900/20 text-red-400 hover:bg-red-900/40 border border-red-500/20 px-3 py-1.5 rounded-sm disabled:opacity-50">
+          {saving ? <Loader2 size={11} className="animate-spin" /> : <ShieldAlert size={11} />} Reject
+        </button>
+      </div>
+      {msg && <p className="text-xs font-mono text-white/40">{msg}</p>}
+    </div>
+  );
+}
 
 function Field({ label, value, editKey, editing, editValues, onEdit, onChange }) {
   return (
@@ -33,6 +113,8 @@ export default function EraClientDetail({ client: initialClient, onBack, onUpdat
   const [client, setClient] = useState(initialClient);
   const [editing, setEditing] = useState(false);
   const [editValues, setEditValues] = useState({});
+  // eslint-disable-next-line no-unused-vars
+  const [_reviewKey, setReviewKey] = useState(0); // force re-render on review resolve
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -275,7 +357,7 @@ export default function EraClientDetail({ client: initialClient, onBack, onUpdat
       {client.era_account && (
         <div className="border border-white/8 rounded-sm bg-white/[0.03] p-5">
           <p className="text-[10px] font-mono tracking-widest text-white/30 mb-4">ERA BILLING ACCOUNT</p>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-5 text-sm">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-5 text-sm mb-4">
             <div>
               <p className="text-[10px] font-mono text-white/30 mb-1">OWNER EMAIL</p>
               <p className="text-white/70">{client.era_account.owner_email || '—'}</p>
@@ -291,6 +373,11 @@ export default function EraClientDetail({ client: initialClient, onBack, onUpdat
               </p>
             </div>
           </div>
+          <ReviewPanel eraAccount={client.era_account} businessId={client.business_id} onResolved={(patch) => {
+            const merged = { ...client, era_account: { ...client.era_account, ...patch } };
+            setClient(merged);
+            onUpdated?.(merged);
+          }} />
         </div>
       )}
 

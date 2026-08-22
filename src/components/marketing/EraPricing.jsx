@@ -5,25 +5,25 @@ import Reveal from './Reveal';
 const PLANS = [
   { key: 'basic', name: 'Basic', tagline: 'Everything you need to launch.', monthly: 199, setup: 750, popular: false, available: true },
   { key: 'foundation', name: 'Foundation', tagline: 'Advanced tools to grow and scale.', monthly: 499, setup: 1200, popular: true, available: true },
-  { key: 'growth', name: 'Growth', tagline: 'AI-powered customer engagement.', monthly: null, setup: null, popular: false, available: false },
-  { key: 'enterprise', name: 'Enterprise', tagline: 'Full platform, unlimited scale.', monthly: null, setup: null, popular: false, available: false },
+  { key: 'growth', name: 'Growth', tagline: 'AI agents that answer calls and texts 24/7.', monthly: 899, setup: 1600, popular: false, available: false },
+  { key: 'enterprise', name: 'Enterprise', tagline: 'Full platform, partners, analytics, and ads.', monthly: 1499, setup: 2200, popular: false, available: false },
 ];
 
 const FEATURES = [
-  { label: 'Branded website & AI chat widget', basic: true, foundation: true, growth: true, enterprise: true },
-  { label: 'Core engines (communication, workflow, CRM)', basic: true, foundation: true, growth: true, enterprise: true },
-  { label: 'Booking & scheduling', basic: true, foundation: true, growth: true, enterprise: true },
-  { label: 'Payments', basic: true, foundation: true, growth: true, enterprise: true },
-  { label: 'Admin dashboard', basic: true, foundation: true, growth: true, enterprise: true },
-  { label: 'Self-serve domain, email & phone', basic: true, foundation: true, growth: true, enterprise: true },
+  { label: 'Custom-built website & UI', basic: true, foundation: true, growth: true, enterprise: true },
+  { label: 'AI chat widget (24/7 quotes & FAQs)', basic: true, foundation: true, growth: true, enterprise: true },
+  { label: 'Core engines: pricing, scheduling & booking', basic: true, foundation: true, growth: true, enterprise: true },
+  { label: 'Payments (Stripe) & admin dashboard', basic: true, foundation: true, growth: true, enterprise: true },
+  { label: 'Self-serve domain, email domain & phone setup', basic: true, foundation: true, growth: true, enterprise: true },
+  { label: 'Email welcome & reminder automations', basic: true, foundation: true, growth: true, enterprise: true },
   { label: 'Customer member portal', basic: false, foundation: true, growth: true, enterprise: true },
   { label: 'Specialist / employee portal', basic: false, foundation: true, growth: true, enterprise: true },
-  { label: 'Simple automations (reminders, welcome)', basic: false, foundation: true, growth: true, enterprise: true },
-  { label: 'AI SMS agent', basic: false, foundation: false, growth: true, enterprise: true },
-  { label: 'AI voice agent', basic: false, foundation: false, growth: true, enterprise: true },
-  { label: 'Partner / referral engine', basic: false, foundation: false, growth: false, enterprise: true },
+  { label: 'SMS welcome & reminder automations', basic: false, foundation: false, growth: true, enterprise: true },
+  { label: 'AI SMS agent (24/7 texts, quotes & booking)', basic: false, foundation: false, growth: true, enterprise: true },
+  { label: 'AI voice agent (24/7 phone calls)', basic: false, foundation: false, growth: true, enterprise: true },
+  { label: 'Partner & referral network engine', basic: false, foundation: false, growth: false, enterprise: true },
   { label: 'Advanced analytics & reporting', basic: false, foundation: false, growth: false, enterprise: true },
-  { label: 'Ad Management', basic: 'add-on', foundation: 'add-on', growth: 'add-on', enterprise: 'included' },
+  { label: 'Ad Management (lead-gen campaigns)', basic: 'add-on', foundation: 'add-on', growth: 'add-on', enterprise: 'included' },
 ];
 
 const TIERS = ['basic', 'foundation', 'growth', 'enterprise'];
@@ -45,7 +45,7 @@ export default function EraPricing() {
             One-time setup. Flat monthly. No per-seat surprises.
           </h2>
           <p className="font-['Inter'] text-[#7A9A92] text-lg leading-relaxed">
-            Start with a setup fee, then a flat monthly rate. Growth and Enterprise are coming soon.
+            Start with a one-time setup fee, then a flat monthly rate. Basic and Foundation are live today — Growth and Enterprise are on the roadmap.
           </p>
         </div>
 
@@ -58,15 +58,11 @@ export default function EraPricing() {
                 <h3 className="font-['Fraunces'] font-semibold text-[#DFEDE9] text-xl mb-1.5">{p.name}</h3>
                 <p className="font-['Inter'] text-[#7A9A92] text-sm mb-5 min-h-[2.5rem]">{p.tagline}</p>
                 <div className="mb-6">
-                  {p.monthly !== null ? (
-                    <>
-                      <span className="font-['Fraunces'] font-semibold text-[#DFEDE9] text-4xl">${p.monthly}</span>
-                      <span className="font-['Inter'] text-[#4A6359] text-sm">/month</span>
-                      <p className="font-['JetBrains_Mono'] text-[10px] text-[#4A6359] mt-2">+ ${p.setup} one-time setup</p>
-                    </>
-                  ) : (
-                    <span className="font-['Fraunces'] font-semibold text-[#4A6359] text-3xl">TBD</span>
-                  )}
+                  <>
+                    <span className="font-['Fraunces'] font-semibold text-[#DFEDE9] text-4xl">${p.monthly}</span>
+                    <span className="font-['Inter'] text-[#4A6359] text-sm">/month</span>
+                    <p className="font-['JetBrains_Mono'] text-[10px] text-[#4A6359] mt-2">+ ${p.setup?.toLocaleString()} one-time setup</p>
+                  </>
                 </div>
                 {p.available ? (
                   <Link to="/era-register" className={`mt-auto text-center font-['Inter'] text-sm font-medium py-2.5 rounded-[6px] transition-all ${p.popular ? 'bg-[#10B981] text-[#060A09] hover:bg-[#34D399] shadow-[0_0_20px_-6px_rgba(16,185,129,0.5)]' : 'border border-[#10B981]/40 text-[#10B981] hover:bg-[#10B981] hover:text-[#060A09]'}`}>Get started</Link>

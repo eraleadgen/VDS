@@ -1,11 +1,52 @@
 import React from 'react';
 import { ExternalLink } from 'lucide-react';
 
-// Unlocked operational tab. The operational data, branding, and config live on the
-// member's own tenant domain (not eraleadgen.com, which resolves to the era_systems
-// tenant), so an unlocked module deep-links to their live admin dashboard.
+// Unlocked operational tab. Operational modules deep-link to the member's live admin
+// dashboard (their own domain), where all their data and branding live.
+// Settings tab gets a special Documents section here instead of a standalone Resources tab.
+const DOCS = [
+  { label: 'ERA Systems Service Agreement', desc: 'Your signed service contract with ERA Systems LLC.' },
+  { label: 'Terms of Service (Your Site)', desc: 'Standard ToS ERA Systems drafted for your customer-facing site.' },
+  { label: 'Privacy Policy (Your Site)', desc: 'Standard privacy policy for your customer-facing site.' },
+  { label: 'Liability Waiver', desc: 'Liability disclaimer for services performed by your business.' },
+];
+
 export default function EraPortalOpsTab({ tab, siteUrl }) {
   const dashUrl = siteUrl ? `${siteUrl}/admin?tab=${tab.key}` : null;
+
+  if (tab.key === 'settings') {
+    return (
+      <div className="space-y-8">
+        <div>
+          <p className="text-[10px] font-mono-tech tracking-[0.3em] text-gold/70 mb-1">OPERATIONS</p>
+          <h1 className="text-3xl font-grotesk font-bold text-vapor">SETTINGS</h1>
+        </div>
+        {dashUrl && (
+          <div className="rounded-md border border-vapor/10 bg-asphalt/40 p-5 flex items-center justify-between gap-4">
+            <p className="text-vapor text-sm">Manage business settings, automations, and integrations on your live dashboard.</p>
+            <a href={dashUrl} target="_blank" rel="noreferrer" className="shrink-0 inline-flex items-center gap-2 px-4 py-2 rounded-sm border border-gold/40 text-gold text-xs font-mono-tech hover:bg-gold hover:text-obsidian transition-colors">
+              OPEN SETTINGS <ExternalLink size={13} />
+            </a>
+          </div>
+        )}
+        <div>
+          <p className="text-xs font-mono-tech tracking-[0.2em] text-gold/70 mb-4">DOCUMENTS</p>
+          <div className="space-y-3">
+            {DOCS.map(d => (
+              <div key={d.label} className="rounded-md border border-vapor/10 bg-asphalt/40 p-4 flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-vapor text-sm font-medium">{d.label}</p>
+                  <p className="text-vapor/50 text-xs mt-0.5">{d.desc}</p>
+                </div>
+                <span className="shrink-0 text-vapor/30 text-xs font-mono-tech">COMING SOON</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
