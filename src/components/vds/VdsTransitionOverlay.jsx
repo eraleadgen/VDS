@@ -109,7 +109,7 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded, onCloseCompl
   const partEase = [0.7, 0, 0.3, 1];
 
   return (
-    <div className="fixed inset-0 z-[100] pointer-events-none overflow-hidden">
+    <div className="fixed inset-0 z-[100] pointer-events-none overflow-hidden" style={{ background: isEra ? '#000000' : 'rgb(var(--obsidian))' }}>
       {/* Black field, erased by the single growing/shrinking reveal circle */}
       <svg className="absolute inset-0" width={w} height={h} aria-hidden>
         <defs>
@@ -124,7 +124,7 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded, onCloseCompl
             />
           </mask>
         </defs>
-        <rect x={0} y={0} width={w} height={h} fill="rgb(var(--obsidian))" mask="url(#vdsPinchReveal)" />
+        <rect x={0} y={0} width={w} height={h} fill={isEra ? '#000000' : 'rgb(var(--obsidian))'} mask="url(#vdsPinchReveal)" />
       </svg>
 
       {/* Gold-flake particles — VDS tenant only. Other tenants get a clean branded
