@@ -3,7 +3,7 @@ import BrowserFrame from './BrowserFrame';
 import Reveal from './Reveal';
 
 const OVERVIEW_IMG =
-  'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/d3a68ae2b_image.png';
+  'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/e3990cfc2_generated_image.png';
 
 const FACTS = [
   { k: '1st', v: 'ERA Systems client' },
