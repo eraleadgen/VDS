@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-export default function GoldParticles({ count = 55 }) {
+export default function GoldParticles({ count = 55, palette }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -36,8 +36,13 @@ export default function GoldParticles({ count = 55 }) {
       const b = Math.min(255, parseInt(hex.slice(5, 7), 16) + amt);
       return '#' + r.toString(16).padStart(2, '0') + g.toString(16).padStart(2, '0') + b.toString(16).padStart(2, '0');
     };
-    const goldLightHex = lighten(goldHex, 70);
-    const GOLDS = [goldHex, goldLightHex, goldHex, goldLightHex, goldHex, goldLightHex];
+    let GOLDS;
+    if (palette) {
+      GOLDS = palette;
+    } else {
+      const goldLightHex = lighten(goldHex, 70);
+      GOLDS = [goldHex, goldLightHex, goldHex, goldLightHex, goldHex, goldLightHex];
+    }
 
     // Create flakes
     const flakes = Array.from({ length: count }, () => {

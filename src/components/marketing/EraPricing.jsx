@@ -41,7 +41,7 @@ export default function EraPricing() {
       <div className="max-w-[1200px] mx-auto px-6">
         <div className="max-w-[760px] mb-14">
           <p className="font-['JetBrains_Mono'] text-[11px] tracking-[0.25em] text-[#10B981] mb-5">PRICING — 05</p>
-          <h2 className="font-['Fraunces'] font-semibold text-[#DFEDE9] text-[34px] md:text-[48px] leading-[1.05] tracking-[-0.02em] mb-5">
+          <h2 className="font-['Sora'] font-semibold text-[#DFEDE9] text-[34px] md:text-[48px] leading-[1.05] tracking-[-0.02em] mb-5">
             One-time setup. Flat monthly. No per-seat surprises.
           </h2>
           <p className="font-['Inter'] text-[#7A9A92] text-lg leading-relaxed">
@@ -55,11 +55,11 @@ export default function EraPricing() {
               <div className={`relative rounded-[10px] p-6 flex flex-col h-full transition-all ${p.popular ? 'ring-2 ring-[#10B981] bg-[#10B981]/[0.04] shadow-[0_0_40px_-12px_rgba(16,185,129,0.3)] hover:shadow-[0_0_50px_-8px_rgba(16,185,129,0.5)]' : p.available ? 'ring-1 ring-[#1A2A24] bg-[#0C1614] hover:ring-[#10B981]/40 hover:shadow-[0_0_30px_-8px_rgba(16,185,129,0.3)]' : 'ring-1 ring-[#1A2A24] bg-[#0C1614] opacity-50'}`}>
                 {p.popular && <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#10B981] text-[#060A09] text-[10px] font-['JetBrains_Mono'] tracking-widest px-3 py-1 rounded-full">MOST POPULAR</span>}
                 {!p.available && <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#0C1614] border border-[#1A2A24] text-[#4A6359] text-[10px] font-['JetBrains_Mono'] tracking-widest px-3 py-1 rounded-full">COMING SOON</span>}
-                <h3 className="font-['Fraunces'] font-semibold text-[#DFEDE9] text-xl mb-1.5">{p.name}</h3>
+                <h3 className="font-['Sora'] font-semibold text-[#DFEDE9] text-xl mb-1.5">{p.name}</h3>
                 <p className="font-['Inter'] text-[#7A9A92] text-sm mb-5 min-h-[2.5rem]">{p.tagline}</p>
                 <div className="mb-6">
                   <>
-                    <span className="font-['Fraunces'] font-semibold text-[#DFEDE9] text-4xl">${p.monthly}</span>
+                    <span className="font-['Sora'] font-semibold text-[#DFEDE9] text-4xl">${p.monthly}</span>
                     <span className="font-['Inter'] text-[#4A6359] text-sm">/month</span>
                     <p className="font-['JetBrains_Mono'] text-[10px] text-[#4A6359] mt-2">+ ${p.setup?.toLocaleString()} one-time setup</p>
                   </>

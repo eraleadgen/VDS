@@ -17,7 +17,7 @@ export default function EraFooter() {
               <EraLogo size={30} />
             </div>
             <p className="font-['Inter'] text-[#7A9A92] text-sm leading-relaxed max-w-[260px]">
-              The operating system for service businesses. Modular. Event-driven. Already running one.
+              Bringing service businesses to a new ERA of efficiency.
             </p>
           </div>
           {COLS.map((c) => (

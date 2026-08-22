@@ -4,10 +4,10 @@ import { Menu, X } from 'lucide-react';
 import EraLogo from './EraLogo';
 
 const LINKS = [
-  { href: '#platform', label: 'Platform' },
-  { href: '#proof', label: 'Proof' },
+  { href: '#platform', label: 'What we do' },
+  { href: '#proof', label: 'Results' },
   { href: '#pricing', label: 'Pricing' },
-  { href: '#customers', label: 'Customers' },
+  { href: '#customers', label: "Who it's for" },
 ];
 
 export default function EraNav() {
@@ -34,7 +34,7 @@ export default function EraNav() {
 
         <div className="hidden md:flex items-center gap-3">
           <Link to="/era-login" className="font-['Inter'] text-sm font-medium text-[#DFEDE9] hover:text-[#34D399] transition-colors">Sign in</Link>
-          <Link to="/era-register" className="font-['Inter'] text-sm font-medium bg-[#10B981] text-[#060A09] px-4 py-2 rounded-[6px] hover:bg-[#34D399] transition-all duration-200 shadow-[0_0_20px_-4px_rgba(16,185,129,0.4)] hover:shadow-[0_0_28px_-4px_rgba(52,211,153,0.6)]">Start your business</Link>
+          <Link to="/era-register" className="font-['Inter'] text-sm font-medium bg-[#10B981] text-[#060A09] px-4 py-2 rounded-[6px] hover:bg-[#34D399] transition-all duration-200 shadow-[0_0_20px_-4px_rgba(16,185,129,0.4)] hover:shadow-[0_0_28px_-4px_rgba(52,211,153,0.6)]">Get started</Link>
         </div>
 
         <button className="md:hidden text-[#DFEDE9]" onClick={() => setOpen((v) => !v)} aria-label="Menu">
@@ -49,7 +49,7 @@ export default function EraNav() {
           ))}
           <div className="flex gap-3 pt-2 border-t border-[#10B981]/10">
             <Link to="/era-login" className="flex-1 text-center font-['Inter'] text-sm font-medium text-[#DFEDE9] border border-[#1A2A24] rounded-[6px] py-2">Sign in</Link>
-            <Link to="/era-register" className="flex-1 text-center font-['Inter'] text-sm font-medium bg-[#10B981] text-[#060A09] rounded-[6px] py-2">Start your business</Link>
+            <Link to="/era-register" className="flex-1 text-center font-['Inter'] text-sm font-medium bg-[#10B981] text-[#060A09] rounded-[6px] py-2">Get started</Link>
           </div>
         </div>
       )}

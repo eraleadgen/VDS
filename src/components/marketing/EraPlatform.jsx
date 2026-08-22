@@ -1,10 +1,6 @@
 import { motion } from 'framer-motion';
 import Reveal from './Reveal';
 
-const E = '#10B981';
-const Ed = '#0A5A45';
-const text = '#DFEDE9';
-const muted = '#6B8A82';
 const card = 'bg-[#0C1614] border border-[#1A2A24] rounded-md';
 
 function ValerieFragment() {
@@ -21,7 +17,7 @@ function ValerieFragment() {
       <div className="max-w-[55%]">
         <div className="bg-[#060A09] border border-[#1A2A24] rounded-md rounded-tl-sm px-2.5 py-1.5 text-[11px] text-[#7A9A92] font-['Inter']">Yes please</div>
       </div>
-      <p className="font-['JetBrains_Mono'] text-[9px] text-[#10B981]/60 pt-1">VALERIE · BOOKED · JOB VDS-2026-0143</p>
+      <p className="font-['JetBrains_Mono'] text-[9px] text-[#10B981]/60 pt-1">BOOKED · JOB VDS-2026-0143</p>
     </div>
   );
 }
@@ -86,7 +82,7 @@ function InvFragment() {
       </div>
       <div className="h-px bg-[#1A2A24]" />
       <div className="flex items-center justify-between">
-        <span className="font-['JetBrains_Mono'] text-[10px] text-[#6B8A82]">VDS Gold · Monthly</span>
+        <span className="font-['JetBrains_Mono'] text-[10px] text-[#6B8A82]">Gold Membership · Monthly</span>
         <span className="font-['JetBrains_Mono'] text-[10px] text-[#10B981]">$250 · recurring</span>
       </div>
     </div>
@@ -122,7 +118,7 @@ function RulesFragment() {
   ];
   return (
     <div className={`${card} p-3 space-y-2`}>
-      <p className="font-['JetBrains_Mono'] text-[9px] tracking-widest text-[#10B981]/70">COMMUNICATIONS RULES</p>
+      <p className="font-['JetBrains_Mono'] text-[9px] tracking-widest text-[#10B981]/70">AUTOMATED COMMUNICATIONS</p>
       {rows.map((r, i) => (
         <div key={i} className="flex items-center gap-2">
           <span className={`w-7 h-3.5 rounded-full relative ${r[2] ? 'bg-[#10B981]/80' : 'bg-[#1A2A24]'}`}>
@@ -137,12 +133,12 @@ function RulesFragment() {
 }
 
 const MODULES = [
-  { label: 'AI CONCIERGE — VALERIE', title: 'A 24/7 concierge that books real jobs', desc: 'SMS, web chat, and voice. Valerie quotes, schedules, and captures consent — by the rules you configure.', Fragment: ValerieFragment },
-  { label: 'CRM + CUSTOMER JOURNEY', title: 'One customer record. The whole story.', desc: 'Lifetime value, consent, and an auto-generated journey timeline — from first quote to the latest review.', Fragment: CrmFragment },
-  { label: 'SCHEDULING + AUTO-ASSIGN', title: 'The right specialist, automatically', desc: 'Specialist availability, service areas, and skills — matched to each job without the dispatch phone calls.', Fragment: SchedFragment },
-  { label: 'INVOICING + STRIPE', title: 'Get paid without the chase', desc: 'Per-job invoicing, recurring memberships, and Stripe-native payments with automated follow-up.', Fragment: InvFragment },
-  { label: 'PARTNER / REFERRAL ENGINE', title: 'Turn dealerships into a growth channel', desc: 'Referral codes, attribution, and incentive payouts — every partner credited automatically, every time.', Fragment: PartnerFragment },
-  { label: 'COMMUNICATIONS RULES ENGINE', title: 'No message goes out without your rules', desc: 'Centralized control over SMS, email, and chat — consent, cadence, and channel fallback, all configurable.', Fragment: RulesFragment },
+  { label: 'YOUR 24/7 FRONT DESK', title: 'Never miss a booking', desc: 'An AI concierge answers calls, texts, and chats around the clock — quoting, scheduling, and capturing every lead while you sleep.', Fragment: ValerieFragment },
+  { label: 'EVERY CUSTOMER, REMEMBERED', title: 'One customer. The whole story.', desc: 'Lifetime value, preferences, and history — automatically tracked from first quote to latest review. Your customers feel known every time.', Fragment: CrmFragment },
+  { label: 'THE RIGHT PERSON, EVERY TIME', title: 'Dispatch without the phone calls', desc: 'Specialist availability, service areas, and skills — matched to each job automatically. No dispatch desk, no double-booking.', Fragment: SchedFragment },
+  { label: 'GET PAID WITHOUT THE CHASE', title: 'Money in your account faster', desc: 'Per-job invoicing, recurring memberships, and Stripe-native payments with automated follow-up. Stop chasing, start collecting.', Fragment: InvFragment },
+  { label: 'TURN RELATIONSHIPS INTO REVENUE', title: 'Partners send you customers', desc: 'Referral codes, automatic attribution, and incentive payouts — every partner credited, every customer tracked, every time.', Fragment: PartnerFragment },
+  { label: 'YOUR RULES, AUTOMATICALLY', title: 'Every message, on your terms', desc: 'SMS, email, and chat — consent, cadence, and channel fallback, all set once and handled automatically. No more manual follow-up.', Fragment: RulesFragment },
 ];
 
 export default function EraPlatform() {
@@ -151,12 +147,12 @@ export default function EraPlatform() {
       <div className="absolute top-1/2 left-[-10%] w-[600px] h-[600px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.05) 0%, transparent 70%)' }} />
       <div className="relative max-w-[1200px] mx-auto px-6">
         <div className="max-w-[760px] mb-14">
-          <p className="font-['JetBrains_Mono'] text-[11px] tracking-[0.25em] text-[#10B981] mb-5">PLATFORM — 02</p>
-          <h2 className="font-['Fraunces'] font-semibold text-[#DFEDE9] text-[34px] md:text-[48px] leading-[1.05] tracking-[-0.02em] mb-5">
-            One system. Every moving part of a service business.
+          <p className="font-['JetBrains_Mono'] text-[11px] tracking-[0.25em] text-[#10B981] mb-5">WHAT ERA DOES</p>
+          <h2 className="font-['Sora'] font-bold text-[#DFEDE9] text-[34px] md:text-[48px] leading-[1.05] tracking-[-0.03em] mb-5">
+            Six things your business used to need people for — now running themselves.
           </h2>
           <p className="font-['Inter'] text-[#7A9A92] text-lg leading-relaxed">
-            ERA Core is modular by design — each module is independent, but they share one job, one customer, and one source of truth. That's what makes the whole thing actually work end-to-end.
+            Every part of your operation — from the first call to the final payment — handled automatically. Not a collection of tools. One system that works together.
           </p>
         </div>
 
@@ -173,7 +169,7 @@ export default function EraPlatform() {
                   <div className="p-4"><F /></div>
                   <div className="px-5 pb-5">
                     <p className="font-['JetBrains_Mono'] text-[10px] tracking-[0.2em] text-[#10B981] mb-2">{m.label}</p>
-                    <h3 className="font-['Fraunces'] font-semibold text-[#DFEDE9] text-lg leading-snug mb-1.5">{m.title}</h3>
+                    <h3 className="font-['Sora'] font-bold text-[#DFEDE9] text-lg leading-snug mb-1.5">{m.title}</h3>
                     <p className="font-['Inter'] text-[#7A9A92] text-sm leading-relaxed">{m.desc}</p>
                   </div>
                 </motion.div>

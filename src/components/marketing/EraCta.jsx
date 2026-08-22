@@ -19,11 +19,11 @@ export default function EraCta() {
             />
             <div className="relative">
               <div className="flex justify-center mb-6"><EraLogo size={40} /></div>
-              <h2 className="font-['Fraunces'] font-semibold text-[#DFEDE9] text-[34px] md:text-[52px] leading-[1.05] tracking-[-0.02em] mb-5">
-                Start your business on ERA Core.
+              <h2 className="font-['Sora'] font-bold text-[#DFEDE9] text-[34px] md:text-[52px] leading-[1.05] tracking-[-0.03em] mb-5">
+                Bringing service businesses to a new ERA of efficiency.
               </h2>
               <p className="font-['Inter'] text-[#7A9A92] text-lg max-w-[560px] mx-auto mb-9 leading-relaxed">
-                A fully live, working website and booking system in minutes — no developer required. The same platform that runs VDS Mobile Detailing today.
+                A complete, working business platform — live in minutes. No developer, no spreadsheets, no missed calls.
               </p>
               <Link to="/era-register" className="inline-flex items-center gap-2 bg-[#10B981] text-[#060A09] font-['Inter'] text-sm font-semibold px-6 py-3.5 rounded-[6px] hover:bg-[#34D399] transition-all duration-200 shadow-[0_0_28px_-6px_rgba(16,185,129,0.5)] hover:shadow-[0_0_36px_-6px_rgba(52,211,153,0.7)]">
                 Get started <ArrowRight size={15} />

@@ -94,32 +94,11 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded, onCloseCompl
 
   if (phase === 'done') return null;
 
-  // ERA Systems: a distinct loading screen — the real ERA logo loading-loop video,
-  // fading in when the overlay appears and fading out as the page reveals.
-  // No gold ring or particles; just the video on a pure-black field.
-  if (isEra) {
-    const fadeOut = phase === 'opening';
-    return (
-      <motion.div
-        className="fixed inset-0 z-[100] pointer-events-none bg-black flex items-center justify-center overflow-hidden"
-        initial={{ opacity: 1 }}
-        animate={{ opacity: fadeOut ? 0 : 1 }}
-        transition={{ duration: fadeOut ? 0.6 : 0.4, ease: 'easeOut' }}
-      >
-        <motion.video
-          src="https://media.base44.com/videos/public/6a191df337222815cd0b1f5e/17eef1394_LogoLoadingLoop.mp4"
-          autoPlay loop muted playsInline
-          aria-hidden
-          initial={{ opacity: 0 }}
-          animate={{ opacity: fadeOut ? 0 : 1 }}
-          transition={{ duration: fadeOut ? 0.5 : 0.7, ease: 'easeOut' }}
-          className="w-[min(72vw,460px)] max-w-[460px] h-auto select-none"
-        />
-      </motion.div>
-    );
-  }
-
   const isOpen = phase === 'opening';
+  // ERA Systems: same ring + particles design as VDS, but with green particles
+  // and the ERA logo instead of gold and the VDS logo.
+  const ERA_LOGO_URL = 'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/b68e16deb_ERALogo-Photoroom.png';
+  const ERA_PALETTE = ['#10B981', '#34D399', '#10B981', '#34D399', '#10B981', '#34D399'];
 
   // Reveal circle: grows outward from the center of the screen (around the VDS logo /
   // loading ring) until the whole page is uncovered. Implemented as an SVG mask — white
@@ -151,7 +130,7 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded, onCloseCompl
       {/* Gold-flake particles — VDS tenant only. Other tenants get a clean branded
           ring without the VDS-specific gold flakes. Masked out of the ring's interior
           so that stays pure black. Fades out quickly on open. */}
-      {configLoaded && isVds && (
+      {configLoaded && (isVds || isEra) && (
         <motion.div
           aria-hidden
           className="absolute inset-0"
@@ -163,7 +142,7 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded, onCloseCompl
           animate={{ opacity: isOpen ? 0 : 1 }}
           transition={{ duration: 0.35, ease: 'easeOut' }}
         >
-          <GoldParticles count={32} />
+          <GoldParticles count={32} palette={isEra ? ERA_PALETTE : undefined} />
         </motion.div>
       )}
 
@@ -177,16 +156,16 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded, onCloseCompl
             aria-hidden
             className="absolute inset-0 rounded-full vds-spin"
             style={{
-              border: configLoaded ? '2px solid rgb(var(--gold) / 0.12)' : '2px solid transparent',
-              borderTopColor: configLoaded ? 'rgb(var(--gold))' : 'transparent',
+              border: configLoaded ? (isEra ? '2px solid rgba(16,185,129,0.12)' : '2px solid rgb(var(--gold) / 0.12)') : '2px solid transparent',
+              borderTopColor: configLoaded ? (isEra ? '#10B981' : 'rgb(var(--gold))') : 'transparent',
             }}
             initial={{ opacity: 1 }}
             animate={{ opacity: phase === 'opening' ? 0 : 1 }}
             transition={{ duration: phase === 'opening' ? 0.95 : 0, ease: 'easeOut' }}
           />
-          {configLoaded && (logoUrl ? (
+          {configLoaded && (logoUrl || isEra ? (
             <motion.img
-              src={logoUrl}
+              src={isEra && !logoUrl ? ERA_LOGO_URL : logoUrl}
               alt={shortName}
               draggable={false}
               initial={{ opacity: 0 }}
@@ -200,7 +179,7 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded, onCloseCompl
               animate={{ opacity: phase === 'opening' ? 0 : 1, filter: `blur(${phase === 'opening' ? 14 : 0}px)` }}
               transition={{ duration: 0.4, ease: 'easeOut', delay: phase === 'opening' ? 0.05 : 0 }}
               className="relative text-3xl font-grotesk font-bold tracking-widest select-none"
-              style={{ color: 'rgb(var(--gold))' }}
+              style={{ color: isEra ? '#10B981' : 'rgb(var(--gold))' }}
             >
               {shortName.slice(0, 4).toUpperCase()}
             </motion.span>

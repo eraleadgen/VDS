@@ -3,8 +3,8 @@ import Reveal from './Reveal';
 const STEPS = [
   {
     n: '01',
-    title: 'Select a plan & pay',
-    desc: 'Choose Basic or Foundation and complete checkout. No waiting — your onboarding wizard unlocks immediately after payment.',
+    title: 'Pick your plan',
+    desc: 'Choose the tier that fits your business. Start collecting bookings today.',
     capture: (
       <div className="bg-[#0C1614] border border-[#1A2A24] rounded-md p-3.5 space-y-2">
         <p className="font-['JetBrains_Mono'] text-[9px] tracking-widest text-[#6B8A82] mb-1">SELECT YOUR PLAN</p>
@@ -19,8 +19,8 @@ const STEPS = [
   },
   {
     n: '02',
-    title: 'Fill out the onboarding wizard',
-    desc: 'A guided questionnaire collects your business identity, branding, service catalog, pricing, hours, and team. Progress is saved — pause and resume any time.',
+    title: 'Tell us about your business',
+    desc: 'A quick guided setup collects your services, pricing, and team. Pause and resume any time.',
     capture: (
       <div className="bg-[#0C1614] border border-[#1A2A24] rounded-md p-3.5 space-y-2">
         <p className="font-['JetBrains_Mono'] text-[9px] tracking-widest text-[#6B8A82]">SERVICE CATALOG</p>
@@ -35,8 +35,8 @@ const STEPS = [
   },
   {
     n: '03',
-    title: 'ERA provisions and you go live',
-    desc: 'Your branded site, booking flow, AI concierge, and admin dashboard go live automatically once the wizard finishes. ERA Systems handles domain, email, and phone provisioning — you never wait on a developer.',
+    title: 'Open for business',
+    desc: 'Your website, booking flow, and admin dashboard go live automatically. ERA handles the rest.',
     capture: (
       <div className="bg-[#0C1614] border border-[#1A2A24] rounded-md p-3.5">
         <div className="flex items-center gap-1.5 mb-2">
@@ -58,8 +58,8 @@ export default function EraHowItWorks() {
     <section className="bg-[#08110E] py-24 md:py-32 border-y border-[#10B981]/8">
       <div className="max-w-[1200px] mx-auto px-6">
         <div className="max-w-[760px] mb-14">
-          <p className="font-['JetBrains_Mono'] text-[11px] tracking-[0.25em] text-[#10B981] mb-5">HOW IT WORKS — 03</p>
-          <h2 className="font-['Fraunces'] font-semibold text-[#DFEDE9] text-[34px] md:text-[48px] leading-[1.05] tracking-[-0.02em]">
+          <p className="font-['JetBrains_Mono'] text-[11px] tracking-[0.25em] text-[#10B981] mb-5">HOW IT WORKS</p>
+          <h2 className="font-['Sora'] font-bold text-[#DFEDE9] text-[34px] md:text-[48px] leading-[1.05] tracking-[-0.03em]">
             From checkout to live in under five minutes.
           </h2>
         </div>
@@ -69,7 +69,7 @@ export default function EraHowItWorks() {
               <div>
                 <div className="mb-4 transition-transform duration-300 hover:scale-[1.03]">{s.capture}</div>
                 <p className="font-['JetBrains_Mono'] text-[11px] tracking-widest text-[#10B981] mb-2">{s.n}</p>
-                <h3 className="font-['Fraunces'] font-semibold text-[#DFEDE9] text-xl mb-2">{s.title}</h3>
+                <h3 className="font-['Sora'] font-bold text-[#DFEDE9] text-xl mb-2">{s.title}</h3>
                 <p className="font-['Inter'] text-[#7A9A92] text-sm leading-relaxed">{s.desc}</p>
               </div>
             </Reveal>

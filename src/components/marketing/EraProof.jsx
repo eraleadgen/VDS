@@ -8,9 +8,9 @@ const CUSTOMER_SITE_IMG =
   'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/8a0fe8077_image.png';
 
 const FACTS = [
-  { k: '1st', v: 'ERA Core tenant' },
+  { k: '1st', v: 'ERA Systems client' },
   { k: 'Atlanta, GA', v: 'Service area' },
-  { k: 'Live', v: 'Full-stack operations' },
+  { k: 'Live', v: 'Full operations' },
   { k: '2025', v: 'Running since' },
 ];
 
@@ -20,12 +20,12 @@ export default function EraProof() {
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 70% 30%, rgba(16,185,129,0.04) 0%, transparent 50%)' }} />
       <div className="relative max-w-[1200px] mx-auto px-6">
         <div className="max-w-[780px] mb-16">
-          <p className="font-['JetBrains_Mono'] text-[11px] tracking-[0.25em] text-[#10B981] mb-5">PROOF — 01</p>
-          <h2 className="font-['Fraunces'] font-semibold text-[#DFEDE9] text-[34px] md:text-[52px] leading-[1.05] tracking-[-0.02em] mb-6">
-            This isn't a mockup. It's a Tuesday morning for a real detailing business.
+          <p className="font-['JetBrains_Mono'] text-[11px] tracking-[0.25em] text-[#10B981] mb-5">RESULTS</p>
+          <h2 className="font-['Sora'] font-bold text-[#DFEDE9] text-[34px] md:text-[52px] leading-[1.05] tracking-[-0.03em] mb-6">
+            This is what your business looks like on ERA.
           </h2>
           <p className="font-['Inter'] text-[#7A9A92] text-lg leading-relaxed max-w-[640px]">
-            VDS Mobile Detailing is ERA Core's first tenant — a real, operating mobile detailing business in Metro Atlanta. Every screen below is the actual admin dashboard and customer-facing website our platform produces, shown with representative data for privacy.
+            VDS Mobile Detailing is ERA's first client — a real, operating business in Metro Atlanta. Every screen below is the actual website and admin dashboard our platform produces, shown with representative data.
           </p>
         </div>
 
@@ -50,7 +50,7 @@ export default function EraProof() {
                 loading="lazy"
               />
             </BrowserFrame>
-            <p className="font-['JetBrains_Mono'] text-[11px] text-[#4A6359] mt-4">VDS Mobile Detailing · Customer-facing website — the live site ERA Core produces for each tenant</p>
+            <p className="font-['JetBrains_Mono'] text-[11px] text-[#4A6359] mt-4">VDS Mobile Detailing · Customer-facing website — the live site ERA produces for each client</p>
           </Reveal>
         </div>
 
@@ -67,7 +67,7 @@ export default function EraProof() {
                   whileHover={{ y: -4 }}
                   className="transition-all duration-300 hover:drop-shadow-[0_0_12px_rgba(16,185,129,0.4)]"
                 >
-                  <p className="font-['Fraunces'] font-semibold text-[#10B981] text-2xl md:text-3xl">{f.k}</p>
+                  <p className="font-['Sora'] font-bold text-[#10B981] text-2xl md:text-3xl">{f.k}</p>
                   <p className="font-['JetBrains_Mono'] text-[10px] tracking-widest text-[#4A6359] mt-1">{f.v.toUpperCase()}</p>
                 </motion.div>
               ))}

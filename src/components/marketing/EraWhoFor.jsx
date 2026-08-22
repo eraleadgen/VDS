@@ -15,12 +15,12 @@ export default function EraWhoFor() {
     <section id="customers" className="bg-[#060A09] py-24 md:py-32">
       <div className="max-w-[1200px] mx-auto px-6">
         <div className="max-w-[760px] mb-12">
-          <p className="font-['JetBrains_Mono'] text-[11px] tracking-[0.25em] text-[#10B981] mb-5">CUSTOMERS — 04</p>
-          <h2 className="font-['Fraunces'] font-semibold text-[#DFEDE9] text-[34px] md:text-[48px] leading-[1.05] tracking-[-0.02em] mb-5">
-            Built for mobile detailing today. Engineered for every service business tomorrow.
+          <p className="font-['JetBrains_Mono'] text-[11px] tracking-[0.25em] text-[#10B981] mb-5">WHO ERA SERVES</p>
+          <h2 className="font-['Sora'] font-bold text-[#DFEDE9] text-[34px] md:text-[48px] leading-[1.05] tracking-[-0.03em] mb-5">
+            Any service business that books jobs and gets paid.
           </h2>
           <p className="font-['Inter'] text-[#7A9A92] text-lg leading-relaxed max-w-[640px]">
-            ERA Core's dictionary, pricing groups, and workflows are configurable — not hardcoded to one industry. Detailing is live and proven; the same engine is built to scale across service businesses.
+            Today ERA is running mobile detailing operations end-to-end. The same engine is built to scale across any service business — roofing, HVAC, plumbing, and beyond.
           </p>
         </div>
         <Reveal>
@@ -35,7 +35,7 @@ export default function EraWhoFor() {
                 whileHover={{ y: -3 }}
                 className={`bg-[#0C1614] rounded-[10px] ring-1 p-4 text-center transition-all duration-300 ${ind.live ? 'ring-[#10B981]/20 hover:ring-[#10B981]/50 hover:shadow-[0_0_24px_-6px_rgba(16,185,129,0.3)]' : 'ring-[#1A2A24]'}`}
               >
-                <p className="font-['Fraunces'] font-semibold text-[#DFEDE9] text-base">{ind.name}</p>
+                <p className="font-['Sora'] font-bold text-[#DFEDE9] text-base">{ind.name}</p>
                 <p className={`font-['JetBrains_Mono'] text-[9px] tracking-widest mt-2 ${ind.live ? 'text-[#10B981]' : 'text-[#4A6359]'}`}>{ind.status.toUpperCase()}</p>
               </motion.div>
             ))}
