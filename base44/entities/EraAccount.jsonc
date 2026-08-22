@@ -64,6 +64,34 @@
     "onboarding_session_id": {
       "type": "string",
       "description": "OnboardingSession entity ID created after the setup fee checkout completes. Links the ERA account to the onboarding wizard so the wizard can resume if the user navigates away."
+    },
+    "provisioning_review_status": {
+      "type": "string",
+      "enum": [
+        "pending_review",
+        "approved",
+        "rejected"
+      ],
+      "default": "approved",
+      "description": "24-hour ERA provisioning review gate. Set to 'pending_review' by the onboardingWizard provision action when a new tenant is provisioned; ERA staff audit the website, domain, and integrations before operations unlock. 'approved' unlocks operational portal tabs; 'rejected' surfaces review_notes to the member. Defaults to 'approved' so already-provisioned tenants are not retroactively locked out \u2014 only newly provisioned tenants enter the review window."
+    },
+    "review_deadline": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO datetime 24 hours after provisioning. The provisioningReview automation auto-approves any account still 'pending_review' past this deadline, so a tenant is never blocked indefinitely. ERA staff can approve earlier (or reject) from the ERA Staff Console."
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO datetime the review was resolved (approved or rejected). Null while pending."
+    },
+    "reviewed_by": {
+      "type": "string",
+      "description": "Base44 User id of the ERA staff member who resolved the review, or 'system_auto' when the scheduled automation auto-approved after the deadline."
+    },
+    "review_notes": {
+      "type": "string",
+      "description": "Notes from the reviewer. Shown to the member in the portal when status is 'rejected'."
     }
   },
   "required": [

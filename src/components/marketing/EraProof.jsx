@@ -2,12 +2,10 @@ import { motion } from 'framer-motion';
 import BrowserFrame from './BrowserFrame';
 import Reveal from './Reveal';
 
-const ANALYTICS_IMG =
-  'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/53fb705f0_generated_image.png';
-const JOBS_IMG =
-  'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/25d5fd27c_generated_image.png';
-const SITE_IMG =
-  'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/b7422f80d_generated_image.png';
+const MEMBER_PORTAL_IMG =
+  'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/da3bc900c_image.png';
+const CUSTOMER_SITE_IMG =
+  'https://media.base44.com/images/public/6a191df337222815cd0b1f5e/8a0fe8077_image.png';
 
 const FACTS = [
   { k: '1st', v: 'ERA Core tenant' },
@@ -33,31 +31,20 @@ export default function EraProof() {
 
         <div className="space-y-10">
           <Reveal>
-            <BrowserFrame url="app.eracore.com/admin/analytics">
+            <BrowserFrame url="vds-mobile.base44.app/member-dashboard">
               <img
-                src={ANALYTICS_IMG}
-                alt="VDS Mobile Detailing admin analytics — 12-month revenue trend, customer lifetime value, new vs. repeat breakdown"
+                src={MEMBER_PORTAL_IMG}
+                alt="VDS Mobile Detailing member portal — appointments, membership, and account management"
                 className="block w-full aspect-[16/10] object-cover"
                 loading="lazy"
               />
             </BrowserFrame>
-            <p className="font-['JetBrains_Mono'] text-[11px] text-[#4A6359] mt-4">VDS Mobile Detailing admin · Analytics — 12-month revenue trend, customer LTV, new vs. repeat</p>
-          </Reveal>
-          <Reveal delay={0.1}>
-            <BrowserFrame url="app.eracore.com/admin?view=jobs">
-              <img
-                src={JOBS_IMG}
-                alt="VDS Mobile Detailing admin jobs board — live scheduling, specialist assignment, status workflow"
-                className="block w-full aspect-[16/10] object-cover"
-                loading="lazy"
-              />
-            </BrowserFrame>
-            <p className="font-['JetBrains_Mono'] text-[11px] text-[#4A6359] mt-4">VDS Mobile Detailing admin · Jobs board — live scheduling, specialist assignment, status workflow</p>
+            <p className="font-['JetBrains_Mono'] text-[11px] text-[#4A6359] mt-4">VDS Mobile Detailing · Member portal — appointments, membership, and account management</p>
           </Reveal>
           <Reveal delay={0.1}>
             <BrowserFrame url="vds-mobile.base44.app">
               <img
-                src={SITE_IMG}
+                src={CUSTOMER_SITE_IMG}
                 alt="VDS Mobile Detailing customer-facing website — homepage hero with booking"
                 className="block w-full aspect-[16/10] object-cover"
                 loading="lazy"

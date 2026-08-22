@@ -576,6 +576,76 @@ export default async function(req: Request): Promise<Response> {
         calendarError = 'Google Calendar connector not authorized';
       }
 
+      // ── 24-hour ERA provisioning review ───────────────────────────────
+      // Stamp the EraAccount as pending review with a 24h deadline, then email
+      // ERA staff a compiled review packet (website, domain, integrations, audit
+      // checklist) so they can audit the new tenant before operations unlock.
+      // Guarded so a re-provision (page refresh) doesn't reset an already-approved
+      // tenant or re-spam the review email.
+      try {
+        const eraAccounts2 = await base44.asServiceRole.entities.EraAccount.filter({ owner_user_id: me.id }).catch(() => []);
+        const ea = eraAccounts2 && eraAccounts2[0];
+        if (ea) {
+          const cur = ea.provisioning_review_status;
+          if (cur !== 'approved' && cur !== 'pending_review') {
+            const deadline = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+            await base44.asServiceRole.entities.EraAccount.update(ea.id, {
+              provisioning_review_status: 'pending_review',
+              review_deadline: deadline,
+              reviewed_at: null,
+              reviewed_by: null,
+              review_notes: '',
+            }).catch((e: any) => console.error('EraAccount review stamp failed:', e.message));
+
+            const reviewInfo = {
+              business_name: config.business_name,
+              business_id: config.business_id,
+              plan_tier: session.plan_tier,
+              subdomain,
+              custom_domain: config.custom_domain || '(none — temp subdomain)',
+              domain_status: config.domain_status || 'none',
+              email_mode: config.email_mode || 'shared',
+              email_domain_status: config.email_domain_status || 'shared',
+              calendar_status,
+              owner_email: ea.email || me.email,
+            };
+            const staff = await base44.asServiceRole.entities.EraStaff.list().catch(() => []);
+            const recipients = (staff && staff.length ? staff : []).map((s: any) => s.email).filter(Boolean);
+            for (const emailAddr of recipients) {
+              await base44.asServiceRole.integrations.Core.SendEmail({
+                to: emailAddr,
+                subject: `New ERA Core tenant ready for review: ${reviewInfo.business_name}`,
+                body: [
+                  'A new ERA Core tenant finished provisioning and is pending your 24-hour review.',
+                  '',
+                  `Business: ${reviewInfo.business_name} (${reviewInfo.business_id})`,
+                  `Plan: ${reviewInfo.plan_tier}`,
+                  `Owner: ${reviewInfo.owner_email}`,
+                  '',
+                  `Website: https://${reviewInfo.subdomain}`,
+                  `Custom domain: ${reviewInfo.custom_domain} (status: ${reviewInfo.domain_status})`,
+                  `Email mode: ${reviewInfo.email_mode} (status: ${reviewInfo.email_domain_status})`,
+                  `Google Calendar: ${reviewInfo.calendar_status}`,
+                  '',
+                  'Audit checklist:',
+                  '  [ ] Website loads and branding is correct',
+                  '  [ ] Custom domain DNS configured (or temp subdomain is acceptable)',
+                  '  [ ] Email sending domain verified (if custom mode)',
+                  '  [ ] Google Calendar integration connected',
+                  '  [ ] Services, pricing, and specialists configured',
+                  '  [ ] Booking flow tested end-to-end',
+                  '',
+                  'Review and approve in the ERA Admin Portal -> Clients.',
+                  "The tenant's operational tools stay locked until you approve (or until the 24h window auto-approves).",
+                ].join('\n'),
+              }).catch((e: any) => console.error('Review email failed:', e.message));
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Review setup failed:', e.message);
+      }
+
       return Response.json({
         business_config_id: config.id,
         subdomain,

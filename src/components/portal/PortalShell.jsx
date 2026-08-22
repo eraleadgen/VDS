@@ -1,4 +1,4 @@
-import { LogOut } from 'lucide-react';
+import { LogOut, Lock } from 'lucide-react';
 import { useBusinessName } from '@/lib/BusinessConfigContext';
 
 export default function PortalShell({ title, navItems, active, onNavigate, userLabel, onLogout, children }) {
@@ -18,10 +18,13 @@ export default function PortalShell({ title, navItems, active, onNavigate, userL
               className={`w-full flex items-center gap-3 px-4 py-3 text-xs font-mono-tech tracking-widest rounded-sm transition-colors border ${
                 active === item.key
                   ? 'bg-gold/10 text-gold border-gold/30'
-                  : 'text-vapor/60 hover:text-vapor hover:bg-vapor/5 border-transparent'
+                  : item.locked
+                    ? 'text-vapor/35 hover:text-vapor/60 hover:bg-vapor/5 border-transparent'
+                    : 'text-vapor/60 hover:text-vapor hover:bg-vapor/5 border-transparent'
               }`}
             >
-              <item.icon size={16} /> {item.label}
+              <item.icon size={16} /> <span className="flex-1 text-left">{item.label}</span>
+              {item.locked && <Lock size={12} className="text-vapor/30" />}
             </button>
           ))}
         </nav>

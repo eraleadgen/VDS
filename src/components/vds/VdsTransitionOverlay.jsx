@@ -113,7 +113,7 @@ export default function VdsTransitionOverlay({ pathKey, authLoaded, onCloseCompl
           initial={{ opacity: 0 }}
           animate={{ opacity: fadeOut ? 0 : 1 }}
           transition={{ duration: fadeOut ? 0.5 : 0.7, ease: 'easeOut' }}
-          className="max-w-[260px] w-auto h-auto select-none"
+          className="w-[min(72vw,460px)] max-w-[460px] h-auto select-none"
         />
       </motion.div>
     );
