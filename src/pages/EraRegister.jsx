@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { UserPlus, Mail, Lock, Loader2 } from "lucide-react";
+import { UserPlus, Mail, Lock, Loader2, Phone, ShieldCheck } from "lucide-react";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
@@ -16,6 +16,7 @@ export default function EraRegister() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
@@ -49,7 +50,7 @@ export default function EraRegister() {
       }
       // Persist first/last name. No business_id — this is a pre-tenant ERA user.
       try {
-        await base44.auth.updateMe({ first_name: firstName.trim(), last_name: lastName.trim() });
+        await base44.auth.updateMe({ first_name: firstName.trim(), last_name: lastName.trim(), phone: phone.trim() });
       } catch (_) {}
       // Create the EraAccount (idempotent — safe even if Google OAuth already created one).
       try {
@@ -80,8 +81,8 @@ export default function EraRegister() {
     return (
       <AuthLayout
         icon={Mail}
-        title="Check your email"
-        subtitle={`We sent a verification code to ${email}`}
+        title="Two-Factor Verification"
+        subtitle={`Enter the 6-digit code we sent to ${email} to verify your account`}
       >
         {error && (
           <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
@@ -215,6 +216,22 @@ export default function EraRegister() {
           </div>
         </div>
         <div className="space-y-2">
+          <Label htmlFor="phone">Phone Number</Label>
+          <div className="relative">
+            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+            <Input
+              id="phone"
+              type="tel"
+              autoComplete="tel"
+              placeholder="(470) 555-0123"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="pl-10 h-12"
+              required
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
@@ -256,7 +273,11 @@ export default function EraRegister() {
             "Create account"
           )}
         </Button>
-      </form>
+        </form>
+        <p className="text-center text-xs text-muted-foreground mt-4 flex items-center justify-center gap-1.5">
+          <ShieldCheck className="w-3.5 h-3.5" />
+          Protected with two-factor verification
+        </p>
     </AuthLayout>
   );
 }
