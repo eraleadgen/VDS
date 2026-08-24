@@ -58,7 +58,10 @@ export default function EraHowItWorks() {
     <section className="bg-[#08110E] py-24 md:py-32 border-y border-[#10B981]/8">
       <div className="max-w-[1200px] mx-auto px-6">
         <div className="max-w-[760px] mb-14">
-          <p className="font-['JetBrains_Mono'] text-[11px] tracking-[0.25em] text-[#10B981] mb-5">HOW IT WORKS</p>
+          <div className="flex items-center gap-3 mb-5">
+            <span className="h-px w-10" style={{ background: 'linear-gradient(90deg, #D4AF37, transparent)' }} />
+            <p className="font-['JetBrains_Mono'] text-[11px] tracking-[0.25em] text-[#10B981]">HOW IT WORKS</p>
+          </div>
           <h2 className="font-['Sora'] font-bold text-[#DFEDE9] text-[34px] md:text-[48px] leading-[1.05] tracking-[-0.03em]">
             From checkout to live in under five minutes.
           </h2>

@@ -40,7 +40,10 @@ export default function EraPricing() {
     <section id="pricing" className="bg-[#08110E] py-24 md:py-32 border-t border-[#10B981]/8">
       <div className="max-w-[1200px] mx-auto px-6">
         <div className="max-w-[760px] mb-14">
-          <p className="font-['JetBrains_Mono'] text-[11px] tracking-[0.25em] text-[#10B981] mb-5">PRICING · 05</p>
+          <div className="flex items-center gap-3 mb-5">
+            <span className="h-px w-10" style={{ background: 'linear-gradient(90deg, #D4AF37, transparent)' }} />
+            <p className="font-['JetBrains_Mono'] text-[11px] tracking-[0.25em] text-[#10B981]">PRICING · 05</p>
+          </div>
           <h2 className="font-['Sora'] font-semibold text-[#DFEDE9] text-[34px] md:text-[48px] leading-[1.05] tracking-[-0.02em] mb-5">
             One-time setup. Flat monthly. No per-seat surprises.
           </h2>
@@ -52,7 +55,7 @@ export default function EraPricing() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-16">
           {PLANS.map((p) => (
             <Reveal key={p.key}>
-              <div className={`relative rounded-[10px] p-6 flex flex-col h-full transition-all ${p.popular ? 'ring-2 ring-[#10B981] bg-[#10B981]/[0.04] shadow-[0_0_40px_-12px_rgba(16,185,129,0.3)] hover:shadow-[0_0_50px_-8px_rgba(16,185,129,0.5)]' : p.available ? 'ring-1 ring-[#1A2A24] bg-[#0C1614] hover:ring-[#10B981]/40 hover:shadow-[0_0_30px_-8px_rgba(16,185,129,0.3)]' : 'ring-1 ring-[#1A2A24] bg-[#0C1614] opacity-50'}`}>
+              <div className={`relative rounded-[10px] p-6 flex flex-col h-full transition-all ${p.popular ? 'ring-2 ring-[#D4AF37] bg-[#D4AF37]/[0.04] shadow-[0_0_40px_-12px_rgba(212,175,55,0.3)] hover:shadow-[0_0_50px_-8px_rgba(212,175,55,0.5)]' : p.available ? 'ring-1 ring-[#1A2A24] bg-[#0C1614] hover:ring-[#D4AF37]/40 hover:shadow-[0_0_30px_-8px_rgba(212,175,55,0.2)]' : 'ring-1 ring-[#1A2A24] bg-[#0C1614] opacity-50'}`}>
                 {p.popular && <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#10B981] text-[#060A09] text-[10px] font-['JetBrains_Mono'] tracking-widest px-3 py-1 rounded-full">MOST POPULAR</span>}
                 {!p.available && <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#0C1614] border border-[#1A2A24] text-[#4A6359] text-[10px] font-['JetBrains_Mono'] tracking-widest px-3 py-1 rounded-full">COMING SOON</span>}
                 <h3 className="font-['Sora'] font-semibold text-[#DFEDE9] text-xl mb-1.5">{p.name}</h3>

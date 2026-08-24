@@ -51,7 +51,10 @@ export default function EraHome() {
       <section className="bg-[#060A09] py-20 md:py-28">
         <div className="max-w-[1200px] mx-auto px-6">
           <div className="max-w-[640px] mb-12">
-            <p className="font-['JetBrains_Mono'] text-[11px] tracking-[0.25em] text-[#10B981] mb-4">EXPLORE THE PLATFORM</p>
+            <div className="flex items-center gap-3 mb-4">
+              <span className="h-px w-10" style={{ background: 'linear-gradient(90deg, #D4AF37, transparent)' }} />
+              <p className="font-['JetBrains_Mono'] text-[11px] tracking-[0.25em] text-[#10B981]">EXPLORE THE PLATFORM</p>
+            </div>
             <h2 className="font-['Sora'] font-bold text-[#DFEDE9] text-[30px] md:text-[42px] leading-[1.05] tracking-[-0.03em]">
               Everything your business needs — one system.
             </h2>
@@ -59,7 +62,7 @@ export default function EraHome() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {PAGES.map((p, i) => (
               <Reveal key={p.to} delay={(i % 2) * 0.08}>
-                <Link to={p.to} className="group block bg-[#0C1614] rounded-[10px] ring-1 ring-[#1A2A24] p-6 transition-all duration-300 hover:ring-[#10B981]/50 hover:shadow-[0_0_30px_-8px_rgba(16,185,129,0.35)]">
+                <Link to={p.to} className="group block bg-[#0C1614] rounded-[10px] ring-1 ring-[#1A2A24] p-6 transition-all duration-300 hover:ring-[#D4AF37]/40 hover:shadow-[0_0_30px_-8px_rgba(212,175,55,0.2)]">
                   <div className="flex items-start justify-between mb-3">
                     <p className="font-['JetBrains_Mono'] text-[10px] tracking-[0.2em] text-[#10B981]">{p.tag}</p>
                     <ArrowRight size={16} className="text-[#4A6359] group-hover:text-[#10B981] transition-colors" />

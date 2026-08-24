@@ -21,7 +21,10 @@ export default function EraHero() {
     <section className="relative pt-32 pb-20 overflow-hidden">
       <div className="relative max-w-[1200px] mx-auto px-6">
         <motion.div variants={container} initial="hidden" animate="show" className="max-w-[820px]">
-          <motion.p variants={item} className="font-['JetBrains_Mono'] text-[11px] tracking-[0.25em] text-[#10B981] mb-5">BRINGING SERVICE BUSINESSES TO A NEW ERA OF EFFICIENCY</motion.p>
+          <motion.div variants={item} className="flex items-center gap-3 mb-5">
+            <span className="h-px w-10" style={{ background: 'linear-gradient(90deg, #D4AF37, transparent)' }} />
+            <motion.p className="font-['JetBrains_Mono'] text-[11px] tracking-[0.25em] text-[#10B981]">BRINGING SERVICE BUSINESSES TO A NEW ERA OF EFFICIENCY</motion.p>
+          </motion.div>
           <motion.h1 variants={item} className="font-['Sora'] font-bold text-[#DFEDE9] text-[40px] sm:text-[52px] md:text-[68px] leading-[1.02] tracking-[-0.03em] mb-6">
             More bookings. Less overhead. A business that runs itself.
           </motion.h1>
@@ -30,7 +33,7 @@ export default function EraHero() {
           </motion.p>
           <motion.div variants={item} className="flex flex-wrap items-center gap-3">
             <Link to="/era-results" className="inline-flex items-center gap-2 bg-[#10B981] text-[#060A09] font-['Inter'] text-sm font-semibold px-5 py-3 rounded-[6px] hover:bg-[#34D399] transition-all duration-200 shadow-[0_0_24px_-6px_rgba(16,185,129,0.5)] hover:shadow-[0_0_32px_-6px_rgba(52,211,153,0.7)]">See the results <ArrowRight size={15} /></Link>
-            <Link to="/era-pricing" className="inline-flex items-center gap-2 font-['Inter'] text-sm font-medium text-[#DFEDE9] px-5 py-3 rounded-[6px] border border-[#1A2A24] hover:border-[#10B981]/40 hover:text-[#34D399] transition-colors">View pricing</Link>
+            <Link to="/era-pricing" className="inline-flex items-center gap-2 font-['Inter'] text-sm font-medium text-[#DFEDE9] px-5 py-3 rounded-[6px] border border-[#D4AF37]/25 hover:border-[#D4AF37]/60 hover:text-[#D4AF37] transition-colors">View pricing</Link>
           </motion.div>
         </motion.div>
 

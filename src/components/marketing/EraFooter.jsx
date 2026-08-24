@@ -9,7 +9,8 @@ const COLS = [
 
 export default function EraFooter() {
   return (
-    <footer className="bg-[#08110E] border-t border-[#10B981]/10 pt-16 pb-10">
+    <footer className="bg-[#08110E] border-t border-[#10B981]/10 pt-16 pb-10 relative">
+      <div className="absolute top-0 inset-x-0 h-px" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(212,175,55,0.3) 50%, transparent 100%)' }} />
       <div className="max-w-[1200px] mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
           <div>

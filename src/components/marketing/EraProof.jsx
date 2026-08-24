@@ -18,7 +18,10 @@ export default function EraProof() {
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 70% 30%, rgba(16,185,129,0.04) 0%, transparent 50%)' }} />
       <div className="relative max-w-[1200px] mx-auto px-6">
         <div className="max-w-[780px] mb-16">
-          <p className="font-['JetBrains_Mono'] text-[11px] tracking-[0.25em] text-[#10B981] mb-5">RESULTS</p>
+          <div className="flex items-center gap-3 mb-5">
+            <span className="h-px w-10" style={{ background: 'linear-gradient(90deg, #D4AF37, transparent)' }} />
+            <p className="font-['JetBrains_Mono'] text-[11px] tracking-[0.25em] text-[#10B981]">RESULTS</p>
+          </div>
           <h2 className="font-['Sora'] font-bold text-[#DFEDE9] text-[34px] md:text-[52px] leading-[1.05] tracking-[-0.03em] mb-6">
             This is what your business looks like on ERA.
           </h2>

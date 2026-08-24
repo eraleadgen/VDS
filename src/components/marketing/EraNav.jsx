@@ -21,6 +21,7 @@ export default function EraNav() {
 
   return (
     <header className={`fixed top-0 inset-x-0 z-50 transition-all duration-500 ${scrolled ? 'bg-[#060A09]/80 backdrop-blur-xl border-b border-[#10B981]/10' : 'bg-transparent'}`}>
+      {scrolled && <div className="absolute top-0 inset-x-0 h-px" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(212,175,55,0.3) 50%, transparent 100%)' }} />}
       <div className="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2.5 group">
           <EraLogo size={30} />
@@ -28,13 +29,13 @@ export default function EraNav() {
 
         <nav className="hidden md:flex items-center gap-8">
           {LINKS.map((l) => (
-            <Link key={l.to} to={l.to} className="font-['Inter'] text-sm text-[#7A9A92] hover:text-[#34D399] transition-colors duration-200">{l.label}</Link>
+            <Link key={l.to} to={l.to} className="font-['Inter'] text-sm text-[#7A9A92] hover:text-[#D4AF37] transition-colors duration-200">{l.label}</Link>
           ))}
         </nav>
 
         <div className="hidden md:flex items-center gap-3">
-          <Link to="/era-login" className="font-['Inter'] text-sm font-medium text-[#DFEDE9] hover:text-[#34D399] transition-colors">Sign in</Link>
-          <Link to="/era-register" className="font-['Inter'] text-sm font-medium bg-[#10B981] text-[#060A09] px-4 py-2 rounded-[6px] hover:bg-[#34D399] transition-all duration-200 shadow-[0_0_20px_-4px_rgba(16,185,129,0.4)] hover:shadow-[0_0_28px_-4px_rgba(52,211,153,0.6)]">Get started</Link>
+          <Link to="/era-login" className="font-['Inter'] text-sm font-medium text-[#DFEDE9] hover:text-[#D4AF37] transition-colors">Sign in</Link>
+          <Link to="/era-register" className="font-['Inter'] text-sm font-medium bg-[#10B981] text-[#060A09] px-4 py-2 rounded-[6px] ring-1 ring-[#D4AF37]/30 hover:ring-[#D4AF37]/60 hover:bg-[#34D399] transition-all duration-200 shadow-[0_0_20px_-4px_rgba(16,185,129,0.4)] hover:shadow-[0_0_28px_-4px_rgba(52,211,153,0.6)]">Get started</Link>
         </div>
 
         <button className="md:hidden text-[#DFEDE9]" onClick={() => setOpen((v) => !v)} aria-label="Menu">

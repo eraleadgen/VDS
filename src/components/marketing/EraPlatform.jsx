@@ -147,7 +147,10 @@ export default function EraPlatform() {
       <div className="absolute top-1/2 left-[-10%] w-[600px] h-[600px] rounded-full pointer-events-none" style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.05) 0%, transparent 70%)' }} />
       <div className="relative max-w-[1200px] mx-auto px-6">
         <div className="max-w-[760px] mb-14">
-          <p className="font-['JetBrains_Mono'] text-[11px] tracking-[0.25em] text-[#10B981] mb-5">WHAT ERA DOES</p>
+          <div className="flex items-center gap-3 mb-5">
+            <span className="h-px w-10" style={{ background: 'linear-gradient(90deg, #D4AF37, transparent)' }} />
+            <p className="font-['JetBrains_Mono'] text-[11px] tracking-[0.25em] text-[#10B981]">WHAT ERA DOES</p>
+          </div>
           <h2 className="font-['Sora'] font-bold text-[#DFEDE9] text-[34px] md:text-[48px] leading-[1.05] tracking-[-0.03em] mb-5">
             Six things your business used to need people for, now running themselves.
           </h2>
@@ -164,7 +167,7 @@ export default function EraPlatform() {
                 <motion.div
                   whileHover={{ y: -4 }}
                   transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                  className="bg-[#0C1614] rounded-[10px] ring-1 ring-[#1A2A24] overflow-hidden h-full transition-all duration-300 hover:ring-[#10B981]/50 hover:shadow-[0_0_30px_-8px_rgba(16,185,129,0.35),0_18px_50px_-20px_rgba(16,185,129,0.3)]"
+                  className="bg-[#0C1614] rounded-[10px] ring-1 ring-[#1A2A24] overflow-hidden h-full transition-all duration-300 hover:ring-[#D4AF37]/40 hover:shadow-[0_0_30px_-8px_rgba(212,175,55,0.25),0_18px_50px_-20px_rgba(16,185,129,0.25)]"
                 >
                   <div className="p-4"><F /></div>
                   <div className="px-5 pb-5">

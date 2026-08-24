@@ -10,7 +10,7 @@ export default function EraCta() {
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 50% 50%, rgba(16,185,129,0.06) 0%, transparent 60%)' }} />
       <div className="max-w-[1200px] mx-auto px-6 relative">
         <Reveal>
-          <div className="relative rounded-[16px] bg-[#08110E] overflow-hidden px-8 py-16 md:px-16 md:py-20 text-center ring-1 ring-[#10B981]/15">
+          <div className="relative rounded-[16px] bg-[#08110E] overflow-hidden px-8 py-16 md:px-16 md:py-20 text-center ring-1 ring-[#D4AF37]/20 shadow-[0_0_50px_-12px_rgba(212,175,55,0.15)]">
             <motion.div
               className="absolute inset-0 pointer-events-none"
               style={{ background: 'radial-gradient(ellipse 60% 70% at 50% 0%, rgba(16,185,129,0.18) 0%, transparent 60%)' }}
