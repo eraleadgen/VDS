@@ -30,11 +30,23 @@ function slugify(name) {
     .slice(0, 40) || 'new-business';
 }
 
+// Slugs that can never be assigned to a real tenant. The interactive marketing
+// demo uses `demo_era` as its fictional business_id; reserving it here guarantees
+// no future client can ever provision that exact id (belt-and-suspenders — slugify
+// already strips underscores, so "demo_era" is unreachable from a business name,
+// but this makes the intent explicit and survives any future slugify changes).
+const RESERVED_SLUGS = new Set(['demo_era', 'demo', 'era_demo']);
+
 async function uniqueSlug(base44, base) {
   let candidate = base;
   let suffix = 1;
   // Check both BusinessConfig (finalized tenants) and in-progress OnboardingSessions.
   while (true) {
+    if (RESERVED_SLUGS.has(candidate)) {
+      suffix++;
+      candidate = `${base}-${suffix}`;
+      continue;
+    }
     const [configs, sessions] = await Promise.all([
       base44.asServiceRole.entities.BusinessConfig.filter({ business_id: candidate }).catch(() => []),
       base44.asServiceRole.entities.OnboardingSession.filter({ business_id: candidate, status: 'in_progress' }).catch(() => []),

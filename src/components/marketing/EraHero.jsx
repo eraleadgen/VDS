@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Play } from 'lucide-react';
 import BrowserFrame from './BrowserFrame';
 import Reveal from './Reveal';
 
@@ -34,6 +34,12 @@ export default function EraHero() {
           <motion.div variants={item} className="flex flex-wrap items-center gap-3">
             <Link to="/era-results" className="inline-flex items-center gap-2 bg-[#10B981] text-[#060A09] font-['Inter'] text-sm font-semibold px-5 py-3 rounded-[6px] hover:bg-[#34D399] transition-all duration-200 shadow-[0_0_24px_-6px_rgba(16,185,129,0.5)] hover:shadow-[0_0_32px_-6px_rgba(52,211,153,0.7)]">See the results <ArrowRight size={15} /></Link>
             <Link to="/era-pricing" className="inline-flex items-center gap-2 font-['Inter'] text-sm font-medium text-[#DFEDE9] px-5 py-3 rounded-[6px] border border-[#D4AF37]/25 hover:border-[#D4AF37]/60 hover:text-[#D4AF37] transition-colors">View pricing</Link>
+            <Link to="/era-demo" className="inline-flex items-center gap-2 font-['Inter'] text-sm font-medium text-[#7A9A92] px-5 py-3 rounded-[6px] hover:text-[#10B981] transition-colors group">
+              <span className="w-7 h-7 rounded-full border border-[#10B981]/30 group-hover:border-[#10B981]/60 group-hover:bg-[#10B981]/10 flex items-center justify-center transition-all">
+                <Play size={12} className="text-[#10B981] ml-0.5" fill="currentColor" />
+              </span>
+              See it in action
+            </Link>
           </motion.div>
         </motion.div>
 

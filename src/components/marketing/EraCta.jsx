@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Play } from 'lucide-react';
 import EraLogo from './EraLogo';
 import Reveal from './Reveal';
 
@@ -25,9 +25,14 @@ export default function EraCta() {
               <p className="font-['Inter'] text-[#7A9A92] text-lg max-w-[560px] mx-auto mb-9 leading-relaxed">
                 A complete, working business platform, live in minutes. No developer, no spreadsheets, no missed calls.
               </p>
-              <Link to="/era-register" className="inline-flex items-center gap-2 bg-[#10B981] text-[#060A09] font-['Inter'] text-sm font-semibold px-6 py-3.5 rounded-[6px] hover:bg-[#34D399] transition-all duration-200 shadow-[0_0_28px_-6px_rgba(16,185,129,0.5)] hover:shadow-[0_0_36px_-6px_rgba(52,211,153,0.7)]">
-                Get started <ArrowRight size={15} />
-              </Link>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <Link to="/era-register" className="inline-flex items-center gap-2 bg-[#10B981] text-[#060A09] font-['Inter'] text-sm font-semibold px-6 py-3.5 rounded-[6px] hover:bg-[#34D399] transition-all duration-200 shadow-[0_0_28px_-6px_rgba(16,185,129,0.5)] hover:shadow-[0_0_36px_-6px_rgba(52,211,153,0.7)]">
+                  Get started <ArrowRight size={15} />
+                </Link>
+                <Link to="/era-demo" className="inline-flex items-center gap-2 font-['Inter'] text-sm font-medium text-[#DFEDE9] px-6 py-3.5 rounded-[6px] border border-[#D4AF37]/25 hover:border-[#D4AF37]/60 hover:text-[#D4AF37] transition-colors">
+                  <Play size={14} className="text-[#10B981]" fill="currentColor" /> See it in action
+                </Link>
+              </div>
             </div>
           </div>
         </Reveal>
