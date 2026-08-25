@@ -2,6 +2,11 @@ import { DollarSign } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
 import { DEMO_ANALYTICS } from '@/lib/demoTenantData';
 
+// Uses inline hex palette matching eraleadgen.com — no design-system token
+// classes, so it renders identically on the era_systems tenant.
+
+const PANEL = { background: '#0C1614', border: '1px solid #1A2A24', borderRadius: '8px' };
+
 const formatMonth = (key) => {
   const [y, m] = key.split('-');
   const d = new Date(Number(y), Number(m) - 1);
@@ -27,15 +32,15 @@ export default function DemoAnalytics() {
   return (
     <div className="space-y-4 max-w-5xl">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-grotesk font-bold text-vapor">Analytics</h1>
-        <span className="text-xs font-mono-tech tracking-widest text-vapor/40">BUSINESS INTELLIGENCE</span>
+        <h1 style={{ fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: '24px', color: '#DFEDE9' }}>Analytics</h1>
+        <span style={{ fontFamily: "'JetBrains_Mono', monospace", fontSize: '11px', letterSpacing: '0.1em', color: '#4A6359' }}>BUSINESS INTELLIGENCE</span>
       </div>
 
       {/* Revenue Trends */}
-      <div className="glass-panel border border-vapor/10 rounded-sm p-5">
+      <div className="p-5" style={PANEL}>
         <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
-          <h2 className="text-xs font-mono-tech tracking-widest text-gold/70">REVENUE TRENDS — LAST 12 MONTHS</h2>
-          <span className="text-xs font-mono-tech text-vapor/40">{rangeLabel}</span>
+          <h2 style={{ fontFamily: "'JetBrains_Mono', monospace", fontSize: '11px', letterSpacing: '0.15em', color: 'rgba(212,175,55,0.7)' }}>REVENUE TRENDS — LAST 12 MONTHS</h2>
+          <span style={{ fontFamily: "'JetBrains_Mono', monospace", fontSize: '11px', color: '#4A6359' }}>{rangeLabel}</span>
         </div>
         <ResponsiveContainer width="100%" height={280}>
           <AreaChart data={revenueData}>
@@ -45,9 +50,9 @@ export default function DemoAnalytics() {
                 <stop offset="100%" stopColor="#D4AF37" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <XAxis dataKey="month" stroke="#E2E8F080" fontSize={11} tickLine={false} axisLine={{ stroke: '#E2E8F020' }} />
-            <YAxis stroke="#E2E8F080" fontSize={11} tickLine={false} axisLine={{ stroke: '#E2E8F020' }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-            <Tooltip contentStyle={{ background: '#14161A', border: '1px solid rgba(212,175,55,0.25)', borderRadius: 4, fontSize: 12 }} cursor={{ fill: 'rgba(212,175,55,0.05)' }} formatter={(v) => `$${Number(v).toLocaleString()}`} />
+            <XAxis dataKey="month" stroke="#7A9A92" fontSize={11} tickLine={false} axisLine={{ stroke: '#1A2A24' }} />
+            <YAxis stroke="#7A9A92" fontSize={11} tickLine={false} axisLine={{ stroke: '#1A2A24' }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+            <Tooltip contentStyle={{ background: '#0C1614', border: '1px solid rgba(212,175,55,0.25)', borderRadius: 6, fontSize: 12, color: '#DFEDE9' }} cursor={{ fill: 'rgba(212,175,55,0.05)' }} formatter={(v) => `$${Number(v).toLocaleString()}`} />
             <Area type="monotone" dataKey="revenue" stroke="#D4AF37" strokeWidth={2} fill="url(#demoRevGrad)" />
           </AreaChart>
         </ResponsiveContainer>
@@ -55,27 +60,27 @@ export default function DemoAnalytics() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Customer LTV */}
-        <div className="glass-panel border border-vapor/10 rounded-sm p-5">
-          <h2 className="text-xs font-mono-tech tracking-widest text-gold/70 mb-4">CUSTOMER LIFETIME VALUE</h2>
+        <div className="p-5" style={PANEL}>
+          <h2 style={{ fontFamily: "'JetBrains_Mono', monospace", fontSize: '11px', letterSpacing: '0.15em', color: 'rgba(212,175,55,0.7)', marginBottom: '16px' }}>CUSTOMER LIFETIME VALUE</h2>
           <div className="flex items-center gap-4 mb-5">
-            <div className="w-11 h-11 rounded-sm bg-gold/10 border border-gold/30 flex items-center justify-center shrink-0">
-              <DollarSign size={22} className="text-gold" />
+            <div className="w-11 h-11 rounded-[6px] flex items-center justify-center shrink-0" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.3)' }}>
+              <DollarSign size={22} style={{ color: '#D4AF37' }} />
             </div>
             <div>
-              <p className="text-3xl font-grotesk font-bold text-gold leading-none">${DEMO_ANALYTICS.avgLtv.toLocaleString()}</p>
-              <p className="text-xs font-mono-tech tracking-widest text-vapor/50 mt-1.5">AVERAGE LTV PER CUSTOMER</p>
+              <p style={{ fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: '30px', color: '#D4AF37', lineHeight: 1 }}>${DEMO_ANALYTICS.avgLtv.toLocaleString()}</p>
+              <p style={{ fontFamily: "'JetBrains_Mono', monospace", fontSize: '11px', letterSpacing: '0.1em', color: '#7A9A92', marginTop: '6px' }}>AVERAGE LTV PER CUSTOMER</p>
             </div>
           </div>
-          <div className="space-y-1">
+          <div>
             {DEMO_ANALYTICS.topCustomers.map((c, i) => (
-              <div key={i} className="flex items-center justify-between py-2 border-b border-vapor/5 last:border-0">
+              <div key={i} className="flex items-center justify-between py-2" style={{ borderBottom: i < DEMO_ANALYTICS.topCustomers.length - 1 ? '1px solid #1A2A24' : 'none' }}>
                 <div className="flex items-center gap-3">
-                  <span className="text-xs font-mono-tech text-gold/50 w-5">{i + 1}</span>
-                  <span className="text-sm text-vapor font-grotesk">{c.name}</span>
+                  <span style={{ fontFamily: "'JetBrains_Mono', monospace", fontSize: '12px', color: 'rgba(212,175,55,0.5)', width: '20px' }}>{i + 1}</span>
+                  <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: '#DFEDE9' }}>{c.name}</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-sm text-gold font-grotesk font-bold">${c.ltv.toLocaleString()}</span>
-                  <span className="text-xs text-vapor/40 font-mono-tech ml-2">{c.jobs} jobs</span>
+                  <span style={{ fontFamily: "'Sora', sans-serif", fontWeight: 700, fontSize: '13px', color: '#D4AF37' }}>${c.ltv.toLocaleString()}</span>
+                  <span style={{ fontFamily: "'JetBrains_Mono', monospace", fontSize: '11px', color: '#4A6359', marginLeft: '8px' }}>{c.jobs} jobs</span>
                 </div>
               </div>
             ))}
@@ -84,8 +89,8 @@ export default function DemoAnalytics() {
 
         <div className="space-y-4">
           {/* Repeat vs New */}
-          <div className="glass-panel border border-vapor/10 rounded-sm p-5">
-            <h2 className="text-xs font-mono-tech tracking-widest text-gold/70 mb-4">NEW vs. REPEAT CUSTOMERS</h2>
+          <div className="p-5" style={PANEL}>
+            <h2 style={{ fontFamily: "'JetBrains_Mono', monospace", fontSize: '11px', letterSpacing: '0.15em', color: 'rgba(212,175,55,0.7)', marginBottom: '16px' }}>NEW vs. REPEAT CUSTOMERS</h2>
             <div className="flex items-center gap-6">
               <ResponsiveContainer width={140} height={140}>
                 <PieChart>
@@ -97,25 +102,25 @@ export default function DemoAnalytics() {
               </ResponsiveContainer>
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-gold"></div>
-                  <span className="text-sm text-vapor font-grotesk">New — {DEMO_ANALYTICS.customerBreakdown.new}</span>
+                  <div className="w-3 h-3 rounded-[3px]" style={{ background: '#D4AF37' }}></div>
+                  <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: '#DFEDE9' }}>New — {DEMO_ANALYTICS.customerBreakdown.new}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-sm bg-slate-600"></div>
-                  <span className="text-sm text-vapor font-grotesk">Repeat — {DEMO_ANALYTICS.customerBreakdown.repeat}</span>
+                  <div className="w-3 h-3 rounded-[3px]" style={{ background: '#475569' }}></div>
+                  <span style={{ fontFamily: "'Inter', sans-serif", fontSize: '13px', color: '#DFEDE9' }}>Repeat — {DEMO_ANALYTICS.customerBreakdown.repeat}</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Service Profitability */}
-          <div className="glass-panel border border-vapor/10 rounded-sm p-5">
-            <h2 className="text-xs font-mono-tech tracking-widest text-gold/70 mb-4">SERVICE-TYPE PROFITABILITY</h2>
+          <div className="p-5" style={PANEL}>
+            <h2 style={{ fontFamily: "'JetBrains_Mono', monospace", fontSize: '11px', letterSpacing: '0.15em', color: 'rgba(212,175,55,0.7)', marginBottom: '16px' }}>SERVICE-TYPE PROFITABILITY</h2>
             <ResponsiveContainer width="100%" height={Math.max(160, serviceData.length * 40)}>
               <BarChart data={serviceData} layout="vertical" margin={{ left: 20 }}>
-                <XAxis type="number" stroke="#E2E8F080" fontSize={11} tickLine={false} axisLine={{ stroke: '#E2E8F020' }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                <YAxis type="category" dataKey="name" stroke="#E2E8F080" fontSize={11} tickLine={false} axisLine={{ stroke: '#E2E8F020' }} width={100} />
-                <Tooltip contentStyle={{ background: '#14161A', border: '1px solid rgba(212,175,55,0.25)', borderRadius: 4, fontSize: 12 }} cursor={{ fill: 'rgba(212,175,55,0.05)' }} formatter={(v) => `$${Number(v).toLocaleString()}`} />
+                <XAxis type="number" stroke="#7A9A92" fontSize={11} tickLine={false} axisLine={{ stroke: '#1A2A24' }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+                <YAxis type="category" dataKey="name" stroke="#7A9A92" fontSize={11} tickLine={false} axisLine={{ stroke: '#1A2A24' }} width={100} />
+                <Tooltip contentStyle={{ background: '#0C1614', border: '1px solid rgba(212,175,55,0.25)', borderRadius: 6, fontSize: 12, color: '#DFEDE9' }} cursor={{ fill: 'rgba(212,175,55,0.05)' }} formatter={(v) => `$${Number(v).toLocaleString()}`} />
                 <Bar dataKey="revenue" fill="#D4AF37" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
