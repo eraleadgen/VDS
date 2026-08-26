@@ -610,47 +610,124 @@ export default async function(req: Request): Promise<Response> {
               review_notes: '',
             }).catch((e: any) => console.error('EraAccount review stamp failed:', e.message));
 
-            const reviewInfo = {
-              business_name: config.business_name,
-              business_id: config.business_id,
-              plan_tier: session.plan_tier,
-              subdomain,
-              custom_domain: config.custom_domain || '(none — temp subdomain)',
-              domain_status: config.domain_status || 'none',
-              email_mode: config.email_mode || 'shared',
-              email_domain_status: config.email_domain_status || 'shared',
-              calendar_status,
-              owner_email: ea.email || me.email,
-            };
+            // ── Build comprehensive client info packet ──────────────────────
+            // Email ERA staff a complete packet of the client's business info so
+            // they can build and publish the customer-facing website within 72 hours.
+            const wd = session.wizard_data || {};
+            const bb = wd.business_basics || {};
+            const br = wd.branding || {};
+            const sc = wd.service_catalog || {};
+            const ts = wd.team_scheduling || {};
+
+            const dayLabels: Record<string, string> = { mon: 'Monday', tue: 'Tuesday', wed: 'Wednesday', thu: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday' };
+            const hoursText = (bb.business_hours || []).map((h: any) =>
+              `  ${dayLabels[h.day] || h.day}: ${h.closed ? 'Closed' : `${h.open || '09:00'} - ${h.close || '17:00'}`}`
+            ).join('\n');
+
+            const servicesText = (sc.services || []).map((s: any, i: number) => {
+              const tiers = (s.tiers || []).map((t: any) => `    ${t.tier}: $${t.price} (${t.duration_minutes} min)`).join('\n');
+              return `  ${i + 1}. ${s.label || s.key} (${s.category || 'detail'})${s.requires_consultation ? ' [consultation]' : ''}${s.description ? `\n     ${s.description}` : ''}${tiers ? `\n${tiers}` : ''}`;
+            }).join('\n');
+
+            const membershipsText = sc.offer_memberships && (sc.membership_plans || []).length
+              ? (sc.membership_plans as any[]).map((m: any) =>
+                  `  ${m.label || m.key} (${m.short_label || ''})\n    Benefits: ${(m.benefits || []).join(', ')}`
+                ).join('\n')
+              : '  (none)';
+
+            const specialistsText = (ts.specialists || []).map((s: any, i: number) => {
+              const skills = (s.skills || []).join(', ');
+              const areas = s.service_areas?.counties?.join(', ') || '';
+              return `  ${i + 1}. ${s.name} — ${s.email || ''} — ${s.phone || ''}${skills ? `\n     Skills: ${skills}` : ''}${areas ? `\n     Service Areas: ${areas}` : ''}`;
+            }).join('\n') || '  (none — Basic tier)';
+
+            const colors = br.brand_colors || {};
+            const colorsText = Object.entries(colors).map(([k, v]) => `${k}=${v}`).join(', ');
+            const classificationsText = (sc.vehicle_classifications || []).map((v: any) => v.label).join(', ');
+            const pricingGroupsText = (sc.pricing_groups || []).map((g: any) => g.label).join(', ');
+            const conditionsText = (sc.condition_multipliers || []).map((c: any) =>
+              `  ${c.label || c.key}: ${c.multiplier}x (+${c.duration_add_minutes || 0} min)`
+            ).join('\n') || '  (none)';
+
+            const infoPacket = [
+              'NEW CLIENT PROVISIONED — BUSINESS INFO PACKET',
+              '===============================================',
+              '',
+              'BUSINESS IDENTITY',
+              '-----------------',
+              `Legal Name: ${bb.legal_name || bb.business_name || ''}`,
+              `DBA / Brand Name: ${bb.business_name || ''}`,
+              `EIN: ${bb.business_ein || '(not provided)'}`,
+              `Phone: ${bb.business_phone || ''}`,
+              `Email: ${bb.business_email || ''}`,
+              `Address: ${bb.business_address || ''}`,
+              `City: ${bb.address_locality || ''} | State: ${bb.address_region || ''}`,
+              `Legal Jurisdiction: ${bb.legal_jurisdiction || ''}`,
+              `Service Areas: ${(bb.service_areas || []).join(', ')}`,
+              `Timezone: ${bb.timezone || 'America/New_York'} | Currency: ${bb.currency || 'USD'}`,
+              '',
+              'BRANDING',
+              '--------',
+              `Tagline: ${br.tagline || ''}`,
+              `Short Name: ${br.business_short_name || ''}`,
+              `Logo: ${br.logo_url || '(none uploaded)'}`,
+              `Brand Colors: ${colorsText || '(defaults)'}`,
+              '',
+              'BUSINESS HOURS',
+              '--------------',
+              hoursText || '  (not set)',
+              '',
+              'SERVICES & PRICING',
+              '------------------',
+              servicesText || '  (none)',
+              '',
+              'VEHICLE CLASSIFICATIONS',
+              '-----------------------',
+              `  ${classificationsText || '(none)'}`,
+              '',
+              'PRICING GROUPS',
+              '-------------',
+              `  ${pricingGroupsText || '(none)'}`,
+              '',
+              'CONDITION MULTIPLIERS',
+              '---------------------',
+              conditionsText,
+              '',
+              'MEMBERSHIP PLANS',
+              '----------------',
+              membershipsText,
+              '',
+              'TEAM / SPECIALISTS',
+              '-----------------',
+              specialistsText,
+              '',
+              'PROVISIONING INFO',
+              '-----------------',
+              `Plan Tier: ${session.plan_tier}`,
+              `Subdomain: ${subdomain}`,
+              `Custom Domain: ${config.custom_domain || '(none — temp subdomain)'}`,
+              `Google Calendar: ${calendarStatus}`,
+              `Owner Email: ${ea.email || me.email}`,
+              '',
+              'WEBSITE PUBLISHING',
+              '------------------',
+              "The client's customer-facing website will be built and published within 72 hours.",
+              'Use the information above to create their website.',
+              '',
+              '===============================================',
+              'Review and approve in the ERA Admin Portal -> Clients.',
+              "The tenant's operational tools stay locked until you approve (or until the 24h window auto-approves).",
+            ].join('\n');
+
             const staff = await base44.asServiceRole.entities.EraStaff.list().catch(() => []);
             const recipients = (staff && staff.length ? staff : []).map((s: any) => s.email).filter(Boolean);
+            const notifEmail = Deno.env.get('ERA_NOTIFICATION_EMAIL');
+            if (!recipients.length && notifEmail) recipients.push(notifEmail);
             for (const emailAddr of recipients) {
               await base44.asServiceRole.integrations.Core.SendEmail({
                 to: emailAddr,
-                subject: `New ERA Core tenant ready for review: ${reviewInfo.business_name}`,
-                body: [
-                  'A new ERA Core tenant finished provisioning and is pending your 24-hour review.',
-                  '',
-                  `Business: ${reviewInfo.business_name} (${reviewInfo.business_id})`,
-                  `Plan: ${reviewInfo.plan_tier}`,
-                  `Owner: ${reviewInfo.owner_email}`,
-                  '',
-                  `Website: https://${reviewInfo.subdomain}`,
-                  `Custom domain: ${reviewInfo.custom_domain} (status: ${reviewInfo.domain_status})`,
-                  `Email mode: ${reviewInfo.email_mode} (status: ${reviewInfo.email_domain_status})`,
-                  `Google Calendar: ${reviewInfo.calendar_status}`,
-                  '',
-                  'Audit checklist:',
-                  '  [ ] Website loads and branding is correct',
-                  '  [ ] Custom domain DNS configured (or temp subdomain is acceptable)',
-                  '  [ ] Email sending domain verified (if custom mode)',
-                  '  [ ] Google Calendar integration connected',
-                  '  [ ] Services, pricing, and specialists configured',
-                  '  [ ] Booking flow tested end-to-end',
-                  '',
-                  'Review and approve in the ERA Admin Portal -> Clients.',
-                  "The tenant's operational tools stay locked until you approve (or until the 24h window auto-approves).",
-                ].join('\n'),
+                subject: `New ERA Client: ${config.business_name} — Business Info Packet`,
+                body: infoPacket,
               }).catch((e: any) => console.error('Review email failed:', e.message));
             }
           }

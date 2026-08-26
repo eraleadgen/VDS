@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Check } from 'lucide-react';
+import { Check, Clock } from 'lucide-react';
 import Reveal from './Reveal';
 
 const PLANS = [
@@ -101,6 +101,18 @@ export default function EraPricing() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </Reveal>
+
+        <Reveal delay={0.1} className="mt-10">
+          <div className="rounded-[10px] ring-1 ring-[#D4AF37]/20 bg-[#D4AF37]/[0.03] p-5 flex items-start gap-3">
+            <Clock size={18} className="text-[#D4AF37] shrink-0 mt-0.5" />
+            <div>
+              <p className="font-['Inter'] text-sm text-[#DFEDE9] font-medium mb-1">Your website goes live within 72 hours.</p>
+              <p className="font-['Inter'] text-sm text-[#7A9A92] leading-relaxed">
+                Once you complete your account setup, our team builds and publishes your customer-facing website within 72 hours. Your admin portal is available immediately so you can manage your business from day one.
+              </p>
             </div>
           </div>
         </Reveal>

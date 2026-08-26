@@ -61,6 +61,10 @@
     "business_email": {
       "type": "string"
     },
+    "business_ein": {
+      "type": "string",
+      "description": "Employer Identification Number (EIN). Required during onboarding so ERA can verify the business and build the client website."
+    },
     "business_address": {
       "type": "string",
       "description": "Free-text display address (e.g. 'Metro Atlanta, GA'). For structured needs (JSON-LD PostalAddress, legal jurisdiction) use address_locality / address_region / address_country."
