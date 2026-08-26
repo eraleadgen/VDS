@@ -57,6 +57,12 @@ export default function Step1BusinessBasics({ data, onNext, onBack, saving, isFi
       </div>
 
       <div>
+        <Label className="text-vapor/70 text-xs font-mono-tech tracking-wider">BUSINESS EIN *</Label>
+        <Input value={form.business_ein || ''} onChange={(e) => update('business_ein', e.target.value)} placeholder="12-3456789" className="bg-asphalt border-vapor/15 text-vapor mt-1.5" />
+        <p className="text-vapor/40 text-xs mt-1">Required for account verification and website setup.</p>
+      </div>
+
+      <div>
         <Label className="text-vapor/70 text-xs font-mono-tech tracking-wider">DISPLAY ADDRESS</Label>
         <Input value={form.business_address || ''} onChange={(e) => update('business_address', e.target.value)} placeholder="Metro Atlanta, GA" className="bg-asphalt border-vapor/15 text-vapor mt-1.5" />
       </div>
@@ -135,7 +141,7 @@ export default function Step1BusinessBasics({ data, onNext, onBack, saving, isFi
         <Button variant="ghost" onClick={onBack} disabled={isFirst || saving} className="text-vapor/60 hover:text-vapor">
           <ChevronLeft size={18} className="mr-1" /> Back
         </Button>
-        <Button onClick={() => onNext(form)} disabled={saving || !form.legal_name || !form.business_name || !form.business_phone || !form.business_email} className="bg-gold text-obsidian hover:bg-gold-light font-grotesk font-bold">
+        <Button onClick={() => onNext(form)} disabled={saving || !form.legal_name || !form.business_name || !form.business_phone || !form.business_email || !form.business_ein} className="bg-gold text-obsidian hover:bg-gold-light font-grotesk font-bold">
           {saving ? 'Saving...' : 'Next'} <ChevronRight size={18} className="ml-1" />
         </Button>
       </div>

@@ -202,6 +202,7 @@ function buildBusinessConfig(businessId, planTier, data, tempDomain) {
     brand_colors: br.brand_colors || {},
     business_phone: b.business_phone || '',
     business_email: b.business_email || '',
+    business_ein: b.business_ein || '',
     business_address: b.business_address || '',
     address_locality: b.address_locality || '',
     address_region: b.address_region || '',
