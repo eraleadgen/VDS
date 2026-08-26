@@ -7,6 +7,7 @@ import Step2Branding from '@/components/onboarding/Step2Branding';
 import Step3ServiceCatalog from '@/components/onboarding/Step3ServiceCatalog';
 import Step4TeamScheduling from '@/components/onboarding/Step4TeamScheduling';
 import Step5Integrations from '@/components/onboarding/Step5Integrations';
+import OnboardingReview from '@/components/onboarding/OnboardingReview';
 import ProvisioningScreen from '@/components/onboarding/ProvisioningScreen';
 import ConfirmingPayment from '@/components/onboarding/ConfirmingPayment';
 
@@ -30,6 +31,7 @@ export default function OnboardingWizard() {
   const [currentStep, setCurrentStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [provisioning, setProvisioning] = useState(false);
+  const [showReview, setShowReview] = useState(false);
 
   const initFromTier = useCallback(async (tier) => {
     try {
@@ -171,8 +173,8 @@ export default function OnboardingWizard() {
       if (currentStep < 5) {
         setCurrentStep(currentStep + 1);
       } else {
-        // Step 5 saved — redirect to Stripe checkout (payment before provisioning).
-        await startCheckout();
+        // Step 5 saved — show the review overview before proceeding to checkout.
+        setShowReview(true);
       }
     } catch (e) {
       setError(e.message);
@@ -222,6 +224,28 @@ export default function OnboardingWizard() {
   }
 
   if (!session) return null;
+
+  if (showReview) {
+    return (
+      <div className="min-h-screen bg-obsidian">
+        <div className="glass-header sticky top-0 z-50 px-4 lg:px-8 py-4">
+          <div className="max-w-4xl mx-auto flex items-center gap-3">
+            <span className="text-lg font-grotesk font-bold text-gold">ERA</span>
+            <span className="text-xs font-mono-tech tracking-widest text-vapor/40 hidden sm:inline">ONBOARDING · REVIEW</span>
+          </div>
+        </div>
+        <div className="max-w-4xl mx-auto px-4 lg:px-8 py-8">
+          <OnboardingReview
+            wizardData={session.wizard_data || {}}
+            planTier={session.plan_tier}
+            onConfirm={startCheckout}
+            onBack={() => setShowReview(false)}
+            saving={saving}
+          />
+        </div>
+      </div>
+    );
+  }
 
   const step = STEPS.find((s) => s.num === currentStep);
   const StepComponent = step.Component;

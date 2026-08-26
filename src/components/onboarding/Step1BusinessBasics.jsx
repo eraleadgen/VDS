@@ -83,12 +83,12 @@ export default function Step1BusinessBasics({ data, onNext, onBack, saving, isFi
       </div>
 
       <div>
-        <Label className="text-vapor/70 text-xs font-mono-tech tracking-wider">SERVICE AREAS</Label>
-        <p className="text-vapor/40 text-xs mb-2">Enter each area or county you serve, separated by commas.</p>
+        <Label className="text-vapor/70 text-xs font-mono-tech tracking-wider">SERVICE CITIES</Label>
+        <p className="text-vapor/40 text-xs mb-2">Enter each city you serve, separated by commas.</p>
         <Input
           value={(form.service_areas || []).join(', ')}
           onChange={(e) => update('service_areas', e.target.value.split(',').map((s) => s.trim()).filter(Boolean))}
-          placeholder="Fulton County, Cobb County, Dekalb County"
+          placeholder="Alpharetta, Roswell, Marietta"
           className="bg-asphalt border-vapor/15 text-vapor mt-1.5"
         />
       </div>
