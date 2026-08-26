@@ -51,6 +51,7 @@ import EraResultsPage from './pages/era/EraResultsPage';
 import EraPricingPage from './pages/era/EraPricingPage';
 import EraWhoForPage from './pages/era/EraWhoForPage';
 import EraDemo from './pages/EraDemo';
+import EraHome from './pages/EraHome';
 import SsoHandoff from './pages/SsoHandoff';
 import ChatWidget from '@/components/chat/ChatWidget';
 import FeatureGate from '@/components/FeatureGate';
@@ -130,6 +131,7 @@ const AuthenticatedApp = () => {
           <Route path="/era-pricing" element={<EraPricingPage />} />
           <Route path="/era-who-for" element={<EraWhoForPage />} />
           <Route path="/era-demo" element={<EraDemo />} />
+          <Route path="/era-home" element={<EraHome />} />
           <Route path="/sso" element={<SsoHandoff />} />
           <Route path="/:code" element={<FeatureGate feature="partner_engine"><PartnerRedirect /></FeatureGate>} />
             <Route path="*" element={<PageNotFound />} />
