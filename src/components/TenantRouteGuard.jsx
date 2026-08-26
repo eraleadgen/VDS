@@ -33,6 +33,7 @@ const ERA_ALLOWLIST = new Set([
   '/era-pricing',
   '/era-who-for',
   '/era-demo',
+  '/era-home',
 ]);
 
 export default function TenantRouteGuard() {
