@@ -744,15 +744,17 @@ Space Mono: 400;700
 
 ---
 
-### 4.7 Retell AI (Voice Agent)
+### 4.7 Retell AI — NOT a live VDS integration (cross-project artifact)
 
-**Secret:** `RETELL_API_KEY`
+> **Correction:** This is NOT a VDS integration. The `RETELL_API_KEY` secret exists in this workspace but is a cross-project artifact, not part of VDS's live operations. VDS has no voice agent in production.
 
-**What it does:**
-- `valerie` function integrates with Retell for voice-based AI concierge (phone calls)
-- `AILog` entity stores call transcripts, outcomes, and raw request/response data
+**What the code actually shows:**
+- The `valerie` function (VDS's concierge) is **SMS-only** — Twilio inbound SMS + OpenAI LLM. Its header comment explicitly states "SMS-only (no voice/caller ID)." There is no Retell, OpenAI Realtime, or Twilio Voice code in any VDS function.
+- The `RETELL_API_KEY` is used in exactly one place: `checkGoldStatus/entry.ts`, where it serves as a **shared secret for authenticating inbound calls** from an external Retell agent. The function comment says "Used by Retell AI — never calculates pricing itself." This means an external Retell-based voice agent (a separate project) calls this function to check VDS Gold membership status — it is not VDS calling out to Retell.
+- The `AILog` entity has a `call_id` field described as "Retell call ID," but **no active code populates it**. The only writes to AILog come from `valerieTools` (the SMS concierge's tool layer), which logs SMS-based actions (quote creation, specialist follow-ups) — not voice calls.
+- The `scheduler/entry.ts` contains a comment noting "The previous Retell-API-key + caller-supplied-phone-match path was removed" — Retell auth was previously used in the scheduler but was explicitly stripped out.
 
-**Rebuild vs Reconnect:** Reconnect with new Retell API key. Voice agent configuration (agent persona, tools) lives in the Retell dashboard and would need to be re-pointed to the new platform's webhook endpoints.
+**Conclusion:** The `RETELL_API_KEY` is leftover from testing a separate AI Caller project (Retell + Claude) inside the same Base44 workspace. VDS's own voice agent — architected around OpenAI Realtime API + Twilio Voice — is not yet implemented and is not in this codebase. **Do not build around Retell for the VDS rebuild.** The only thing to carry over is the `checkGoldStatus` function's pattern (an auth-gated endpoint that external voice agents can call to verify Gold status), which can be re-implemented with whatever auth mechanism the new platform uses.
 
 ---
 
