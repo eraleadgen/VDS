@@ -1,0 +1,46 @@
+{
+  "name": "Appointment Reminders (24h email + 1h SMS)",
+  "description": "Scans confirmed appointments every 10 minutes and sends 24-hour email reminders and 1-hour SMS reminders.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "interval",
+      "cron_expression": null,
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": 10,
+      "interval_unit": "minutes",
+      "interval_anchor": "2026-07-17T02:25:42.278000",
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "appointment_reminders_24h_email_1h_sms",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "appointmentReminders",
+            "args": {
+              "scheduler_token": "vds_sched_9b7f3d1c8e4a6f2b9d5e7c1a4f8b3d6e9c2a5f7b1d4e8c6"
+            }
+          },
+          "then": "end"
+        }
+      }
+    ]
+  },
+  "x-base44-migrated-from-automation": {
+    "legacy_payload_function": "appointmentReminders"
+  }
+}
