@@ -78,6 +78,14 @@ export default function Navbar() {
 
         {/* Right */}
         <div className="hidden lg:flex items-center gap-4">
+          {!isEra && (
+            <a
+              href="sms:+14709446485"
+              className="flex items-center gap-2 border border-gold/40 text-gold px-4 py-2 text-xs font-mono-tech tracking-widest rounded-sm hover:bg-gold hover:text-obsidian transition-colors duration-200"
+            >
+              ✎ TEXT US
+            </a>
+          )}
           {isEra && (
             <Link
               to="/era-register"
@@ -142,6 +150,14 @@ export default function Navbar() {
               >
                 GET STARTED
               </Link>
+            )}
+            {!isEra && (
+              <a
+                href="sms:+14709446485"
+                className="text-sm font-mono-tech tracking-widest text-gold border border-gold/40 px-4 py-3 text-center rounded-sm"
+              >
+                ✎ TEXT US
+              </a>
             )}
             {!isEra && hasFeature('member_portal') && (
               isLoggedIn ? (

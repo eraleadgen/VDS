@@ -87,10 +87,6 @@ export default function Home() {
                 className="vds-gold-btn flex items-center gap-3 px-6 sm:px-7 py-3.5 sm:py-4 text-xs sm:text-sm font-mono-tech tracking-widest rounded-sm">
                 ◆ EXPLORE VDS GOLD
               </Link>
-              <a href="sms:+14709446485"
-                className="flex items-center gap-3 border border-gold/40 text-gold px-6 sm:px-7 py-3.5 sm:py-4 text-xs sm:text-sm font-mono-tech tracking-widest hover:bg-gold hover:text-obsidian transition-all duration-300 rounded-sm">
-                ✎ TEXT US
-              </a>
             </div>
 
             {/* Stats strip */}
