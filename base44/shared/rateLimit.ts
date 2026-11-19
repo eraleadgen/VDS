@@ -13,6 +13,8 @@ export function rateLimit(key, max, windowMs) {
   const effectiveMax = key.endsWith(UNKNOWN_SUFFIX) ? max * UNKNOWN_MAX_MULTIPLIER : max;
   const now = Date.now();
   const hits = (_rlHits.get(key) || []).filter((ts) => now - ts < windowMs);
+  // Resolved limiter key — shows whether this request carried a real IP or fell into the shared bucket.
+  console.log('[rateLimit]', key, hits.length + '/' + effectiveMax);
   if (hits.length >= effectiveMax) return false;
   hits.push(now);
   _rlHits.set(key, hits);
