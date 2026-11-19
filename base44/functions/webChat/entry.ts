@@ -84,15 +84,16 @@ function buildSystemPrompt(cfg) {
     '- Tell the client that a specialist will reach out to them directly to discuss options and pricing.',
     '',
     'BOOKING & QUOTES — YOU CAN BOOK DIRECTLY IN THE CHAT:',
-    '- BOOKING FLOW (follow this order):',
+    '- BOOKING FLOW (follow this order, every step):',
     '  1. Confirm the service type (e.g. full_detail, exterior_detail, interior_detail). Ask if unsure.',
     '  2. Confirm the vehicle classification (coupe, sedan, hatchback, mid_size_suv, truck_3_row_suv, other) and year/make/model. Ask if the customer has not mentioned their vehicle.',
-    '  3. Call check_availability with the requested date (YYYY-MM-DD), service_type, and vehicle_classification to find open slots. Present the available times to the customer.',
-    '  4. Once the customer picks a time, collect their full name, phone number, email address, and service address. These are REQUIRED for booking — the phone and email are used to send booking confirmation and reminder messages.',
-    '  5. Call book_appointment with ALL collected fields (name, phone, email, address, service_type, vehicle_classification, vehicle_info, preferred_date, preferred_time) to create the booking. The booking is automatically added to Google Calendar and a specialist is auto-assigned.',
-    '  6. Confirm the booking to the customer with the date, time, service, and address. Let them know they will receive a confirmation and reminder via SMS and email.',
-    '  QUOTE-FIRST RULE (CRITICAL — OVERRIDES THE BOOKING FLOW ABOVE): Before booking, always call create_quote for the requested service and vehicle. Only call book_appointment with the quote_id that create_quote returns, and tell the customer the quoted price. Never book without a quote.',
-    '- For quotes on standard services (full detail, exterior detail, etc.), use the create_quote tool. The quote will be displayed with a "Book Now" button that takes them to the booking page. Offer this as an alternative if the customer wants to see a formal quote first.',
+    '  3. Call create_quote with the service(s), vehicle_classification, condition, and add_ons. The quote is the ONLY source of price: never treat a lookup_pricing result as a quote, and never state a price that did not come from create_quote. Tell the customer the final_price it returns.',
+    '  4. Call check_availability with the requested date (YYYY-MM-DD), service_type, and vehicle_classification to find open slots. Present the available times to the customer.',
+    '  5. Once the customer picks a time, collect their full name, phone number, email address, and service address. These are REQUIRED for booking — the phone and email are used to send booking confirmation and reminder messages.',
+    '  6. Call book_appointment with ALL collected fields (name, phone, email, address, service_type, vehicle_classification, vehicle_info, preferred_date, preferred_time) AND the quote_id from step 3. The server rejects any booking without a valid quote_id, so never call book_appointment before step 3 has succeeded. The booking is automatically added to Google Calendar and a specialist is auto-assigned.',
+    '  7. Confirm the booking to the customer with the date, time, service, and address. Let them know they will receive a confirmation and reminder via SMS and email.',
+    '- If create_quote fails, do NOT book. Tell the customer you could not price it and offer to have a specialist follow up.',
+    '- For quotes on standard services (full detail, exterior detail, etc.), the quote is displayed with a "Book Now" button that takes them to the booking page. Offer this as an alternative if the customer wants to see a formal quote first.',
     '- For availability, use check_availability to see open time slots for a specific date. Always convert relative dates to YYYY-MM-DD using TODAY\'S DATE above.',
     '- For pricing questions, use lookup_pricing to get exact starting prices.',
     '',
@@ -159,7 +160,7 @@ const TOOLS = [
       vehicle_info: { type: 'string', description: 'Vehicle year/make/model (e.g. "2022 BMW M4")' },
       preferred_date: { type: 'string', description: 'YYYY-MM-DD' },
       preferred_time: { type: 'string', description: 'Time slot in AM/PM format (e.g. "10:00 AM") — must match a slot returned by check_availability' },
-      quote_id: { type: 'string', description: 'Quote ID returned by create_quote for this booking — links the booking to its priced quote' },
+      quote_id: { type: 'string', description: 'REQUIRED. The quote_id returned by create_quote for this exact service and vehicle classification. The server rejects the booking when it is missing, unknown, no longer open, or does not match the service and vehicle.' },
     }, required: ['name', 'phone', 'email', 'address', 'service_type', 'vehicle_classification', 'vehicle_info', 'preferred_date', 'preferred_time'] },
   } },
   { type: 'function', function: {
@@ -258,6 +259,28 @@ async function executeTool(base44, cfg, businessId, name, args) {
       };
     }
     case 'book_appointment': {
+      // Server-side quote gate. The prompt asks the model to quote first, but a model can skip
+      // the step or invent an id — so the rule is enforced here, where it cannot be argued with.
+      if (!args.quote_id) {
+        return { error: 'A quote is required before booking. Call create_quote first, then retry book_appointment with the returned quote_id. Nothing was booked.' };
+      }
+      const quote = await base44.asServiceRole.entities.Quote.get(args.quote_id).catch(() => null);
+      if (!quote) {
+        return { error: 'That quote_id does not exist. Call create_quote and retry with the new quote_id. Nothing was booked.' };
+      }
+      if (quote.business_id && quote.business_id !== businessId) {
+        return { error: 'That quote belongs to a different business. Call create_quote and retry. Nothing was booked.' };
+      }
+      if (!['pending', 'sent'].includes(quote.status)) {
+        return { error: 'That quote is no longer open (status: ' + quote.status + '). Call create_quote and retry. Nothing was booked.' };
+      }
+      if (!(quote.requested_services || []).includes(args.service_type)) {
+        return { error: 'That quote does not cover ' + args.service_type + '. Call create_quote for this service and retry. Nothing was booked.' };
+      }
+      if (quote.vehicle_classification !== args.vehicle_classification) {
+        return { error: 'That quote is for ' + (quote.vehicle_classification || 'no vehicle') + ', not ' + args.vehicle_classification + '. Call create_quote for this vehicle and retry. Nothing was booked.' };
+      }
+
       // Resolve pricing group from vehicle classification via BusinessConfig mapping
       const map = cfg.classification_to_pricing_group || {};
       const pricingGroup = (args.vehicle_classification && map[args.vehicle_classification]) || 'sedan_coupe';

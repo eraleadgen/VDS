@@ -19,7 +19,7 @@ function clientIp(req) {
   return req.headers.get('x-real-ip') || 'unknown';
 }
 
-// ERA Core booking submission.
+// ERA Core booking submission. (rev: service-identity guard, classification pricing, Job.quote_id)
 // Base44 (Customer + Job entities) is the single source of truth.
 // GoHighLevel has been eliminated — ERA Core is now the sole CRM and messaging system.
 // Google Calendar remains as a mirror (valid integration via connector).
@@ -86,23 +86,25 @@ async function logEvent(base44, event) {
 // When a quote_id is supplied, use the quote's final_price (quotes are priced server-side by
 // saveQuote, so the value is trusted). Otherwise compute the starting price for the service +
 // pricing group from the active BusinessConfig catalog.
-async function computeJobPrice(base44, serviceType, pricingGroup, quoteId, businessId) {
+async function computeJobPrice(base44, serviceType, classification, pricingGroup, businessId) {
   try {
-    if (quoteId) {
-      const q = await base44.asServiceRole.entities.Quote.get(quoteId).catch(() => null);
-      if (q && q.final_price != null) {
-        // Tenant guard: asServiceRole bypasses RLS — reject cross-tenant quote lookups.
-        if (q.business_id && q.business_id !== businessId) return null;
-        return q.final_price;
-      }
-    }
     const configs = await base44.asServiceRole.entities.BusinessConfig.filter({ business_id: businessId, is_active: true });
     const cfg = configs && configs[0];
     if (!cfg) return null;
     const svc = (cfg.services || []).find(s => s.key === serviceType);
     if (!svc) return null;
-    const tier = (svc.tiers || []).find(t => t.tier === pricingGroup) || (svc.tiers || [])[0];
-    return tier ? (tier.price || 0) : null;
+    const tiers = svc.tiers || [];
+    // Tiers are keyed by vehicle classification (coupe/sedan/mid_size_suv/...), NOT by pricing
+    // group. Resolving by group alone never matched and silently fell through to tiers[0] —
+    // the cheapest tier — undercharging every SUV and every quote-less booking.
+    const tier = tiers.find(t => t.tier === classification)
+      || tiers.find(t => t.tier === pricingGroup)
+      || (tiers.length === 1 ? tiers[0] : null);
+    if (!tier || tier.price == null) {
+      console.warn('computeJobPrice: no tier for', serviceType, '| classification:', classification, '| group:', pricingGroup);
+      return null;
+    }
+    return tier.price || 0;
   } catch (e) {
     console.error('computeJobPrice failed:', e.message);
     return null;
@@ -228,13 +230,15 @@ Deno.serve(async (req) => {
     // contacted via Valerie (E.164) isn't duplicated when booking on the website.
     let customer = null;
     let customerCreated = false;
+    // A service identity (service_*) is a platform principal, never a customer — don't link on it.
+    const linkedUserId = user && user.id && !String(user.id).startsWith('service_') ? user.id : null;
     try {
       const result = await findOrCreateCustomer(base44, {
         phone: phoneDigits,
         firstName,
         lastName,
         email: email || null,
-        linkedUserId: user ? user.id : null,
+        linkedUserId,
         address,
         smsConsent: sms_consent !== false,
         businessId,
@@ -249,7 +253,7 @@ Deno.serve(async (req) => {
           entity_id: customer.id,
           customer_id: customer.id,
           description: `New customer created: ${name}`,
-          metadata: { source: 'website_booking', linked_user_id: user ? user.id : null, email: email || null },
+          metadata: { source: 'website_booking', linked_user_id: linkedUserId, email: email || null },
         });
       }
     } catch (e) {
@@ -262,6 +266,13 @@ Deno.serve(async (req) => {
     // ── Create Job (the operational hub — source of truth) ────────────────
     let job = null;
     let serviceLabel = '';
+    // Resolve and tenant-validate the originating quote ONCE — it drives both the Job's
+    // price and Job.quote_id, so the Job stays traceable from its own record.
+    let linkedQuote = null;
+    if (quote_id) {
+      const q = await base44.asServiceRole.entities.Quote.get(quote_id).catch(() => null);
+      if (q && (!q.business_id || q.business_id === businessId)) linkedQuote = q;
+    }
     try {
       serviceLabel = resolveServiceLabel(cfg, service_type);
       const servicesNotes = vehicleEntries.length > 0
@@ -273,9 +284,11 @@ Deno.serve(async (req) => {
           }).join('\n')
         : notes || '';
 
-      // Compute the estimated price server-side from BusinessConfig (or the linked quote) —
+      // Compute the estimated price server-side from the quote or BusinessConfig —
       // never trust client-supplied pricing (prevents $0 / forged-price bookings).
-      const estimatedPrice = await computeJobPrice(base44, service_type, pricingGroup, quote_id, businessId);
+      const estimatedPrice = linkedQuote && linkedQuote.final_price != null
+        ? linkedQuote.final_price
+        : await computeJobPrice(base44, service_type, vehicle_classification, pricingGroup, businessId);
 
       job = await base44.asServiceRole.entities.Job.create({
         business_id: businessId,
@@ -297,6 +310,7 @@ Deno.serve(async (req) => {
         sms_consent: sms_consent !== false,
         estimated_duration_minutes: vehicleEntries.length > 0 ? Math.min(vehicleEntries.length, 4) * 120 : 120,
         estimated_price: estimatedPrice,
+        quote_id: linkedQuote ? linkedQuote.id : null,
       });
 
       await logEvent(base44, {
@@ -358,19 +372,15 @@ Deno.serve(async (req) => {
     } catch (e) { console.error('Partner referral capture failed:', e.message); }
 
     // ── Link the originating Quote (if this booking came from the pricing page) ──
-    if (quote_id) {
+    if (linkedQuote) {
       try {
-        const q = await base44.asServiceRole.entities.Quote.get(quote_id).catch(() => null);
-        // Tenant guard: asServiceRole bypasses RLS — only link quotes from the same tenant.
-        if (q && (!q.business_id || q.business_id === businessId)) {
-          await base44.asServiceRole.entities.Quote.update(q.id, {
-            status: 'booked',
-            customer_name: name,
-            customer_phone: phone,
-            customer_email: email || q.customer_email,
-            job_id: job ? job.id : null,
-          });
-        }
+        await base44.asServiceRole.entities.Quote.update(linkedQuote.id, {
+          status: 'booked',
+          customer_name: name,
+          customer_phone: phone,
+          customer_email: email || linkedQuote.customer_email,
+          job_id: job ? job.id : null,
+        });
       } catch (e) { console.error('Quote link failed:', e.message); }
     }
 

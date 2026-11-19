@@ -46,9 +46,14 @@ export async function findOrCreateCustomer(base44, opts) {
 
   let customer = null;
 
+  // A service identity (service_*) is a platform principal, not a person — never match or
+  // link on it. Without this, every service-role booking collapses onto whichever customer
+  // happens to hold that link, silently merging unrelated people into one CRM record.
+  const safeLinkedUserId = linkedUserId && !String(linkedUserId).startsWith('service_') ? linkedUserId : null;
+
   // 1) Strongest match — authenticated user link (trusted: derived from session).
-  if (linkedUserId) {
-    const byUser = await base44.asServiceRole.entities.Customer.filter({ business_id: businessId, linked_user_id: linkedUserId }).catch(() => []);
+  if (safeLinkedUserId) {
+    const byUser = await base44.asServiceRole.entities.Customer.filter({ business_id: businessId, linked_user_id: safeLinkedUserId }).catch(() => []);
     if (byUser && byUser.length > 0) customer = byUser[0];
   }
   // 2) Phone match — only when NO authenticated user is involved. A caller-supplied
@@ -56,11 +61,11 @@ export async function findOrCreateCustomer(base44, opts) {
   // record by phone (would enable CRM identity hijack — CWE-639). Phone matching is
   // still safe for non-authenticated flows (guest bookings, Valerie) where the caller
   // is the system, not an end user.
-  if (!customer && phone && !linkedUserId) {
+  if (!customer && phone && !safeLinkedUserId) {
     customer = await findCustomer(base44, phone, null, businessId);
   }
   // 3) Email match — same restriction: only for non-authenticated flows.
-  if (!customer && email && !linkedUserId) {
+  if (!customer && email && !safeLinkedUserId) {
     customer = await findCustomer(base44, null, email, businessId);
   }
 
@@ -81,7 +86,7 @@ export async function findOrCreateCustomer(base44, opts) {
 
   customer = await base44.asServiceRole.entities.Customer.create({
     business_id: businessId,
-    linked_user_id: linkedUserId || null,
+    linked_user_id: safeLinkedUserId,
     first_name: firstName || '',
     last_name: lastName || '',
     email: email || null,
