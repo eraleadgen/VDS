@@ -92,6 +92,7 @@ function buildSystemPrompt(cfg) {
     '  4. Once the customer picks a time, collect their full name, phone number, email address, and service address. These are REQUIRED for booking — the phone and email are used to send booking confirmation and reminder messages.',
     '  5. Call book_appointment with ALL collected fields (name, phone, email, address, service_type, vehicle_classification, vehicle_info, preferred_date, preferred_time) to create the booking. The booking is automatically added to Google Calendar and a specialist is auto-assigned.',
     '  6. Confirm the booking to the customer with the date, time, service, and address. Let them know they will receive a confirmation and reminder via SMS and email.',
+    '  QUOTE-FIRST RULE (CRITICAL — OVERRIDES THE BOOKING FLOW ABOVE): Before booking, always call create_quote for the requested service and vehicle. Only call book_appointment with the quote_id that create_quote returns, and tell the customer the quoted price. Never book without a quote.',
     '- For quotes on standard services (full detail, exterior detail, etc.), use the create_quote tool. The quote will be displayed with a "Book Now" button that takes them to the booking page. Offer this as an alternative if the customer wants to see a formal quote first.',
     '- For availability, use check_availability to see open time slots for a specific date. Always convert relative dates to YYYY-MM-DD using TODAY\'S DATE above.',
     '- For pricing questions, use lookup_pricing to get exact starting prices.',
