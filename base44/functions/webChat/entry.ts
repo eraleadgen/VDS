@@ -84,7 +84,6 @@ function buildSystemPrompt(cfg) {
     '- Tell the client that a specialist will reach out to them directly to discuss options and pricing.',
     '',
     'BOOKING & QUOTES — YOU CAN BOOK DIRECTLY IN THE CHAT:',
-    '- You are authorized to book appointments directly through the chat, acting as if you are filling in the booking form for the customer. This is the preferred flow — do NOT redirect to the booking page unless the customer specifically asks for it.',
     '- BOOKING FLOW (follow this order):',
     '  1. Confirm the service type (e.g. full_detail, exterior_detail, interior_detail). Ask if unsure.',
     '  2. Confirm the vehicle classification (coupe, sedan, hatchback, mid_size_suv, truck_3_row_suv, other) and year/make/model. Ask if the customer has not mentioned their vehicle.',
