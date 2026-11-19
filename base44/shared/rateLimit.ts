@@ -3,10 +3,17 @@
 
 const _rlHits = new Map();
 
+// A request carrying neither forwarding header lands in one shared 'unknown' bucket, so
+// limiting it at the per-visitor rate would throttle every such visitor at once. It gets a
+// far higher ceiling instead: still a cost backstop, no longer a site-wide quota.
+const UNKNOWN_SUFFIX = ':unknown';
+const UNKNOWN_MAX_MULTIPLIER = 100;
+
 export function rateLimit(key, max, windowMs) {
+  const effectiveMax = key.endsWith(UNKNOWN_SUFFIX) ? max * UNKNOWN_MAX_MULTIPLIER : max;
   const now = Date.now();
   const hits = (_rlHits.get(key) || []).filter((ts) => now - ts < windowMs);
-  if (hits.length >= max) return false;
+  if (hits.length >= effectiveMax) return false;
   hits.push(now);
   _rlHits.set(key, hits);
   return true;

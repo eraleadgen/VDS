@@ -2,22 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 import { findOrCreateCustomer } from '../../shared/customer.ts';
 import { resolveBusinessIdFromHost, logTenantMismatch } from '../../shared/tenantContext.ts';
 import { hasFeature } from '../../shared/planFeatures.ts';
-
-// ── Per-IP rate limiter (per-isolate) — protects public booking from spam / resource exhaustion ──
-const _rlHits = new Map();
-function rateLimit(key, max, windowMs) {
-  const now = Date.now();
-  const hits = (_rlHits.get(key) || []).filter(ts => now - ts < windowMs);
-  if (hits.length >= max) return false;
-  hits.push(now);
-  _rlHits.set(key, hits);
-  return true;
-}
-function clientIp(req) {
-  const fwd = req.headers.get('x-forwarded-for');
-  if (fwd) return fwd.split(',')[0].trim();
-  return req.headers.get('x-real-ip') || 'unknown';
-}
+import { rateLimit, clientIp } from '../../shared/rateLimit.ts';
 
 // ERA Core booking submission. (rev: service-identity guard, classification pricing, Job.quote_id)
 // Base44 (Customer + Job entities) is the single source of truth.

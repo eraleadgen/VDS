@@ -3,6 +3,10 @@ import { Check, Loader2, Car, RefreshCw } from 'lucide-react';
 import VehicleYearMakeModel from './VehicleYearMakeModel';
 import { classifyVehicle4, CLASSIFICATION_LABEL } from '@/lib/vehicleClassification';
 
+// Shown only when auto-classification can't place the vehicle. 'other' is deliberately
+// absent — the classifier returns it directly, so it never needs a manual escape hatch.
+const MANUAL_OPTIONS = ['coupe', 'hatchback', 'sedan', 'mid_size_suv', 'truck_3_row_suv'];
+
 export default function VehicleSelector({ onSelect, selected = null }) {
   const [ymm, setYmm] = useState({
     year: selected?.year || '',
@@ -11,6 +15,8 @@ export default function VehicleSelector({ onSelect, selected = null }) {
   });
   const [classifying, setClassifying] = useState(false);
   const [classification, setClassification] = useState(selected?.classification || null);
+  const [manual, setManual] = useState(false);
+  const [pickedManually, setPickedManually] = useState(false);
   const initialised = useRef(false);
 
   // Debounced auto-classification
@@ -29,6 +35,10 @@ export default function VehicleSelector({ onSelect, selected = null }) {
       if (cancelled) return;
       setClassification(cls);
       setClassifying(false);
+      // The classifier is a convenience, never a gate: if it errors, is rate limited or
+      // can't place the vehicle, the customer picks the class and keeps booking.
+      setManual(!cls);
+      setPickedManually(false);
       if (cls) {
         onSelect({ year: ymm.year, make: ymm.make, model: ymm.model.trim(), classification: cls });
       }
@@ -42,9 +52,18 @@ export default function VehicleSelector({ onSelect, selected = null }) {
     if (classification) { setClassification(null); onSelect(null); }
   };
 
+  const handleManualSelect = (key) => {
+    setClassification(key);
+    setManual(false);
+    setPickedManually(true);
+    onSelect({ year: ymm.year, make: ymm.make, model: ymm.model.trim(), classification: key });
+  };
+
   const handleReset = () => {
     setYmm({ year: '', make: '', model: '' });
     setClassification(null);
+    setManual(false);
+    setPickedManually(false);
     onSelect(null);
   };
 
@@ -74,7 +93,7 @@ export default function VehicleSelector({ onSelect, selected = null }) {
             <p className="text-base font-grotesk font-bold text-vapor truncate">{ymm.year} {ymm.make} {ymm.model}</p>
             <div className="flex items-center gap-1.5 mt-1">
               <Check size={11} className="text-gold" />
-              <span className="text-xs font-mono-tech tracking-widest text-gold">AUTO-CLASSIFIED: {CLASSIFICATION_LABEL[classification]?.toUpperCase()}</span>
+              <span className="text-xs font-mono-tech tracking-widest text-gold">{pickedManually ? 'SELECTED' : 'AUTO-CLASSIFIED'}: {CLASSIFICATION_LABEL[classification]?.toUpperCase()}</span>
             </div>
           </div>
         </div>
@@ -93,6 +112,25 @@ export default function VehicleSelector({ onSelect, selected = null }) {
               </>
             ) : null}
           </div>
+
+          {/* Manual fallback — the classifier never blocks a booking */}
+          {manual && !classifying && (
+            <div className="mt-2 pt-4 border-t border-vapor/10">
+              <p className="text-xs font-mono-tech tracking-widest text-gold mb-1">PICK YOUR VEHICLE TYPE</p>
+              <p className="text-xs text-vapor/40 mb-3">We couldn't identify your vehicle automatically. Pick the closest match.</p>
+              <div className="grid grid-cols-2 gap-2">
+                {MANUAL_OPTIONS.map(key => (
+                  <button
+                    key={key}
+                    onClick={() => handleManualSelect(key)}
+                    className="text-left px-3 py-2.5 rounded-sm border border-vapor/15 bg-asphalt hover:border-gold/50 hover:bg-gold/[0.06] text-xs font-mono-tech text-vapor/70 hover:text-gold transition-colors"
+                  >
+                    {CLASSIFICATION_LABEL[key]}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>
