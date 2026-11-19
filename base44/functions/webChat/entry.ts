@@ -160,6 +160,7 @@ const TOOLS = [
       vehicle_info: { type: 'string', description: 'Vehicle year/make/model (e.g. "2022 BMW M4")' },
       preferred_date: { type: 'string', description: 'YYYY-MM-DD' },
       preferred_time: { type: 'string', description: 'Time slot in AM/PM format (e.g. "10:00 AM") — must match a slot returned by check_availability' },
+      quote_id: { type: 'string', description: 'Quote ID returned by create_quote for this booking — links the booking to its priced quote' },
     }, required: ['name', 'phone', 'email', 'address', 'service_type', 'vehicle_classification', 'vehicle_info', 'preferred_date', 'preferred_time'] },
   } },
   { type: 'function', function: {
@@ -274,6 +275,7 @@ async function executeTool(base44, cfg, businessId, name, args) {
         vehicle_info: args.vehicle_info,
         preferred_date: args.preferred_date,
         preferred_time: args.preferred_time,
+        quote_id: args.quote_id,
         sms_consent: true,
       });
       const data = res?.data || res;
