@@ -36,10 +36,12 @@ export default function JobCard({ job, onStart, onComplete, onPhotos, onReview, 
       }
       right={
         <div className="text-right">
-          {job.estimated_price != null && (
+          {job.estimated_price != null ? (
             <p className="text-xs font-mono-tech tracking-widest text-gold mb-1">
               {job.final_price != null ? 'FINAL' : 'QUOTED'}: ${(job.final_price != null ? job.final_price : job.estimated_price).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </p>
+          ) : (
+            <p className="text-xs font-mono-tech tracking-widest text-amber-300/80 mb-1">PRICE PENDING</p>
           )}
           <span className={`inline-block text-xs font-mono-tech tracking-widest px-3 py-1 rounded-sm border whitespace-nowrap ${badgeClass}`}>{badgeLabel}</span>
         </div>

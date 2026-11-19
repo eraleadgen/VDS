@@ -80,14 +80,18 @@ export default function JobDetailPanel({ event, contractors, busy, consultBusy, 
             </div>
 
             {/* Price */}
-            {(job.estimated_price != null || job.final_price != null) && (
-              <div className="border-t border-vapor/10 pt-4">
+            <div className="border-t border-vapor/10 pt-4">
+              {job.estimated_price != null || job.final_price != null ? (
                 <p className="text-xs font-mono-tech text-gold">
                   {(job.final_price != null ? job.final_price : job.estimated_price).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
                   <span className="text-vapor/40 ml-1">{job.final_price != null ? 'final' : 'quoted'}</span>
                 </p>
-              </div>
-            )}
+              ) : (
+                <p className="text-xs font-mono-tech text-amber-300/80">
+                  Price pending<span className="text-vapor/40 ml-1">not quoted</span>
+                </p>
+              )}
+            </div>
 
             {/* Consultation status */}
             {isConsultationJob(job) && (
