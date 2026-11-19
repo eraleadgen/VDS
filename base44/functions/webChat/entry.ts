@@ -328,6 +328,13 @@ async function executeTool(base44, cfg, businessId, name, args) {
   }
 }
 
+// Deterministic short fingerprint (SHA-256, first 16 hex chars) of the exact system prompt
+// sent to the model. Instrumentation only — lets a run's prompt be matched to source.
+async function shortPromptHash(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 // ── Main ───────────────────────────────────────────────────────────────
 Deno.serve(async (req) => {
   try {
@@ -363,6 +370,8 @@ Deno.serve(async (req) => {
     const ordered = history.slice().reverse();
 
     const systemPrompt = buildSystemPrompt(cfg);
+    // Instrumentation: fingerprint the exact prompt sent to the model (records only).
+    const promptHash = await shortPromptHash(systemPrompt);
     const messages = [{ role: 'system', content: systemPrompt }];
     for (const m of ordered) {
       if (m.role === 'user') messages.push({ role: 'user', content: m.content });
@@ -374,11 +383,13 @@ Deno.serve(async (req) => {
     let msg = await callOpenAI(messages, TOOLS, { temperature: 0.3 });
     let rounds = 0;
     let lastQuote = null;
+    const toolNames = [];
     while (msg && msg.tool_calls && msg.tool_calls.length && rounds < 5) {
       rounds++;
       messages.push(msg);
       for (const tc of msg.tool_calls) {
         const toolName = tc.function.name;
+        toolNames.push(toolName);
         let toolArgs = {};
         try { toolArgs = JSON.parse(tc.function.arguments || '{}'); } catch {}
         const result = await executeTool(base44, cfg, businessId, toolName, toolArgs);
@@ -392,9 +403,10 @@ Deno.serve(async (req) => {
 
     // Persist conversation history.
     try {
+      const telemetry = { prompt_hash: promptHash, tool_rounds: rounds, tools: toolNames };
       await base44.asServiceRole.entities.ConversationHistory.bulkCreate([
-        { business_id: businessId, customer_phone: sessionKey, role: 'user', content: message },
-        { business_id: businessId, customer_phone: sessionKey, role: 'assistant', content: finalText },
+        { business_id: businessId, customer_phone: sessionKey, role: 'user', content: message, metadata: telemetry },
+        { business_id: businessId, customer_phone: sessionKey, role: 'assistant', content: finalText, metadata: telemetry },
       ]);
     } catch (e) { console.error('History save error:', e.message); }
 
