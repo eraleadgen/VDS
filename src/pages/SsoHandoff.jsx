@@ -14,15 +14,27 @@ import { Loader2 } from 'lucide-react';
 // message, and degrades to the admin login page if window.opener is absent
 // (e.g. a client's own Cloudflare COOP severed it, or the era-portal tab was
 // closed before the ~1s handshake completed). Fails safe — never breaks.
+// Only the ERA portal may drive this handoff. Pinned — never taken from the URL.
+const ERA_ISSUERS = ['https://eraleadgen.com', 'https://www.eraleadgen.com'];
+
 export default function SsoHandoff() {
   const [status, setStatus] = useState('connecting');
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const redirect = params.get('redirect') || '/admin';
-    const issuer = params.get('issuer');
 
-    // No issuer param, or no opener available — fall back to login.
+    // The redirect must be a same-origin path. This rejects absolute URLs,
+    // "javascript:", protocol-relative "//host" and "/\host" — browsers treat a
+    // backslash after the leading slash like a second slash.
+    const rawRedirect = params.get('redirect') || '/admin';
+    const redirect = /^\/(?![\/\\])/.test(rawRedirect) ? rawRedirect : '/admin';
+
+    // The issuer is pinned to the ERA portal origins. Reading it from the URL let
+    // a caller nominate which origin this page would trust.
+    const issuerParam = params.get('issuer');
+    const issuer = ERA_ISSUERS.includes(issuerParam) ? issuerParam : null;
+
+    // No valid issuer, or no opener available — fall back to login.
     // This is the safe degradation path if COOP ever severs window.opener
     // on a client's custom domain (their own Cloudflare settings, not ours).
     if (!issuer || !window.opener || window.opener.closed) {

@@ -20,8 +20,15 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = body.action || 'auto_approve_past_deadline';
 
-    // ── auto_approve_past_deadline (scheduled, no user) ───────────────
+    // ── auto_approve_past_deadline (scheduled) ─────────────────────────
+    // A workflow calls this as its creator (an app admin), so require an
+    // authenticated admin here. The endpoint URL is public — without this check
+    // any anonymous caller could force-approve every pending tenant.
     if (action === 'auto_approve_past_deadline') {
+      const user = await base44.auth.me().catch((e: any) => (e.status === 401 ? null : Promise.reject(e)));
+      if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      if (user.role !== 'admin') return Response.json({ error: 'Forbidden: admin only' }, { status: 403 });
+
       const accounts = await base44.asServiceRole.entities.EraAccount.filter({
         provisioning_review_status: 'pending_review',
       }).catch(() => []);

@@ -3,21 +3,8 @@
 // Falls back to Nominatim (OpenStreetMap) geocoding + Haversine straight-line distance.
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.38';
 
-// ── Per-IP rate limiter (per-isolate) — prevents Google Maps API cost abuse ──
-const _rlHits = new Map();
-function rateLimit(key, max, windowMs) {
-  const now = Date.now();
-  const hits = (_rlHits.get(key) || []).filter(ts => now - ts < windowMs);
-  if (hits.length >= max) return false;
-  hits.push(now);
-  _rlHits.set(key, hits);
-  return true;
-}
-function clientIp(req) {
-  const fwd = req.headers.get('x-forwarded-for');
-  if (fwd) return fwd.split(',')[0].trim();
-  return req.headers.get('x-real-ip') || 'unknown';
-}
+// Per-IP rate limiter — prevents Google Maps API cost abuse.
+import { rateLimit, clientIp } from '../../shared/rateLimit.ts';
 
 const BASE_ADDR = 'Alpharetta, GA';
 const BASE_LAT = 34.0754;
